@@ -1,4 +1,4 @@
 {
   "editor.tabCompletion": "on",
-  "editor.acceptSuggestionOnEnter": "off"
+  "editor.acceptSuggestionOnEnter": "on"
 }
