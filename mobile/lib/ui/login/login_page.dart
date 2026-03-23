@@ -53,7 +53,7 @@ class _LoginPageState extends State<LoginPage> {
                       child: Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: AppTheme.primary.withOpacity(0.1),
+                          color: AppTheme.primary.withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
@@ -68,7 +68,7 @@ class _LoginPageState extends State<LoginPage> {
                       child: Text(
                         'ATTP Đà Nẵng',
                         style: GoogleFonts.inter(
-                          color: AppTheme.spotifyWhite,
+                          color: AppTheme.textPrimary,
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
                         ),
@@ -79,7 +79,7 @@ class _LoginPageState extends State<LoginPage> {
                       child: Text(
                         'Hệ thống quản lý an toàn vệ sinh thực phẩm',
                         style: GoogleFonts.inter(
-                          color: AppTheme.spotifySubtle,
+                          color: AppTheme.textSecondary,
                           fontSize: 14,
                         ),
                         textAlign: TextAlign.center,
@@ -96,7 +96,7 @@ class _LoginPageState extends State<LoginPage> {
                       errorText: state.emailError,
                       prefixIcon: const Icon(
                         Icons.person_outline_rounded,
-                        color: AppTheme.spotifySubtle,
+                        color: AppTheme.textSecondary,
                         size: 20,
                       ),
                       onChanged: (v) =>
@@ -113,7 +113,7 @@ class _LoginPageState extends State<LoginPage> {
                       errorText: state.passwordError,
                       prefixIcon: const Icon(
                         Icons.lock_outline_rounded,
-                        color: AppTheme.spotifySubtle,
+                        color: AppTheme.textSecondary,
                         size: 20,
                       ),
                       suffixIcon: GestureDetector(
@@ -124,7 +124,7 @@ class _LoginPageState extends State<LoginPage> {
                           state.obscurePassword
                               ? Icons.visibility_off_outlined
                               : Icons.visibility_outlined,
-                          color: AppTheme.spotifySubtle,
+                          color: AppTheme.textSecondary,
                           size: 20,
                         ),
                       ),
@@ -137,8 +137,8 @@ class _LoginPageState extends State<LoginPage> {
                     Align(
                       alignment: Alignment.centerRight,
                       child: TextButton(
-                        onPressed: () => Navigator.pushNamed(
-                            context, Routes.forgotPassword),
+                        onPressed: () =>
+                            Navigator.pushNamed(context, Routes.forgotPassword),
                         child: Text(
                           'Quên mật khẩu?',
                           style: GoogleFonts.inter(
@@ -157,7 +157,71 @@ class _LoginPageState extends State<LoginPage> {
                       isLoading: state.status == LoginStatus.loading,
                       onPressed: () => context.read<LoginCubit>().login(),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 20),
+
+                    // Divider OR
+                    Row(
+                      children: [
+                        Expanded(child: Divider(color: AppTheme.dividerColor)),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Text(
+                            'HOẶC',
+                            style: GoogleFonts.inter(
+                              color: AppTheme.textSecondary,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        Expanded(child: Divider(color: AppTheme.dividerColor)),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+
+                    // VNeID login button
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          // TODO: Implement VNeID login
+                        },
+                        icon: Container(
+                          width: 28,
+                          height: 28,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFCC0000),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Center(
+                            child: Text(
+                              'V',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ),
+                        ),
+                        label: Text(
+                          'Đăng nhập bằng VNeID',
+                          style: GoogleFonts.inter(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppTheme.textPrimary,
+                          side: const BorderSide(color: AppTheme.dividerColor),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 28),
 
                     // Register link
                     Row(
@@ -166,7 +230,7 @@ class _LoginPageState extends State<LoginPage> {
                         Text(
                           'Chưa có tài khoản? ',
                           style: GoogleFonts.inter(
-                            color: AppTheme.spotifySubtle,
+                            color: AppTheme.textSecondary,
                             fontSize: 14,
                           ),
                         ),

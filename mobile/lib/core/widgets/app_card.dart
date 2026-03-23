@@ -27,10 +27,10 @@ class AppCard extends StatelessWidget {
         margin: margin ?? const EdgeInsets.only(bottom: 12),
         padding: padding ?? const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: color ?? AppTheme.spotifyDarkGray,
+          color: color ?? AppTheme.cardColor,
           borderRadius: BorderRadius.circular(borderRadius),
           border: Border.all(
-            color: AppTheme.spotifyLightGray.withOpacity(0.5),
+            color: AppTheme.dividerColor,
             width: 0.5,
           ),
         ),

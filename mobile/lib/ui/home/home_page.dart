@@ -47,7 +47,7 @@ class HomePage extends StatelessWidget {
                                     ? state.greeting
                                     : 'Xin chào!',
                                 style: GoogleFonts.inter(
-                                  color: AppTheme.spotifyWhite,
+                                  color: AppTheme.textPrimary,
                                   fontSize: 22,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -56,7 +56,7 @@ class HomePage extends StatelessWidget {
                               Text(
                                 'An toàn thực phẩm Đà Nẵng',
                                 style: GoogleFonts.inter(
-                                  color: AppTheme.spotifySubtle,
+                                  color: AppTheme.textSecondary,
                                   fontSize: 13,
                                 ),
                               ),
@@ -66,12 +66,12 @@ class HomePage extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: AppTheme.spotifyLightGray,
+                            color: AppTheme.surfaceBg,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: const Icon(
                             Icons.notifications_none_rounded,
-                            color: AppTheme.spotifyWhite,
+                            color: AppTheme.textPrimary,
                             size: 22,
                           ),
                         ),
@@ -248,15 +248,15 @@ class _AlertBanner extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            const Color(0xFFEF5350).withOpacity(0.15),
-            AppTheme.accent.withOpacity(0.1),
+            const Color(0xFFEF5350).withValues(alpha: 0.1),
+            AppTheme.accent.withValues(alpha: 0.08),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: const Color(0xFFEF5350).withOpacity(0.3),
+          color: const Color(0xFFEF5350).withValues(alpha: 0.25),
           width: 1,
         ),
       ),
@@ -265,7 +265,7 @@ class _AlertBanner extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: const Color(0xFFEF5350).withOpacity(0.2),
+              color: const Color(0xFFEF5350).withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(10),
             ),
             child: const Icon(
@@ -291,7 +291,7 @@ class _AlertBanner extends StatelessWidget {
                 Text(
                   'Thu hồi lô hàng thực phẩm chức năng không rõ nguồn gốc',
                   style: GoogleFonts.inter(
-                    color: AppTheme.spotifyWhite,
+                    color: AppTheme.textPrimary,
                     fontSize: 13,
                     height: 1.4,
                   ),
@@ -303,7 +303,7 @@ class _AlertBanner extends StatelessWidget {
           ),
           const Icon(
             Icons.chevron_right_rounded,
-            color: AppTheme.spotifySubtle,
+            color: AppTheme.textSecondary,
           ),
         ],
       ),
@@ -329,10 +329,10 @@ class _SummaryCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppTheme.spotifyDarkGray,
+        color: AppTheme.cardColor,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: color.withOpacity(0.2),
+          color: color.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -343,7 +343,7 @@ class _SummaryCard extends StatelessWidget {
           Text(
             value,
             style: GoogleFonts.inter(
-              color: AppTheme.spotifyWhite,
+              color: AppTheme.textPrimary,
               fontSize: 22,
               fontWeight: FontWeight.bold,
             ),
@@ -352,7 +352,7 @@ class _SummaryCard extends StatelessWidget {
           Text(
             label,
             style: GoogleFonts.inter(
-              color: AppTheme.spotifySubtle,
+              color: AppTheme.textSecondary,
               fontSize: 11,
             ),
             textAlign: TextAlign.center,
@@ -383,9 +383,9 @@ class _ShortcutCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withOpacity(0.2)),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
         ),
         child: Column(
           children: [
@@ -394,7 +394,7 @@ class _ShortcutCard extends StatelessWidget {
             Text(
               label,
               style: GoogleFonts.inter(
-                color: AppTheme.spotifyWhite,
+                color: AppTheme.textPrimary,
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
               ),
@@ -431,7 +431,7 @@ class _NewsCard extends StatelessWidget {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: AppTheme.primary.withOpacity(0.1),
+              color: AppTheme.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Icon(Icons.article_outlined, color: AppTheme.primary),
@@ -444,7 +444,7 @@ class _NewsCard extends StatelessWidget {
                 Text(
                   title,
                   style: GoogleFonts.inter(
-                    color: AppTheme.spotifyWhite,
+                    color: AppTheme.textPrimary,
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
@@ -459,7 +459,7 @@ class _NewsCard extends StatelessWidget {
                     Text(
                       date,
                       style: GoogleFonts.inter(
-                        color: AppTheme.spotifySubtle,
+                        color: AppTheme.textSecondary,
                         fontSize: 12,
                       ),
                     ),
@@ -495,9 +495,9 @@ class _AlertFoodCard extends StatelessWidget {
       margin: const EdgeInsets.only(right: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
+        color: color.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.25)),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -512,7 +512,7 @@ class _AlertFoodCard extends StatelessWidget {
           Text(
             name,
             style: GoogleFonts.inter(
-              color: AppTheme.spotifyWhite,
+              color: AppTheme.textPrimary,
               fontSize: 13,
               fontWeight: FontWeight.w600,
             ),
@@ -523,7 +523,7 @@ class _AlertFoodCard extends StatelessWidget {
           Text(
             location,
             style: GoogleFonts.inter(
-              color: AppTheme.spotifySubtle,
+              color: AppTheme.textSecondary,
               fontSize: 11,
             ),
           ),
@@ -531,7 +531,7 @@ class _AlertFoodCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.2),
+              color: color.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(6),
             ),
             child: Text(

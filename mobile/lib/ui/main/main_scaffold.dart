@@ -47,11 +47,11 @@ class _MainScaffoldState extends State<MainScaffold> {
           children: _pages,
         ),
         bottomNavigationBar: Container(
-          decoration: BoxDecoration(
-            color: AppTheme.spotifyDarkGray,
+          decoration: const BoxDecoration(
+            color: Colors.white,
             border: Border(
               top: BorderSide(
-                color: AppTheme.spotifyLightGray.withOpacity(0.5),
+                color: AppTheme.dividerColor,
                 width: 0.5,
               ),
             ),
@@ -63,7 +63,7 @@ class _MainScaffoldState extends State<MainScaffold> {
             backgroundColor: Colors.transparent,
             elevation: 0,
             selectedItemColor: AppTheme.primary,
-            unselectedItemColor: AppTheme.spotifySubtle,
+            unselectedItemColor: AppTheme.textSecondary,
             selectedLabelStyle: GoogleFonts.inter(
               fontSize: 11,
               fontWeight: FontWeight.w600,

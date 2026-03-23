@@ -53,7 +53,7 @@ class ComplaintPage extends StatelessWidget {
                     Text(
                       'Phản ánh',
                       style: GoogleFonts.inter(
-                        color: AppTheme.spotifyWhite,
+                        color: AppTheme.textPrimary,
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
                       ),
@@ -74,7 +74,7 @@ class ComplaintPage extends StatelessWidget {
                 child: Text(
                   'Danh sách phản ánh của bạn',
                   style: GoogleFonts.inter(
-                    color: AppTheme.spotifySubtle,
+                    color: AppTheme.textSecondary,
                     fontSize: 13,
                   ),
                 ),
@@ -110,7 +110,7 @@ class ComplaintPage extends StatelessWidget {
                                         child: Text(
                                           item['title'] as String,
                                           style: GoogleFonts.inter(
-                                            color: AppTheme.spotifyWhite,
+                                            color: AppTheme.textPrimary,
                                             fontSize: 14,
                                             fontWeight: FontWeight.w600,
                                           ),
@@ -131,13 +131,13 @@ class ComplaintPage extends StatelessWidget {
                                     children: [
                                       Icon(Icons.location_on_outlined,
                                           size: 14,
-                                          color: AppTheme.spotifySubtle),
+                                          color: AppTheme.textSecondary),
                                       const SizedBox(width: 4),
                                       Expanded(
                                         child: Text(
                                           item['location'] as String,
                                           style: GoogleFonts.inter(
-                                            color: AppTheme.spotifySubtle,
+                                            color: AppTheme.textSecondary,
                                             fontSize: 12,
                                           ),
                                           maxLines: 1,
@@ -147,7 +147,7 @@ class ComplaintPage extends StatelessWidget {
                                       Text(
                                         item['date'] as String,
                                         style: GoogleFonts.inter(
-                                          color: AppTheme.spotifySubtle,
+                                          color: AppTheme.textSecondary,
                                           fontSize: 11,
                                         ),
                                       ),

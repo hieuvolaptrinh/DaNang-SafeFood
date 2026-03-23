@@ -15,7 +15,7 @@ class MainApp extends StatelessWidget {
     return MaterialApp(
       title: 'ATTP Đà Nẵng',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.darkTheme,
+      theme: AppTheme.lightTheme,
       initialRoute: Routes.login,
       onGenerateRoute: AppRouter.onGenerateRoute,
     );

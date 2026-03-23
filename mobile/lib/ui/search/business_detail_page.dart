@@ -32,16 +32,16 @@ class BusinessDetailPage extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: AppTheme.spotifyDarkGray,
+                color: AppTheme.cardColor,
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: AppTheme.spotifyLightGray.withOpacity(0.5)),
+                border: Border.all(color: AppTheme.dividerColor),
               ),
               child: Column(
                 children: [
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: AppTheme.primary.withOpacity(0.1),
+                      color: AppTheme.primary.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(Icons.store_rounded, color: AppTheme.primary, size: 36),
@@ -50,7 +50,7 @@ class BusinessDetailPage extends StatelessWidget {
                   Text(
                     businessName.isNotEmpty ? businessName : 'Nhà hàng Biển Xanh',
                     style: GoogleFonts.inter(
-                      color: AppTheme.spotifyWhite,
+                      color: AppTheme.textPrimary,
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
@@ -59,7 +59,7 @@ class BusinessDetailPage extends StatelessWidget {
                   const SizedBox(height: 8),
                   Text(
                     '123 Nguyễn Văn Linh, Q. Hải Châu, Đà Nẵng',
-                    style: GoogleFonts.inter(color: AppTheme.spotifySubtle, fontSize: 13),
+                    style: GoogleFonts.inter(color: AppTheme.textSecondary, fontSize: 13),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 12),
@@ -69,7 +69,6 @@ class BusinessDetailPage extends StatelessWidget {
             ),
             const SizedBox(height: 20),
 
-            // Info items
             const SectionHeader(
               title: 'Thông tin chung',
               padding: EdgeInsets.symmetric(vertical: 8),
@@ -90,7 +89,7 @@ class BusinessDetailPage extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: AppTheme.primary.withOpacity(0.1),
+                      color: AppTheme.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Icon(Icons.fact_check_outlined, color: AppTheme.primary, size: 20),
@@ -103,7 +102,7 @@ class BusinessDetailPage extends StatelessWidget {
                         Text(
                           'Kiểm tra định kỳ Q1/2026',
                           style: GoogleFonts.inter(
-                            color: AppTheme.spotifyWhite,
+                            color: AppTheme.textPrimary,
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
                           ),
@@ -111,7 +110,7 @@ class BusinessDetailPage extends StatelessWidget {
                         const SizedBox(height: 4),
                         Text(
                           '15/01/2026 — Đạt yêu cầu',
-                          style: GoogleFonts.inter(color: AppTheme.spotifySubtle, fontSize: 12),
+                          style: GoogleFonts.inter(color: AppTheme.textSecondary, fontSize: 12),
                         ),
                       ],
                     ),
@@ -126,7 +125,7 @@ class BusinessDetailPage extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: AppTheme.accent.withOpacity(0.1),
+                      color: AppTheme.accent.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(Icons.fact_check_outlined, color: AppTheme.accent, size: 20),
@@ -139,7 +138,7 @@ class BusinessDetailPage extends StatelessWidget {
                         Text(
                           'Kiểm tra đột xuất',
                           style: GoogleFonts.inter(
-                            color: AppTheme.spotifyWhite,
+                            color: AppTheme.textPrimary,
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
                           ),
@@ -147,7 +146,7 @@ class BusinessDetailPage extends StatelessWidget {
                         const SizedBox(height: 4),
                         Text(
                           '10/10/2025 — Cần cải thiện vệ sinh bếp',
-                          style: GoogleFonts.inter(color: AppTheme.spotifySubtle, fontSize: 12),
+                          style: GoogleFonts.inter(color: AppTheme.textSecondary, fontSize: 12),
                         ),
                       ],
                     ),
@@ -158,8 +157,6 @@ class BusinessDetailPage extends StatelessWidget {
             ),
 
             const SizedBox(height: 20),
-
-            // Action buttons
             Row(
               children: [
                 Expanded(
@@ -216,17 +213,17 @@ class _InfoRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
-          Icon(icon, color: AppTheme.spotifySubtle, size: 18),
+          Icon(icon, color: AppTheme.textSecondary, size: 18),
           const SizedBox(width: 12),
           Text(
             label,
-            style: GoogleFonts.inter(color: AppTheme.spotifySubtle, fontSize: 13),
+            style: GoogleFonts.inter(color: AppTheme.textSecondary, fontSize: 13),
           ),
           const Spacer(),
           Text(
             value,
             style: GoogleFonts.inter(
-              color: AppTheme.spotifyWhite,
+              color: AppTheme.textPrimary,
               fontSize: 13,
               fontWeight: FontWeight.w500,
             ),

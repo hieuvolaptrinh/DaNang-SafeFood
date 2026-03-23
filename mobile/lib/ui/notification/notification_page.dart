@@ -72,7 +72,7 @@ class NotificationPage extends StatelessWidget {
             child: Text(
               'Thông báo',
               style: GoogleFonts.inter(
-                color: AppTheme.spotifyWhite,
+                color: AppTheme.textPrimary,
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
               ),
@@ -80,7 +80,6 @@ class NotificationPage extends StatelessWidget {
           ),
           const SizedBox(height: 16),
 
-          // Category filter chips
           SizedBox(
             height: 36,
             child: BlocBuilder<NotificationCubit, NotificationState>(
@@ -97,16 +96,16 @@ class NotificationPage extends StatelessWidget {
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                           decoration: BoxDecoration(
-                            color: selected ? AppTheme.primary.withOpacity(0.15) : AppTheme.spotifyLightGray,
+                            color: selected ? AppTheme.primary.withValues(alpha: 0.1) : AppTheme.surfaceBg,
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
-                              color: selected ? AppTheme.primary : Colors.transparent,
+                              color: selected ? AppTheme.primary : AppTheme.dividerColor,
                             ),
                           ),
                           child: Text(
                             c,
                             style: GoogleFonts.inter(
-                              color: selected ? AppTheme.primary : AppTheme.spotifySubtle,
+                              color: selected ? AppTheme.primary : AppTheme.textSecondary,
                               fontSize: 12,
                               fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
                             ),
@@ -121,7 +120,6 @@ class NotificationPage extends StatelessWidget {
           ),
           const SizedBox(height: 12),
 
-          // Notification list
           Expanded(
             child: BlocBuilder<NotificationCubit, NotificationState>(
               builder: (context, state) {
@@ -162,7 +160,7 @@ class NotificationPage extends StatelessWidget {
                                 Text(
                                   item['date']!,
                                   style: GoogleFonts.inter(
-                                    color: AppTheme.spotifySubtle,
+                                    color: AppTheme.textSecondary,
                                     fontSize: 11,
                                   ),
                                 ),
@@ -172,7 +170,7 @@ class NotificationPage extends StatelessWidget {
                             Text(
                               item['title']!,
                               style: GoogleFonts.inter(
-                                color: AppTheme.spotifyWhite,
+                                color: AppTheme.textPrimary,
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -183,7 +181,7 @@ class NotificationPage extends StatelessWidget {
                             Text(
                               item['desc']!,
                               style: GoogleFonts.inter(
-                                color: AppTheme.spotifySubtle,
+                                color: AppTheme.textSecondary,
                                 fontSize: 12,
                                 height: 1.4,
                               ),

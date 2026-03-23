@@ -31,15 +31,15 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
           showDialog(
             context: context,
             builder: (_) => AlertDialog(
-              backgroundColor: AppTheme.spotifyDarkGray,
+              backgroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               title: Text(
                 'Thành công',
-                style: GoogleFonts.inter(color: AppTheme.spotifyWhite, fontWeight: FontWeight.bold),
+                style: GoogleFonts.inter(color: AppTheme.textPrimary, fontWeight: FontWeight.bold),
               ),
               content: Text(
                 'Yêu cầu đặt lại mật khẩu đã được gửi đến email/SĐT của bạn.',
-                style: GoogleFonts.inter(color: AppTheme.spotifySubtle),
+                style: GoogleFonts.inter(color: AppTheme.textSecondary),
               ),
               actions: [
                 TextButton(
@@ -77,7 +77,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                       child: Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: AppTheme.accent.withOpacity(0.1),
+                          color: AppTheme.accent.withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
@@ -91,7 +91,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                     Text(
                       'Quên mật khẩu',
                       style: GoogleFonts.inter(
-                        color: AppTheme.spotifyWhite,
+                        color: AppTheme.textPrimary,
                         fontSize: 26,
                         fontWeight: FontWeight.bold,
                       ),
@@ -100,7 +100,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                     Text(
                       'Nhập email hoặc số điện thoại đã đăng ký để nhận hướng dẫn đặt lại mật khẩu.',
                       style: GoogleFonts.inter(
-                        color: AppTheme.spotifySubtle,
+                        color: AppTheme.textSecondary,
                         fontSize: 14,
                         height: 1.5,
                       ),
@@ -113,7 +113,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                       controller: _emailCtrl,
                       keyboardType: TextInputType.emailAddress,
                       errorText: state.emailError,
-                      prefixIcon: const Icon(Icons.email_outlined, color: AppTheme.spotifySubtle, size: 20),
+                      prefixIcon: const Icon(Icons.email_outlined, color: AppTheme.textSecondary, size: 20),
                       onChanged: (v) => context.read<ForgotPasswordCubit>().emailChanged(v),
                     ),
                     const SizedBox(height: 32),

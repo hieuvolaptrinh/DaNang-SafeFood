@@ -34,7 +34,7 @@ class NotificationDetailPage extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: const Color(0xFFEF5350).withOpacity(0.15),
+                color: const Color(0xFFEF5350).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
@@ -52,7 +52,7 @@ class NotificationDetailPage extends StatelessWidget {
                   ? title
                   : 'Thu hồi sản phẩm nước mắm ABC không đạt chuẩn',
               style: GoogleFonts.inter(
-                color: AppTheme.spotifyWhite,
+                color: AppTheme.textPrimary,
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
                 height: 1.3,
@@ -61,23 +61,23 @@ class NotificationDetailPage extends StatelessWidget {
             const SizedBox(height: 12),
             Row(
               children: [
-                Icon(Icons.calendar_today_outlined, size: 14, color: AppTheme.spotifySubtle),
+                Icon(Icons.calendar_today_outlined, size: 14, color: AppTheme.textSecondary),
                 const SizedBox(width: 6),
                 Text(
                   '22/03/2026',
-                  style: GoogleFonts.inter(color: AppTheme.spotifySubtle, fontSize: 13),
+                  style: GoogleFonts.inter(color: AppTheme.textSecondary, fontSize: 13),
                 ),
                 const SizedBox(width: 16),
-                Icon(Icons.visibility_outlined, size: 14, color: AppTheme.spotifySubtle),
+                Icon(Icons.visibility_outlined, size: 14, color: AppTheme.textSecondary),
                 const SizedBox(width: 6),
                 Text(
                   '1,245 lượt xem',
-                  style: GoogleFonts.inter(color: AppTheme.spotifySubtle, fontSize: 13),
+                  style: GoogleFonts.inter(color: AppTheme.textSecondary, fontSize: 13),
                 ),
               ],
             ),
             const SizedBox(height: 20),
-            Divider(color: AppTheme.spotifyLightGray),
+            const Divider(color: AppTheme.dividerColor),
             const SizedBox(height: 20),
 
             // Image placeholder
@@ -85,43 +85,42 @@ class NotificationDetailPage extends StatelessWidget {
               height: 180,
               width: double.infinity,
               decoration: BoxDecoration(
-                color: AppTheme.spotifyLightGray,
+                color: AppTheme.surfaceBg,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.image_outlined, color: AppTheme.spotifySubtle, size: 40),
+                  Icon(Icons.image_outlined, color: AppTheme.textSecondary, size: 40),
                   const SizedBox(height: 8),
                   Text(
                     'Hình ảnh minh họa',
-                    style: GoogleFonts.inter(color: AppTheme.spotifySubtle, fontSize: 13),
+                    style: GoogleFonts.inter(color: AppTheme.textSecondary, fontSize: 13),
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 20),
 
-            // Content
             Text(
               'Ngày 22/03/2026, Cục An toàn thực phẩm (Bộ Y tế) ra thông báo thu hồi toàn bộ lô hàng nước mắm nhãn hiệu ABC, mã lô SX-2026-03-15.\n\n'
               'Qua kiểm nghiệm, lô hàng này có hàm lượng histamine vượt 3 lần ngưỡng cho phép theo QCVN 8-2:2011/BYT, tiềm ẩn nguy cơ gây ngộ độc thực phẩm.\n\n'
               'Người tiêu dùng đang sở hữu sản phẩm thuộc lô này vui lòng ngừng sử dụng và liên hệ nơi mua để đổi trả.\n\n'
               'Các cơ sở kinh doanh cần rà soát và thu hồi sản phẩm theo đúng quy định.',
               style: GoogleFonts.inter(
-                color: AppTheme.spotifyWhite.withOpacity(0.9),
+                color: AppTheme.textPrimary,
                 fontSize: 15,
                 height: 1.7,
               ),
             ),
             const SizedBox(height: 24),
 
-            // Document attachment
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: AppTheme.spotifyLightGray,
+                color: AppTheme.surfaceBg,
                 borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppTheme.dividerColor),
               ),
               child: Row(
                 children: [
@@ -134,14 +133,14 @@ class NotificationDetailPage extends StatelessWidget {
                         Text(
                           'QD-ThuHoi-2026-03-22.pdf',
                           style: GoogleFonts.inter(
-                            color: AppTheme.spotifyWhite,
+                            color: AppTheme.textPrimary,
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
                         Text(
                           '1.2 MB',
-                          style: GoogleFonts.inter(color: AppTheme.spotifySubtle, fontSize: 11),
+                          style: GoogleFonts.inter(color: AppTheme.textSecondary, fontSize: 11),
                         ),
                       ],
                     ),

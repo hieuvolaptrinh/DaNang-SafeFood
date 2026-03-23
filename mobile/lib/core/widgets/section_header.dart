@@ -26,7 +26,7 @@ class SectionHeader extends StatelessWidget {
           Text(
             title,
             style: GoogleFonts.inter(
-              color: AppTheme.spotifyWhite,
+              color: AppTheme.textPrimary,
               fontSize: 18,
               fontWeight: FontWeight.w700,
             ),

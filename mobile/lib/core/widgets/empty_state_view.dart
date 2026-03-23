@@ -25,20 +25,20 @@ class EmptyStateView extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: AppTheme.spotifyLightGray,
+                color: AppTheme.surfaceBg,
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 icon,
                 size: 48,
-                color: AppTheme.spotifySubtle,
+                color: AppTheme.textSecondary,
               ),
             ),
             const SizedBox(height: 20),
             Text(
               title,
               style: GoogleFonts.inter(
-                color: AppTheme.spotifyWhite,
+                color: AppTheme.textPrimary,
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
               ),
@@ -49,7 +49,7 @@ class EmptyStateView extends StatelessWidget {
               Text(
                 subtitle!,
                 style: GoogleFonts.inter(
-                  color: AppTheme.spotifySubtle,
+                  color: AppTheme.textSecondary,
                   fontSize: 13,
                 ),
                 textAlign: TextAlign.center,

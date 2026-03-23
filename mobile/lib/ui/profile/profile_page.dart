@@ -24,11 +24,9 @@ class ProfilePage extends StatelessWidget {
                   margin: const EdgeInsets.symmetric(horizontal: 20),
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: AppTheme.spotifyDarkGray,
+                    color: AppTheme.cardColor,
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: AppTheme.spotifyLightGray.withOpacity(0.5),
-                    ),
+                    border: Border.all(color: AppTheme.dividerColor),
                   ),
                   child: Column(
                     children: [
@@ -36,12 +34,9 @@ class ProfilePage extends StatelessWidget {
                       Container(
                         width: 80,
                         height: 80,
-                        decoration: BoxDecoration(
+                        decoration: const BoxDecoration(
                           gradient: LinearGradient(
-                            colors: [
-                              AppTheme.primary,
-                              AppTheme.primaryLight,
-                            ],
+                            colors: [AppTheme.primary, AppTheme.primaryLight],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),
@@ -64,7 +59,7 @@ class ProfilePage extends StatelessWidget {
                       Text(
                         state.name.isNotEmpty ? state.name : 'Người dùng',
                         style: GoogleFonts.inter(
-                          color: AppTheme.spotifyWhite,
+                          color: AppTheme.textPrimary,
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
                         ),
@@ -73,7 +68,7 @@ class ProfilePage extends StatelessWidget {
                       Text(
                         state.email,
                         style: GoogleFonts.inter(
-                          color: AppTheme.spotifySubtle,
+                          color: AppTheme.textSecondary,
                           fontSize: 13,
                         ),
                       ),
@@ -82,7 +77,7 @@ class ProfilePage extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 12, vertical: 4),
                         decoration: BoxDecoration(
-                          color: AppTheme.primary.withOpacity(0.12),
+                          color: AppTheme.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
@@ -104,13 +99,13 @@ class ProfilePage extends StatelessWidget {
                           Container(
                             width: 1,
                             height: 30,
-                            color: AppTheme.spotifyLightGray,
+                            color: AppTheme.dividerColor,
                           ),
                           _StatItem(value: '5', label: 'Đã lưu'),
                           Container(
                             width: 1,
                             height: 30,
-                            color: AppTheme.spotifyLightGray,
+                            color: AppTheme.dividerColor,
                           ),
                           _StatItem(value: '12', label: 'Đánh giá'),
                         ],
@@ -127,9 +122,9 @@ class ProfilePage extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Tài khoản',
+                        'TÀI KHOẢN',
                         style: GoogleFonts.inter(
-                          color: AppTheme.spotifySubtle,
+                          color: AppTheme.textSecondary,
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                           letterSpacing: 1,
@@ -155,9 +150,9 @@ class ProfilePage extends StatelessWidget {
                       const SizedBox(height: 16),
 
                       Text(
-                        'Cài đặt',
+                        'CÀI ĐẶT',
                         style: GoogleFonts.inter(
-                          color: AppTheme.spotifySubtle,
+                          color: AppTheme.textSecondary,
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                           letterSpacing: 1,
@@ -184,9 +179,9 @@ class ProfilePage extends StatelessWidget {
                       const SizedBox(height: 16),
 
                       Text(
-                        'Khác',
+                        'KHÁC',
                         style: GoogleFonts.inter(
-                          color: AppTheme.spotifySubtle,
+                          color: AppTheme.textSecondary,
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                           letterSpacing: 1,
@@ -220,11 +215,10 @@ class ProfilePage extends StatelessWidget {
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFEF5350).withOpacity(0.1),
+                            color: const Color(0xFFEF5350).withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(14),
                             border: Border.all(
-                              color:
-                                  const Color(0xFFEF5350).withOpacity(0.3),
+                              color: const Color(0xFFEF5350).withValues(alpha: 0.3),
                             ),
                           ),
                           child: Row(
@@ -271,7 +265,7 @@ class _StatItem extends StatelessWidget {
         Text(
           value,
           style: GoogleFonts.inter(
-            color: AppTheme.spotifyWhite,
+            color: AppTheme.textPrimary,
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
@@ -280,7 +274,7 @@ class _StatItem extends StatelessWidget {
         Text(
           label,
           style: GoogleFonts.inter(
-            color: AppTheme.spotifySubtle,
+            color: AppTheme.textSecondary,
             fontSize: 11,
           ),
         ),
@@ -310,18 +304,19 @@ class _MenuItem extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 4),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
         decoration: BoxDecoration(
-          color: AppTheme.spotifyDarkGray,
+          color: AppTheme.cardColor,
           borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppTheme.dividerColor, width: 0.5),
         ),
         child: Row(
           children: [
-            Icon(icon, color: AppTheme.spotifySubtle, size: 22),
+            Icon(icon, color: AppTheme.textSecondary, size: 22),
             const SizedBox(width: 14),
             Expanded(
               child: Text(
                 title,
                 style: GoogleFonts.inter(
-                  color: AppTheme.spotifyWhite,
+                  color: AppTheme.textPrimary,
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                 ),
@@ -331,14 +326,14 @@ class _MenuItem extends StatelessWidget {
               Text(
                 subtitle!,
                 style: GoogleFonts.inter(
-                  color: AppTheme.spotifySubtle,
+                  color: AppTheme.textSecondary,
                   fontSize: 12,
                 ),
               ),
               const SizedBox(width: 4),
             ],
             const Icon(Icons.chevron_right_rounded,
-                color: AppTheme.spotifySubtle, size: 20),
+                color: AppTheme.textSecondary, size: 20),
           ],
         ),
       ),

@@ -37,7 +37,6 @@ class _ComplaintFormPageState extends State<ComplaintFormPage> {
   }
 
   void _pickImage() {
-    // Placeholder for image picker
     setState(() {
       _imagePaths.add('image_${_imagePaths.length + 1}.jpg');
     });
@@ -101,7 +100,7 @@ class _ComplaintFormPageState extends State<ComplaintFormPage> {
             Text(
               'Loại vi phạm',
               style: GoogleFonts.inter(
-                color: AppTheme.spotifyWhite,
+                color: AppTheme.textPrimary,
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
               ),
@@ -110,22 +109,20 @@ class _ComplaintFormPageState extends State<ComplaintFormPage> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               decoration: BoxDecoration(
-                color: AppTheme.spotifyLightGray,
+                color: AppTheme.surfaceBg,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: AppTheme.spotifySubtle.withOpacity(0.15),
-                ),
+                border: Border.all(color: AppTheme.dividerColor),
               ),
               child: DropdownButtonHideUnderline(
                 child: DropdownButton<String>(
                   value: _selectedType,
                   isExpanded: true,
-                  dropdownColor: AppTheme.spotifyDarkGray,
+                  dropdownColor: Colors.white,
                   style: GoogleFonts.inter(
-                    color: AppTheme.spotifyWhite,
+                    color: AppTheme.textPrimary,
                     fontSize: 15,
                   ),
-                  icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppTheme.spotifySubtle),
+                  icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppTheme.textSecondary),
                   items: _violationTypes.map((t) {
                     return DropdownMenuItem(value: t, child: Text(t));
                   }).toList(),
@@ -141,10 +138,9 @@ class _ComplaintFormPageState extends State<ComplaintFormPage> {
               label: 'Địa điểm',
               hint: 'Nhập địa chỉ hoặc chọn trên bản đồ',
               controller: _locationCtrl,
-              prefixIcon: const Icon(Icons.location_on_outlined, color: AppTheme.spotifySubtle, size: 20),
+              prefixIcon: const Icon(Icons.location_on_outlined, color: AppTheme.textSecondary, size: 20),
               suffixIcon: GestureDetector(
                 onTap: () {
-                  // Placeholder for map picker
                   _locationCtrl.text = '123 Nguyễn Văn Linh, Hải Châu, Đà Nẵng';
                 },
                 child: const Icon(Icons.my_location_rounded, color: AppTheme.primary, size: 20),
@@ -156,7 +152,7 @@ class _ComplaintFormPageState extends State<ComplaintFormPage> {
             Text(
               'Hình ảnh / Video',
               style: GoogleFonts.inter(
-                color: AppTheme.spotifyWhite,
+                color: AppTheme.textPrimary,
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
               ),
@@ -172,17 +168,18 @@ class _ComplaintFormPageState extends State<ComplaintFormPage> {
                           width: 80,
                           height: 80,
                           decoration: BoxDecoration(
-                            color: AppTheme.spotifyLightGray,
+                            color: AppTheme.surfaceBg,
                             borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppTheme.dividerColor),
                           ),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Icon(Icons.image_outlined, color: AppTheme.spotifySubtle, size: 24),
+                              const Icon(Icons.image_outlined, color: AppTheme.textSecondary, size: 24),
                               const SizedBox(height: 4),
                               Text(
                                 path,
-                                style: GoogleFonts.inter(color: AppTheme.spotifySubtle, fontSize: 9),
+                                style: GoogleFonts.inter(color: AppTheme.textSecondary, fontSize: 9),
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ],
@@ -211,11 +208,10 @@ class _ComplaintFormPageState extends State<ComplaintFormPage> {
                     width: 80,
                     height: 80,
                     decoration: BoxDecoration(
-                      color: AppTheme.primary.withOpacity(0.1),
+                      color: AppTheme.primary.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: AppTheme.primary.withOpacity(0.3),
-                        style: BorderStyle.solid,
+                        color: AppTheme.primary.withValues(alpha: 0.3),
                       ),
                     ),
                     child: Column(

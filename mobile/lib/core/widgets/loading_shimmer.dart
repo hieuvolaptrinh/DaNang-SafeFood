@@ -50,7 +50,7 @@ class _LoadingShimmerState extends State<LoadingShimmer>
           height: widget.height,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(widget.borderRadius),
-            color: AppTheme.spotifyLightGray.withOpacity(_animation.value),
+            color: Colors.grey[300]!.withValues(alpha: _animation.value),
           ),
         );
       },
@@ -75,8 +75,9 @@ class ShimmerList extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppTheme.spotifyDarkGray,
+              color: AppTheme.cardColor,
               borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppTheme.dividerColor, width: 0.5),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

@@ -23,7 +23,7 @@ class ErrorStateView extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: const Color(0xFFEF5350).withOpacity(0.1),
+                color: const Color(0xFFEF5350).withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -36,7 +36,7 @@ class ErrorStateView extends StatelessWidget {
             Text(
               message,
               style: GoogleFonts.inter(
-                color: AppTheme.spotifyWhite,
+                color: AppTheme.textPrimary,
                 fontSize: 15,
                 fontWeight: FontWeight.w500,
               ),

@@ -33,7 +33,7 @@ class ComplaintDetailPage extends StatelessWidget {
                   ? complaintTitle
                   : 'Quán ăn sử dụng dầu ăn tái chế',
               style: GoogleFonts.inter(
-                color: AppTheme.spotifyWhite,
+                color: AppTheme.textPrimary,
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
                 height: 1.3,
@@ -41,20 +41,19 @@ class ComplaintDetailPage extends StatelessWidget {
             ),
             const SizedBox(height: 16),
 
-            // Info row
             _DetailRow(label: 'Ngày gửi', value: '20/03/2026'),
             _DetailRow(label: 'Loại vi phạm', value: 'Vệ sinh kém'),
             _DetailRow(label: 'Địa điểm', value: 'Quán ăn ABC, 45 Trần Phú, Hải Châu'),
             _DetailRow(label: 'Mã phản ánh', value: 'PA-2026-00123'),
 
             const SizedBox(height: 20),
-            Divider(color: AppTheme.spotifyLightGray),
+            const Divider(color: AppTheme.dividerColor),
             const SizedBox(height: 20),
 
             Text(
               'Mô tả chi tiết',
               style: GoogleFonts.inter(
-                color: AppTheme.spotifyWhite,
+                color: AppTheme.textPrimary,
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
               ),
@@ -63,7 +62,7 @@ class ComplaintDetailPage extends StatelessWidget {
             Text(
               'Quán ăn tại địa chỉ trên sử dụng dầu ăn tái chế nhiều lần, dầu đã đen và có mùi khét. Phát hiện vào lúc 11h trưa ngày 20/03/2026 khi đến ăn tại quán. Nhân viên phục vụ xác nhận dầu được sử dụng lại từ hôm trước.',
               style: GoogleFonts.inter(
-                color: AppTheme.spotifyWhite.withOpacity(0.85),
+                color: AppTheme.textPrimary.withValues(alpha: 0.85),
                 fontSize: 14,
                 height: 1.6,
               ),
@@ -73,7 +72,7 @@ class ComplaintDetailPage extends StatelessWidget {
             Text(
               'Hình ảnh đính kèm',
               style: GoogleFonts.inter(
-                color: AppTheme.spotifyWhite,
+                color: AppTheme.textPrimary,
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
               ),
@@ -86,10 +85,11 @@ class ComplaintDetailPage extends StatelessWidget {
                   height: 80,
                   margin: const EdgeInsets.only(right: 10),
                   decoration: BoxDecoration(
-                    color: AppTheme.spotifyLightGray,
+                    color: AppTheme.surfaceBg,
                     borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppTheme.dividerColor),
                   ),
-                  child: const Icon(Icons.image_outlined, color: AppTheme.spotifySubtle),
+                  child: const Icon(Icons.image_outlined, color: AppTheme.textSecondary),
                 );
               }),
             ),
@@ -98,7 +98,7 @@ class ComplaintDetailPage extends StatelessWidget {
             Text(
               'Tiến trình xử lý',
               style: GoogleFonts.inter(
-                color: AppTheme.spotifyWhite,
+                color: AppTheme.textPrimary,
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
               ),
@@ -155,14 +155,14 @@ class _DetailRow extends StatelessWidget {
             width: 110,
             child: Text(
               label,
-              style: GoogleFonts.inter(color: AppTheme.spotifySubtle, fontSize: 13),
+              style: GoogleFonts.inter(color: AppTheme.textSecondary, fontSize: 13),
             ),
           ),
           Expanded(
             child: Text(
               value,
               style: GoogleFonts.inter(
-                color: AppTheme.spotifyWhite,
+                color: AppTheme.textPrimary,
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
               ),
@@ -203,10 +203,10 @@ class _TimelineItem extends StatelessWidget {
                 width: 12,
                 height: 12,
                 decoration: BoxDecoration(
-                  color: isCompleted ? AppTheme.primary : AppTheme.spotifyLightGray,
+                  color: isCompleted ? AppTheme.primary : Colors.grey[300],
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: isCompleted ? AppTheme.primary : AppTheme.spotifySubtle,
+                    color: isCompleted ? AppTheme.primary : AppTheme.textSecondary,
                     width: 2,
                   ),
                 ),
@@ -216,8 +216,8 @@ class _TimelineItem extends StatelessWidget {
                   child: Container(
                     width: 2,
                     color: isCompleted
-                        ? AppTheme.primary.withOpacity(0.4)
-                        : AppTheme.spotifyLightGray,
+                        ? AppTheme.primary.withValues(alpha: 0.4)
+                        : Colors.grey[300],
                   ),
                 ),
             ],
@@ -233,8 +233,8 @@ class _TimelineItem extends StatelessWidget {
                     title,
                     style: GoogleFonts.inter(
                       color: isCompleted
-                          ? AppTheme.spotifyWhite
-                          : AppTheme.spotifySubtle,
+                          ? AppTheme.textPrimary
+                          : AppTheme.textSecondary,
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                     ),
@@ -244,7 +244,7 @@ class _TimelineItem extends StatelessWidget {
                     Text(
                       date,
                       style: GoogleFonts.inter(
-                        color: AppTheme.spotifySubtle,
+                        color: AppTheme.textSecondary,
                         fontSize: 11,
                       ),
                     ),
@@ -253,7 +253,7 @@ class _TimelineItem extends StatelessWidget {
                   Text(
                     description,
                     style: GoogleFonts.inter(
-                      color: AppTheme.spotifySubtle.withOpacity(0.8),
+                      color: AppTheme.textSecondary.withValues(alpha: 0.8),
                       fontSize: 12,
                       height: 1.4,
                     ),

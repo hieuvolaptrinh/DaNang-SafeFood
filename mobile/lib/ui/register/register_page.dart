@@ -60,7 +60,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     Text(
                       'Tạo tài khoản',
                       style: GoogleFonts.inter(
-                        color: AppTheme.spotifyWhite,
+                        color: AppTheme.textPrimary,
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
                       ),
@@ -69,7 +69,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     Text(
                       'Đăng ký để sử dụng hệ thống ATTP',
                       style: GoogleFonts.inter(
-                        color: AppTheme.spotifySubtle,
+                        color: AppTheme.textSecondary,
                         fontSize: 14,
                       ),
                     ),
@@ -80,7 +80,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       hint: 'Nhập họ tên đầy đủ',
                       controller: _nameCtrl,
                       errorText: state.fullNameError,
-                      prefixIcon: const Icon(Icons.person_outline_rounded, color: AppTheme.spotifySubtle, size: 20),
+                      prefixIcon: const Icon(Icons.person_outline_rounded, color: AppTheme.textSecondary, size: 20),
                       onChanged: cubit.fullNameChanged,
                     ),
                     const SizedBox(height: 16),
@@ -91,7 +91,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       controller: _emailCtrl,
                       keyboardType: TextInputType.emailAddress,
                       errorText: state.emailError,
-                      prefixIcon: const Icon(Icons.email_outlined, color: AppTheme.spotifySubtle, size: 20),
+                      prefixIcon: const Icon(Icons.email_outlined, color: AppTheme.textSecondary, size: 20),
                       onChanged: cubit.emailChanged,
                     ),
                     const SizedBox(height: 16),
@@ -100,7 +100,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     Text(
                       'Bạn là',
                       style: GoogleFonts.inter(
-                        color: AppTheme.spotifyWhite,
+                        color: AppTheme.textPrimary,
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
                       ),
@@ -131,12 +131,12 @@ class _RegisterPageState extends State<RegisterPage> {
                       controller: _passCtrl,
                       obscureText: state.obscurePassword,
                       errorText: state.passwordError,
-                      prefixIcon: const Icon(Icons.lock_outline_rounded, color: AppTheme.spotifySubtle, size: 20),
+                      prefixIcon: const Icon(Icons.lock_outline_rounded, color: AppTheme.textSecondary, size: 20),
                       suffixIcon: GestureDetector(
                         onTap: cubit.togglePassword,
                         child: Icon(
                           state.obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                          color: AppTheme.spotifySubtle, size: 20,
+                          color: AppTheme.textSecondary, size: 20,
                         ),
                       ),
                       onChanged: cubit.passwordChanged,
@@ -149,12 +149,12 @@ class _RegisterPageState extends State<RegisterPage> {
                       controller: _confirmCtrl,
                       obscureText: state.obscureConfirmPassword,
                       errorText: state.confirmPasswordError,
-                      prefixIcon: const Icon(Icons.lock_outline_rounded, color: AppTheme.spotifySubtle, size: 20),
+                      prefixIcon: const Icon(Icons.lock_outline_rounded, color: AppTheme.textSecondary, size: 20),
                       suffixIcon: GestureDetector(
                         onTap: cubit.toggleConfirmPassword,
                         child: Icon(
                           state.obscureConfirmPassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                          color: AppTheme.spotifySubtle, size: 20,
+                          color: AppTheme.textSecondary, size: 20,
                         ),
                       ),
                       onChanged: cubit.confirmPasswordChanged,
@@ -173,7 +173,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       children: [
                         Text(
                           'Đã có tài khoản? ',
-                          style: GoogleFonts.inter(color: AppTheme.spotifySubtle, fontSize: 14),
+                          style: GoogleFonts.inter(color: AppTheme.textSecondary, fontSize: 14),
                         ),
                         GestureDetector(
                           onTap: () => Navigator.pop(context),
@@ -221,22 +221,22 @@ class _RoleChip extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 14),
           decoration: BoxDecoration(
-            color: selected ? AppTheme.primary.withOpacity(0.12) : AppTheme.spotifyLightGray,
+            color: selected ? AppTheme.primary.withValues(alpha: 0.1) : AppTheme.surfaceBg,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: selected ? AppTheme.primary : Colors.transparent,
+              color: selected ? AppTheme.primary : AppTheme.dividerColor,
               width: 1.5,
             ),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 18, color: selected ? AppTheme.primary : AppTheme.spotifySubtle),
+              Icon(icon, size: 18, color: selected ? AppTheme.primary : AppTheme.textSecondary),
               const SizedBox(width: 8),
               Text(
                 label,
                 style: GoogleFonts.inter(
-                  color: selected ? AppTheme.primary : AppTheme.spotifySubtle,
+                  color: selected ? AppTheme.primary : AppTheme.textSecondary,
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                 ),

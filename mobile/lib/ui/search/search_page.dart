@@ -26,7 +26,6 @@ class _SearchPageState extends State<SearchPage> {
 
   final _statuses = ['Tất cả', 'An toàn', 'Vi phạm', 'Đang xử lý'];
 
-  // Mock data
   final _mockResults = [
     {'name': 'Nhà hàng Biển Xanh', 'address': '123 Nguyễn Văn Linh, Hải Châu', 'status': SafetyStatus.safe},
     {'name': 'Quán Phở Bà Năm', 'address': '45 Trần Phú, Hải Châu', 'status': SafetyStatus.violated},
@@ -54,7 +53,7 @@ class _SearchPageState extends State<SearchPage> {
             child: Text(
               'Tra cứu cơ sở',
               style: GoogleFonts.inter(
-                color: AppTheme.spotifyWhite,
+                color: AppTheme.textPrimary,
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
               ),
@@ -69,22 +68,30 @@ class _SearchPageState extends State<SearchPage> {
               controller: _searchCtrl,
               onChanged: (v) => context.read<SearchCubit>().queryChanged(v),
               style: GoogleFonts.inter(
-                color: AppTheme.spotifyWhite,
+                color: AppTheme.textPrimary,
                 fontSize: 15,
               ),
               decoration: InputDecoration(
                 hintText: 'Tìm kiếm nhà hàng, quán ăn...',
                 hintStyle: GoogleFonts.inter(
-                  color: AppTheme.spotifySubtle.withOpacity(0.6),
+                  color: AppTheme.textSecondary.withValues(alpha: 0.6),
                   fontSize: 15,
                 ),
-                prefixIcon: const Icon(Icons.search_rounded, color: AppTheme.spotifySubtle),
+                prefixIcon: const Icon(Icons.search_rounded, color: AppTheme.textSecondary),
                 filled: true,
-                fillColor: AppTheme.spotifyLightGray,
+                fillColor: AppTheme.surfaceBg,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide.none,
+                  borderSide: const BorderSide(color: AppTheme.dividerColor),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: const BorderSide(color: AppTheme.dividerColor),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: const BorderSide(color: AppTheme.primary, width: 1.5),
                 ),
               ),
             ),
@@ -177,7 +184,7 @@ class _SearchPageState extends State<SearchPage> {
                               width: 44,
                               height: 44,
                               decoration: BoxDecoration(
-                                color: AppTheme.primary.withOpacity(0.1),
+                                color: AppTheme.primary.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: const Icon(Icons.store_outlined, color: AppTheme.primary, size: 22),
@@ -190,7 +197,7 @@ class _SearchPageState extends State<SearchPage> {
                                   Text(
                                     item['name'] as String,
                                     style: GoogleFonts.inter(
-                                      color: AppTheme.spotifyWhite,
+                                      color: AppTheme.textPrimary,
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -199,7 +206,7 @@ class _SearchPageState extends State<SearchPage> {
                                   Text(
                                     item['address'] as String,
                                     style: GoogleFonts.inter(
-                                      color: AppTheme.spotifySubtle,
+                                      color: AppTheme.textSecondary,
                                       fontSize: 12,
                                     ),
                                     maxLines: 1,
@@ -243,17 +250,17 @@ class _FilterChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
         decoration: BoxDecoration(
-          color: selected ? AppTheme.primary.withOpacity(0.15) : AppTheme.spotifyLightGray,
+          color: selected ? AppTheme.primary.withValues(alpha: 0.1) : AppTheme.surfaceBg,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: selected ? AppTheme.primary : Colors.transparent,
+            color: selected ? AppTheme.primary : AppTheme.dividerColor,
             width: 1,
           ),
         ),
         child: Text(
           label,
           style: GoogleFonts.inter(
-            color: selected ? AppTheme.primary : AppTheme.spotifySubtle,
+            color: selected ? AppTheme.primary : AppTheme.textSecondary,
             fontSize: 12,
             fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
           ),

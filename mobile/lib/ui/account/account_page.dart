@@ -29,7 +29,6 @@ class AccountPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Account info section
                 _SectionTitle(title: 'Thông tin tài khoản'),
                 const SizedBox(height: 8),
                 _InfoTile(
@@ -62,7 +61,7 @@ class AccountPage extends StatelessWidget {
                   trailing: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
-                      color: AppTheme.accent.withOpacity(0.15),
+                      color: AppTheme.accent.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
@@ -117,7 +116,7 @@ class AccountPage extends StatelessWidget {
                   trailing: Text(
                     '1.0.0',
                     style: GoogleFonts.inter(
-                      color: AppTheme.spotifySubtle,
+                      color: AppTheme.textSecondary,
                       fontSize: 13,
                     ),
                   ),
@@ -139,10 +138,10 @@ class AccountPage extends StatelessWidget {
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFEF5350).withOpacity(0.1),
+                      color: const Color(0xFFEF5350).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: const Color(0xFFEF5350).withOpacity(0.3),
+                        color: const Color(0xFFEF5350).withValues(alpha: 0.3),
                       ),
                     ),
                     child: Row(
@@ -173,7 +172,7 @@ class AccountPage extends StatelessWidget {
                     child: Text(
                       'Xóa tài khoản',
                       style: GoogleFonts.inter(
-                        color: AppTheme.spotifySubtle,
+                        color: AppTheme.textSecondary,
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
                       ),
@@ -200,7 +199,7 @@ class _SectionTitle extends StatelessWidget {
     return Text(
       title.toUpperCase(),
       style: GoogleFonts.inter(
-        color: AppTheme.spotifySubtle,
+        color: AppTheme.textSecondary,
         fontSize: 12,
         fontWeight: FontWeight.w600,
         letterSpacing: 1,
@@ -226,17 +225,18 @@ class _InfoTile extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 4),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
       decoration: BoxDecoration(
-        color: AppTheme.spotifyDarkGray,
+        color: AppTheme.cardColor,
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.dividerColor, width: 0.5),
       ),
       child: Row(
         children: [
-          Icon(icon, color: AppTheme.spotifySubtle, size: 20),
+          Icon(icon, color: AppTheme.textSecondary, size: 20),
           const SizedBox(width: 14),
           Text(
             title,
             style: GoogleFonts.inter(
-              color: AppTheme.spotifySubtle,
+              color: AppTheme.textSecondary,
               fontSize: 13,
             ),
           ),
@@ -244,7 +244,7 @@ class _InfoTile extends StatelessWidget {
           Text(
             value,
             style: GoogleFonts.inter(
-              color: AppTheme.spotifyWhite,
+              color: AppTheme.textPrimary,
               fontSize: 13,
               fontWeight: FontWeight.w500,
             ),
@@ -276,18 +276,19 @@ class _ActionTile extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 4),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
         decoration: BoxDecoration(
-          color: AppTheme.spotifyDarkGray,
+          color: AppTheme.cardColor,
           borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppTheme.dividerColor, width: 0.5),
         ),
         child: Row(
           children: [
-            Icon(icon, color: AppTheme.spotifySubtle, size: 20),
+            Icon(icon, color: AppTheme.textSecondary, size: 20),
             const SizedBox(width: 14),
             Expanded(
               child: Text(
                 title,
                 style: GoogleFonts.inter(
-                  color: AppTheme.spotifyWhite,
+                  color: AppTheme.textPrimary,
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                 ),
@@ -298,7 +299,7 @@ class _ActionTile extends StatelessWidget {
               const SizedBox(width: 4),
             ],
             const Icon(Icons.chevron_right_rounded,
-                color: AppTheme.spotifySubtle, size: 20),
+                color: AppTheme.textSecondary, size: 20),
           ],
         ),
       ),
@@ -325,18 +326,19 @@ class _ToggleTile extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 4),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
       decoration: BoxDecoration(
-        color: AppTheme.spotifyDarkGray,
+        color: AppTheme.cardColor,
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.dividerColor, width: 0.5),
       ),
       child: Row(
         children: [
-          Icon(icon, color: AppTheme.spotifySubtle, size: 20),
+          Icon(icon, color: AppTheme.textSecondary, size: 20),
           const SizedBox(width: 14),
           Expanded(
             child: Text(
               title,
               style: GoogleFonts.inter(
-                color: AppTheme.spotifyWhite,
+                color: AppTheme.textPrimary,
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
               ),
@@ -345,8 +347,14 @@ class _ToggleTile extends StatelessWidget {
           Switch(
             value: value,
             onChanged: onChanged,
-            activeColor: AppTheme.primary,
-            inactiveTrackColor: AppTheme.spotifyLightGray,
+            thumbColor: WidgetStateProperty.resolveWith((states) {
+              if (states.contains(WidgetState.selected)) return AppTheme.primary;
+              return Colors.grey[400];
+            }),
+            trackColor: WidgetStateProperty.resolveWith((states) {
+              if (states.contains(WidgetState.selected)) return AppTheme.primary.withValues(alpha: 0.4);
+              return Colors.grey[300];
+            }),
           ),
         ],
       ),
