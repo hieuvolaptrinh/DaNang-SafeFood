@@ -147,7 +147,9 @@ class HomePage extends StatelessWidget {
                             label: 'Gửi\nphản ánh',
                             color: AppTheme.accent,
                             onTap: () => Navigator.pushNamed(
-                                context, Routes.complaintForm),
+                              context,
+                              Routes.complaintForm,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -176,19 +178,22 @@ class HomePage extends StatelessWidget {
                     child: Column(
                       children: [
                         _NewsCard(
-                          title: 'Phát hiện cơ sở sử dụng phẩm màu cấm tại quận Hải Châu',
+                          title:
+                              'Phát hiện cơ sở sử dụng phẩm màu cấm tại quận Hải Châu',
                           date: '22/03/2026',
                           category: 'Cảnh báo',
                           status: SafetyStatus.violated,
                         ),
                         _NewsCard(
-                          title: 'Chiến dịch kiểm tra ATTP dịp lễ 30/4 tại Đà Nẵng',
+                          title:
+                              'Chiến dịch kiểm tra ATTP dịp lễ 30/4 tại Đà Nẵng',
                           date: '21/03/2026',
                           category: 'Tin tức',
                           status: SafetyStatus.safe,
                         ),
                         _NewsCard(
-                          title: 'Quy định mới về giấy phép kinh doanh thực phẩm 2026',
+                          title:
+                              'Quy định mới về giấy phép kinh doanh thực phẩm 2026',
                           date: '20/03/2026',
                           category: 'Pháp quy',
                           status: SafetyStatus.processing,
@@ -331,10 +336,7 @@ class _SummaryCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppTheme.cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: color.withValues(alpha: 0.2),
-          width: 1,
-        ),
+        border: Border.all(color: color.withValues(alpha: 0.2), width: 1),
       ),
       child: Column(
         children: [
@@ -503,11 +505,6 @@ class _AlertFoodCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Icon(
-            Icons.warning_amber_rounded,
-            color: color,
-            size: 24,
-          ),
           const SizedBox(height: 8),
           Text(
             name,

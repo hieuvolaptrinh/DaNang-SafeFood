@@ -32,7 +32,6 @@ class AppButton extends StatelessWidget {
     if (isOutlined) {
       return SizedBox(
         width: width ?? double.infinity,
-        height: 52,
         child: OutlinedButton(
           onPressed: isLoading ? null : onPressed,
           style: OutlinedButton.styleFrom(
@@ -49,7 +48,7 @@ class AppButton extends StatelessWidget {
 
     return SizedBox(
       width: width ?? double.infinity,
-      height: 52,
+
       child: ElevatedButton(
         onPressed: isLoading ? null : onPressed,
         style: ElevatedButton.styleFrom(
@@ -68,27 +67,21 @@ class AppButton extends StatelessWidget {
   Widget _buildChild(Color fgColor) {
     if (isLoading) {
       return SizedBox(
-        height: 22,
-        width: 22,
-        child: CircularProgressIndicator(
-          strokeWidth: 2.5,
-          color: fgColor,
-        ),
+        height: 11,
+        width: 11,
+        child: CircularProgressIndicator(strokeWidth: 2.5, color: fgColor),
       );
     }
 
     if (icon != null) {
       return Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           Icon(icon, size: 20),
           const SizedBox(width: 8),
           Text(
             text,
-            style: GoogleFonts.inter(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-            ),
+            style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600),
           ),
         ],
       );
@@ -96,10 +89,7 @@ class AppButton extends StatelessWidget {
 
     return Text(
       text,
-      style: GoogleFonts.inter(
-        fontSize: 15,
-        fontWeight: FontWeight.w600,
-      ),
+      style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600),
     );
   }
 }

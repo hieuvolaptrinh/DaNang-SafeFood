@@ -42,18 +42,12 @@ class _MainScaffoldState extends State<MainScaffold> {
         BlocProvider(create: (_) => ProfileCubit()..loadProfile()),
       ],
       child: Scaffold(
-        body: IndexedStack(
-          index: _currentIndex,
-          children: _pages,
-        ),
+        body: IndexedStack(index: _currentIndex, children: _pages),
         bottomNavigationBar: Container(
           decoration: const BoxDecoration(
             color: Colors.white,
             border: Border(
-              top: BorderSide(
-                color: AppTheme.dividerColor,
-                width: 0.5,
-              ),
+              top: BorderSide(color: AppTheme.dividerColor, width: 0.5),
             ),
           ),
           child: BottomNavigationBar(
@@ -83,11 +77,7 @@ class _MainScaffoldState extends State<MainScaffold> {
                 activeIcon: Icon(Icons.search_rounded),
                 label: 'Tra cứu',
               ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.notifications_none_rounded),
-                activeIcon: Icon(Icons.notifications_rounded),
-                label: 'Thông báo',
-              ),
+
               BottomNavigationBarItem(
                 icon: Icon(Icons.report_outlined),
                 activeIcon: Icon(Icons.report_rounded),

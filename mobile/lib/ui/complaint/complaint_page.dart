@@ -61,7 +61,7 @@ class ComplaintPage extends StatelessWidget {
                     AppButton(
                       text: 'Tạo mới',
                       icon: Icons.add_rounded,
-                      width: 130,
+                      width: 150,
                       onPressed: () =>
                           Navigator.pushNamed(context, Routes.complaintForm),
                     ),
@@ -85,7 +85,9 @@ class ComplaintPage extends StatelessWidget {
                 child: state.status == ComplaintStatus.loading
                     ? const Center(
                         child: CircularProgressIndicator(
-                            color: AppTheme.primary))
+                          color: AppTheme.primary,
+                        ),
+                      )
                     : RefreshIndicator(
                         onRefresh: () =>
                             context.read<ComplaintCubit>().refresh(),
@@ -129,9 +131,11 @@ class ComplaintPage extends StatelessWidget {
                                   const SizedBox(height: 10),
                                   Row(
                                     children: [
-                                      Icon(Icons.location_on_outlined,
-                                          size: 14,
-                                          color: AppTheme.textSecondary),
+                                      Icon(
+                                        Icons.location_on_outlined,
+                                        size: 14,
+                                        color: AppTheme.textSecondary,
+                                      ),
                                       const SizedBox(width: 4),
                                       Expanded(
                                         child: Text(
