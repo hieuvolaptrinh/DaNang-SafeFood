@@ -4,12 +4,12 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile_ui/core/theme/app_theme.dart';
 import 'package:mobile_ui/ui/home/home_page.dart';
 import 'package:mobile_ui/ui/search/search_page.dart';
-import 'package:mobile_ui/ui/notification/notification_page.dart';
+import 'package:mobile_ui/ui/business_management/business_management_page.dart';
 import 'package:mobile_ui/ui/complaint/complaint_page.dart';
 import 'package:mobile_ui/ui/profile/profile_page.dart';
 import 'package:mobile_ui/viewmodel/home/home_cubit.dart';
 import 'package:mobile_ui/viewmodel/search/search_cubit.dart';
-import 'package:mobile_ui/viewmodel/notification/notification_cubit.dart';
+import 'package:mobile_ui/viewmodel/business_management/business_management_cubit.dart';
 import 'package:mobile_ui/viewmodel/complaint/complaint_cubit.dart';
 import 'package:mobile_ui/viewmodel/profile/profile_cubit.dart';
 
@@ -26,7 +26,7 @@ class _MainScaffoldState extends State<MainScaffold> {
   final List<Widget> _pages = const [
     HomePage(),
     SearchPage(),
-    NotificationPage(),
+    BusinessManagementPage(),
     ComplaintPage(),
     ProfilePage(),
   ];
@@ -37,7 +37,8 @@ class _MainScaffoldState extends State<MainScaffold> {
       providers: [
         BlocProvider(create: (_) => HomeCubit()..loadData()),
         BlocProvider(create: (_) => SearchCubit()),
-        BlocProvider(create: (_) => NotificationCubit()..loadNotifications()),
+        BlocProvider(
+            create: (_) => BusinessManagementCubit()..loadData()),
         BlocProvider(create: (_) => ComplaintCubit()..loadComplaints()),
         BlocProvider(create: (_) => ProfileCubit()..loadProfile()),
       ],
@@ -77,7 +78,11 @@ class _MainScaffoldState extends State<MainScaffold> {
                 activeIcon: Icon(Icons.search_rounded),
                 label: 'Tra cứu',
               ),
-
+              BottomNavigationBarItem(
+                icon: Icon(Icons.business_center_outlined),
+                activeIcon: Icon(Icons.business_center_rounded),
+                label: 'Kinh doanh',
+              ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.report_outlined),
                 activeIcon: Icon(Icons.report_rounded),

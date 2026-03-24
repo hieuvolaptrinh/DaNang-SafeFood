@@ -63,16 +63,22 @@ class HomePage extends StatelessWidget {
                             ],
                           ),
                         ),
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: AppTheme.surfaceBg,
-                            borderRadius: BorderRadius.circular(12),
+                        GestureDetector(
+                          onTap: () => Navigator.pushNamed(
+                            context,
+                            Routes.notifications,
                           ),
-                          child: const Icon(
-                            Icons.notifications_none_rounded,
-                            color: AppTheme.textPrimary,
-                            size: 22,
+                          child: Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: AppTheme.surfaceBg,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(
+                              Icons.notifications_none_rounded,
+                              color: AppTheme.textPrimary,
+                              size: 22,
+                            ),
                           ),
                         ),
                       ],

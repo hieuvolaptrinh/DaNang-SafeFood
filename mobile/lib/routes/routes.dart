@@ -8,4 +8,14 @@ class Routes {
   static const String notificationDetail = '/notification-detail';
   static const String complaintForm = '/complaint-form';
   static const String complaintDetail = '/complaint-detail';
+
+  // Business Management
+  static const String bizDetail = '/biz-detail';
+  static const String businessRegistration = '/business-registration';
+  static const String violationList = '/violation-list';
+  static const String violationDetail = '/violation-detail';
+  static const String businessComplaint = '/business-complaint';
+
+  // Notification (from home icon)
+  static const String notifications = '/notifications';
 }
