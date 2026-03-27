@@ -5,71 +5,75 @@ import DataTable, { Column } from '@/components/DataTable';
 import Badge from '@/components/Badge';
 import TableCard, { SearchInput, FilterSelect, Pagination } from '@/components/TableCard';
 
-interface ViolationFix {
+interface Violation {
   id: string;
   businessName: string;
   violationType: string;
   severity: 'nhẹ' | 'trung bình' | 'nghiêm trọng';
-  fixStatus: 'pending' | 'in_progress' | 'completed';
-  deadline: string;
-  updatedDate: string;
+  detectedDate: string;
+  status: 'pending' | 'processing' | 'resolved';
+  district: string;
 }
 
-const mockViolationFixes: ViolationFix[] = [
+const mockViolations: Violation[] = [
   {
     id: 'VP-2025001',
     businessName: 'Nhà hàng Hải Sản Biển Xanh',
     violationType: 'Vi phạm vệ sinh an toàn thực phẩm',
     severity: 'nghiêm trọng',
-    fixStatus: 'in_progress',
-    deadline: '15/04/2025',
-    updatedDate: '22/03/2025',
+    detectedDate: '18/03/2025',
+    status: 'processing',
+    district: 'Hải Châu',
   },
   {
     id: 'VP-2025002',
     businessName: 'Quán Ăn Gia Đình Việt',
-    violationType: 'Không niêm yết giá',
+    violationType: 'Không niêm yết giá bán',
     severity: 'nhẹ',
-    fixStatus: 'completed',
-    deadline: '10/03/2025',
-    updatedDate: '08/03/2025',
+    detectedDate: '15/03/2025',
+    status: 'resolved',
+    district: 'Thanh Khê',
   },
   {
     id: 'VP-2025003',
     businessName: 'Cửa hàng Thực phẩm Sạch Organic',
-    violationType: 'Sử dụng nguyên liệu hết hạn',
-    severity: 'trung bình',
-    fixStatus: 'pending',
-    deadline: '30/03/2025',
-    updatedDate: '25/03/2025',
+    violationType: 'Sử dụng chất cấm trong thực phẩm',
+    severity: 'nghiêm trọng',
+    detectedDate: '22/03/2025',
+    status: 'pending',
+    district: 'Ngũ Hành Sơn',
   },
   {
     id: 'VP-2025004',
     businessName: 'Siêu thị Mini Mart Đà Nẵng',
-    violationType: 'Thiếu giấy phép kinh doanh',
-    severity: 'nghiêm trọng',
-    fixStatus: 'in_progress',
-    deadline: '20/04/2025',
-    updatedDate: '18/03/2025',
+    violationType: 'Bán hàng hết hạn sử dụng',
+    severity: 'trung bình',
+    detectedDate: '20/03/2025',
+    status: 'processing',
+    district: 'Sơn Trà',
   },
 ];
 
-export default function KhacPhucPage() {
+export default function DanhSachViPhamPage() {
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
   const [severityFilter, setSeverityFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [districtFilter, setDistrictFilter] = useState('');
 
-  const filtered = mockViolationFixes.filter((v) => {
+  const filtered = mockViolations.filter((v) => {
     const matchSearch =
       !search ||
       v.id.toLowerCase().includes(search.toLowerCase()) ||
       v.businessName.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = !statusFilter || v.fixStatus === statusFilter;
     const matchSeverity = !severityFilter || v.severity === severityFilter;
-    return matchSearch && matchStatus && matchSeverity;
+    const matchStatus = !statusFilter || v.status === statusFilter;
+    const matchDistrict = !districtFilter || v.district === districtFilter;
+    return matchSearch && matchSeverity && matchStatus && matchDistrict;
   });
 
-  const columns: Column<ViolationFix>[] = [
+  const districts = [...new Set(mockViolations.map((v) => v.district))];
+
+  const columns: Column<Violation>[] = [
     {
       key: 'id',
       header: 'Mã vi phạm',
@@ -86,13 +90,13 @@ export default function KhacPhucPage() {
       header: 'Mức độ',
       render: (r) => <Badge variant={r.severity} />,
     },
+    { key: 'detectedDate', header: 'Ngày phát hiện' },
     {
-      key: 'fixStatus',
-      header: 'Trạng thái khắc phục',
-      render: (r) => <Badge variant={r.fixStatus} />,
+      key: 'status',
+      header: 'Trạng thái',
+      render: (r) => <Badge variant={r.status} />,
     },
-    { key: 'deadline', header: 'Hạn khắc phục' },
-    { key: 'updatedDate', header: 'Ngày cập nhật' },
+    { key: 'district', header: 'Quận/Huyện' },
     {
       key: 'actions',
       header: 'Thao tác',
@@ -110,8 +114,8 @@ export default function KhacPhucPage() {
       {/* Page header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-[22px] font-extrabold text-slate-900 font-display">Theo dõi Khắc phục Vi phạm</h1>
-          <p className="text-[13px] text-slate-500 mt-0.5">Theo dõi tiến độ khắc phục vi phạm của các cơ sở kinh doanh tại Đà Nẵng</p>
+          <h1 className="text-[22px] font-extrabold text-slate-900 font-display">Danh sách vi phạm</h1>
+          <p className="text-[13px] text-slate-500 mt-0.5">Danh sách các vi phạm được ghi nhận tại các cơ sở kinh doanh trên địa bàn Đà Nẵng</p>
         </div>
         <div className="flex gap-2">
           <button className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-slate-200 bg-white text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition-colors">
@@ -121,7 +125,7 @@ export default function KhacPhucPage() {
       </div>
 
       <TableCard
-        title="Tất cả yêu cầu khắc phục"
+        title="Tất cả vi phạm"
         controls={
           <>
             <SearchInput placeholder="Tìm mã vi phạm, tên cơ sở..." onChange={setSearch} />
@@ -137,17 +141,24 @@ export default function KhacPhucPage() {
             <FilterSelect
               options={[
                 { value: '', label: 'Tất cả trạng thái' },
-                { value: 'pending', label: 'Chờ xử lý' },
-                { value: 'in_progress', label: 'Đang khắc phục' },
-                { value: 'completed', label: 'Đã hoàn thành' },
+                { value: 'pending', label: 'Chưa xử lý' },
+                { value: 'processing', label: 'Đang xử lý' },
+                { value: 'resolved', label: 'Đã xử lý' },
               ]}
               onChange={setStatusFilter}
             />
+            <FilterSelect
+              options={[
+                { value: '', label: 'Tất cả quận/huyện' },
+                ...districts.map((d) => ({ value: d, label: d })),
+              ]}
+              onChange={setDistrictFilter}
+            />
           </>
         }
-        footer={<Pagination info={`Hiển thị 1–${filtered.length} trong tổng số ${mockViolationFixes.length} hồ sơ`} />}
+        footer={<Pagination info={`Hiển thị 1–${filtered.length} trong tổng số ${mockViolations.length} vi phạm`} />}
       >
-        <DataTable columns={columns} data={filtered as unknown as Record<string, unknown>[]} emptyMessage="Không tìm thấy hồ sơ khắc phục nào" />
+        <DataTable columns={columns} data={filtered as unknown as Record<string, unknown>[]} emptyMessage="Không tìm thấy vi phạm nào" />
       </TableCard>
     </div>
   );
