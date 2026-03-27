@@ -13,6 +13,9 @@ interface DataTableProps<T extends object> {
   data: T[];
   emptyMessage?: string;
   className?: string;
+  rowKey?: (row: T, index: number) => string;
+  onRowClick?: (row: T) => void;
+  rowClassName?: (row: T, index: number) => string;
 }
 
 export default function DataTable<T extends object>({
@@ -20,6 +23,9 @@ export default function DataTable<T extends object>({
   data,
   emptyMessage = 'Không có dữ liệu',
   className,
+  rowKey,
+  onRowClick,
+  rowClassName,
 }: DataTableProps<T>) {
   return (
     <div className={cn('overflow-x-auto', className)}>
@@ -53,8 +59,13 @@ export default function DataTable<T extends object>({
           ) : (
             data.map((row, i) => (
               <tr
-                key={i}
-                className="border-b border-slate-100 hover:bg-slate-50/60 transition-colors last:border-0"
+                key={rowKey ? rowKey(row, i) : i}
+                onClick={() => onRowClick?.(row)}
+                className={cn(
+                  'border-b border-slate-100 transition-colors last:border-0',
+                  onRowClick ? 'cursor-pointer hover:bg-slate-50/60' : 'hover:bg-slate-50/60',
+                  rowClassName?.(row, i)
+                )}
               >
                 {columns.map((col) => (
                   <td
