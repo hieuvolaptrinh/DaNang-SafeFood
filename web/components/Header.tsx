@@ -13,6 +13,7 @@ const breadcrumbMap: Record<string, string[]> = {
   '/co-so-kinh-doanh/phap-ly':         ['Cơ sở kinh doanh', 'Tình trạng pháp lý'],
   '/co-so-kinh-doanh/chung-nhan':      ['Cơ sở kinh doanh', 'Phê duyệt chứng nhận'],
   '/thanh-tra-kiem-dinh':              ['Thanh tra & Kiểm định', 'Hồ sơ thanh tra'],
+  '/thanh-tra-kiem-dinh/nhiem-vu':     ['Thanh tra & Kiểm định', 'Nhiệm vụ kiểm tra'],
   '/thanh-tra-kiem-dinh/bao-cao':      ['Thanh tra & Kiểm định', 'Báo cáo'],
   '/thanh-tra-kiem-dinh/yeu-cau':      ['Thanh tra & Kiểm định', 'Yêu cầu kiểm nghiệm'],
   '/thanh-tra-kiem-dinh/ket-qua':      ['Thanh tra & Kiểm định', 'Kết quả kiểm nghiệm'],

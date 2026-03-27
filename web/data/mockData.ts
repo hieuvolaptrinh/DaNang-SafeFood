@@ -209,6 +209,7 @@ export const roleNavMap: Record<Role, NavItem[]> = {
     {
       label: 'Thanh tra & Kiểm định', icon: 'clipboard', children: [
         { label: 'Hồ sơ thanh tra', href: '/thanh-tra-kiem-dinh' },
+        { label: 'Nhiệm vụ kiểm tra', href: '/thanh-tra-kiem-dinh/nhiem-vu' },
         { label: 'Báo cáo thanh tra', href: '/thanh-tra-kiem-dinh/bao-cao' },
         { label: 'Yêu cầu kiểm nghiệm', href: '/thanh-tra-kiem-dinh/yeu-cau' },
         { label: 'Kết quả kiểm nghiệm', href: '/thanh-tra-kiem-dinh/ket-qua' },

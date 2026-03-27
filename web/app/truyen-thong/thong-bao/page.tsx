@@ -141,7 +141,7 @@ export default function ThongBaoPage() {
         }
         footer={<Pagination info={`Hiển thị 1–${filtered.length} trong tổng số ${mockNotifications.length} thông báo`} />}
       >
-        <DataTable columns={columns} data={filtered as unknown as Record<string, unknown>[]} emptyMessage="Không tìm thấy thông báo nào" />
+        <DataTable columns={columns} data={filtered } emptyMessage="Không tìm thấy thông báo nào" />
       </TableCard>
     </div>
   );

@@ -1,21 +1,21 @@
 import { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
-export interface Column<T> {
+export interface Column<T extends object> {
   key: string;
   header: string;
   className?: string;
   render?: (row: T) => ReactNode;
 }
 
-interface DataTableProps<T> {
+interface DataTableProps<T extends object> {
   columns: Column<T>[];
   data: T[];
   emptyMessage?: string;
   className?: string;
 }
 
-export default function DataTable<T extends Record<string, unknown>>({
+export default function DataTable<T extends object>({
   columns,
   data,
   emptyMessage = 'Không có dữ liệu',
@@ -61,7 +61,9 @@ export default function DataTable<T extends Record<string, unknown>>({
                     key={col.key}
                     className={cn('px-4 py-3 text-sm text-slate-800 align-middle', col.className)}
                   >
-                    {col.render ? col.render(row) : (row[col.key] as ReactNode)}
+                    {col.render
+                      ? col.render(row)
+                      : ((row as Record<string, unknown>)[col.key] as ReactNode)}
                   </td>
                 ))}
               </tr>

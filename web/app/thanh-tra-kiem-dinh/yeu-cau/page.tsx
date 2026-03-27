@@ -1,21 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import DataTable, { Column } from '@/components/DataTable';
 import Badge from '@/components/Badge';
-import TableCard, { SearchInput, FilterSelect, Pagination } from '@/components/TableCard';
+import CreateInspectionRequestForm, {
+  type FoodInspectionRequestRecord,
+} from '@/components/CreateInspectionRequestForm';
+import DataTable, { type Column } from '@/components/DataTable';
+import AlertBanner from '@/components/AlertBanner';
+import TableCard, { FilterSelect, Pagination, SearchInput } from '@/components/TableCard';
 
-interface TestRequest {
-  id: string;
-  business: string;
-  sampleType: string;
-  requestDate: string;
-  deadline: string;
-  status: 'pending' | 'processing' | 'completed';
-  lab: string;
-}
-
-const mockTestRequests: TestRequest[] = [
+const mockTestRequests: FoodInspectionRequestRecord[] = [
   {
     id: 'YC-2025001',
     business: 'Nhà hàng Hải Sản Biển Xanh',
@@ -46,28 +40,32 @@ const mockTestRequests: TestRequest[] = [
 ];
 
 export default function YeuCauPage() {
+  const [mode, setMode] = useState<'list' | 'create'>('list');
+  const [requests, setRequests] = useState<FoodInspectionRequestRecord[]>(mockTestRequests);
+  const [selectedSampleId] = useState('SAMPLE-2025-001');
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [feedbackMessage, setFeedbackMessage] = useState('');
 
-  const filtered = mockTestRequests.filter((r) => {
+  const filtered = requests.filter((request) => {
     const matchSearch =
       !search ||
-      r.business.toLowerCase().includes(search.toLowerCase()) ||
-      r.id.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = !statusFilter || r.status === statusFilter;
+      request.business.toLowerCase().includes(search.toLowerCase()) ||
+      request.id.toLowerCase().includes(search.toLowerCase());
+    const matchStatus = !statusFilter || request.status === statusFilter;
     return matchSearch && matchStatus;
   });
 
-  const columns: Column<TestRequest>[] = [
+  const columns: Column<FoodInspectionRequestRecord>[] = [
     {
       key: 'id',
       header: 'Mã yêu cầu',
-      render: (r) => <span className="font-mono text-[12px] text-slate-500">{r.id}</span>,
+      render: (request) => <span className="font-mono text-[12px] text-slate-500">{request.id}</span>,
     },
     {
       key: 'business',
       header: 'Cơ sở',
-      render: (r) => <strong className="text-slate-800">{r.business}</strong>,
+      render: (request) => <strong className="text-slate-800">{request.business}</strong>,
     },
     { key: 'sampleType', header: 'Loại mẫu' },
     { key: 'requestDate', header: 'Ngày yêu cầu' },
@@ -75,7 +73,7 @@ export default function YeuCauPage() {
     {
       key: 'status',
       header: 'Trạng thái',
-      render: (r) => <Badge variant={r.status} />,
+      render: (request) => <Badge variant={request.status} />,
     },
     { key: 'lab', header: 'Phòng lab' },
     {
@@ -83,51 +81,94 @@ export default function YeuCauPage() {
       header: 'Thao tác',
       render: () => (
         <div className="flex gap-1.5">
-          <button className="w-7 h-7 rounded-md border border-slate-200 bg-white hover:bg-slate-50 text-sm transition-colors">👁</button>
-          <button className="w-7 h-7 rounded-md border border-slate-200 bg-white hover:bg-slate-50 text-sm transition-colors">✏️</button>
+          <button className="h-7 w-7 rounded-md border border-slate-200 bg-white text-sm transition-colors hover:bg-slate-50">
+            👁
+          </button>
+          <button className="h-7 w-7 rounded-md border border-slate-200 bg-white text-sm transition-colors hover:bg-slate-50">
+            ✏️
+          </button>
         </div>
       ),
     },
   ];
 
+  const handleCreateClick = () => {
+    setFeedbackMessage('');
+    setMode('create');
+  };
+
+  const handleCancelCreate = () => {
+    setMode('list');
+  };
+
+  const handleCreateSuccess = (request: FoodInspectionRequestRecord) => {
+    setRequests((current) => [request, ...current]);
+    setMode('list');
+    setFeedbackMessage('Đơn kiểm định đã được tạo và gửi thành công');
+  };
+
   return (
     <div>
-      {/* Page header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-[22px] font-extrabold text-slate-900 font-display">Yêu cầu Kiểm nghiệm</h1>
-          <p className="text-[13px] text-slate-500 mt-0.5">Quản lý các yêu cầu kiểm nghiệm mẫu từ cơ sở kinh doanh</p>
+          <h1 className="font-display text-[22px] font-extrabold text-slate-900">
+            Yêu cầu Kiểm nghiệm
+          </h1>
+          <p className="mt-0.5 text-[13px] text-slate-500">
+            Quản lý các yêu cầu kiểm nghiệm mẫu từ cơ sở kinh doanh
+          </p>
         </div>
-        <div className="flex gap-2">
-          <button className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-slate-200 bg-white text-[13px] font-semibold text-slate-600 hover:bg-slate-50">
-            📥 Xuất danh sách
-          </button>
-          <button className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-blue-600 text-white text-[13px] font-semibold hover:bg-blue-700">
-            + Tạo yêu cầu mới
-          </button>
-        </div>
+
+        {mode === 'list' && (
+          <div className="flex gap-2">
+            <button className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-[13px] font-semibold text-slate-600 hover:bg-slate-50">
+              📥 Xuất danh sách
+            </button>
+            <button
+              type="button"
+              onClick={handleCreateClick}
+              className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-2 text-[13px] font-semibold text-white hover:bg-blue-700"
+            >
+              + Tạo yêu cầu mới
+            </button>
+          </div>
+        )}
       </div>
 
-      <TableCard
-        title="Danh sách yêu cầu kiểm nghiệm"
-        controls={
-          <>
-            <SearchInput placeholder="Tìm cơ sở, mã yêu cầu..." onChange={setSearch} />
-            <FilterSelect
-              options={[
-                { value: '', label: 'Tất cả trạng thái' },
-                { value: 'pending', label: 'Chờ xử lý' },
-                { value: 'processing', label: 'Đang thực hiện' },
-                { value: 'completed', label: 'Hoàn thành' },
-              ]}
-              onChange={setStatusFilter}
-            />
-          </>
-        }
-        footer={<Pagination info={`Hiển thị 1–${filtered.length} trong tổng số ${mockTestRequests.length} yêu cầu`} />}
-      >
-        <DataTable columns={columns} data={filtered as unknown as Record<string, unknown>[]} emptyMessage="Không tìm thấy yêu cầu nào" />
-      </TableCard>
+      {mode === 'create' ? (
+        <CreateInspectionRequestForm
+          selectedSampleId={selectedSampleId}
+          onCancel={handleCancelCreate}
+          onSuccess={handleCreateSuccess}
+        />
+      ) : (
+        <>
+          {feedbackMessage && <AlertBanner type="success" title={feedbackMessage} />}
+
+          <TableCard
+            title="Danh sách yêu cầu kiểm nghiệm"
+            controls={
+              <>
+                <SearchInput placeholder="Tìm cơ sở, mã yêu cầu..." onChange={setSearch} />
+                <FilterSelect
+                  options={[
+                    { value: '', label: 'Tất cả trạng thái' },
+                    { value: 'pending', label: 'Chờ xử lý' },
+                    { value: 'processing', label: 'Đang thực hiện' },
+                    { value: 'completed', label: 'Hoàn thành' },
+                  ]}
+                  onChange={setStatusFilter}
+                />
+              </>
+            }
+            footer={
+              <Pagination info={`Hiển thị 1–${filtered.length} trong tổng số ${requests.length} yêu cầu`} />
+            }
+          >
+            <DataTable columns={columns} data={filtered} emptyMessage="Không tìm thấy yêu cầu nào" />
+          </TableCard>
+        </>
+      )}
     </div>
   );
 }

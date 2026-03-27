@@ -437,7 +437,7 @@ export default function BaoCaoPage() {
       >
         <DataTable
           columns={columns}
-          data={filtered as unknown as Record<string, unknown>[]}
+          data={filtered}
           emptyMessage="Không tìm thấy báo cáo nào"
         />
       </TableCard>

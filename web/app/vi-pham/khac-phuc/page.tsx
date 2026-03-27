@@ -147,7 +147,7 @@ export default function KhacPhucPage() {
         }
         footer={<Pagination info={`Hiển thị 1–${filtered.length} trong tổng số ${mockViolationFixes.length} hồ sơ`} />}
       >
-        <DataTable columns={columns} data={filtered as unknown as Record<string, unknown>[]} emptyMessage="Không tìm thấy hồ sơ khắc phục nào" />
+        <DataTable columns={columns} data={filtered } emptyMessage="Không tìm thấy hồ sơ khắc phục nào" />
       </TableCard>
     </div>
   );

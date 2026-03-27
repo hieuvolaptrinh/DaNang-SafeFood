@@ -102,8 +102,9 @@ export default function PhanAnhCongDanPage() {
         }
         footer={<Pagination info={`Hiển thị 1–${filtered.length} trong tổng số 86 phản ánh`} />}
       >
-        <DataTable columns={columns} data={filtered as unknown as Record<string, unknown>[]} emptyMessage="Không có phản ánh nào" />
+        <DataTable columns={columns} data={filtered } emptyMessage="Không có phản ánh nào" />
       </TableCard>
     </div>
   );
 }
+

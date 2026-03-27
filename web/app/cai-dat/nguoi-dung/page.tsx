@@ -120,10 +120,11 @@ export default function NguoiDungPage() {
       >
         <DataTable
           columns={columns}
-          data={filtered as unknown as Record<string, unknown>[]}
+          data={filtered }
           emptyMessage="Không tìm thấy người dùng nào"
         />
       </TableCard>
     </div>
   );
 }
+

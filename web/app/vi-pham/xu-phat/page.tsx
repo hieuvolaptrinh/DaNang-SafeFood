@@ -137,7 +137,7 @@ export default function XuPhatPage() {
         }
         footer={<Pagination info={`Hiển thị 1–${filtered.length} trong tổng số ${mockPenalties.length} quyết định`} />}
       >
-        <DataTable columns={columns} data={filtered as unknown as Record<string, unknown>[]} emptyMessage="Không tìm thấy quyết định xử phạt nào" />
+        <DataTable columns={columns} data={filtered } emptyMessage="Không tìm thấy quyết định xử phạt nào" />
       </TableCard>
     </div>
   );
