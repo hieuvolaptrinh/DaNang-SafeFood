@@ -1,114 +1,117 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
+import { useState } from "react";
 
 import LicenseDetailModal, {
   type LicenseDetailData,
   type LicenseSummary,
   type SelectedLicenseRecord,
-} from '@/components/LicenseDetailModal';
+} from "@/components/LicenseDetailModal";
 
 type License = LicenseSummary;
 
 const mockLicenses: License[] = [
   {
-    id: 'GP-2025001',
-    businessName: 'Nhà hàng Hải Sản Biển Xanh',
-    type: 'Giấy phép kinh doanh thực phẩm',
-    issueDate: '10/01/2025',
-    expiryDate: '09/01/2026',
-    status: 'valid',
-    district: 'Hải Châu',
+    id: "GP-2025001",
+    businessName: "Nhà hàng Hải Sản Biển Xanh",
+    type: "Giấy phép kinh doanh thực phẩm",
+    issueDate: "10/01/2025",
+    expiryDate: "09/01/2026",
+    status: "valid",
+    district: "Hải Châu",
   },
   {
-    id: 'GP-2025002',
-    businessName: 'Quán Ăn Gia Đình Việt',
-    type: 'Giấy phép VSATTP',
-    issueDate: '15/02/2025',
-    expiryDate: '14/02/2025',
-    status: 'expired',
-    district: 'Thanh Khê',
+    id: "GP-2025002",
+    businessName: "Quán Ăn Gia Đình Việt",
+    type: "Giấy phép VSATTP",
+    issueDate: "15/02/2025",
+    expiryDate: "14/02/2025",
+    status: "expired",
+    district: "Thanh Khê",
   },
   {
-    id: 'GP-2025003',
-    businessName: 'Cửa hàng Thực phẩm Sạch Organic',
-    type: 'Giấy phép kinh doanh thực phẩm',
-    issueDate: '20/03/2025',
-    expiryDate: '19/03/2026',
-    status: 'valid',
-    district: 'Ngũ Hành Sơn',
+    id: "GP-2025003",
+    businessName: "Cửa hàng Thực phẩm Sạch Organic",
+    type: "Giấy phép kinh doanh thực phẩm",
+    issueDate: "20/03/2025",
+    expiryDate: "19/03/2026",
+    status: "valid",
+    district: "Ngũ Hành Sơn",
   },
   {
-    id: 'GP-2025004',
-    businessName: 'Siêu thị Mini Mart Đà Nẵng',
-    type: 'Giấy phép kinh doanh thực phẩm',
-    issueDate: '05/01/2025',
-    expiryDate: '04/01/2026',
-    status: 'revoked',
-    district: 'Sơn Trà',
+    id: "GP-2025004",
+    businessName: "Siêu thị Mini Mart Đà Nẵng",
+    type: "Giấy phép kinh doanh thực phẩm",
+    issueDate: "05/01/2025",
+    expiryDate: "04/01/2026",
+    status: "revoked",
+    district: "Sơn Trà",
   },
 ];
 
-const mockLicenseDetails: Partial<Record<License['id'], LicenseDetailData>> = {
-  'GP-2025001': {
-    id: 'GP-2025001',
-    businessName: 'Nhà hàng Hải Sản Biển Xanh',
-    type: 'Giấy phép kinh doanh thực phẩm',
-    issueDate: '10/01/2025',
-    expiryDate: '09/01/2026',
-    status: 'valid',
-    district: 'Hải Châu',
-    evidenceKind: 'image',
-    evidenceName: 'Ảnh scan giấy phép kinh doanh',
-    evidenceDescription: 'Bản scan giấy phép đã được tải lên để đối chiếu thông tin của cơ sở.',
+const mockLicenseDetails: Partial<Record<License["id"], LicenseDetailData>> = {
+  "GP-2025001": {
+    id: "GP-2025001",
+    businessName: "Nhà hàng Hải Sản Biển Xanh",
+    type: "Giấy phép kinh doanh thực phẩm",
+    issueDate: "10/01/2025",
+    expiryDate: "09/01/2026",
+    status: "valid",
+    district: "Hải Châu",
+    evidenceKind: "image",
+    evidenceName: "Ảnh scan giấy phép kinh doanh",
+    evidenceDescription:
+      "Bản scan giấy phép đã được tải lên để đối chiếu thông tin của cơ sở.",
   },
-  'GP-2025002': {
-    id: 'GP-2025002',
-    businessName: 'Quán Ăn Gia Đình Việt',
-    type: 'Giấy phép VSATTP',
-    issueDate: '15/02/2025',
-    expiryDate: '14/02/2025',
-    status: 'expired',
-    district: 'Thanh Khê',
-    evidenceKind: 'file',
-    evidenceName: 'hoso-giay-phep-vsattp.pdf',
-    evidenceDescription: 'Hồ sơ PDF mô phỏng minh chứng giấy phép đã hết hạn của cơ sở.',
+  "GP-2025002": {
+    id: "GP-2025002",
+    businessName: "Quán Ăn Gia Đình Việt",
+    type: "Giấy phép VSATTP",
+    issueDate: "15/02/2025",
+    expiryDate: "14/02/2025",
+    status: "expired",
+    district: "Thanh Khê",
+    evidenceKind: "file",
+    evidenceName: "hoso-giay-phep-vsattp.pdf",
+    evidenceDescription:
+      "Hồ sơ PDF mô phỏng minh chứng giấy phép đã hết hạn của cơ sở.",
   },
-  'GP-2025004': {
-    id: 'GP-2025004',
-    businessName: 'Siêu thị Mini Mart Đà Nẵng',
-    type: 'Giấy phép kinh doanh thực phẩm',
-    issueDate: '05/01/2025',
-    expiryDate: '04/01/2026',
-    status: 'revoked',
-    district: 'Sơn Trà',
-    evidenceKind: 'image',
-    evidenceName: 'Biên bản thu hồi giấy phép',
-    evidenceDescription: 'Ảnh chụp biên bản thu hồi giấy phép được dùng làm minh chứng mô phỏng.',
+  "GP-2025004": {
+    id: "GP-2025004",
+    businessName: "Siêu thị Mini Mart Đà Nẵng",
+    type: "Giấy phép kinh doanh thực phẩm",
+    issueDate: "05/01/2025",
+    expiryDate: "04/01/2026",
+    status: "revoked",
+    district: "Sơn Trà",
+    evidenceKind: "image",
+    evidenceName: "Biên bản thu hồi giấy phép",
+    evidenceDescription:
+      "Ảnh chụp biên bản thu hồi giấy phép được dùng làm minh chứng mô phỏng.",
   },
 };
 
 const STATUS_CONFIG = {
   valid: {
-    label: 'Còn hiệu lực',
-    bg: 'bg-emerald-50',
-    text: 'text-emerald-700',
-    dot: 'bg-emerald-500',
-    border: 'border-emerald-200',
+    label: "Còn hiệu lực",
+    bg: "bg-emerald-50",
+    text: "text-emerald-700",
+    dot: "bg-emerald-500",
+    border: "border-emerald-200",
   },
   expired: {
-    label: 'Hết hạn',
-    bg: 'bg-slate-100',
-    text: 'text-slate-500',
-    dot: 'bg-slate-400',
-    border: 'border-slate-200',
+    label: "Hết hạn",
+    bg: "bg-slate-100",
+    text: "text-slate-500",
+    dot: "bg-slate-400",
+    border: "border-slate-200",
   },
   revoked: {
-    label: 'Đã thu hồi',
-    bg: 'bg-red-50',
-    text: 'text-red-700',
-    dot: 'bg-red-500',
-    border: 'border-red-200',
+    label: "Đã thu hồi",
+    bg: "bg-red-50",
+    text: "text-red-700",
+    dot: "bg-red-500",
+    border: "border-red-200",
   },
 };
 
@@ -125,24 +128,45 @@ function StatusBadge({ status }: { status: keyof typeof STATUS_CONFIG }) {
 }
 
 const DISTRICT_COLORS: Record<string, string> = {
-  'Hải Châu': 'bg-blue-100 text-blue-700',
-  'Thanh Khê': 'bg-violet-100 text-violet-700',
-  'Ngũ Hành Sơn': 'bg-teal-100 text-teal-700',
-  'Sơn Trà': 'bg-orange-100 text-orange-700',
+  "Hải Châu": "bg-blue-100 text-blue-700",
+  "Thanh Khê": "bg-violet-100 text-violet-700",
+  "Ngũ Hành Sơn": "bg-teal-100 text-teal-700",
+  "Sơn Trà": "bg-orange-100 text-orange-700",
 };
 
 const STATS = [
-  { label: 'Tổng giấy phép', value: '1.245', icon: '📄', color: 'from-indigo-600 to-blue-600' },
-  { label: 'Còn hiệu lực', value: '1.048', icon: '✅', color: 'from-emerald-500 to-teal-500' },
-  { label: 'Hết hạn', value: '143', icon: '⌛', color: 'from-slate-500 to-slate-600' },
-  { label: 'Đã thu hồi', value: '54', icon: '🚫', color: 'from-red-500 to-red-600' },
+  {
+    label: "Tổng giấy phép",
+    value: "1.245",
+    icon: "📄",
+    color: "from-indigo-600 to-blue-600",
+  },
+  {
+    label: "Còn hiệu lực",
+    value: "1.048",
+    icon: "✅",
+    color: "from-emerald-500 to-teal-500",
+  },
+  {
+    label: "Hết hạn",
+    value: "143",
+    icon: "⌛",
+    color: "from-slate-500 to-slate-600",
+  },
+  {
+    label: "Đã thu hồi",
+    value: "54",
+    icon: "🚫",
+    color: "from-red-500 to-red-600",
+  },
 ];
 
 export default function GiayPhepPage() {
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [districtFilter, setDistrictFilter] = useState('');
-  const [selectedLicense, setSelectedLicense] = useState<SelectedLicenseRecord | null>(null);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [districtFilter, setDistrictFilter] = useState("");
+  const [selectedLicense, setSelectedLicense] =
+    useState<SelectedLicenseRecord | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loadingLicenseId, setLoadingLicenseId] = useState<string | null>(null);
 
@@ -152,12 +176,15 @@ export default function GiayPhepPage() {
       license.id.toLowerCase().includes(search.toLowerCase()) ||
       license.businessName.toLowerCase().includes(search.toLowerCase());
     const matchStatus = !statusFilter || license.status === statusFilter;
-    const matchDistrict = !districtFilter || license.district === districtFilter;
+    const matchDistrict =
+      !districtFilter || license.district === districtFilter;
 
     return matchSearch && matchStatus && matchDistrict;
   });
 
-  const districts = [...new Set(mockLicenses.map((license) => license.district))];
+  const districts = [
+    ...new Set(mockLicenses.map((license) => license.district)),
+  ];
 
   const handleViewLicense = async (license: License) => {
     if (loadingLicenseId) {
@@ -210,7 +237,12 @@ export default function GiayPhepPage() {
 
           <div className="flex gap-2 pt-1">
             <button className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-[13px] font-semibold text-slate-600 shadow-sm transition-all hover:border-slate-300 hover:bg-slate-50">
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -220,8 +252,14 @@ export default function GiayPhepPage() {
               </svg>
               Xuất CSV
             </button>
+
             <button className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-700 px-4 py-2.5 text-[13px] font-semibold text-white shadow-md shadow-indigo-200 transition-all hover:from-indigo-700 hover:to-blue-800">
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -229,7 +267,6 @@ export default function GiayPhepPage() {
                   d="M12 4v16m8-8H4"
                 />
               </svg>
-              Cấp giấy phép mới
             </button>
           </div>
         </div>
@@ -245,7 +282,9 @@ export default function GiayPhepPage() {
                   <p className="mb-2 text-[12px] font-semibold uppercase tracking-wide text-slate-400">
                     {stat.label}
                   </p>
-                  <p className="text-[30px] font-black leading-none text-slate-900">{stat.value}</p>
+                  <p className="text-[30px] font-black leading-none text-slate-900">
+                    {stat.value}
+                  </p>
                 </div>
                 <div
                   className={`flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br text-lg shadow-sm ${stat.color}`}
@@ -260,7 +299,9 @@ export default function GiayPhepPage() {
         <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
           <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
             <div className="flex items-center gap-3">
-              <h2 className="text-[15px] font-bold text-slate-800">Tất cả giấy phép</h2>
+              <h2 className="text-[15px] font-bold text-slate-800">
+                Tất cả giấy phép
+              </h2>
               <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[12px] font-bold text-slate-500">
                 {filtered.length}
               </span>
@@ -317,14 +358,14 @@ export default function GiayPhepPage() {
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50">
                 {[
-                  'Mã giấy phép',
-                  'Tên cơ sở',
-                  'Loại giấy phép',
-                  'Ngày cấp',
-                  'Ngày hết hạn',
-                  'Trạng thái',
-                  'Quận/Huyện',
-                  'Thao tác',
+                  "Mã giấy phép",
+                  "Tên cơ sở",
+                  "Loại giấy phép",
+                  "Ngày cấp",
+                  "Ngày hết hạn",
+                  "Trạng thái",
+                  "Quận/Huyện",
+                  "Thao tác",
                 ].map((heading) => (
                   <th
                     key={heading}
@@ -342,8 +383,8 @@ export default function GiayPhepPage() {
                   key={license.id}
                   className={`group transition-colors ${
                     selectedLicense?.summary.id === license.id && isModalOpen
-                      ? 'bg-indigo-50/60'
-                      : 'hover:bg-indigo-50/30'
+                      ? "bg-indigo-50/60"
+                      : "hover:bg-indigo-50/30"
                   }`}
                 >
                   <td className="px-5 py-3.5">
@@ -361,7 +402,9 @@ export default function GiayPhepPage() {
                       </span>
                     </div>
                   </td>
-                  <td className="px-5 py-3.5 text-[13px] text-slate-600">{license.type}</td>
+                  <td className="px-5 py-3.5 text-[13px] text-slate-600">
+                    {license.type}
+                  </td>
                   <td className="px-5 py-3.5 font-mono text-[13px] text-slate-500">
                     {license.issueDate}
                   </td>
@@ -374,7 +417,8 @@ export default function GiayPhepPage() {
                   <td className="px-5 py-3.5">
                     <span
                       className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
-                        DISTRICT_COLORS[license.district] || 'bg-slate-100 text-slate-600'
+                        DISTRICT_COLORS[license.district] ||
+                        "bg-slate-100 text-slate-600"
                       }`}
                     >
                       {license.district}
@@ -384,14 +428,16 @@ export default function GiayPhepPage() {
                     <div className="flex gap-1.5 opacity-0 transition-opacity group-hover:opacity-100">
                       <button
                         className="h-7 w-7 rounded-lg border border-slate-200 bg-white text-sm shadow-sm transition-all hover:border-indigo-300 hover:bg-indigo-50 disabled:cursor-not-allowed disabled:opacity-60"
-                        title={loadingLicenseId === license.id ? 'Đang tải' : 'Xem'}
+                        title={
+                          loadingLicenseId === license.id ? "Đang tải" : "Xem"
+                        }
                         onClick={() => void handleViewLicense(license)}
                         disabled={Boolean(loadingLicenseId)}
                       >
                         {loadingLicenseId === license.id ? (
                           <span className="mx-auto block h-3.5 w-3.5 animate-spin rounded-full border-2 border-indigo-200 border-t-indigo-600" />
                         ) : (
-                          '👁'
+                          "👁"
                         )}
                       </button>
                       <button
@@ -409,8 +455,11 @@ export default function GiayPhepPage() {
 
           <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50/50 px-5 py-3.5">
             <span className="text-[12px] font-medium text-slate-400">
-              Hiển thị <strong className="text-slate-600">{filtered.length}</strong> trong tổng số{' '}
-              <strong className="text-slate-600">{mockLicenses.length}</strong> giấy phép
+              Hiển thị{" "}
+              <strong className="text-slate-600">{filtered.length}</strong>{" "}
+              trong tổng số{" "}
+              <strong className="text-slate-600">{mockLicenses.length}</strong>{" "}
+              giấy phép
             </span>
             <div className="flex gap-1">
               {[1, 2, 3].map((page) => (
@@ -418,8 +467,8 @@ export default function GiayPhepPage() {
                   key={page}
                   className={`h-7 w-7 rounded-lg text-[12px] font-semibold transition-all ${
                     page === 1
-                      ? 'bg-indigo-600 text-white shadow-sm'
-                      : 'text-slate-500 hover:bg-slate-100'
+                      ? "bg-indigo-600 text-white shadow-sm"
+                      : "text-slate-500 hover:bg-slate-100"
                   }`}
                 >
                   {page}

@@ -128,9 +128,9 @@ export default function CoSoKinhDoanhPage() {
               </svg>
               Xuất CSV
             </button>
-            <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-[13px] font-semibold transition-all shadow-sm">
+            {/* <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-[13px] font-semibold transition-all shadow-sm">
               + Thêm cơ sở mới
-            </button>
+            </button> */}
           </div>
         </div>
 
