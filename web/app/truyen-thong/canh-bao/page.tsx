@@ -167,7 +167,7 @@ export default function CanhBaoPage() {
         }
         footer={<Pagination info={`Hiển thị 1–${filtered.length} trong tổng số ${mockWarnings.length} cảnh báo`} />}
       >
-        <DataTable columns={columns} data={filtered as unknown as Record<string, unknown>[]} emptyMessage="Không tìm thấy cảnh báo nào" />
+        <DataTable columns={columns} data={filtered } emptyMessage="Không tìm thấy cảnh báo nào" />
       </TableCard>
     </div>
   );

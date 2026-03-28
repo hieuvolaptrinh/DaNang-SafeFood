@@ -153,7 +153,7 @@ export default function KetQuaPage() {
         }
         footer={<Pagination info={`Hiển thị 1–${filtered.length} trong tổng số ${mockTestResults.length} kết quả`} />}
       >
-        <DataTable columns={columns} data={filtered as unknown as Record<string, unknown>[]} emptyMessage="Không tìm thấy kết quả nào" />
+        <DataTable columns={columns} data={filtered } emptyMessage="Không tìm thấy kết quả nào" />
       </TableCard>
     </div>
   );

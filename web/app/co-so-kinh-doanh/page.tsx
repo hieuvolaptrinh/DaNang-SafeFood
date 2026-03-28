@@ -192,12 +192,12 @@ export default function CoSoKinhDoanhPage() {
         >
           <DataTable 
             columns={columns} 
-            data={filtered as unknown as Record<string, unknown>[]} 
+            data={filtered} 
             emptyMessage="Không tìm thấy cơ sở kinh doanh nào khớp với điều kiện tìm kiếm."
-            rowClassName="hover:bg-violet-50/30 group transition-colors"
           />
         </TableCard>
       </div>
     </div>
   );
 }
+

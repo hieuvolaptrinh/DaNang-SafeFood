@@ -2,15 +2,13 @@
 
 import { useState } from 'react';
 
-interface License {
-  id: string;
-  businessName: string;
-  type: string;
-  issueDate: string;
-  expiryDate: string;
-  status: 'valid' | 'expired' | 'revoked';
-  district: string;
-}
+import LicenseDetailModal, {
+  type LicenseDetailData,
+  type LicenseSummary,
+  type SelectedLicenseRecord,
+} from '@/components/LicenseDetailModal';
+
+type License = LicenseSummary;
 
 const mockLicenses: License[] = [
   {
@@ -51,6 +49,45 @@ const mockLicenses: License[] = [
   },
 ];
 
+const mockLicenseDetails: Partial<Record<License['id'], LicenseDetailData>> = {
+  'GP-2025001': {
+    id: 'GP-2025001',
+    businessName: 'Nhà hàng Hải Sản Biển Xanh',
+    type: 'Giấy phép kinh doanh thực phẩm',
+    issueDate: '10/01/2025',
+    expiryDate: '09/01/2026',
+    status: 'valid',
+    district: 'Hải Châu',
+    evidenceKind: 'image',
+    evidenceName: 'Ảnh scan giấy phép kinh doanh',
+    evidenceDescription: 'Bản scan giấy phép đã được tải lên để đối chiếu thông tin của cơ sở.',
+  },
+  'GP-2025002': {
+    id: 'GP-2025002',
+    businessName: 'Quán Ăn Gia Đình Việt',
+    type: 'Giấy phép VSATTP',
+    issueDate: '15/02/2025',
+    expiryDate: '14/02/2025',
+    status: 'expired',
+    district: 'Thanh Khê',
+    evidenceKind: 'file',
+    evidenceName: 'hoso-giay-phep-vsattp.pdf',
+    evidenceDescription: 'Hồ sơ PDF mô phỏng minh chứng giấy phép đã hết hạn của cơ sở.',
+  },
+  'GP-2025004': {
+    id: 'GP-2025004',
+    businessName: 'Siêu thị Mini Mart Đà Nẵng',
+    type: 'Giấy phép kinh doanh thực phẩm',
+    issueDate: '05/01/2025',
+    expiryDate: '04/01/2026',
+    status: 'revoked',
+    district: 'Sơn Trà',
+    evidenceKind: 'image',
+    evidenceName: 'Biên bản thu hồi giấy phép',
+    evidenceDescription: 'Ảnh chụp biên bản thu hồi giấy phép được dùng làm minh chứng mô phỏng.',
+  },
+};
+
 const STATUS_CONFIG = {
   valid: {
     label: 'Còn hiệu lực',
@@ -78,8 +115,10 @@ const STATUS_CONFIG = {
 function StatusBadge({ status }: { status: keyof typeof STATUS_CONFIG }) {
   const cfg = STATUS_CONFIG[status];
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold tracking-wide border ${cfg.bg} ${cfg.text} ${cfg.border}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold tracking-wide ${cfg.bg} ${cfg.text} ${cfg.border}`}
+    >
+      <span className={`h-1.5 w-1.5 rounded-full ${cfg.dot}`} />
       {cfg.label}
     </span>
   );
@@ -103,109 +142,172 @@ export default function GiayPhepPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [districtFilter, setDistrictFilter] = useState('');
+  const [selectedLicense, setSelectedLicense] = useState<SelectedLicenseRecord | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [loadingLicenseId, setLoadingLicenseId] = useState<string | null>(null);
 
-  const filtered = mockLicenses.filter((l) => {
+  const filtered = mockLicenses.filter((license) => {
     const matchSearch =
       !search ||
-      l.id.toLowerCase().includes(search.toLowerCase()) ||
-      l.businessName.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = !statusFilter || l.status === statusFilter;
-    const matchDistrict = !districtFilter || l.district === districtFilter;
+      license.id.toLowerCase().includes(search.toLowerCase()) ||
+      license.businessName.toLowerCase().includes(search.toLowerCase());
+    const matchStatus = !statusFilter || license.status === statusFilter;
+    const matchDistrict = !districtFilter || license.district === districtFilter;
+
     return matchSearch && matchStatus && matchDistrict;
   });
 
-  const districts = [...new Set(mockLicenses.map((l) => l.district))];
+  const districts = [...new Set(mockLicenses.map((license) => license.district))];
+
+  const handleViewLicense = async (license: License) => {
+    if (loadingLicenseId) {
+      return;
+    }
+
+    setSelectedLicense({ summary: license, detail: null });
+    setIsModalOpen(true);
+    setLoadingLicenseId(license.id);
+
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 650));
+
+      setSelectedLicense({
+        summary: license,
+        detail: mockLicenseDetails[license.id] ?? null,
+      });
+    } finally {
+      setLoadingLicenseId(null);
+    }
+  };
+
+  const handleModalOpenChange = (open: boolean) => {
+    setIsModalOpen(open);
+
+    if (!open && !loadingLicenseId) {
+      setSelectedLicense(null);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#f5f6fa] font-sans">
       <div className="h-1 w-full bg-gradient-to-r from-indigo-600 via-blue-500 to-teal-400" />
 
-      <div className="max-w-[1200px] mx-auto px-6 py-8">
-        {/* Header */}
-        <div className="flex items-start justify-between mb-8">
+      <div className="mx-auto max-w-[1200px] px-6 py-8">
+        <div className="mb-8 flex items-start justify-between">
           <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-[11px] font-bold tracking-[0.12em] uppercase text-indigo-500">
+            <div className="mb-1 flex items-center gap-2">
+              <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-indigo-500">
                 SỞ AN TOÀN THỰC PHẨM • ĐÀ NẴNG
               </span>
             </div>
-            <h1 className="text-[28px] font-black text-slate-900 tracking-tight leading-tight">
+            <h1 className="text-[28px] font-black leading-tight tracking-tight text-slate-900">
               Quản lý Giấy phép
             </h1>
-            <p className="text-[13px] text-slate-400 mt-1 font-medium">
+            <p className="mt-1 text-[13px] font-medium text-slate-400">
               1.245 giấy phép đã cấp cho các cơ sở kinh doanh tại Đà Nẵng
             </p>
           </div>
+
           <div className="flex gap-2 pt-1">
-            <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-[13px] font-semibold text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            <button className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-[13px] font-semibold text-slate-600 shadow-sm transition-all hover:border-slate-300 hover:bg-slate-50">
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                />
               </svg>
               Xuất CSV
             </button>
-            <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-700 text-white text-[13px] font-semibold hover:from-indigo-700 hover:to-blue-800 transition-all shadow-md shadow-indigo-200">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+            <button className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-700 px-4 py-2.5 text-[13px] font-semibold text-white shadow-md shadow-indigo-200 transition-all hover:from-indigo-700 hover:to-blue-800">
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2.5}
+                  d="M12 4v16m8-8H4"
+                />
               </svg>
               Cấp giấy phép mới
             </button>
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-4 gap-4 mb-8">
-          {STATS.map((s) => (
-            <div key={s.label} className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+        <div className="mb-8 grid grid-cols-4 gap-4">
+          {STATS.map((stat) => (
+            <div
+              key={stat.label}
+              className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
+            >
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-[12px] font-semibold text-slate-400 uppercase tracking-wide mb-2">{s.label}</p>
-                  <p className="text-[30px] font-black text-slate-900 leading-none">{s.value}</p>
+                  <p className="mb-2 text-[12px] font-semibold uppercase tracking-wide text-slate-400">
+                    {stat.label}
+                  </p>
+                  <p className="text-[30px] font-black leading-none text-slate-900">{stat.value}</p>
                 </div>
-                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${s.color} flex items-center justify-center text-lg shadow-sm`}>
-                  {s.icon}
+                <div
+                  className={`flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br text-lg shadow-sm ${stat.color}`}
+                >
+                  {stat.icon}
                 </div>
               </div>
             </div>
           ))}
         </div>
 
-        {/* Table */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+        <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
+          <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
             <div className="flex items-center gap-3">
               <h2 className="text-[15px] font-bold text-slate-800">Tất cả giấy phép</h2>
-              <span className="px-2 py-0.5 rounded-md bg-slate-100 text-[12px] font-bold text-slate-500">
+              <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[12px] font-bold text-slate-500">
                 {filtered.length}
               </span>
             </div>
+
             <div className="flex items-center gap-2">
               <div className="relative">
-                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                <svg
+                  className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
                 </svg>
                 <input
                   type="text"
                   placeholder="Tìm mã, tên cơ sở..."
-                  className="pl-9 pr-4 py-2 rounded-xl border border-slate-200 bg-slate-50 text-[13px] text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent w-[220px] transition-all"
-                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-[220px] rounded-xl border border-slate-200 bg-slate-50 py-2 pr-4 pl-9 text-[13px] text-slate-700 placeholder-slate-400 transition-all focus:border-transparent focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                  onChange={(event) => setSearch(event.target.value)}
                 />
               </div>
+
               <select
-                className="px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-[13px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
-                onChange={(e) => setStatusFilter(e.target.value)}
+                className="cursor-pointer rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-[13px] text-slate-600 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                onChange={(event) => setStatusFilter(event.target.value)}
               >
                 <option value="">Tất cả trạng thái</option>
                 <option value="valid">Còn hiệu lực</option>
                 <option value="expired">Hết hạn</option>
                 <option value="revoked">Đã thu hồi</option>
               </select>
+
               <select
-                className="px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-[13px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
-                onChange={(e) => setDistrictFilter(e.target.value)}
+                className="cursor-pointer rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-[13px] text-slate-600 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                onChange={(event) => setDistrictFilter(event.target.value)}
               >
                 <option value="">Tất cả quận/huyện</option>
-                {districts.map((d) => (
-                  <option key={d} value={d}>{d}</option>
+                {districts.map((district) => (
+                  <option key={district} value={district}>
+                    {district}
+                  </option>
                 ))}
               </select>
             </div>
@@ -213,45 +315,91 @@ export default function GiayPhepPage() {
 
           <table className="w-full">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-100">
-                {['Mã giấy phép', 'Tên cơ sở', 'Loại giấy phép', 'Ngày cấp', 'Ngày hết hạn', 'Trạng thái', 'Quận/Huyện', 'Thao tác'].map((h) => (
-                  <th key={h} className="px-5 py-3 text-left text-[11px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">
-                    {h}
+              <tr className="border-b border-slate-100 bg-slate-50">
+                {[
+                  'Mã giấy phép',
+                  'Tên cơ sở',
+                  'Loại giấy phép',
+                  'Ngày cấp',
+                  'Ngày hết hạn',
+                  'Trạng thái',
+                  'Quận/Huyện',
+                  'Thao tác',
+                ].map((heading) => (
+                  <th
+                    key={heading}
+                    className="whitespace-nowrap px-5 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-400"
+                  >
+                    {heading}
                   </th>
                 ))}
               </tr>
             </thead>
+
             <tbody className="divide-y divide-slate-50">
-              {filtered.map((l, i) => (
-                <tr key={l.id} className="hover:bg-indigo-50/30 transition-colors group">
+              {filtered.map((license) => (
+                <tr
+                  key={license.id}
+                  className={`group transition-colors ${
+                    selectedLicense?.summary.id === license.id && isModalOpen
+                      ? 'bg-indigo-50/60'
+                      : 'hover:bg-indigo-50/30'
+                  }`}
+                >
                   <td className="px-5 py-3.5">
-                    <span className="font-mono text-[12px] text-slate-400 font-semibold bg-slate-100 px-2 py-0.5 rounded-md">
-                      {l.id}
+                    <span className="rounded-md bg-slate-100 px-2 py-0.5 font-mono text-[12px] font-semibold text-slate-400">
+                      {license.id}
                     </span>
                   </td>
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-2.5">
-                      <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-100 to-indigo-200 flex items-center justify-center text-[11px] font-black text-indigo-600 flex-shrink-0">
-                        {l.businessName.charAt(0)}
+                      <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-100 to-indigo-200 text-[11px] font-black text-indigo-600">
+                        {license.businessName.charAt(0)}
                       </div>
-                      <span className="font-semibold text-[13px] text-slate-800">{l.businessName}</span>
+                      <span className="text-[13px] font-semibold text-slate-800">
+                        {license.businessName}
+                      </span>
                     </div>
                   </td>
-                  <td className="px-5 py-3.5 text-[13px] text-slate-600">{l.type}</td>
-                  <td className="px-5 py-3.5 text-[13px] text-slate-500 font-mono">{l.issueDate}</td>
-                  <td className="px-5 py-3.5 text-[13px] text-slate-500 font-mono">{l.expiryDate}</td>
-                  <td className="px-5 py-3.5">
-                    <StatusBadge status={l.status} />
+                  <td className="px-5 py-3.5 text-[13px] text-slate-600">{license.type}</td>
+                  <td className="px-5 py-3.5 font-mono text-[13px] text-slate-500">
+                    {license.issueDate}
+                  </td>
+                  <td className="px-5 py-3.5 font-mono text-[13px] text-slate-500">
+                    {license.expiryDate}
                   </td>
                   <td className="px-5 py-3.5">
-                    <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full ${DISTRICT_COLORS[l.district] || 'bg-slate-100 text-slate-600'}`}>
-                      {l.district}
+                    <StatusBadge status={license.status} />
+                  </td>
+                  <td className="px-5 py-3.5">
+                    <span
+                      className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                        DISTRICT_COLORS[license.district] || 'bg-slate-100 text-slate-600'
+                      }`}
+                    >
+                      {license.district}
                     </span>
                   </td>
                   <td className="px-5 py-3.5">
-                    <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button className="w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-indigo-50 hover:border-indigo-300 text-sm transition-all shadow-sm" title="Xem">👁</button>
-                      <button className="w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-amber-50 hover:border-amber-300 text-sm transition-all shadow-sm" title="Chỉnh sửa">✏️</button>
+                    <div className="flex gap-1.5 opacity-0 transition-opacity group-hover:opacity-100">
+                      <button
+                        className="h-7 w-7 rounded-lg border border-slate-200 bg-white text-sm shadow-sm transition-all hover:border-indigo-300 hover:bg-indigo-50 disabled:cursor-not-allowed disabled:opacity-60"
+                        title={loadingLicenseId === license.id ? 'Đang tải' : 'Xem'}
+                        onClick={() => void handleViewLicense(license)}
+                        disabled={Boolean(loadingLicenseId)}
+                      >
+                        {loadingLicenseId === license.id ? (
+                          <span className="mx-auto block h-3.5 w-3.5 animate-spin rounded-full border-2 border-indigo-200 border-t-indigo-600" />
+                        ) : (
+                          '👁'
+                        )}
+                      </button>
+                      <button
+                        className="h-7 w-7 rounded-lg border border-slate-200 bg-white text-sm shadow-sm transition-all hover:border-amber-300 hover:bg-amber-50"
+                        title="Chỉnh sửa"
+                      >
+                        ✏️
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -259,26 +407,35 @@ export default function GiayPhepPage() {
             </tbody>
           </table>
 
-          <div className="px-5 py-3.5 border-t border-slate-100 flex items-center justify-between bg-slate-50/50">
-            <span className="text-[12px] text-slate-400 font-medium">
+          <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50/50 px-5 py-3.5">
+            <span className="text-[12px] font-medium text-slate-400">
               Hiển thị <strong className="text-slate-600">{filtered.length}</strong> trong tổng số{' '}
               <strong className="text-slate-600">{mockLicenses.length}</strong> giấy phép
             </span>
             <div className="flex gap-1">
-              {[1, 2, 3].map((p) => (
+              {[1, 2, 3].map((page) => (
                 <button
-                  key={p}
-                  className={`w-7 h-7 rounded-lg text-[12px] font-semibold transition-all ${
-                    p === 1 ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-100'
+                  key={page}
+                  className={`h-7 w-7 rounded-lg text-[12px] font-semibold transition-all ${
+                    page === 1
+                      ? 'bg-indigo-600 text-white shadow-sm'
+                      : 'text-slate-500 hover:bg-slate-100'
                   }`}
                 >
-                  {p}
+                  {page}
                 </button>
               ))}
             </div>
           </div>
         </div>
       </div>
+
+      <LicenseDetailModal
+        open={isModalOpen}
+        loading={Boolean(loadingLicenseId)}
+        selectedLicense={selectedLicense}
+        onOpenChange={handleModalOpenChange}
+      />
     </div>
   );
 }
