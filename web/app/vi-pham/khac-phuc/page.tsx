@@ -1,5 +1,11 @@
 "use client";
 
+import DataTable from "@/components/DataTable";
+import TableCard, {
+  FilterSelect,
+  Pagination,
+  SearchInput,
+} from "@/components/TableCard";
 import { useState } from "react";
 
 interface ViolationFix {
