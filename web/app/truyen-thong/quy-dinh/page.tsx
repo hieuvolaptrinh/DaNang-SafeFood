@@ -137,7 +137,7 @@ export default function QuyDinhPage() {
         }
         footer={<Pagination info={`Hiển thị 1–${filtered.length} trong tổng số ${mockRegulations.length} quy định`} />}
       >
-        <DataTable columns={columns} data={filtered as unknown as Record<string, unknown>[]} emptyMessage="Không tìm thấy quy định nào" />
+        <DataTable columns={columns} data={filtered } emptyMessage="Không tìm thấy quy định nào" />
       </TableCard>
     </div>
   );

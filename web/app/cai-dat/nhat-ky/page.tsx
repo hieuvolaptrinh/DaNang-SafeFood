@@ -117,10 +117,11 @@ export default function NhatKyPage() {
       >
         <DataTable
           columns={columns}
-          data={filtered as unknown as Record<string, unknown>[]}
+          data={filtered }
           emptyMessage="Không có nhật ký nào"
         />
       </TableCard>
     </div>
   );
 }
+
