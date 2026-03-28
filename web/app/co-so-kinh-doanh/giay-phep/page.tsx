@@ -143,12 +143,12 @@ export default function GiayPhepPage() {
               </svg>
               Xuất CSV
             </button>
-            <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-700 text-white text-[13px] font-semibold hover:from-indigo-700 hover:to-blue-800 transition-all shadow-md shadow-indigo-200">
+            {/* <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-700 text-white text-[13px] font-semibold hover:from-indigo-700 hover:to-blue-800 transition-all shadow-md shadow-indigo-200">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
               </svg>
               Cấp giấy phép mới
-            </button>
+            </button> */}
           </div>
         </div>
 
