@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { FiEdit, FiEye } from 'react-icons/fi';
 import { mockInspections, type Inspection } from '@/data/mockData';
 import AlertBanner from '@/components/AlertBanner';
 import Badge from '@/components/Badge';
@@ -152,14 +153,14 @@ export default function ThanhTraKiemDinhPage() {
             onClick={() => handleViewInspection(inspection)}
             className="h-7 w-7 rounded-md border border-slate-200 bg-white text-sm transition-colors hover:bg-slate-50"
           >
-            👁
+            <FiEye size={16} className="mx-auto" />
           </button>
           <button
             type="button"
             onClick={() => handleEditInspection(inspection)}
             className="h-7 w-7 rounded-md border border-slate-200 bg-white text-sm transition-colors hover:bg-slate-50"
           >
-            ✏️
+            <FiEdit size={16} className="mx-auto" />
           </button>
         </div>
       ),

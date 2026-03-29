@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { FiEye } from 'react-icons/fi';
 import DataTable, { Column } from '@/components/DataTable';
 import Badge from '@/components/Badge';
 import TableCard, { SearchInput, FilterSelect, Pagination } from '@/components/TableCard';
@@ -340,7 +341,7 @@ export default function KetQuaPage() {
             className="h-7 w-7 rounded-md border border-slate-200 bg-white text-sm transition-colors hover:bg-slate-50"
             title="Xem chi tiết"
           >
-            👁
+            <FiEye size={16} className="mx-auto" />
           </button>
         </div>
       ),

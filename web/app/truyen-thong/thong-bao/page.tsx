@@ -7,6 +7,7 @@ import TableCard, {
   SearchInput,
 } from "@/components/TableCard";
 import { useState } from "react";
+import { FiEdit, FiEye } from "react-icons/fi";
 
 interface Notification {
   id: string;
@@ -432,13 +433,13 @@ export default function ThongBaoPage() {
                             className="w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-violet-50 hover:border-violet-300 text-sm transition-all shadow-sm"
                             title="Xem"
                           >
-                            👁
+                            <FiEye size={16} className="mx-auto" />
                           </button>
                           <button
                             className="w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-amber-50 hover:border-amber-300 text-sm transition-all shadow-sm"
                             title="Chỉnh sửa"
                           >
-                            ✏️
+                            <FiEdit size={16} className="mx-auto" />
                           </button>
                         </div>
                       </td>
