@@ -3,24 +3,25 @@
 import { useState } from 'react';
 import { FiEye } from 'react-icons/fi';
 import { mockFeedback, CitizenFeedback } from '@/data/mockData';
+import Link from 'next/link';
 
 const TYPE_CONFIG: Record<string, { bg: string; text: string; border: string; dot: string }> = {
-  'Khiếu nại vệ sinh': { bg: 'bg-red-50',    text: 'text-red-700',    border: 'border-red-200',    dot: 'bg-red-400' },
-  'Hàng giả':          { bg: 'bg-purple-50',  text: 'text-purple-700', border: 'border-purple-200', dot: 'bg-purple-400' },
-  'Ngộ độc thực phẩm': { bg: 'bg-orange-50',  text: 'text-orange-700', border: 'border-orange-200', dot: 'bg-orange-400' },
-  'Câu hỏi chung':     { bg: 'bg-slate-50',   text: 'text-slate-600',  border: 'border-slate-200',  dot: 'bg-slate-400' },
+  'Khiếu nại vệ sinh': { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', dot: 'bg-red-400' },
+  'Hàng giả': { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200', dot: 'bg-purple-400' },
+  'Ngộ độc thực phẩm': { bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-200', dot: 'bg-orange-400' },
+  'Câu hỏi chung': { bg: 'bg-slate-50', text: 'text-slate-600', border: 'border-slate-200', dot: 'bg-slate-400' },
 };
 
 const PRIORITY_CONFIG: Record<string, { bg: string; text: string; border: string; dot: string; label: string }> = {
-  high:   { bg: 'bg-red-50',    text: 'text-red-700',    border: 'border-red-200',    dot: 'bg-red-500',    label: 'Cao' },
-  medium: { bg: 'bg-amber-50',  text: 'text-amber-700',  border: 'border-amber-200',  dot: 'bg-amber-400',  label: 'Trung bình' },
-  low:    { bg: 'bg-sky-50',    text: 'text-sky-700',    border: 'border-sky-200',    dot: 'bg-sky-400',    label: 'Thấp' },
+  high: { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', dot: 'bg-red-500', label: 'Cao' },
+  medium: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', dot: 'bg-amber-400', label: 'Trung bình' },
+  low: { bg: 'bg-sky-50', text: 'text-sky-700', border: 'border-sky-200', dot: 'bg-sky-400', label: 'Thấp' },
 };
 
 const STATUS_CONFIG: Record<string, { bg: string; text: string; border: string; dot: string; icon: string; label: string }> = {
-  'open':        { bg: 'bg-amber-50',  text: 'text-amber-700',  border: 'border-amber-200',  dot: 'bg-amber-400',  icon: '📬', label: 'Đang mở' },
-  'in-progress': { bg: 'bg-blue-50',   text: 'text-blue-700',   border: 'border-blue-200',   dot: 'bg-blue-500',   icon: '🔄', label: 'Đang xử lý' },
-  'resolved':    { bg: 'bg-emerald-50',text: 'text-emerald-700',border: 'border-emerald-200',dot: 'bg-emerald-500',icon: '✓',  label: 'Đã giải quyết' },
+  'open': { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', dot: 'bg-amber-400', icon: '📬', label: 'Đang mở' },
+  'in-progress': { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', dot: 'bg-blue-500', icon: '🔄', label: 'Đang xử lý' },
+  'resolved': { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', dot: 'bg-emerald-500', icon: '✓', label: 'Đã giải quyết' },
 };
 
 export default function PhanAnhCongDanPage() {
@@ -30,16 +31,16 @@ export default function PhanAnhCongDanPage() {
 
   const filtered = mockFeedback.filter((f: CitizenFeedback) => {
     const matchSearch = !search || f.businessReported.toLowerCase().includes(search.toLowerCase()) || f.submitter.toLowerCase().includes(search.toLowerCase());
-    const matchType   = !typeFilter   || f.type   === typeFilter;
+    const matchType = !typeFilter || f.type === typeFilter;
     const matchStatus = !statusFilter || f.status === statusFilter;
     return matchSearch && matchType && matchStatus;
   });
 
   const STATS = [
-    { label: 'Tổng phản ánh',   value: String(mockFeedback.length),                                          icon: '📣', color: 'from-violet-600 to-purple-600' },
-    { label: 'Đang mở',         value: String(mockFeedback.filter((f: CitizenFeedback) => f.status === 'open').length),        icon: '📬', color: 'from-amber-500 to-orange-500' },
-    { label: 'Đang xử lý',      value: String(mockFeedback.filter((f: CitizenFeedback) => f.status === 'in-progress').length), icon: '🔄', color: 'from-blue-500 to-cyan-600' },
-    { label: 'Đã giải quyết',   value: String(mockFeedback.filter((f: CitizenFeedback) => f.status === 'resolved').length),    icon: '✅', color: 'from-emerald-500 to-teal-500' },
+    { label: 'Tổng phản ánh', value: String(mockFeedback.length), icon: '📣', color: 'from-violet-600 to-purple-600' },
+    { label: 'Đang mở', value: String(mockFeedback.filter((f: CitizenFeedback) => f.status === 'open').length), icon: '📬', color: 'from-amber-500 to-orange-500' },
+    { label: 'Đang xử lý', value: String(mockFeedback.filter((f: CitizenFeedback) => f.status === 'in-progress').length), icon: '🔄', color: 'from-blue-500 to-cyan-600' },
+    { label: 'Đã giải quyết', value: String(mockFeedback.filter((f: CitizenFeedback) => f.status === 'resolved').length), icon: '✅', color: 'from-emerald-500 to-teal-500' },
   ];
 
   return (
@@ -83,14 +84,14 @@ export default function PhanAnhCongDanPage() {
         <div className="bg-white rounded-2xl p-5 mb-4 shadow-sm border border-slate-100">
           <p className="text-[12px] font-bold text-slate-400 uppercase tracking-wider mb-3">Tỷ lệ theo trạng thái xử lý</p>
           <div className="flex gap-2 h-2 rounded-full overflow-hidden">
-            <div className="bg-amber-400 rounded-full"  style={{ flex: mockFeedback.filter((f: CitizenFeedback) => f.status === 'open').length }} />
-            <div className="bg-blue-500 rounded-full"   style={{ flex: mockFeedback.filter((f: CitizenFeedback) => f.status === 'in-progress').length }} />
+            <div className="bg-amber-400 rounded-full" style={{ flex: mockFeedback.filter((f: CitizenFeedback) => f.status === 'open').length }} />
+            <div className="bg-blue-500 rounded-full" style={{ flex: mockFeedback.filter((f: CitizenFeedback) => f.status === 'in-progress').length }} />
             <div className="bg-emerald-500 rounded-full" style={{ flex: mockFeedback.filter((f: CitizenFeedback) => f.status === 'resolved').length }} />
           </div>
           <div className="flex gap-5 mt-2.5">
             {[
-              { color: 'bg-amber-400',   label: 'Đang mở',       val: String(mockFeedback.filter((f: CitizenFeedback) => f.status === 'open').length) },
-              { color: 'bg-blue-500',    label: 'Đang xử lý',    val: String(mockFeedback.filter((f: CitizenFeedback) => f.status === 'in-progress').length) },
+              { color: 'bg-amber-400', label: 'Đang mở', val: String(mockFeedback.filter((f: CitizenFeedback) => f.status === 'open').length) },
+              { color: 'bg-blue-500', label: 'Đang xử lý', val: String(mockFeedback.filter((f: CitizenFeedback) => f.status === 'in-progress').length) },
               { color: 'bg-emerald-500', label: 'Đã giải quyết', val: String(mockFeedback.filter((f: CitizenFeedback) => f.status === 'resolved').length) },
             ].map((item) => (
               <div key={item.label} className="flex items-center gap-1.5">
@@ -148,9 +149,9 @@ export default function PhanAnhCongDanPage() {
               {filtered.length === 0 ? (
                 <tr><td colSpan={8} className="px-5 py-12 text-center text-[13px] text-slate-400">Không có phản ánh nào</td></tr>
               ) : filtered.map((f: CitizenFeedback) => {
-                const typeCfg  = TYPE_CONFIG[f.type]     || { bg: 'bg-slate-50', text: 'text-slate-600', border: 'border-slate-200', dot: 'bg-slate-400' };
-                const prioCfg  = PRIORITY_CONFIG[f.priority] || { bg: 'bg-slate-50', text: 'text-slate-600', border: 'border-slate-200', dot: 'bg-slate-400', label: f.priority };
-                const statCfg  = STATUS_CONFIG[f.status]  || { bg: 'bg-slate-50', text: 'text-slate-600', border: 'border-slate-200', dot: 'bg-slate-400', icon: '•', label: f.status };
+                const typeCfg = TYPE_CONFIG[f.type] || { bg: 'bg-slate-50', text: 'text-slate-600', border: 'border-slate-200', dot: 'bg-slate-400' };
+                const prioCfg = PRIORITY_CONFIG[f.priority] || { bg: 'bg-slate-50', text: 'text-slate-600', border: 'border-slate-200', dot: 'bg-slate-400', label: f.priority };
+                const statCfg = STATUS_CONFIG[f.status] || { bg: 'bg-slate-50', text: 'text-slate-600', border: 'border-slate-200', dot: 'bg-slate-400', icon: '•', label: f.status };
                 return (
                   <tr key={f.id} className="hover:bg-violet-50/30 transition-colors group">
                     <td className="px-5 py-3.5">
@@ -183,7 +184,11 @@ export default function PhanAnhCongDanPage() {
                     </td>
                     <td className="px-5 py-3.5">
                       <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button className="w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-violet-50 hover:border-violet-300 text-sm transition-all shadow-sm" title="Xem"><FiEye size={16} className="mx-auto" /></button>
+                        <Link href={`/phan-anh-cong-dan/${f.id}`}>
+                          <button className="w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-violet-50 hover:border-violet-300 text-sm transition-all shadow-sm">
+                            👁
+                          </button>
+                        </Link>
                         <button className="w-7 h-7 rounded-lg border border-blue-200 bg-blue-600 hover:bg-blue-700 text-white text-sm transition-all shadow-sm" title="Phản hồi">💬</button>
                       </div>
                     </td>

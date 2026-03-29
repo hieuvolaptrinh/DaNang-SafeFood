@@ -1,13 +1,7 @@
 "use client";
 
-import DataTable from "@/components/DataTable";
-import TableCard, {
-  FilterSelect,
-  Pagination,
-  SearchInput,
-} from "@/components/TableCard";
-import { useState } from "react";
-import { FiEdit, FiEye } from "react-icons/fi";
+import { useState } from 'react';
+import Link from 'next/link';
 
 interface ViolationFix {
   id: string;
@@ -59,81 +53,22 @@ const mockViolationFixes: ViolationFix[] = [
 ];
 
 const SEVERITY_CONFIG = {
-  "nghiêm trọng": {
-    label: "Nghiêm trọng",
-    bg: "bg-red-50",
-    text: "text-red-700",
-    dot: "bg-red-500",
-    border: "border-red-200",
-  },
-  "trung bình": {
-    label: "Trung bình",
-    bg: "bg-amber-50",
-    text: "text-amber-700",
-    dot: "bg-amber-400",
-    border: "border-amber-200",
-  },
-  nhẹ: {
-    label: "Nhẹ",
-    bg: "bg-sky-50",
-    text: "text-sky-700",
-    dot: "bg-sky-400",
-    border: "border-sky-200",
-  },
+  'nghiêm trọng': { label: 'Nghiêm trọng', bg: 'bg-red-50', text: 'text-red-700', dot: 'bg-red-500', border: 'border-red-200' },
+  'trung bình': { label: 'Trung bình', bg: 'bg-amber-50', text: 'text-amber-700', dot: 'bg-amber-400', border: 'border-amber-200' },
+  'nhẹ': { label: 'Nhẹ', bg: 'bg-sky-50', text: 'text-sky-700', dot: 'bg-sky-400', border: 'border-sky-200' },
 };
 
 const FIX_STATUS_CONFIG = {
-  pending: {
-    label: "Chờ khắc phục",
-    bg: "bg-slate-50",
-    text: "text-slate-600",
-    icon: "⏸",
-  },
-  in_progress: {
-    label: "Đang khắc phục",
-    bg: "bg-blue-50",
-    text: "text-blue-700",
-    icon: "🔄",
-  },
-  completed: {
-    label: "Đã hoàn thành",
-    bg: "bg-emerald-50",
-    text: "text-emerald-700",
-    icon: "✓",
-  },
+  pending: { label: 'Chờ khắc phục', bg: 'bg-slate-50', text: 'text-slate-600', icon: '⏸' },
+  in_progress: { label: 'Đang khắc phục', bg: 'bg-blue-50', text: 'text-blue-700', icon: '🔄' },
+  completed: { label: 'Đã hoàn thành', bg: 'bg-emerald-50', text: 'text-emerald-700', icon: '✓' },
 };
 
 const STATS = [
-  {
-    label: "Tổng hồ sơ",
-    value: String(mockViolationFixes.length),
-    icon: "📋",
-    color: "from-violet-600 to-purple-600",
-  },
-  {
-    label: "Chờ khắc phục",
-    value: String(
-      mockViolationFixes.filter((v) => v.fixStatus === "pending").length,
-    ),
-    icon: "⏸",
-    color: "from-slate-500 to-slate-600",
-  },
-  {
-    label: "Đang khắc phục",
-    value: String(
-      mockViolationFixes.filter((v) => v.fixStatus === "in_progress").length,
-    ),
-    icon: "🔄",
-    color: "from-blue-500 to-cyan-600",
-  },
-  {
-    label: "Đã hoàn thành",
-    value: String(
-      mockViolationFixes.filter((v) => v.fixStatus === "completed").length,
-    ),
-    icon: "✅",
-    color: "from-emerald-500 to-teal-500",
-  },
+  { label: 'Tổng hồ sơ', value: String(mockViolationFixes.length), icon: '📋', color: 'from-violet-600 to-purple-600' },
+  { label: 'Chờ khắc phục', value: String(mockViolationFixes.filter(v => v.fixStatus === 'pending').length), icon: '⏸', color: 'from-slate-500 to-slate-600' },
+  { label: 'Đang khắc phục', value: String(mockViolationFixes.filter(v => v.fixStatus === 'in_progress').length), icon: '🔄', color: 'from-blue-500 to-cyan-600' },
+  { label: 'Đã hoàn thành', value: String(mockViolationFixes.filter(v => v.fixStatus === 'completed').length), icon: '✅', color: 'from-emerald-500 to-teal-500' },
 ];
 
 export default function KhacPhucPage() {
@@ -207,56 +142,15 @@ export default function KhacPhucPage() {
             Tỷ lệ khắc phục theo mức độ vi phạm
           </p>
           <div className="flex gap-2 h-2 rounded-full overflow-hidden">
-            <div
-              className="bg-red-500 rounded-full"
-              style={{
-                flex: mockViolationFixes.filter(
-                  (v) => v.severity === "nghiêm trọng",
-                ).length,
-              }}
-            />
-            <div
-              className="bg-amber-400 rounded-full"
-              style={{
-                flex: mockViolationFixes.filter(
-                  (v) => v.severity === "trung bình",
-                ).length,
-              }}
-            />
-            <div
-              className="bg-sky-400 rounded-full"
-              style={{
-                flex: mockViolationFixes.filter((v) => v.severity === "nhẹ")
-                  .length,
-              }}
-            />
+            <div className="bg-red-500 rounded-full" style={{ flex: mockViolationFixes.filter(v => v.severity === 'nghiêm trọng').length }} />
+            <div className="bg-amber-400 rounded-full" style={{ flex: mockViolationFixes.filter(v => v.severity === 'trung bình').length }} />
+            <div className="bg-sky-400 rounded-full" style={{ flex: mockViolationFixes.filter(v => v.severity === 'nhẹ').length }} />
           </div>
           <div className="flex gap-5 mt-2.5">
             {[
-              {
-                color: "bg-red-500",
-                label: "Nghiêm trọng",
-                val: String(
-                  mockViolationFixes.filter(
-                    (v) => v.severity === "nghiêm trọng",
-                  ).length,
-                ),
-              },
-              {
-                color: "bg-amber-400",
-                label: "Trung bình",
-                val: String(
-                  mockViolationFixes.filter((v) => v.severity === "trung bình")
-                    .length,
-                ),
-              },
-              {
-                color: "bg-sky-400",
-                label: "Nhẹ",
-                val: String(
-                  mockViolationFixes.filter((v) => v.severity === "nhẹ").length,
-                ),
-              },
+              { color: 'bg-red-500', label: 'Nghiêm trọng', val: String(mockViolationFixes.filter(v => v.severity === 'nghiêm trọng').length) },
+              { color: 'bg-amber-400', label: 'Trung bình', val: String(mockViolationFixes.filter(v => v.severity === 'trung bình').length) },
+              { color: 'bg-sky-400', label: 'Nhẹ', val: String(mockViolationFixes.filter(v => v.severity === 'nhẹ').length) },
             ].map((item) => (
               <div key={item.label} className="flex items-center gap-1.5">
                 <span className={`w-2 h-2 rounded-full ${item.color}`} />
@@ -422,11 +316,37 @@ export default function KhacPhucPage() {
                             <FiEdit size={16} className="mx-auto" />
                           </button>
                         </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
+                        <span className="font-semibold text-[13px] text-slate-800">{v.businessName}</span>
+                      </div>
+                    </td>
+                    <td className="px-5 py-3.5 text-[13px] text-slate-600 max-w-[180px]"><span className="line-clamp-1">{v.violationType}</span></td>
+                    <td className="px-5 py-3.5">
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold tracking-wide border ${sev.bg} ${sev.text} ${sev.border}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${sev.dot}`} />{sev.label}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3.5">
+                      <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold ${fix.bg} ${fix.text}`}>
+                        <span className="text-[10px]">{fix.icon}</span>{fix.label}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3.5 text-[13px] text-slate-500 font-mono">{v.deadline}</td>
+                    <td className="px-5 py-3.5 text-[13px] text-slate-500 font-mono">{v.updatedDate}</td>
+                    <td className="px-5 py-3.5">
+                      <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Link
+                          href={`/vi-pham/khac-phuc/${v.id}`}
+                          className="w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-violet-50 hover:border-violet-300 text-sm flex items-center justify-center transition-all shadow-sm"
+                          title="Xem chi tiết"
+                        >
+                          👁
+                        </Link>
+                        <button className="w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-amber-50 hover:border-amber-300 text-sm transition-all shadow-sm" title="Chỉnh sửa">✏️</button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
 

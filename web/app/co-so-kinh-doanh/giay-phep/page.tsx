@@ -1,15 +1,17 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { FiEdit, FiEye } from "react-icons/fi";
+import { useState } from 'react';
+import Link from 'next/link';
 
-import LicenseDetailModal, {
-  type LicenseDetailData,
-  type LicenseSummary,
-  type SelectedLicenseRecord,
-} from "@/components/LicenseDetailModal";
-
-type License = LicenseSummary;
+interface License {
+  id: string;
+  businessName: string;
+  type: string;
+  issueDate: string;
+  expiryDate: string;
+  status: 'valid' | 'expired' | 'revoked';
+  district: string;
+}
 
 const mockLicenses: License[] = [
   {
@@ -426,26 +428,19 @@ export default function GiayPhepPage() {
                     </span>
                   </td>
                   <td className="px-5 py-3.5">
-                    <div className="flex gap-1.5 opacity-0 transition-opacity group-hover:opacity-100">
-                      <button
-                        className="h-7 w-7 rounded-lg border border-slate-200 bg-white text-sm shadow-sm transition-all hover:border-indigo-300 hover:bg-indigo-50 disabled:cursor-not-allowed disabled:opacity-60"
-                        title={
-                          loadingLicenseId === license.id ? "Đang tải" : "Xem"
-                        }
-                        onClick={() => void handleViewLicense(license)}
-                        disabled={Boolean(loadingLicenseId)}
+                    <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Link
+                        href={`/co-so-kinh-doanh/giay-phep/${l.id}`}
+                        className="w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-indigo-50 hover:border-indigo-300 text-sm flex items-center justify-center transition-all shadow-sm"
+                        title="Xem chi tiết"
                       >
-                        {loadingLicenseId === license.id ? (
-                          <span className="mx-auto block h-3.5 w-3.5 animate-spin rounded-full border-2 border-indigo-200 border-t-indigo-600" />
-                        ) : (
-                          <FiEye size={16} className="mx-auto" />
-                        )}
-                      </button>
+                        👁
+                      </Link>
                       <button
-                        className="h-7 w-7 rounded-lg border border-slate-200 bg-white text-sm shadow-sm transition-all hover:border-amber-300 hover:bg-amber-50"
+                        className="w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-amber-50 hover:border-amber-300 text-sm flex items-center justify-center transition-all shadow-sm"
                         title="Chỉnh sửa"
                       >
-                        <FiEdit size={16} className="mx-auto" />
+                        ✏️
                       </button>
                     </div>
                   </td>
@@ -465,12 +460,9 @@ export default function GiayPhepPage() {
             <div className="flex gap-1">
               {[1, 2, 3].map((page) => (
                 <button
-                  key={page}
-                  className={`h-7 w-7 rounded-lg text-[12px] font-semibold transition-all ${
-                    page === 1
-                      ? "bg-indigo-600 text-white shadow-sm"
-                      : "text-slate-500 hover:bg-slate-100"
-                  }`}
+                  key={p}
+                  className={`w-7 h-7 rounded-lg text-[12px] font-semibold transition-all ${p === 1 ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-100'
+                    }`}
                 >
                   {page}
                 </button>

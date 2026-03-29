@@ -23,6 +23,8 @@ export interface TestRequest
     ViewInspectionRequestData {
   result?: string;
   reason?: string;
+  stampedFile?: string;           // Thêm field mới
+  technicalParams?: string;       // Thêm field mới (thông số kỹ thuật)
 }
 
 const mockTestRequests: TestRequest[] = [
@@ -118,15 +120,16 @@ function renderRequestStatus(status: TestRequest["status"]) {
 
 export default function YeuCauPage() {
   const { role } = useRole();
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
-  const [requests, setRequests] = useState<TestRequest[]>(mockTestRequests);
-  const [selectedRequest, setSelectedRequest] = useState<TestRequest | null>(
-    null,
-  );
-  const [mode, setMode] = useState<"list" | "create" | "view">("list");
-  const [selectedSampleId] = useState("SAMPLE-2025-001");
-  const [feedbackMessage, setFeedbackMessage] = useState("");
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [data, setData] = useState(mockTestRequests);
+
+  // Modal state - Đã thay đổi theo yêu cầu
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState<TestRequest | null>(null);
+  const [resultStatus, setResultStatus] = useState<'Đạt' | 'Không đạt'>('Đạt');
+  const [reason, setReason] = useState('');
+  const [stampedFileName, setStampedFileName] = useState('');   // Tên file có dấu mộc
 
   const canCreateRequest = role === "INSPECTOR";
 
@@ -167,15 +170,23 @@ export default function YeuCauPage() {
     },
   ];
 
-  const handleCreateClick = () => {
-    setFeedbackMessage("");
-    setSelectedRequest(null);
-    setMode("create");
+  const openResultModal = (request: TestRequest) => {
+    setSelectedRequest(request);
+    setResultStatus(request.result?.includes('Không đạt') ? 'Không đạt' : 'Đạt');
+    setReason(request.reason || '');
+    setStampedFileName('');
+    setIsModalOpen(true);
   };
 
-  const handleCancelCreate = () => {
-    setMode("list");
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setStampedFileName(file.name);
+    }
   };
+
+  const saveResult = () => {
+    if (!selectedRequest) return;
 
   const handleCreateSuccess = (request: FoodInspectionRequestRecord) => {
     setRequests((current) => [normalizeRequestForView(request), ...current]);
@@ -183,15 +194,29 @@ export default function YeuCauPage() {
     setFeedbackMessage("Đơn kiểm định đã được tạo và gửi thành công");
   };
 
-  const handleViewRequest = (request: TestRequest) => {
-    setSelectedRequest(request);
-    setFeedbackMessage("");
-    setMode("view");
-  };
+    setData(prev => prev.map(item =>
+      item.id === selectedRequest.id 
+        ? { 
+            ...item, 
+            result: finalResult, 
+            reason: resultStatus === 'Không đạt' ? reason.trim() : undefined,
+            stampedFile: stampedFileName || undefined,
+          } 
+        : item
+    ));
 
-  const handleBackToList = () => {
+    console.log('Kết quả kiểm nghiệm đã được lưu:', {
+      id: selectedRequest.id,
+      business: selectedRequest.business,
+      result: finalResult,
+      reason: resultStatus === 'Không đạt' ? reason.trim() : undefined,
+      stampedFile: stampedFileName,
+    });
+
+    setIsModalOpen(false);
     setSelectedRequest(null);
-    setMode("list");
+    setReason('');
+    setStampedFileName('');
   };
 
   const columns: Column<TestRequest>[] = [
@@ -261,6 +286,9 @@ export default function YeuCauPage() {
                 {request.reason}
               </div>
             )}
+            {r.stampedFile && (
+              <div className="text-[11px] text-emerald-600 mt-1">✓ Có file có dấu mộc</div>
+            )}
           </div>
         );
       },
@@ -287,8 +315,9 @@ export default function YeuCauPage() {
     <div className="min-h-screen bg-[#f5f6fa] font-sans">
       <div className="h-1 w-full bg-gradient-to-r from-violet-600 via-purple-500 to-pink-400" />
 
-      <div className="mx-auto max-w-[1200px] px-6 py-8">
-        <div className="mb-8 flex items-start justify-between">
+      <div className="max-w-[1200px] mx-auto px-6 py-8">
+        {/* Header, Stats, TableCard giữ nguyên như cũ */}
+        <div className="flex items-start justify-between mb-8">
           <div>
             <div className="mb-1 flex items-center gap-2">
               <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-violet-500">
@@ -303,11 +332,76 @@ export default function YeuCauPage() {
             </p>
           </div>
 
-          {mode === "list" && (
-            <div className="flex gap-3 pt-1">
-              <button
-                type="button"
-                className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-[13px] font-semibold text-slate-600 shadow-sm transition-all hover:border-slate-300 hover:bg-slate-50"
+          <div className="flex gap-3 pt-1">
+            <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-[13px] font-semibold text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm">
+              📥 Xuất danh sách
+            </button>
+            {canCreateRequest && (
+              <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-[13px] font-semibold transition-all shadow-sm">
+                + Tạo yêu cầu mới
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Stats Cards giữ nguyên */}
+        <div className="grid grid-cols-4 gap-4 mb-8">
+          {[
+            { label: 'Tổng yêu cầu', value: '248', icon: '📋', color: 'from-violet-600 to-purple-600' },
+            { label: 'Chờ xử lý', value: '67', icon: '⏳', color: 'from-amber-500 to-orange-500' },
+            { label: 'Đang thực hiện', value: '94', icon: '🔬', color: 'from-blue-500 to-cyan-600' },
+            { label: 'Hoàn thành', value: '187', icon: '✅', color: 'from-emerald-500 to-teal-500' },
+          ].map((s) => (
+            <div key={s.label} className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-[12px] font-semibold text-slate-400 uppercase tracking-wide mb-2">{s.label}</p>
+                  <p className="text-[30px] font-black text-slate-900 leading-none">{s.value}</p>
+                </div>
+                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${s.color} flex items-center justify-center text-xl shadow-sm`}>
+                  {s.icon}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <TableCard
+          title="Danh sách yêu cầu kiểm nghiệm"
+          controls={
+            <>
+              <SearchInput placeholder="Tìm mã yêu cầu, tên cơ sở..." onChange={setSearch} />
+              <FilterSelect
+                options={[
+                  { value: '', label: 'Tất cả trạng thái' },
+                  { value: 'pending', label: 'Chờ xử lý' },
+                  { value: 'processing', label: 'Đang thực hiện' },
+                  { value: 'completed', label: 'Hoàn thành' },
+                ]}
+                onChange={setStatusFilter}
+              />
+            </>
+          }
+          footer={<Pagination info={`Hiển thị ${filtered.length} trong tổng số ${mockTestRequests.length} yêu cầu`} />}
+        >
+          <DataTable 
+            columns={columns} 
+            data={filtered as unknown as Record<string, unknown>[]} 
+            emptyMessage="Không tìm thấy yêu cầu kiểm nghiệm nào"
+            rowClassName="hover:bg-violet-50/30 group transition-colors"
+          />
+        </TableCard>
+      </div>
+
+      {/* ==================== MODAL ĐÃ CHỈNH SỬA ==================== */}
+      {isModalOpen && selectedRequest && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+            <div className="px-6 py-5 border-b flex items-center justify-between bg-slate-50">
+              <h3 className="text-lg font-semibold text-slate-900">Nhập kết quả kiểm nghiệm</h3>
+              <button 
+                onClick={() => setIsModalOpen(false)}
+                className="text-3xl text-slate-400 hover:text-slate-600 leading-none"
               >
                 📥 Xuất danh sách
               </button>
@@ -347,62 +441,68 @@ export default function YeuCauPage() {
               </div>
             )}
 
-            <div className="mb-8 grid grid-cols-4 gap-4">
-              {stats.map((stat) => (
-                <div
-                  key={stat.label}
-                  className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Kết luận cuối cùng</label>
+                <select
+                  value={resultStatus}
+                  onChange={(e) => setResultStatus(e.target.value as 'Đạt' | 'Không đạt')}
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-violet-500"
                 >
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="mb-2 text-[12px] font-semibold uppercase tracking-wide text-slate-400">
-                        {stat.label}
-                      </p>
-                      <p className="text-[30px] font-black leading-none text-slate-900">
-                        {stat.value}
-                      </p>
-                    </div>
-                    <div
-                      className={`flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br text-xl shadow-sm ${stat.color}`}
-                    >
-                      {stat.icon}
-                    </div>
-                  </div>
+                  <option value="Đạt">Đạt tiêu chuẩn</option>
+                  <option value="Không đạt">Không đạt</option>
+                </select>
+              </div>
+
+              {/* Phần mới: Tải lên tệp kết quả có dấu mộc */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-3">
+                  Tải lên tệp kết quả có dấu mộc <span className="text-red-500">*</span>
+                </label>
+                <label className="border-2 border-dashed border-slate-300 hover:border-violet-400 rounded-2xl p-8 flex flex-col items-center cursor-pointer transition-colors">
+                  <input 
+                    type="file" 
+                    onChange={handleFileChange} 
+                    className="hidden" 
+                    accept=".pdf,.jpg,.png" 
+                  />
+                  <div className="text-4xl mb-3">📎</div>
+                  <p className="font-medium text-slate-700">
+                    {stampedFileName || "Chọn file PDF hoặc ảnh có dấu mộc"}
+                  </p>
+                  <p className="text-xs text-slate-400 mt-1">Định dạng: PDF, JPG, PNG</p>
+                </label>
+              </div>
+
+              {resultStatus === 'Không đạt' && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Lý do không đạt <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    value={reason}
+                    onChange={(e) => setReason(e.target.value)}
+                    placeholder="Nhập lý do chi tiết không đạt..."
+                    className="w-full h-32 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-violet-500 resize-y min-h-[120px]"
+                  />
                 </div>
               ))}
             </div>
 
-            <TableCard
-              title="Danh sách yêu cầu kiểm nghiệm"
-              controls={
-                <>
-                  <SearchInput
-                    placeholder="Tìm mã yêu cầu, tên cơ sở..."
-                    onChange={setSearch}
-                  />
-                  <FilterSelect
-                    options={[
-                      { value: "", label: "Tất cả trạng thái" },
-                      { value: "pending", label: "Chờ xử lý" },
-                      { value: "processing", label: "Đang thực hiện" },
-                      { value: "completed", label: "Hoàn thành" },
-                    ]}
-                    onChange={setStatusFilter}
-                  />
-                </>
-              }
-              footer={
-                <Pagination
-                  info={`Hiển thị ${filtered.length} trong tổng số ${requests.length} yêu cầu`}
-                />
-              }
-            >
-              <DataTable
-                columns={columns}
-                data={filtered}
-                emptyMessage="Không tìm thấy yêu cầu kiểm nghiệm nào"
-              />
-            </TableCard>
+            <div className="px-6 py-5 border-t bg-slate-50 flex gap-3 justify-end">
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="px-6 py-2.5 text-slate-600 hover:bg-slate-100 rounded-xl font-medium transition-colors"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={saveResult}
+                disabled={resultStatus === 'Không đạt' && !reason.trim() || !stampedFileName}
+                className="px-6 py-2.5 bg-violet-600 hover:bg-violet-700 disabled:bg-slate-300 text-white font-semibold rounded-xl transition-colors"
+              >
+                Lưu kết quả
+              </button>
+            </div>
           </div>
         )}
       </div>
