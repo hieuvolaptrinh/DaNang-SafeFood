@@ -1,7 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { FormEvent, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 import type { Inspection } from '@/data/mockData';
 import AlertBanner from '@/components/AlertBanner';
 import TableCard from '@/components/TableCard';
@@ -14,7 +14,23 @@ type ConclusionStatus = 'pass' | 'fail' | '';
 
 interface CreateInspectionFormProps {
   onCancel: () => void;
-  onSuccess: (record: Inspection) => void;
+  onSuccess: (record: InspectionFormResult) => void;
+  mode?: 'create' | 'edit' | 'view';
+  data?: Partial<InspectionFormState>;
+  recordId?: string;
+}
+
+export interface InspectionFormResult extends Omit<InspectionFormState, 'checklist' | 'violationStatus' | 'conclusion'> {
+  id: string;
+  business: string;
+  type: string;
+  inspector: string;
+  date: string;
+  result: 'pass' | 'fail';
+  score: number;
+  checklist: Record<string, 'pass' | 'fail'>;
+  violationStatus: 'none' | 'has';
+  conclusion: 'pass' | 'fail';
 }
 
 interface ChecklistItem {
@@ -34,6 +50,10 @@ interface InspectionFormState {
   owner: string;
   businessType: string;
   inspectionTime: string;
+  businessLicense: string;
+  foodSafetyCertificate: string;
+  healthCertificate: string;
+  trainingCertificate: string;
   checklist: Record<string, ChecklistResult>;
   violationStatus: ViolationStatus;
   violationDescription: string;
@@ -117,6 +137,10 @@ function createInitialFormState(): InspectionFormState {
     owner: '',
     businessType: '',
     inspectionTime: '',
+    businessLicense: '',
+    foodSafetyCertificate: '',
+    healthCertificate: '',
+    trainingCertificate: '',
     checklist: createInitialChecklist(),
     violationStatus: '',
     violationDescription: '',
@@ -179,7 +203,7 @@ function saveDraft(state: InspectionFormState) {
   );
 }
 
-function mockCreateInspectionRecord(state: InspectionFormState) {
+function mockCreateInspectionRecord(state: InspectionFormState, recordId?: string) {
   return new Promise<Inspection>((resolve, reject) => {
     window.setTimeout(() => {
       if (typeof navigator !== 'undefined' && !navigator.onLine) {
@@ -192,7 +216,7 @@ function mockCreateInspectionRecord(state: InspectionFormState) {
       const score = Math.round((passedItems / totalChecklistItems) * 100);
 
       resolve({
-        id: `INS-${Date.now().toString().slice(-6)}`,
+        id: recordId ?? `INS-${Date.now().toString().slice(-6)}`,
         business: state.businessName.trim(),
         type: 'Kiểm tra ATVSTP',
         inspector: 'Thanh tra viên phụ trách',
@@ -212,11 +236,26 @@ function FieldLabel({ htmlFor, children }: { htmlFor?: string; children: ReactNo
   );
 }
 
-export default function CreateInspectionForm({ onCancel, onSuccess }: CreateInspectionFormProps) {
+export default function CreateInspectionForm({
+  onCancel,
+  onSuccess,
+  mode = 'create',
+  data,
+  recordId,
+}: CreateInspectionFormProps) {
   const [form, setForm] = useState<InspectionFormState>(() => createInitialFormState());
   const [submitError, setSubmitError] = useState('');
   const [showValidation, setShowValidation] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const isViewMode = mode === 'view';
+  const isEditMode = mode === 'edit';
+
+  useEffect(() => {
+    setForm((current) => ({ ...createInitialFormState(), ...data }));
+    setShowValidation(false);
+    setSubmitError('');
+  }, [data, mode]);
 
   const validation = useMemo(() => buildValidation(form), [form]);
   const shouldDisableSubmit = isSubmitting || (showValidation && !validation.isValid);
@@ -242,6 +281,11 @@ export default function CreateInspectionForm({ onCancel, onSuccess }: CreateInsp
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
+    if (isViewMode) {
+      return;
+    }
+
     setShowValidation(true);
 
     if (!validation.isValid) {
@@ -257,8 +301,18 @@ export default function CreateInspectionForm({ onCancel, onSuccess }: CreateInsp
     setSubmitError('');
 
     try {
-      const record = await mockCreateInspectionRecord(form);
-      onSuccess(record);
+      const saved = await mockCreateInspectionRecord(form, recordId);
+      const payload: InspectionFormResult = {
+        ...form,
+        id: saved.id,
+        business: saved.business,
+        type: saved.type,
+        inspector: saved.inspector,
+        date: saved.date,
+        result: saved.result,
+        score: saved.score,
+      };
+      onSuccess(payload);
     } catch {
       saveDraft(form);
       setSubmitError('Mất kết nối mạng, dữ liệu đã được lưu nháp');
@@ -280,7 +334,7 @@ export default function CreateInspectionForm({ onCancel, onSuccess }: CreateInsp
         />
       )}
 
-      <TableCard title="Tạo hồ sơ kiểm tra ATVSTP">
+      <TableCard title={isViewMode ? 'Xem hồ sơ kiểm tra ATVSTP' : isEditMode ? 'Chỉnh sửa hồ sơ kiểm tra ATVSTP' : 'Tạo hồ sơ kiểm tra ATVSTP'}>
         <form onSubmit={handleSubmit} className="space-y-6 p-5" noValidate>
           <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-5">
             <div>
@@ -383,7 +437,7 @@ export default function CreateInspectionForm({ onCancel, onSuccess }: CreateInsp
             )}
           >
             <div>
-              <h2 className="text-base font-bold text-slate-900">2. Checklist đánh giá</h2>
+              <h2 className="text-base font-bold text-slate-900">{isViewMode ? '3. Checklist đánh giá' : '2. Checklist đánh giá'}</h2>
               <p className="mt-1 text-sm text-slate-500">Mỗi tiêu chí phải được chọn Đạt hoặc Không đạt.</p>
             </div>
 
@@ -441,9 +495,32 @@ export default function CreateInspectionForm({ onCancel, onSuccess }: CreateInsp
             </div>
           </section>
 
+          {isViewMode && (
+            <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-5">
+              <div>
+                <h2 className="text-base font-bold text-slate-900">2. Hồ sơ pháp lý</h2>
+                <p className="mt-1 text-sm text-slate-500">Tình trạng giấy tờ pháp lý của cơ sở.</p>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                {[
+                  { label: 'Giấy phép kinh doanh', value: form.businessLicense || 'Chưa cập nhật' },
+                  { label: 'Giấy chứng nhận ATTP', value: form.foodSafetyCertificate || 'Chưa cập nhật' },
+                  { label: 'Giấy khám sức khỏe', value: form.healthCertificate || 'Chưa cập nhật' },
+                  { label: 'Giấy tập huấn ATTP', value: form.trainingCertificate || 'Chưa cập nhật' },
+                ].map((item) => (
+                  <div key={item.label} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <p className="text-sm text-slate-600">{item.label}</p>
+                    <p className="mt-2 text-sm font-semibold text-slate-900">{item.value}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
           <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-5">
             <div>
-              <h2 className="text-base font-bold text-slate-900">3. Vi phạm</h2>
+              <h2 className="text-base font-bold text-slate-900">{isViewMode ? '4. Vi phạm' : '3. Vi phạm'}</h2>
               <p className="mt-1 text-sm text-slate-500">Xác định tình trạng vi phạm và mô tả chi tiết nếu có.</p>
             </div>
 
@@ -498,7 +575,7 @@ export default function CreateInspectionForm({ onCancel, onSuccess }: CreateInsp
 
           <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-5">
             <div>
-              <h2 className="text-base font-bold text-slate-900">4. Kết luận</h2>
+              <h2 className="text-base font-bold text-slate-900">{isViewMode ? '5. Kết luận' : '4. Kết luận'}</h2>
               <p className="mt-1 text-sm text-slate-500">Tổng hợp kết quả và nhận xét chung cho biên bản.</p>
             </div>
 
@@ -551,7 +628,7 @@ export default function CreateInspectionForm({ onCancel, onSuccess }: CreateInsp
 
           <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-5">
             <div>
-              <h2 className="text-base font-bold text-slate-900">5. Kiến nghị</h2>
+              <h2 className="text-base font-bold text-slate-900">{isViewMode ? '6. Kiến nghị' : '5. Kiến nghị'}</h2>
               <p className="mt-1 text-sm text-slate-500">Đề xuất biện pháp xử lý và kiến nghị tiếp theo.</p>
             </div>
 
@@ -603,15 +680,23 @@ export default function CreateInspectionForm({ onCancel, onSuccess }: CreateInsp
               disabled={isSubmitting}
               className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Hủy
+              {isViewMode ? 'Quay lại' : 'Hủy'}
             </button>
-            <button
-              type="submit"
-              disabled={shouldDisableSubmit}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300"
-            >
-              {isSubmitting ? 'Đang lưu...' : 'Lưu biên bản'}
-            </button>
+            {!isViewMode && (
+              <button
+                type="submit"
+                disabled={shouldDisableSubmit}
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+              >
+                {isSubmitting
+                  ? isEditMode
+                    ? 'Đang cập nhật...'
+                    : 'Đang lưu...'
+                  : isEditMode
+                    ? 'Cập nhật biên bản'
+                    : 'Lưu biên bản'}
+              </button>
+            )}
           </div>
         </form>
       </TableCard>

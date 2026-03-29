@@ -147,6 +147,16 @@ export default function DanhSachViPhamPage() {
 
   const districts = [...new Set(mockViolations.map((v) => v.district))];
 
+  const columns = [
+    { key: "id", label: "Mã vi phạm" },
+    { key: "businessName", label: "Tên cơ sở" },
+    { key: "violationType", label: "Loại vi phạm" },
+    { key: "severity", label: "Mức độ" },
+    { key: "detectedDate", label: "Ngày phát hiện" },
+    { key: "status", label: "Trạng thái" },
+    { key: "district", label: "Quận/Huyện" },
+  ];
+
   const filtered = mockViolations.filter((v) => {
     const matchSearch =
       !search ||
