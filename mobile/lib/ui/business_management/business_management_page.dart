@@ -190,10 +190,13 @@ class BusinessManagementPage extends StatelessWidget {
                         const SizedBox(width: 12),
                         Expanded(
                           child: _QuickAction(
-                            icon: Icons.edit_note_rounded,
-                            label: 'Cập nhật\nthông tin',
+                            icon: Icons.shield_outlined,
+                            label: 'Tình trạng\npháp lý',
                             color: const Color(0xFF42A5F5),
-                            onTap: () {},
+                            onTap: () => Navigator.pushNamed(
+                              context,
+                              Routes.businessStatus,
+                            ),
                           ),
                         ),
                       ],

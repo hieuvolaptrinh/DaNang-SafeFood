@@ -5,7 +5,7 @@ import 'package:mobile_ui/ui/login/login_page.dart';
 import 'package:mobile_ui/ui/register/register_page.dart';
 import 'package:mobile_ui/ui/forgot_password/forgot_password_page.dart';
 import 'package:mobile_ui/ui/main/main_scaffold.dart';
-import 'package:mobile_ui/ui/account/account_page.dart';
+import 'package:mobile_ui/ui/(user)/account/account_page.dart';
 import 'package:mobile_ui/ui/search/business_detail_page.dart';
 import 'package:mobile_ui/ui/notification/notification_detail_page.dart';
 import 'package:mobile_ui/ui/notification/notification_page.dart';
@@ -15,12 +15,17 @@ import 'package:mobile_ui/ui/business_management/pages/biz_detail_page.dart';
 import 'package:mobile_ui/ui/business_management/pages/business_registration_page.dart';
 import 'package:mobile_ui/ui/business_management/pages/violation_list_page.dart';
 import 'package:mobile_ui/ui/business_management/pages/violation_detail_page.dart';
+import 'package:mobile_ui/ui/business_management/pages/inspection_detail_page.dart';
+import 'package:mobile_ui/ui/business_management/pages/testing_detail_page.dart';
 import 'package:mobile_ui/ui/business_management/pages/business_complaint_page.dart';
+import 'package:mobile_ui/ui/business_management/pages/update_evidence_page.dart';
+import 'package:mobile_ui/ui/business_status/business_status_page.dart';
 import 'package:mobile_ui/viewmodel/login/login_cubit.dart';
 import 'package:mobile_ui/viewmodel/register/register_cubit.dart';
 import 'package:mobile_ui/viewmodel/forgot_password/forgot_password_cubit.dart';
 import 'package:mobile_ui/viewmodel/account/account_cubit.dart';
 import 'package:mobile_ui/viewmodel/notification/notification_cubit.dart';
+import 'package:mobile_ui/viewmodel/business_status/business_status_cubit.dart';
 
 class AppRouter {
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
@@ -50,9 +55,7 @@ class AppRouter {
         );
 
       case Routes.main:
-        return MaterialPageRoute(
-          builder: (_) => const MainScaffold(),
-        );
+        return MaterialPageRoute(builder: (_) => const MainScaffold());
 
       case Routes.account:
         return MaterialPageRoute(
@@ -65,17 +68,13 @@ class AppRouter {
       case Routes.businessDetail:
         final args = settings.arguments as Map<String, dynamic>?;
         return MaterialPageRoute(
-          builder: (_) => BusinessDetailPage(
-            businessName: args?['name'] ?? '',
-          ),
+          builder: (_) => BusinessDetailPage(businessName: args?['name'] ?? ''),
         );
 
       case Routes.notificationDetail:
         final args = settings.arguments as Map<String, dynamic>?;
         return MaterialPageRoute(
-          builder: (_) => NotificationDetailPage(
-            title: args?['title'] ?? '',
-          ),
+          builder: (_) => NotificationDetailPage(title: args?['title'] ?? ''),
         );
 
       case Routes.notifications:
@@ -87,25 +86,20 @@ class AppRouter {
         );
 
       case Routes.complaintForm:
-        return MaterialPageRoute(
-          builder: (_) => const ComplaintFormPage(),
-        );
+        return MaterialPageRoute(builder: (_) => const ComplaintFormPage());
 
       case Routes.complaintDetail:
         final args = settings.arguments as Map<String, dynamic>?;
         return MaterialPageRoute(
-          builder: (_) => ComplaintDetailPage(
-            complaintTitle: args?['title'] ?? '',
-          ),
+          builder: (_) =>
+              ComplaintDetailPage(complaintTitle: args?['title'] ?? ''),
         );
 
       // Business Management routes
       case Routes.bizDetail:
         final args = settings.arguments as Map<String, dynamic>?;
         return MaterialPageRoute(
-          builder: (_) => BizDetailPage(
-            businessName: args?['name'] ?? '',
-          ),
+          builder: (_) => BizDetailPage(businessName: args?['name'] ?? ''),
         );
 
       case Routes.businessRegistration:
@@ -114,21 +108,45 @@ class AppRouter {
         );
 
       case Routes.violationList:
-        return MaterialPageRoute(
-          builder: (_) => const ViolationListPage(),
-        );
+        return MaterialPageRoute(builder: (_) => const ViolationListPage());
 
       case Routes.violationDetail:
         final args = settings.arguments as Map<String, dynamic>?;
         return MaterialPageRoute(
-          builder: (_) => ViolationDetailPage(
-            violationTitle: args?['title'] ?? '',
-          ),
+          builder: (_) =>
+              ViolationDetailPage(violationTitle: args?['title'] ?? ''),
         );
 
       case Routes.businessComplaint:
+        return MaterialPageRoute(builder: (_) => const BusinessComplaintPage());
+
+      case Routes.updateEvidence:
+        final args = settings.arguments as Map<String, dynamic>?;
         return MaterialPageRoute(
-          builder: (_) => const BusinessComplaintPage(),
+          builder: (_) => UpdateEvidencePage(
+            title: args?['title'] ?? '',
+            isExpired: args?['isExpired'] ?? false,
+          ),
+        );
+
+      case Routes.inspectionDetail:
+        final args = settings.arguments as Map<String, dynamic>?;
+        return MaterialPageRoute(
+          builder: (_) => InspectionDetailPage(title: args?['title'] ?? ''),
+        );
+
+      case Routes.testingDetail:
+        final args = settings.arguments as Map<String, dynamic>?;
+        return MaterialPageRoute(
+          builder: (_) => TestingDetailPage(title: args?['title'] ?? ''),
+        );
+
+      case Routes.businessStatus:
+        return MaterialPageRoute(
+          builder: (_) => BlocProvider(
+            create: (_) => BusinessStatusCubit()..loadDocuments(),
+            child: const BusinessStatusPage(),
+          ),
         );
 
       default:

@@ -15,6 +15,7 @@ class AppTheme {
   static const Color surfaceBg = Color(0xFFF5F5F5);
   static const Color dividerColor = Color(0xFFE5E7EB);
   static const Color scaffoldBg = Color(0xFFFAFAFA);
+  static const Color success = Color(0xFF4CAF50);
 
   static ThemeData get lightTheme {
     final baseTextTheme = GoogleFonts.interTextTheme(
