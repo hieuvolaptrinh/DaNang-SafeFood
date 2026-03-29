@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 
 interface FoodSafetyWarning {
   id: string;
@@ -57,22 +58,22 @@ const mockWarnings: FoodSafetyWarning[] = [
 ];
 
 const LEVEL_CONFIG = {
-  cao:        { label: 'Cao',        bg: 'bg-red-50',    text: 'text-red-700',    dot: 'bg-red-500',    border: 'border-red-200' },
-  'trung bình': { label: 'Trung bình', bg: 'bg-amber-50',  text: 'text-amber-700',  dot: 'bg-amber-400',  border: 'border-amber-200' },
-  thấp:       { label: 'Thấp',       bg: 'bg-sky-50',    text: 'text-sky-700',    dot: 'bg-sky-400',    border: 'border-sky-200' },
+  cao: { label: 'Cao', bg: 'bg-red-50', text: 'text-red-700', dot: 'bg-red-500', border: 'border-red-200' },
+  'trung bình': { label: 'Trung bình', bg: 'bg-amber-50', text: 'text-amber-700', dot: 'bg-amber-400', border: 'border-amber-200' },
+  thấp: { label: 'Thấp', bg: 'bg-sky-50', text: 'text-sky-700', dot: 'bg-sky-400', border: 'border-sky-200' },
 };
 
 const STATUS_CONFIG = {
-  active:   { label: 'Đang hiệu lực', bg: 'bg-red-50',     text: 'text-red-700',     dot: 'bg-red-500',     border: 'border-red-200',     icon: '🔴' },
-  resolved: { label: 'Đã xử lý',     bg: 'bg-emerald-50', text: 'text-emerald-700', dot: 'bg-emerald-500', border: 'border-emerald-200', icon: '✓' },
-  expired:  { label: 'Hết hiệu lực', bg: 'bg-slate-50',   text: 'text-slate-500',   dot: 'bg-slate-400',   border: 'border-slate-200',   icon: '⏹' },
+  active: { label: 'Đang hiệu lực', bg: 'bg-red-50', text: 'text-red-700', dot: 'bg-red-500', border: 'border-red-200', icon: '🔴' },
+  resolved: { label: 'Đã xử lý', bg: 'bg-emerald-50', text: 'text-emerald-700', dot: 'bg-emerald-500', border: 'border-emerald-200', icon: '✓' },
+  expired: { label: 'Hết hiệu lực', bg: 'bg-slate-50', text: 'text-slate-500', dot: 'bg-slate-400', border: 'border-slate-200', icon: '⏹' },
 };
 
 const STATS = [
-  { label: 'Tổng cảnh báo',    value: String(mockWarnings.length),                                       icon: '🚨', color: 'from-violet-600 to-purple-600' },
-  { label: 'Đang hiệu lực',    value: String(mockWarnings.filter(w => w.status === 'active').length),    icon: '🔴', color: 'from-red-500 to-rose-600' },
-  { label: 'Mức độ cao',       value: String(mockWarnings.filter(w => w.level === 'cao').length),        icon: '⚠️', color: 'from-amber-500 to-orange-500' },
-  { label: 'Đã xử lý',         value: String(mockWarnings.filter(w => w.status === 'resolved').length),  icon: '✅', color: 'from-emerald-500 to-teal-500' },
+  { label: 'Tổng cảnh báo', value: String(mockWarnings.length), icon: '🚨', color: 'from-violet-600 to-purple-600' },
+  { label: 'Đang hiệu lực', value: String(mockWarnings.filter(w => w.status === 'active').length), icon: '🔴', color: 'from-red-500 to-rose-600' },
+  { label: 'Mức độ cao', value: String(mockWarnings.filter(w => w.level === 'cao').length), icon: '⚠️', color: 'from-amber-500 to-orange-500' },
+  { label: 'Đã xử lý', value: String(mockWarnings.filter(w => w.status === 'resolved').length), icon: '✅', color: 'from-emerald-500 to-teal-500' },
 ];
 
 export default function CanhBaoPage() {
@@ -108,9 +109,9 @@ export default function CanhBaoPage() {
             <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-[13px] font-semibold text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm">
               📥 Xuất CSV
             </button>
-            <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-[13px] font-semibold transition-all shadow-sm">
+            <Link href="/truyen-thong/canh-bao/new" className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-[13px] font-semibold transition-all shadow-sm">
               + Tạo cảnh báo mới
-            </button>
+            </Link>
           </div>
         </div>
 
@@ -131,15 +132,15 @@ export default function CanhBaoPage() {
         <div className="bg-white rounded-2xl p-5 mb-4 shadow-sm border border-slate-100">
           <p className="text-[12px] font-bold text-slate-400 uppercase tracking-wider mb-3">Tỷ lệ cảnh báo theo mức độ</p>
           <div className="flex gap-2 h-2 rounded-full overflow-hidden">
-            <div className="bg-red-500 rounded-full"   style={{ flex: mockWarnings.filter(w => w.level === 'cao').length }} />
+            <div className="bg-red-500 rounded-full" style={{ flex: mockWarnings.filter(w => w.level === 'cao').length }} />
             <div className="bg-amber-400 rounded-full" style={{ flex: mockWarnings.filter(w => w.level === 'trung bình').length }} />
-            <div className="bg-sky-400 rounded-full"   style={{ flex: mockWarnings.filter(w => w.level === 'thấp').length }} />
+            <div className="bg-sky-400 rounded-full" style={{ flex: mockWarnings.filter(w => w.level === 'thấp').length }} />
           </div>
           <div className="flex gap-5 mt-2.5">
             {[
-              { color: 'bg-red-500',   label: 'Cao',        val: String(mockWarnings.filter(w => w.level === 'cao').length) },
+              { color: 'bg-red-500', label: 'Cao', val: String(mockWarnings.filter(w => w.level === 'cao').length) },
               { color: 'bg-amber-400', label: 'Trung bình', val: String(mockWarnings.filter(w => w.level === 'trung bình').length) },
-              { color: 'bg-sky-400',   label: 'Thấp',       val: String(mockWarnings.filter(w => w.level === 'thấp').length) },
+              { color: 'bg-sky-400', label: 'Thấp', val: String(mockWarnings.filter(w => w.level === 'thấp').length) },
             ].map((item) => (
               <div key={item.label} className="flex items-center gap-1.5">
                 <span className={`w-2 h-2 rounded-full ${item.color}`} />
@@ -229,7 +230,13 @@ export default function CanhBaoPage() {
                     </td>
                     <td className="px-5 py-3.5">
                       <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button className="w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-violet-50 hover:border-violet-300 text-sm transition-all shadow-sm" title="Xem">👁</button>
+                        <Link
+                          href={`/truyen-thong/canh-bao/${w.id}`}
+                          className="w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-violet-50 hover:border-violet-300 text-sm flex items-center justify-center transition-all shadow-sm"
+                          title="Xem chi tiết"
+                        >
+                          👁
+                        </Link>
                         <button className="w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-amber-50 hover:border-amber-300 text-sm transition-all shadow-sm" title="Chỉnh sửa">✏️</button>
                       </div>
                     </td>

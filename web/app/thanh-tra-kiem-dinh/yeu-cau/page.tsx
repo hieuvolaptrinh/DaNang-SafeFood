@@ -16,6 +16,8 @@ interface TestRequest {
   lab: string;
   result?: string;
   reason?: string;
+  stampedFile?: string;           // Thêm field mới
+  technicalParams?: string;       // Thêm field mới (thông số kỹ thuật)
 }
 
 const mockTestRequests: TestRequest[] = [
@@ -63,11 +65,12 @@ export default function YeuCauPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [data, setData] = useState(mockTestRequests);
 
-  // Modal state
+  // Modal state - Đã thay đổi theo yêu cầu
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<TestRequest | null>(null);
   const [resultStatus, setResultStatus] = useState<'Đạt' | 'Không đạt'>('Đạt');
   const [reason, setReason] = useState('');
+  const [stampedFileName, setStampedFileName] = useState('');   // Tên file có dấu mộc
 
   const canCreateRequest = role === 'INSPECTOR';
   const canChangeStatus = role === 'TESTER';
@@ -91,7 +94,15 @@ export default function YeuCauPage() {
     setSelectedRequest(request);
     setResultStatus(request.result?.includes('Không đạt') ? 'Không đạt' : 'Đạt');
     setReason(request.reason || '');
+    setStampedFileName('');
     setIsModalOpen(true);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setStampedFileName(file.name);
+    }
   };
 
   const saveResult = () => {
@@ -104,14 +115,24 @@ export default function YeuCauPage() {
         ? { 
             ...item, 
             result: finalResult, 
-            reason: resultStatus === 'Không đạt' ? reason.trim() : undefined 
+            reason: resultStatus === 'Không đạt' ? reason.trim() : undefined,
+            stampedFile: stampedFileName || undefined,
           } 
         : item
     ));
 
+    console.log('Kết quả kiểm nghiệm đã được lưu:', {
+      id: selectedRequest.id,
+      business: selectedRequest.business,
+      result: finalResult,
+      reason: resultStatus === 'Không đạt' ? reason.trim() : undefined,
+      stampedFile: stampedFileName,
+    });
+
     setIsModalOpen(false);
     setSelectedRequest(null);
     setReason('');
+    setStampedFileName('');
   };
 
   const columns: Column<TestRequest>[] = [
@@ -190,6 +211,9 @@ export default function YeuCauPage() {
                 {r.reason}
               </div>
             )}
+            {r.stampedFile && (
+              <div className="text-[11px] text-emerald-600 mt-1">✓ Có file có dấu mộc</div>
+            )}
           </div>
         );
       },
@@ -234,7 +258,7 @@ export default function YeuCauPage() {
       <div className="h-1 w-full bg-gradient-to-r from-violet-600 via-purple-500 to-pink-400" />
 
       <div className="max-w-[1200px] mx-auto px-6 py-8">
-        {/* Header */}
+        {/* Header, Stats, TableCard giữ nguyên như cũ */}
         <div className="flex items-start justify-between mb-8">
           <div>
             <div className="flex items-center gap-2 mb-1">
@@ -262,7 +286,7 @@ export default function YeuCauPage() {
           </div>
         </div>
 
-        {/* Stats Cards */}
+        {/* Stats Cards giữ nguyên */}
         <div className="grid grid-cols-4 gap-4 mb-8">
           {[
             { label: 'Tổng yêu cầu', value: '248', icon: '📋', color: 'from-violet-600 to-purple-600' },
@@ -311,7 +335,7 @@ export default function YeuCauPage() {
         </TableCard>
       </div>
 
-      {/* Modal Nhập Kết Quả */}
+      {/* ==================== MODAL ĐÃ CHỈNH SỬA ==================== */}
       {isModalOpen && selectedRequest && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
@@ -332,7 +356,7 @@ export default function YeuCauPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Kết quả</label>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Kết luận cuối cùng</label>
                 <select
                   value={resultStatus}
                   onChange={(e) => setResultStatus(e.target.value as 'Đạt' | 'Không đạt')}
@@ -341,6 +365,26 @@ export default function YeuCauPage() {
                   <option value="Đạt">Đạt tiêu chuẩn</option>
                   <option value="Không đạt">Không đạt</option>
                 </select>
+              </div>
+
+              {/* Phần mới: Tải lên tệp kết quả có dấu mộc */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-3">
+                  Tải lên tệp kết quả có dấu mộc <span className="text-red-500">*</span>
+                </label>
+                <label className="border-2 border-dashed border-slate-300 hover:border-violet-400 rounded-2xl p-8 flex flex-col items-center cursor-pointer transition-colors">
+                  <input 
+                    type="file" 
+                    onChange={handleFileChange} 
+                    className="hidden" 
+                    accept=".pdf,.jpg,.png" 
+                  />
+                  <div className="text-4xl mb-3">📎</div>
+                  <p className="font-medium text-slate-700">
+                    {stampedFileName || "Chọn file PDF hoặc ảnh có dấu mộc"}
+                  </p>
+                  <p className="text-xs text-slate-400 mt-1">Định dạng: PDF, JPG, PNG</p>
+                </label>
               </div>
 
               {resultStatus === 'Không đạt' && (
@@ -367,7 +411,7 @@ export default function YeuCauPage() {
               </button>
               <button
                 onClick={saveResult}
-                disabled={resultStatus === 'Không đạt' && !reason.trim()}
+                disabled={resultStatus === 'Không đạt' && !reason.trim() || !stampedFileName}
                 className="px-6 py-2.5 bg-violet-600 hover:bg-violet-700 disabled:bg-slate-300 text-white font-semibold rounded-xl transition-colors"
               >
                 Lưu kết quả

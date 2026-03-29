@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 
 interface Violation {
   id: string;
@@ -52,22 +53,22 @@ const mockViolations: Violation[] = [
 ];
 
 const SEVERITY_CONFIG = {
-  'nghiêm trọng': { label: 'Nghiêm trọng', bg: 'bg-red-50',   text: 'text-red-700',   dot: 'bg-red-500',   border: 'border-red-200' },
-  'trung bình':   { label: 'Trung bình',   bg: 'bg-amber-50', text: 'text-amber-700', dot: 'bg-amber-400', border: 'border-amber-200' },
-  'nhẹ':          { label: 'Nhẹ',          bg: 'bg-sky-50',   text: 'text-sky-700',   dot: 'bg-sky-400',   border: 'border-sky-200' },
+  'nghiêm trọng': { label: 'Nghiêm trọng', bg: 'bg-red-50', text: 'text-red-700', dot: 'bg-red-500', border: 'border-red-200' },
+  'trung bình': { label: 'Trung bình', bg: 'bg-amber-50', text: 'text-amber-700', dot: 'bg-amber-400', border: 'border-amber-200' },
+  'nhẹ': { label: 'Nhẹ', bg: 'bg-sky-50', text: 'text-sky-700', dot: 'bg-sky-400', border: 'border-sky-200' },
 };
 
 const STATUS_CONFIG = {
-  pending:    { label: 'Chưa xử lý', bg: 'bg-slate-50',   text: 'text-slate-600',   icon: '⏸', dot: 'bg-slate-400',   border: 'border-slate-200' },
-  processing: { label: 'Đang xử lý', bg: 'bg-blue-50',    text: 'text-blue-700',    icon: '🔄', dot: 'bg-blue-500',    border: 'border-blue-200' },
-  resolved:   { label: 'Đã xử lý',   bg: 'bg-emerald-50', text: 'text-emerald-700', icon: '✓',  dot: 'bg-emerald-500', border: 'border-emerald-200' },
+  pending: { label: 'Chưa xử lý', bg: 'bg-slate-50', text: 'text-slate-600', icon: '⏸', dot: 'bg-slate-400', border: 'border-slate-200' },
+  processing: { label: 'Đang xử lý', bg: 'bg-blue-50', text: 'text-blue-700', icon: '🔄', dot: 'bg-blue-500', border: 'border-blue-200' },
+  resolved: { label: 'Đã xử lý', bg: 'bg-emerald-50', text: 'text-emerald-700', icon: '✓', dot: 'bg-emerald-500', border: 'border-emerald-200' },
 };
 
 const STATS = [
-  { label: 'Tổng vi phạm',  value: String(mockViolations.length),                                          icon: '📋', color: 'from-violet-600 to-purple-600' },
-  { label: 'Nghiêm trọng',  value: String(mockViolations.filter(v => v.severity === 'nghiêm trọng').length), icon: '🚨', color: 'from-red-500 to-rose-600' },
-  { label: 'Đang xử lý',    value: String(mockViolations.filter(v => v.status === 'processing').length),    icon: '🔄', color: 'from-blue-500 to-cyan-600' },
-  { label: 'Đã xử lý',      value: String(mockViolations.filter(v => v.status === 'resolved').length),      icon: '✅', color: 'from-emerald-500 to-teal-500' },
+  { label: 'Tổng vi phạm', value: String(mockViolations.length), icon: '📋', color: 'from-violet-600 to-purple-600' },
+  { label: 'Nghiêm trọng', value: String(mockViolations.filter(v => v.severity === 'nghiêm trọng').length), icon: '🚨', color: 'from-red-500 to-rose-600' },
+  { label: 'Đang xử lý', value: String(mockViolations.filter(v => v.status === 'processing').length), icon: '🔄', color: 'from-blue-500 to-cyan-600' },
+  { label: 'Đã xử lý', value: String(mockViolations.filter(v => v.status === 'resolved').length), icon: '✅', color: 'from-emerald-500 to-teal-500' },
 ];
 
 export default function DanhSachViPhamPage() {
@@ -123,15 +124,15 @@ export default function DanhSachViPhamPage() {
         <div className="bg-white rounded-2xl p-5 mb-4 shadow-sm border border-slate-100">
           <p className="text-[12px] font-bold text-slate-400 uppercase tracking-wider mb-3">Tỷ lệ vi phạm theo mức độ</p>
           <div className="flex gap-2 h-2 rounded-full overflow-hidden">
-            <div className="bg-red-500 rounded-full"  style={{ flex: mockViolations.filter(v => v.severity === 'nghiêm trọng').length }} />
+            <div className="bg-red-500 rounded-full" style={{ flex: mockViolations.filter(v => v.severity === 'nghiêm trọng').length }} />
             <div className="bg-amber-400 rounded-full" style={{ flex: mockViolations.filter(v => v.severity === 'trung bình').length }} />
-            <div className="bg-sky-400 rounded-full"  style={{ flex: mockViolations.filter(v => v.severity === 'nhẹ').length }} />
+            <div className="bg-sky-400 rounded-full" style={{ flex: mockViolations.filter(v => v.severity === 'nhẹ').length }} />
           </div>
           <div className="flex gap-5 mt-2.5">
             {[
-              { color: 'bg-red-500',  label: 'Nghiêm trọng', val: String(mockViolations.filter(v => v.severity === 'nghiêm trọng').length) },
-              { color: 'bg-amber-400', label: 'Trung bình',  val: String(mockViolations.filter(v => v.severity === 'trung bình').length) },
-              { color: 'bg-sky-400',  label: 'Nhẹ',          val: String(mockViolations.filter(v => v.severity === 'nhẹ').length) },
+              { color: 'bg-red-500', label: 'Nghiêm trọng', val: String(mockViolations.filter(v => v.severity === 'nghiêm trọng').length) },
+              { color: 'bg-amber-400', label: 'Trung bình', val: String(mockViolations.filter(v => v.severity === 'trung bình').length) },
+              { color: 'bg-sky-400', label: 'Nhẹ', val: String(mockViolations.filter(v => v.severity === 'nhẹ').length) },
             ].map((item) => (
               <div key={item.label} className="flex items-center gap-1.5">
                 <span className={`w-2 h-2 rounded-full ${item.color}`} />
@@ -192,7 +193,7 @@ export default function DanhSachViPhamPage() {
                 <tr><td colSpan={8} className="px-5 py-12 text-center text-[13px] text-slate-400">Không tìm thấy vi phạm nào</td></tr>
               ) : filtered.map((v) => {
                 const sev = SEVERITY_CONFIG[v.severity];
-                const st  = STATUS_CONFIG[v.status];
+                const st = STATUS_CONFIG[v.status];
                 return (
                   <tr key={v.id} className="hover:bg-violet-50/30 transition-colors group">
                     <td className="px-5 py-3.5">
@@ -223,7 +224,13 @@ export default function DanhSachViPhamPage() {
                     </td>
                     <td className="px-5 py-3.5">
                       <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button className="w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-violet-50 hover:border-violet-300 text-sm transition-all shadow-sm" title="Xem">👁</button>
+                        <Link
+                          href={`/vi-pham/${v.id}`}
+                          className="w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-violet-50 hover:border-violet-300 text-sm flex items-center justify-center transition-all shadow-sm"
+                          title="Xem chi tiết"
+                        >
+                          👁
+                        </Link>
                         <button className="w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-amber-50 hover:border-amber-300 text-sm transition-all shadow-sm" title="Chỉnh sửa">✏️</button>
                       </div>
                     </td>

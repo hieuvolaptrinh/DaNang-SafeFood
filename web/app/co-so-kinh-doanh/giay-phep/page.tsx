@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 
 interface License {
   id: string;
@@ -250,8 +251,19 @@ export default function GiayPhepPage() {
                   </td>
                   <td className="px-5 py-3.5">
                     <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button className="w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-indigo-50 hover:border-indigo-300 text-sm transition-all shadow-sm" title="Xem">👁</button>
-                      <button className="w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-amber-50 hover:border-amber-300 text-sm transition-all shadow-sm" title="Chỉnh sửa">✏️</button>
+                      <Link
+                        href={`/co-so-kinh-doanh/giay-phep/${l.id}`}
+                        className="w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-indigo-50 hover:border-indigo-300 text-sm flex items-center justify-center transition-all shadow-sm"
+                        title="Xem chi tiết"
+                      >
+                        👁
+                      </Link>
+                      <button
+                        className="w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-amber-50 hover:border-amber-300 text-sm flex items-center justify-center transition-all shadow-sm"
+                        title="Chỉnh sửa"
+                      >
+                        ✏️
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -268,9 +280,8 @@ export default function GiayPhepPage() {
               {[1, 2, 3].map((p) => (
                 <button
                   key={p}
-                  className={`w-7 h-7 rounded-lg text-[12px] font-semibold transition-all ${
-                    p === 1 ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-100'
-                  }`}
+                  className={`w-7 h-7 rounded-lg text-[12px] font-semibold transition-all ${p === 1 ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-100'
+                    }`}
                 >
                   {p}
                 </button>
