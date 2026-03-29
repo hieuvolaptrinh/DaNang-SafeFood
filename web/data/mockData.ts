@@ -365,3 +365,74 @@ export const roleColors: Record<Role, string> = {
   TESTER: 'bg-violet-700 text-white',
   BUSINESS: 'bg-cyan-700 text-white',
 };
+
+export type InspectionReportResult = 'pass' | 'fail' | 'scheduled';
+
+export interface InspectionReport {
+  id: string;
+  tenCoSo: string;
+  loaiThanhTra: string;
+  thanhTraVien: string;
+  ngay: string;
+  ketQua: InspectionReportResult;
+  diem: number;
+  quanHuyen: string;
+  noiDung: string;
+  nhanXet: string;
+  tepDinhKem?: string;
+}
+
+export const mockInspectionReports: InspectionReport[] = [
+  {
+    id: 'BC-001',
+    tenCoSo: 'Cơ sở A',
+    loaiThanhTra: 'Thanh tra định kỳ',
+    thanhTraVien: 'Nguyễn Văn Trần',
+    ngay: '2026-03-20',
+    ketQua: 'pass',
+    diem: 92,
+    quanHuyen: 'Hải Châu',
+    noiDung: 'Đã kiểm tra khu vực sơ chế, kho bảo quản và hồ sơ nguồn gốc nguyên liệu của cơ sở.',
+    nhanXet: 'Cơ sở đáp ứng tốt yêu cầu an toàn thực phẩm, cần duy trì việc lưu mẫu đúng quy định.',
+    tepDinhKem: 'bao-cao-bc-001.pdf',
+  },
+  {
+    id: 'BC-002',
+    tenCoSo: 'Cơ sở B',
+    loaiThanhTra: 'Thanh tra đột xuất',
+    thanhTraVien: 'Lê Thị Mai',
+    ngay: '2026-03-18',
+    ketQua: 'fail',
+    diem: 54,
+    quanHuyen: 'Thanh Khê',
+    noiDung: 'Phát hiện khu vực bảo quản thực phẩm chưa tách biệt rõ giữa thực phẩm sống và chín.',
+    nhanXet: 'Yêu cầu khắc phục ngay việc bố trí kho và bổ sung nhật ký vệ sinh theo ngày.',
+    tepDinhKem: 'bao-cao-bc-002.pdf',
+  },
+  {
+    id: 'BC-003',
+    tenCoSo: 'Cơ sở C',
+    loaiThanhTra: 'Thanh tra định kỳ',
+    thanhTraVien: 'Phạm Văn Đức',
+    ngay: '2026-03-21',
+    ketQua: 'pass',
+    diem: 88,
+    quanHuyen: 'Ngũ Hành Sơn',
+    noiDung: 'Đã đối chiếu hồ sơ pháp lý, nhãn mác sản phẩm và điều kiện vệ sinh tại khu chế biến.',
+    nhanXet: 'Cơ sở vận hành ổn định, hồ sơ đầy đủ và nhân sự thực hiện đúng quy trình đã ban hành.',
+    tepDinhKem: 'bao-cao-bc-003.pdf',
+  },
+  {
+    id: 'BC-004',
+    tenCoSo: 'Cơ sở D',
+    loaiThanhTra: 'Thanh tra theo phản ánh',
+    thanhTraVien: 'Nguyễn Văn Trần',
+    ngay: '2026-03-25',
+    ketQua: 'scheduled',
+    diem: 0,
+    quanHuyen: 'Sơn Trà',
+    noiDung: 'Đã tiếp nhận phản ánh và lên lịch kiểm tra thực tế, báo cáo chi tiết sẽ bổ sung sau.',
+    nhanXet: 'Chờ hoàn tất biên bản kiểm tra để cập nhật kết quả cuối cùng.',
+    tepDinhKem: 'bao-cao-bc-004.pdf',
+  },
+];
