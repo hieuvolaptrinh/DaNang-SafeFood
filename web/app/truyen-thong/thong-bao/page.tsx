@@ -2,6 +2,9 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import { FiEdit, FiEye } from 'react-icons/fi';
+import TableCard, { FilterSelect, Pagination, SearchInput } from '@/components/TableCard';
+import DataTable from '@/components/DataTable';
 
 interface Notification {
   id: string;
@@ -126,6 +129,16 @@ const STATS = [
     icon: "👥",
     color: "from-amber-500 to-orange-500",
   },
+];
+
+const columns = [
+  { key: "id", label: "Mã thông báo" },
+  { key: "title", label: "Tiêu đề" },
+  { key: "type", label: "Loại" },
+  { key: "target", label: "Đối tượng" },
+  { key: "sendDate", label: "Ngày gửi" },
+  { key: "status", label: "Trạng thái" },
+  { key: "recipientCount", label: "Số người nhận" },
 ];
 
 export default function ThongBaoPage() {

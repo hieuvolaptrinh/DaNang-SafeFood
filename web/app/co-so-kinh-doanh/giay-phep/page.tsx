@@ -52,48 +52,6 @@ const mockLicenses: License[] = [
   },
 ];
 
-const mockLicenseDetails: Partial<Record<License["id"], LicenseDetailData>> = {
-  "GP-2025001": {
-    id: "GP-2025001",
-    businessName: "Nhà hàng Hải Sản Biển Xanh",
-    type: "Giấy phép kinh doanh thực phẩm",
-    issueDate: "10/01/2025",
-    expiryDate: "09/01/2026",
-    status: "valid",
-    district: "Hải Châu",
-    evidenceKind: "image",
-    evidenceName: "Ảnh scan giấy phép kinh doanh",
-    evidenceDescription:
-      "Bản scan giấy phép đã được tải lên để đối chiếu thông tin của cơ sở.",
-  },
-  "GP-2025002": {
-    id: "GP-2025002",
-    businessName: "Quán Ăn Gia Đình Việt",
-    type: "Giấy phép VSATTP",
-    issueDate: "15/02/2025",
-    expiryDate: "14/02/2025",
-    status: "expired",
-    district: "Thanh Khê",
-    evidenceKind: "file",
-    evidenceName: "hoso-giay-phep-vsattp.pdf",
-    evidenceDescription:
-      "Hồ sơ PDF mô phỏng minh chứng giấy phép đã hết hạn của cơ sở.",
-  },
-  "GP-2025004": {
-    id: "GP-2025004",
-    businessName: "Siêu thị Mini Mart Đà Nẵng",
-    type: "Giấy phép kinh doanh thực phẩm",
-    issueDate: "05/01/2025",
-    expiryDate: "04/01/2026",
-    status: "revoked",
-    district: "Sơn Trà",
-    evidenceKind: "image",
-    evidenceName: "Biên bản thu hồi giấy phép",
-    evidenceDescription:
-      "Ảnh chụp biên bản thu hồi giấy phép được dùng làm minh chứng mô phỏng.",
-  },
-};
-
 const STATUS_CONFIG = {
   valid: {
     label: "Còn hiệu lực",
@@ -118,6 +76,20 @@ const STATUS_CONFIG = {
   },
 };
 
+const DISTRICT_COLORS: Record<string, string> = {
+  "Hải Châu": "bg-blue-100 text-blue-700",
+  "Thanh Khê": "bg-violet-100 text-violet-700",
+  "Ngũ Hành Sơn": "bg-teal-100 text-teal-700",
+  "Sơn Trà": "bg-orange-100 text-orange-700",
+};
+
+const STATS = [
+  { label: "Tổng giấy phép", value: "1.245", icon: "📄", color: "from-indigo-600 to-blue-600" },
+  { label: "Còn hiệu lực", value: "1.048", icon: "✅", color: "from-emerald-500 to-teal-500" },
+  { label: "Hết hạn", value: "143", icon: "⌛", color: "from-slate-500 to-slate-600" },
+  { label: "Đã thu hồi", value: "54", icon: "🚫", color: "from-red-500 to-red-600" },
+];
+
 function StatusBadge({ status }: { status: keyof typeof STATUS_CONFIG }) {
   const cfg = STATUS_CONFIG[status];
   return (
@@ -130,48 +102,10 @@ function StatusBadge({ status }: { status: keyof typeof STATUS_CONFIG }) {
   );
 }
 
-const DISTRICT_COLORS: Record<string, string> = {
-  "Hải Châu": "bg-blue-100 text-blue-700",
-  "Thanh Khê": "bg-violet-100 text-violet-700",
-  "Ngũ Hành Sơn": "bg-teal-100 text-teal-700",
-  "Sơn Trà": "bg-orange-100 text-orange-700",
-};
-
-const STATS = [
-  {
-    label: "Tổng giấy phép",
-    value: "1.245",
-    icon: "📄",
-    color: "from-indigo-600 to-blue-600",
-  },
-  {
-    label: "Còn hiệu lực",
-    value: "1.048",
-    icon: "✅",
-    color: "from-emerald-500 to-teal-500",
-  },
-  {
-    label: "Hết hạn",
-    value: "143",
-    icon: "⌛",
-    color: "from-slate-500 to-slate-600",
-  },
-  {
-    label: "Đã thu hồi",
-    value: "54",
-    icon: "🚫",
-    color: "from-red-500 to-red-600",
-  },
-];
-
 export default function GiayPhepPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [districtFilter, setDistrictFilter] = useState("");
-  const [selectedLicense, setSelectedLicense] =
-    useState<SelectedLicenseRecord | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [loadingLicenseId, setLoadingLicenseId] = useState<string | null>(null);
 
   const filtered = mockLicenses.filter((license) => {
     const matchSearch =
@@ -179,44 +113,12 @@ export default function GiayPhepPage() {
       license.id.toLowerCase().includes(search.toLowerCase()) ||
       license.businessName.toLowerCase().includes(search.toLowerCase());
     const matchStatus = !statusFilter || license.status === statusFilter;
-    const matchDistrict =
-      !districtFilter || license.district === districtFilter;
+    const matchDistrict = !districtFilter || license.district === districtFilter;
 
     return matchSearch && matchStatus && matchDistrict;
   });
 
-  const districts = [
-    ...new Set(mockLicenses.map((license) => license.district)),
-  ];
-
-  const handleViewLicense = async (license: License) => {
-    if (loadingLicenseId) {
-      return;
-    }
-
-    setSelectedLicense({ summary: license, detail: null });
-    setIsModalOpen(true);
-    setLoadingLicenseId(license.id);
-
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 650));
-
-      setSelectedLicense({
-        summary: license,
-        detail: mockLicenseDetails[license.id] ?? null,
-      });
-    } finally {
-      setLoadingLicenseId(null);
-    }
-  };
-
-  const handleModalOpenChange = (open: boolean) => {
-    setIsModalOpen(open);
-
-    if (!open && !loadingLicenseId) {
-      setSelectedLicense(null);
-    }
-  };
+  const districts = [...new Set(mockLicenses.map((license) => license.district))];
 
   return (
     <div className="min-h-screen bg-[#f5f6fa] font-sans">
@@ -240,40 +142,15 @@ export default function GiayPhepPage() {
 
           <div className="flex gap-2 pt-1">
             <button className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-[13px] font-semibold text-slate-600 shadow-sm transition-all hover:border-slate-300 hover:bg-slate-50">
-              <svg
-                className="h-4 w-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                />
-              </svg>
-              Xuất CSV
+              📥 Xuất CSV
             </button>
-
             <button className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-700 px-4 py-2.5 text-[13px] font-semibold text-white shadow-md shadow-indigo-200 transition-all hover:from-indigo-700 hover:to-blue-800">
-              <svg
-                className="h-4 w-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2.5}
-                  d="M12 4v16m8-8H4"
-                />
-              </svg>
+              + Cấp giấy phép mới
             </button>
           </div>
         </div>
 
+        {/* Stats */}
         <div className="mb-8 grid grid-cols-4 gap-4">
           {STATS.map((stat) => (
             <div
@@ -302,9 +179,7 @@ export default function GiayPhepPage() {
         <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
           <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
             <div className="flex items-center gap-3">
-              <h2 className="text-[15px] font-bold text-slate-800">
-                Tất cả giấy phép
-              </h2>
+              <h2 className="text-[15px] font-bold text-slate-800">Tất cả giấy phép</h2>
               <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[12px] font-bold text-slate-500">
                 {filtered.length}
               </span>
@@ -329,13 +204,13 @@ export default function GiayPhepPage() {
                   type="text"
                   placeholder="Tìm mã, tên cơ sở..."
                   className="w-[220px] rounded-xl border border-slate-200 bg-slate-50 py-2 pr-4 pl-9 text-[13px] text-slate-700 placeholder-slate-400 transition-all focus:border-transparent focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                  onChange={(event) => setSearch(event.target.value)}
+                  onChange={(e) => setSearch(e.target.value)}
                 />
               </div>
 
               <select
                 className="cursor-pointer rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-[13px] text-slate-600 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                onChange={(event) => setStatusFilter(event.target.value)}
+                onChange={(e) => setStatusFilter(e.target.value)}
               >
                 <option value="">Tất cả trạng thái</option>
                 <option value="valid">Còn hiệu lực</option>
@@ -345,7 +220,7 @@ export default function GiayPhepPage() {
 
               <select
                 className="cursor-pointer rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-[13px] text-slate-600 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                onChange={(event) => setDistrictFilter(event.target.value)}
+                onChange={(e) => setDistrictFilter(e.target.value)}
               >
                 <option value="">Tất cả quận/huyện</option>
                 {districts.map((district) => (
@@ -382,14 +257,7 @@ export default function GiayPhepPage() {
 
             <tbody className="divide-y divide-slate-50">
               {filtered.map((license) => (
-                <tr
-                  key={license.id}
-                  className={`group transition-colors ${
-                    selectedLicense?.summary.id === license.id && isModalOpen
-                      ? "bg-indigo-50/60"
-                      : "hover:bg-indigo-50/30"
-                  }`}
-                >
+                <tr key={license.id} className="group transition-colors hover:bg-indigo-50/30">
                   <td className="px-5 py-3.5">
                     <span className="rounded-md bg-slate-100 px-2 py-0.5 font-mono text-[12px] font-semibold text-slate-400">
                       {license.id}
@@ -420,8 +288,7 @@ export default function GiayPhepPage() {
                   <td className="px-5 py-3.5">
                     <span
                       className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
-                        DISTRICT_COLORS[license.district] ||
-                        "bg-slate-100 text-slate-600"
+                        DISTRICT_COLORS[license.district] || "bg-slate-100 text-slate-600"
                       }`}
                     >
                       {license.district}
@@ -430,7 +297,7 @@ export default function GiayPhepPage() {
                   <td className="px-5 py-3.5">
                     <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Link
-                        href={`/co-so-kinh-doanh/giay-phep/${l.id}`}
+                        href={`/co-so-kinh-doanh/giay-phep/${license.id}`}   // ← Sửa từ l.id thành license.id
                         className="w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-indigo-50 hover:border-indigo-300 text-sm flex items-center justify-center transition-all shadow-sm"
                         title="Xem chi tiết"
                       >
@@ -451,33 +318,23 @@ export default function GiayPhepPage() {
 
           <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50/50 px-5 py-3.5">
             <span className="text-[12px] font-medium text-slate-400">
-              Hiển thị{" "}
-              <strong className="text-slate-600">{filtered.length}</strong>{" "}
-              trong tổng số{" "}
-              <strong className="text-slate-600">{mockLicenses.length}</strong>{" "}
-              giấy phép
+              Hiển thị <strong className="text-slate-600">{filtered.length}</strong> trong tổng số <strong className="text-slate-600">{mockLicenses.length}</strong> giấy phép
             </span>
             <div className="flex gap-1">
-              {[1, 2, 3].map((page) => (
+              {[1, 2, 3].map((p) => (
                 <button
                   key={p}
-                  className={`w-7 h-7 rounded-lg text-[12px] font-semibold transition-all ${p === 1 ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-100'
-                    }`}
+                  className={`w-7 h-7 rounded-lg text-[12px] font-semibold transition-all ${
+                    p === 1 ? "bg-indigo-600 text-white shadow-sm" : "text-slate-500 hover:bg-slate-100"
+                  }`}
                 >
-                  {page}
+                  {p}
                 </button>
               ))}
             </div>
           </div>
         </div>
       </div>
-
-      <LicenseDetailModal
-        open={isModalOpen}
-        loading={Boolean(loadingLicenseId)}
-        selectedLicense={selectedLicense}
-        onOpenChange={handleModalOpenChange}
-      />
     </div>
   );
 }
