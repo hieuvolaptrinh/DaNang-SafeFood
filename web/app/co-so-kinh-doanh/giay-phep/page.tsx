@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { FiEdit, FiEye } from "react-icons/fi";
 
 import LicenseDetailModal, {
   type LicenseDetailData,
@@ -437,14 +438,14 @@ export default function GiayPhepPage() {
                         {loadingLicenseId === license.id ? (
                           <span className="mx-auto block h-3.5 w-3.5 animate-spin rounded-full border-2 border-indigo-200 border-t-indigo-600" />
                         ) : (
-                          "👁"
+                          <FiEye size={16} className="mx-auto" />
                         )}
                       </button>
                       <button
                         className="h-7 w-7 rounded-lg border border-slate-200 bg-white text-sm shadow-sm transition-all hover:border-amber-300 hover:bg-amber-50"
                         title="Chỉnh sửa"
                       >
-                        ✏️
+                        <FiEdit size={16} className="mx-auto" />
                       </button>
                     </div>
                   </td>

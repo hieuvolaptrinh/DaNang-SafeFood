@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { FiEye } from 'react-icons/fi';
 import { mockFeedback, CitizenFeedback } from '@/data/mockData';
 
 const TYPE_CONFIG: Record<string, { bg: string; text: string; border: string; dot: string }> = {
@@ -182,7 +183,7 @@ export default function PhanAnhCongDanPage() {
                     </td>
                     <td className="px-5 py-3.5">
                       <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button className="w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-violet-50 hover:border-violet-300 text-sm transition-all shadow-sm" title="Xem">👁</button>
+                        <button className="w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-violet-50 hover:border-violet-300 text-sm transition-all shadow-sm" title="Xem"><FiEye size={16} className="mx-auto" /></button>
                         <button className="w-7 h-7 rounded-lg border border-blue-200 bg-blue-600 hover:bg-blue-700 text-white text-sm transition-all shadow-sm" title="Phản hồi">💬</button>
                       </div>
                     </td>

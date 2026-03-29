@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { FiEye } from 'react-icons/fi';
 import { useRole } from '@/lib/RoleContext';   // Giả sử bạn đã có RoleContext
 
 interface Certificate {
@@ -167,7 +168,7 @@ export default function PheDuyetChungNhanPage() {
               className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 bg-white hover:bg-blue-50 hover:border-blue-300 text-base transition-all"
               title="Xem chi tiết"
             >
-              👁
+              <FiEye size={16} />
             </button>
 
             {isPending && (
