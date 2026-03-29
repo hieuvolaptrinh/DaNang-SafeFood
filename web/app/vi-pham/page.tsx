@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useState } from 'react';
 import Link from 'next/link';
@@ -7,48 +7,48 @@ interface Violation {
   id: string;
   businessName: string;
   violationType: string;
-  severity: 'nhẹ' | 'trung bình' | 'nghiêm trọng';
+  severity: "nhẹ" | "trung bình" | "nghiêm trọng";
   detectedDate: string;
-  status: 'pending' | 'processing' | 'resolved';
+  status: "pending" | "processing" | "resolved";
   district: string;
 }
 
 const mockViolations: Violation[] = [
   {
-    id: 'VP-2025001',
-    businessName: 'Nhà hàng Hải Sản Biển Xanh',
-    violationType: 'Vi phạm vệ sinh an toàn thực phẩm',
-    severity: 'nghiêm trọng',
-    detectedDate: '18/03/2025',
-    status: 'processing',
-    district: 'Hải Châu',
+    id: "VP-2025001",
+    businessName: "Nhà hàng Hải Sản Biển Xanh",
+    violationType: "Vi phạm vệ sinh an toàn thực phẩm",
+    severity: "nghiêm trọng",
+    detectedDate: "18/03/2025",
+    status: "processing",
+    district: "Hải Châu",
   },
   {
-    id: 'VP-2025002',
-    businessName: 'Quán Ăn Gia Đình Việt',
-    violationType: 'Không niêm yết giá bán',
-    severity: 'nhẹ',
-    detectedDate: '15/03/2025',
-    status: 'resolved',
-    district: 'Thanh Khê',
+    id: "VP-2025002",
+    businessName: "Quán Ăn Gia Đình Việt",
+    violationType: "Không niêm yết giá bán",
+    severity: "nhẹ",
+    detectedDate: "15/03/2025",
+    status: "resolved",
+    district: "Thanh Khê",
   },
   {
-    id: 'VP-2025003',
-    businessName: 'Cửa hàng Thực phẩm Sạch Organic',
-    violationType: 'Sử dụng chất cấm trong thực phẩm',
-    severity: 'nghiêm trọng',
-    detectedDate: '22/03/2025',
-    status: 'pending',
-    district: 'Ngũ Hành Sơn',
+    id: "VP-2025003",
+    businessName: "Cửa hàng Thực phẩm Sạch Organic",
+    violationType: "Sử dụng chất cấm trong thực phẩm",
+    severity: "nghiêm trọng",
+    detectedDate: "22/03/2025",
+    status: "pending",
+    district: "Ngũ Hành Sơn",
   },
   {
-    id: 'VP-2025004',
-    businessName: 'Siêu thị Mini Mart Đà Nẵng',
-    violationType: 'Bán hàng hết hạn sử dụng',
-    severity: 'trung bình',
-    detectedDate: '20/03/2025',
-    status: 'processing',
-    district: 'Sơn Trà',
+    id: "VP-2025004",
+    businessName: "Siêu thị Mini Mart Đà Nẵng",
+    violationType: "Bán hàng hết hạn sử dụng",
+    severity: "trung bình",
+    detectedDate: "20/03/2025",
+    status: "processing",
+    district: "Sơn Trà",
   },
 ];
 
@@ -72,15 +72,18 @@ const STATS = [
 ];
 
 export default function DanhSachViPhamPage() {
-  const [search, setSearch] = useState('');
-  const [severityFilter, setSeverityFilter] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [districtFilter, setDistrictFilter] = useState('');
+  const [search, setSearch] = useState("");
+  const [severityFilter, setSeverityFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [districtFilter, setDistrictFilter] = useState("");
 
   const districts = [...new Set(mockViolations.map((v) => v.district))];
 
   const filtered = mockViolations.filter((v) => {
-    const matchSearch = !search || v.id.toLowerCase().includes(search.toLowerCase()) || v.businessName.toLowerCase().includes(search.toLowerCase());
+    const matchSearch =
+      !search ||
+      v.id.toLowerCase().includes(search.toLowerCase()) ||
+      v.businessName.toLowerCase().includes(search.toLowerCase());
     const matchSeverity = !severityFilter || v.severity === severityFilter;
     const matchStatus = !statusFilter || v.status === statusFilter;
     const matchDistrict = !districtFilter || v.district === districtFilter;
@@ -91,14 +94,20 @@ export default function DanhSachViPhamPage() {
     <div className="min-h-screen bg-[#f5f6fa] font-sans">
       <div className="h-1 w-full bg-gradient-to-r from-violet-600 via-purple-500 to-pink-400" />
       <div className="max-w-[1200px] mx-auto px-6 py-8">
-
         <div className="flex items-start justify-between mb-8">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-[11px] font-bold tracking-[0.12em] uppercase text-violet-500">SỞ AN TOÀN THỰC PHẨM • ĐÀ NẴNG</span>
+              <span className="text-[11px] font-bold tracking-[0.12em] uppercase text-violet-500">
+                SỞ AN TOÀN THỰC PHẨM • ĐÀ NẴNG
+              </span>
             </div>
-            <h1 className="text-[28px] font-black text-slate-900 tracking-tight leading-tight">Danh sách Vi phạm</h1>
-            <p className="text-[13px] text-slate-400 mt-1 font-medium">Danh sách các vi phạm được ghi nhận tại các cơ sở kinh doanh trên địa bàn Đà Nẵng</p>
+            <h1 className="text-[28px] font-black text-slate-900 tracking-tight leading-tight">
+              Danh sách Vi phạm
+            </h1>
+            <p className="text-[13px] text-slate-400 mt-1 font-medium">
+              Danh sách các vi phạm được ghi nhận tại các cơ sở kinh doanh trên
+              địa bàn Đà Nẵng
+            </p>
           </div>
           <div className="flex gap-2 pt-1">
             <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-[13px] font-semibold text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm">
@@ -109,20 +118,33 @@ export default function DanhSachViPhamPage() {
 
         <div className="grid grid-cols-4 gap-4 mb-8">
           {STATS.map((s) => (
-            <div key={s.label} className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+            <div
+              key={s.label}
+              className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-shadow"
+            >
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-[12px] font-semibold text-slate-400 uppercase tracking-wide mb-2">{s.label}</p>
-                  <p className="text-[30px] font-black text-slate-900 leading-none">{s.value}</p>
+                  <p className="text-[12px] font-semibold text-slate-400 uppercase tracking-wide mb-2">
+                    {s.label}
+                  </p>
+                  <p className="text-[30px] font-black text-slate-900 leading-none">
+                    {s.value}
+                  </p>
                 </div>
-                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${s.color} flex items-center justify-center text-lg shadow-sm`}>{s.icon}</div>
+                <div
+                  className={`w-10 h-10 rounded-xl bg-gradient-to-br ${s.color} flex items-center justify-center text-lg shadow-sm`}
+                >
+                  {s.icon}
+                </div>
               </div>
             </div>
           ))}
         </div>
 
         <div className="bg-white rounded-2xl p-5 mb-4 shadow-sm border border-slate-100">
-          <p className="text-[12px] font-bold text-slate-400 uppercase tracking-wider mb-3">Tỷ lệ vi phạm theo mức độ</p>
+          <p className="text-[12px] font-bold text-slate-400 uppercase tracking-wider mb-3">
+            Tỷ lệ vi phạm theo mức độ
+          </p>
           <div className="flex gap-2 h-2 rounded-full overflow-hidden">
             <div className="bg-red-500 rounded-full" style={{ flex: mockViolations.filter(v => v.severity === 'nghiêm trọng').length }} />
             <div className="bg-amber-400 rounded-full" style={{ flex: mockViolations.filter(v => v.severity === 'trung bình').length }} />
@@ -136,8 +158,12 @@ export default function DanhSachViPhamPage() {
             ].map((item) => (
               <div key={item.label} className="flex items-center gap-1.5">
                 <span className={`w-2 h-2 rounded-full ${item.color}`} />
-                <span className="text-[12px] text-slate-500 font-medium">{item.label}</span>
-                <span className="text-[12px] font-bold text-slate-700">{item.val} vi phạm</span>
+                <span className="text-[12px] text-slate-500 font-medium">
+                  {item.label}
+                </span>
+                <span className="text-[12px] font-bold text-slate-700">
+                  {item.val} vi phạm
+                </span>
               </div>
             ))}
           </div>
@@ -146,13 +172,27 @@ export default function DanhSachViPhamPage() {
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-3">
-              <h2 className="text-[15px] font-bold text-slate-800">Tất cả vi phạm</h2>
-              <span className="px-2 py-0.5 rounded-md bg-slate-100 text-[12px] font-bold text-slate-500">{filtered.length}</span>
+              <h2 className="text-[15px] font-bold text-slate-800">
+                Tất cả vi phạm
+              </h2>
+              <span className="px-2 py-0.5 rounded-md bg-slate-100 text-[12px] font-bold text-slate-500">
+                {filtered.length}
+              </span>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               <div className="relative">
-                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                <svg
+                  className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
                 </svg>
                 <input
                   type="text"
@@ -161,21 +201,34 @@ export default function DanhSachViPhamPage() {
                   onChange={(e) => setSearch(e.target.value)}
                 />
               </div>
-              <select className="px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-[13px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-violet-500 cursor-pointer" onChange={(e) => setSeverityFilter(e.target.value)}>
+              <select
+                className="px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-[13px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-violet-500 cursor-pointer"
+                onChange={(e) => setSeverityFilter(e.target.value)}
+              >
                 <option value="">Tất cả mức độ</option>
                 <option value="nhẹ">Nhẹ</option>
                 <option value="trung bình">Trung bình</option>
                 <option value="nghiêm trọng">Nghiêm trọng</option>
               </select>
-              <select className="px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-[13px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-violet-500 cursor-pointer" onChange={(e) => setStatusFilter(e.target.value)}>
+              <select
+                className="px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-[13px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-violet-500 cursor-pointer"
+                onChange={(e) => setStatusFilter(e.target.value)}
+              >
                 <option value="">Tất cả trạng thái</option>
                 <option value="pending">Chưa xử lý</option>
                 <option value="processing">Đang xử lý</option>
                 <option value="resolved">Đã xử lý</option>
               </select>
-              <select className="px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-[13px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-violet-500 cursor-pointer" onChange={(e) => setDistrictFilter(e.target.value)}>
+              <select
+                className="px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-[13px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-violet-500 cursor-pointer"
+                onChange={(e) => setDistrictFilter(e.target.value)}
+              >
                 <option value="">Tất cả quận/huyện</option>
-                {districts.map((d) => <option key={d} value={d}>{d}</option>)}
+                {districts.map((d) => (
+                  <option key={d} value={d}>
+                    {d}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
@@ -183,8 +236,22 @@ export default function DanhSachViPhamPage() {
           <table className="w-full">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-100">
-                {['Mã vi phạm', 'Tên cơ sở', 'Loại vi phạm', 'Mức độ', 'Ngày phát hiện', 'Trạng thái', 'Quận/Huyện', 'Thao tác'].map((h) => (
-                  <th key={h} className="px-5 py-3 text-left text-[11px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">{h}</th>
+                {[
+                  "Mã vi phạm",
+                  "Tên cơ sở",
+                  "Loại vi phạm",
+                  "Mức độ",
+                  "Ngày phát hiện",
+                  "Trạng thái",
+                  "Quận/Huyện",
+                  "Thao tác",
+                ].map((h) => (
+                  <th
+                    key={h}
+                    className="px-5 py-3 text-left text-[11px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap"
+                  >
+                    {h}
+                  </th>
                 ))}
               </tr>
             </thead>
@@ -242,16 +309,75 @@ export default function DanhSachViPhamPage() {
 
           <div className="px-5 py-3.5 border-t border-slate-100 flex items-center justify-between bg-slate-50/50">
             <span className="text-[12px] text-slate-400 font-medium">
-              Hiển thị <strong className="text-slate-600">{filtered.length}</strong> trong tổng số <strong className="text-slate-600">{mockViolations.length}</strong> vi phạm
+              Hiển thị{" "}
+              <strong className="text-slate-600">{filtered.length}</strong>{" "}
+              trong tổng số{" "}
+              <strong className="text-slate-600">
+                {mockViolations.length}
+              </strong>{" "}
+              vi phạm
             </span>
             <div className="flex gap-1">
               {[1, 2, 3].map((p) => (
-                <button key={p} className={`w-7 h-7 rounded-lg text-[12px] font-semibold transition-all ${p === 1 ? 'bg-violet-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-100'}`}>{p}</button>
+                <button
+                  key={p}
+                  className={`w-7 h-7 rounded-lg text-[12px] font-semibold transition-all ${p === 1 ? "bg-violet-600 text-white shadow-sm" : "text-slate-500 hover:bg-slate-100"}`}
+                >
+                  {p}
+                </button>
               ))}
             </div>
           </div>
         </div>
       </div>
+
+      <TableCard
+        title="Tất cả vi phạm"
+        controls={
+          <>
+            <SearchInput
+              placeholder="Tìm mã vi phạm, tên cơ sở..."
+              onChange={setSearch}
+            />
+            <FilterSelect
+              options={[
+                { value: "", label: "Tất cả mức độ" },
+                { value: "nhẹ", label: "Nhẹ" },
+                { value: "trung bình", label: "Trung bình" },
+                { value: "nghiêm trọng", label: "Nghiêm trọng" },
+              ]}
+              onChange={setSeverityFilter}
+            />
+            <FilterSelect
+              options={[
+                { value: "", label: "Tất cả trạng thái" },
+                { value: "pending", label: "Chưa xử lý" },
+                { value: "processing", label: "Đang xử lý" },
+                { value: "resolved", label: "Đã xử lý" },
+              ]}
+              onChange={setStatusFilter}
+            />
+            <FilterSelect
+              options={[
+                { value: "", label: "Tất cả quận/huyện" },
+                ...districts.map((d) => ({ value: d, label: d })),
+              ]}
+              onChange={setDistrictFilter}
+            />
+          </>
+        }
+        footer={
+          <Pagination
+            info={`Hiển thị 1–${filtered.length} trong tổng số ${mockViolations.length} vi phạm`}
+          />
+        }
+      >
+        <DataTable
+          columns={columns}
+          data={filtered}
+          emptyMessage="Không tìm thấy vi phạm nào"
+        />
+      </TableCard>
     </div>
   );
 }

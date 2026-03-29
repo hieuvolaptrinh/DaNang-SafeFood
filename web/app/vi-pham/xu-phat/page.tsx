@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useState } from 'react';
 import { useRole } from '@/lib/RoleContext';
@@ -269,6 +269,45 @@ export default function PheDuyetDonViPhamPage() {
           Chỉ hiển thị các đơn đang chờ xử lý • Hệ thống sẽ tự động lưu lịch sử khi thực hiện
         </div>
       </div>
+
+      <TableCard
+        title="Tất cả quyết định xử phạt"
+        controls={
+          <>
+            <SearchInput
+              placeholder="Tìm mã quyết định, tên cơ sở..."
+              onChange={setSearch}
+            />
+            <FilterSelect
+              options={[
+                { value: "", label: "Tất cả trạng thái" },
+                { value: "pending", label: "Chưa nộp" },
+                { value: "paid", label: "Đã nộp" },
+                { value: "overdue", label: "Quá hạn" },
+              ]}
+              onChange={setStatusFilter}
+            />
+            <FilterSelect
+              options={[
+                { value: "", label: "Tất cả quận/huyện" },
+                ...districts.map((d) => ({ value: d, label: d })),
+              ]}
+              onChange={setDistrictFilter}
+            />
+          </>
+        }
+        footer={
+          <Pagination
+            info={`Hiển thị 1–${filtered.length} trong tổng số ${mockPenalties.length} quyết định`}
+          />
+        }
+      >
+        <DataTable
+          columns={columns}
+          data={filtered}
+          emptyMessage="Không tìm thấy quyết định xử phạt nào"
+        />
+      </TableCard>
     </div>
   );
 }
