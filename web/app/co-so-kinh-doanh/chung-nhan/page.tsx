@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { FiEye } from 'react-icons/fi';
-import { useRole } from '@/lib/RoleContext';   // Giả sử bạn đã có RoleContext
+import { useRole } from '@/lib/RoleContext';
+import Link from 'next/link';
+// Giả sử bạn đã có RoleContext
 
 interface Certificate {
   id: string;
@@ -55,8 +56,8 @@ const mockCertificates: Certificate[] = [
 
 const STATUS_CONFIG = {
   approved: { label: 'Đã phê duyệt', bg: 'bg-emerald-50', text: 'text-emerald-700', dot: 'bg-emerald-500', border: 'border-emerald-200' },
-  pending:  { label: 'Chờ duyệt',    bg: 'bg-amber-50',  text: 'text-amber-700',  dot: 'bg-amber-400',  border: 'border-amber-200' },
-  rejected: { label: 'Từ chối',      bg: 'bg-red-50',    text: 'text-red-700',    dot: 'bg-red-500',    border: 'border-red-200' },
+  pending: { label: 'Chờ duyệt', bg: 'bg-amber-50', text: 'text-amber-700', dot: 'bg-amber-400', border: 'border-amber-200' },
+  rejected: { label: 'Từ chối', bg: 'bg-red-50', text: 'text-red-700', dot: 'bg-red-500', border: 'border-red-200' },
 };
 
 function StatusBadge({ status }: { status: keyof typeof STATUS_CONFIG }) {
@@ -104,10 +105,10 @@ export default function PheDuyetChungNhanPage() {
     setData(prev => prev.map(item =>
       item.id === selectedCert.id
         ? {
-            ...item,
-            status: actionType,
-            approver: currentUser
-          }
+          ...item,
+          status: actionType,
+          approver: currentUser
+        }
         : item
     ));
 
@@ -164,23 +165,24 @@ export default function PheDuyetChungNhanPage() {
 
         return (
           <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-            <button 
+            <Link
+              href={`/co-so-kinh-doanh/chung-nhan/${c.id}`}
               className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 bg-white hover:bg-blue-50 hover:border-blue-300 text-base transition-all"
               title="Xem chi tiết"
             >
-              <FiEye size={16} />
-            </button>
+              👁
+            </Link>
 
             {isPending && (
               <>
-                <button 
+                <button
                   onClick={() => openActionModal(c, 'approved')}
                   className="w-8 h-8 flex items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 hover:border-emerald-400 text-base transition-all"
                   title="Phê duyệt"
                 >
                   ✅
                 </button>
-                <button 
+                <button
                   onClick={() => openActionModal(c, 'rejected')}
                   className="w-8 h-8 flex items-center justify-center rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 hover:border-red-400 text-base transition-all"
                   title="Từ chối"
@@ -379,11 +381,10 @@ export default function PheDuyetChungNhanPage() {
               <button
                 onClick={handleApproveReject}
                 disabled={actionType === 'rejected' && !rejectReason.trim()}
-                className={`px-6 py-2.5 font-semibold rounded-xl transition-colors ${
-                  actionType === 'approved' 
-                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white' 
+                className={`px-6 py-2.5 font-semibold rounded-xl transition-colors ${actionType === 'approved'
+                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
                     : 'bg-red-600 hover:bg-red-700 text-white'
-                } disabled:opacity-50`}
+                  } disabled:opacity-50`}
               >
                 {actionType === 'approved' ? 'Xác nhận phê duyệt' : 'Xác nhận từ chối'}
               </button>

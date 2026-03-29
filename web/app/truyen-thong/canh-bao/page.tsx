@@ -1,13 +1,7 @@
 "use client";
 
-import DataTable from "@/components/DataTable";
-import TableCard, {
-  FilterSelect,
-  Pagination,
-  SearchInput,
-} from "@/components/TableCard";
-import { useState } from "react";
-import { FiEdit, FiEye } from "react-icons/fi";
+import { useState } from 'react';
+import Link from 'next/link';
 
 interface FoodSafetyWarning {
   id: string;
@@ -64,81 +58,22 @@ const mockWarnings: FoodSafetyWarning[] = [
 ];
 
 const LEVEL_CONFIG = {
-  cao: {
-    label: "Cao",
-    bg: "bg-red-50",
-    text: "text-red-700",
-    dot: "bg-red-500",
-    border: "border-red-200",
-  },
-  "trung bình": {
-    label: "Trung bình",
-    bg: "bg-amber-50",
-    text: "text-amber-700",
-    dot: "bg-amber-400",
-    border: "border-amber-200",
-  },
-  thấp: {
-    label: "Thấp",
-    bg: "bg-sky-50",
-    text: "text-sky-700",
-    dot: "bg-sky-400",
-    border: "border-sky-200",
-  },
+  cao: { label: 'Cao', bg: 'bg-red-50', text: 'text-red-700', dot: 'bg-red-500', border: 'border-red-200' },
+  'trung bình': { label: 'Trung bình', bg: 'bg-amber-50', text: 'text-amber-700', dot: 'bg-amber-400', border: 'border-amber-200' },
+  thấp: { label: 'Thấp', bg: 'bg-sky-50', text: 'text-sky-700', dot: 'bg-sky-400', border: 'border-sky-200' },
 };
 
 const STATUS_CONFIG = {
-  active: {
-    label: "Đang hiệu lực",
-    bg: "bg-red-50",
-    text: "text-red-700",
-    dot: "bg-red-500",
-    border: "border-red-200",
-    icon: "🔴",
-  },
-  resolved: {
-    label: "Đã xử lý",
-    bg: "bg-emerald-50",
-    text: "text-emerald-700",
-    dot: "bg-emerald-500",
-    border: "border-emerald-200",
-    icon: "✓",
-  },
-  expired: {
-    label: "Hết hiệu lực",
-    bg: "bg-slate-50",
-    text: "text-slate-500",
-    dot: "bg-slate-400",
-    border: "border-slate-200",
-    icon: "⏹",
-  },
+  active: { label: 'Đang hiệu lực', bg: 'bg-red-50', text: 'text-red-700', dot: 'bg-red-500', border: 'border-red-200', icon: '🔴' },
+  resolved: { label: 'Đã xử lý', bg: 'bg-emerald-50', text: 'text-emerald-700', dot: 'bg-emerald-500', border: 'border-emerald-200', icon: '✓' },
+  expired: { label: 'Hết hiệu lực', bg: 'bg-slate-50', text: 'text-slate-500', dot: 'bg-slate-400', border: 'border-slate-200', icon: '⏹' },
 };
 
 const STATS = [
-  {
-    label: "Tổng cảnh báo",
-    value: String(mockWarnings.length),
-    icon: "🚨",
-    color: "from-violet-600 to-purple-600",
-  },
-  {
-    label: "Đang hiệu lực",
-    value: String(mockWarnings.filter((w) => w.status === "active").length),
-    icon: "🔴",
-    color: "from-red-500 to-rose-600",
-  },
-  {
-    label: "Mức độ cao",
-    value: String(mockWarnings.filter((w) => w.level === "cao").length),
-    icon: "⚠️",
-    color: "from-amber-500 to-orange-500",
-  },
-  {
-    label: "Đã xử lý",
-    value: String(mockWarnings.filter((w) => w.status === "resolved").length),
-    icon: "✅",
-    color: "from-emerald-500 to-teal-500",
-  },
+  { label: 'Tổng cảnh báo', value: String(mockWarnings.length), icon: '🚨', color: 'from-violet-600 to-purple-600' },
+  { label: 'Đang hiệu lực', value: String(mockWarnings.filter(w => w.status === 'active').length), icon: '🔴', color: 'from-red-500 to-rose-600' },
+  { label: 'Mức độ cao', value: String(mockWarnings.filter(w => w.level === 'cao').length), icon: '⚠️', color: 'from-amber-500 to-orange-500' },
+  { label: 'Đã xử lý', value: String(mockWarnings.filter(w => w.status === 'resolved').length), icon: '✅', color: 'from-emerald-500 to-teal-500' },
 ];
 
 export default function CanhBaoPage() {
@@ -182,9 +117,9 @@ export default function CanhBaoPage() {
             <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-[13px] font-semibold text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm">
               📥 Xuất CSV
             </button>
-            <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-[13px] font-semibold transition-all shadow-sm">
+            <Link href="/truyen-thong/canh-bao/new" className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-[13px] font-semibold transition-all shadow-sm">
               + Tạo cảnh báo mới
-            </button>
+            </Link>
           </div>
         </div>
 
@@ -218,49 +153,15 @@ export default function CanhBaoPage() {
             Tỷ lệ cảnh báo theo mức độ
           </p>
           <div className="flex gap-2 h-2 rounded-full overflow-hidden">
-            <div
-              className="bg-red-500 rounded-full"
-              style={{
-                flex: mockWarnings.filter((w) => w.level === "cao").length,
-              }}
-            />
-            <div
-              className="bg-amber-400 rounded-full"
-              style={{
-                flex: mockWarnings.filter((w) => w.level === "trung bình")
-                  .length,
-              }}
-            />
-            <div
-              className="bg-sky-400 rounded-full"
-              style={{
-                flex: mockWarnings.filter((w) => w.level === "thấp").length,
-              }}
-            />
+            <div className="bg-red-500 rounded-full" style={{ flex: mockWarnings.filter(w => w.level === 'cao').length }} />
+            <div className="bg-amber-400 rounded-full" style={{ flex: mockWarnings.filter(w => w.level === 'trung bình').length }} />
+            <div className="bg-sky-400 rounded-full" style={{ flex: mockWarnings.filter(w => w.level === 'thấp').length }} />
           </div>
           <div className="flex gap-5 mt-2.5">
             {[
-              {
-                color: "bg-red-500",
-                label: "Cao",
-                val: String(
-                  mockWarnings.filter((w) => w.level === "cao").length,
-                ),
-              },
-              {
-                color: "bg-amber-400",
-                label: "Trung bình",
-                val: String(
-                  mockWarnings.filter((w) => w.level === "trung bình").length,
-                ),
-              },
-              {
-                color: "bg-sky-400",
-                label: "Thấp",
-                val: String(
-                  mockWarnings.filter((w) => w.level === "thấp").length,
-                ),
-              },
+              { color: 'bg-red-500', label: 'Cao', val: String(mockWarnings.filter(w => w.level === 'cao').length) },
+              { color: 'bg-amber-400', label: 'Trung bình', val: String(mockWarnings.filter(w => w.level === 'trung bình').length) },
+              { color: 'bg-sky-400', label: 'Thấp', val: String(mockWarnings.filter(w => w.level === 'thấp').length) },
             ].map((item) => (
               <div key={item.label} className="flex items-center gap-1.5">
                 <span className={`w-2 h-2 rounded-full ${item.color}`} />
@@ -395,61 +296,40 @@ export default function CanhBaoPage() {
                             {w.businessName}
                           </span>
                         </div>
-                      </td>
-                      <td className="px-5 py-3.5 text-[13px] text-slate-600 max-w-[160px]">
-                        <span className="line-clamp-1">{w.warningType}</span>
-                      </td>
-                      <td className="px-5 py-3.5">
-                        <span
-                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border ${lv.bg} ${lv.text} ${lv.border}`}
+                        <span className="font-semibold text-[13px] text-slate-800">{w.businessName}</span>
+                      </div>
+                    </td>
+                    <td className="px-5 py-3.5 text-[13px] text-slate-600 max-w-[160px]"><span className="line-clamp-1">{w.warningType}</span></td>
+                    <td className="px-5 py-3.5">
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border ${lv.bg} ${lv.text} ${lv.border}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${lv.dot}`} />{lv.label}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3.5 text-[13px] text-slate-500 font-mono">{w.issueDate}</td>
+                    <td className="px-5 py-3.5 text-[13px] text-slate-500 font-mono">{w.expiryDate}</td>
+                    <td className="px-5 py-3.5">
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border ${st.bg} ${st.text} ${st.border}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} />{st.label}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3.5">
+                      <span className="text-[12px] text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md font-medium">{w.district}</span>
+                    </td>
+                    <td className="px-5 py-3.5">
+                      <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Link
+                          href={`/truyen-thong/canh-bao/${w.id}`}
+                          className="w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-violet-50 hover:border-violet-300 text-sm flex items-center justify-center transition-all shadow-sm"
+                          title="Xem chi tiết"
                         >
-                          <span
-                            className={`w-1.5 h-1.5 rounded-full ${lv.dot}`}
-                          />
-                          {lv.label}
-                        </span>
-                      </td>
-                      <td className="px-5 py-3.5 text-[13px] text-slate-500 font-mono">
-                        {w.issueDate}
-                      </td>
-                      <td className="px-5 py-3.5 text-[13px] text-slate-500 font-mono">
-                        {w.expiryDate}
-                      </td>
-                      <td className="px-5 py-3.5">
-                        <span
-                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border ${st.bg} ${st.text} ${st.border}`}
-                        >
-                          <span
-                            className={`w-1.5 h-1.5 rounded-full ${st.dot}`}
-                          />
-                          {st.label}
-                        </span>
-                      </td>
-                      <td className="px-5 py-3.5">
-                        <span className="text-[12px] text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md font-medium">
-                          {w.district}
-                        </span>
-                      </td>
-                      <td className="px-5 py-3.5">
-                        <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button
-                            className="w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-violet-50 hover:border-violet-300 text-sm transition-all shadow-sm"
-                            title="Xem"
-                          >
-                            <FiEye size={16} className="mx-auto" />
-                          </button>
-                          <button
-                            className="w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-amber-50 hover:border-amber-300 text-sm transition-all shadow-sm"
-                            title="Chỉnh sửa"
-                          >
-                            <FiEdit size={16} className="mx-auto" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
+                          👁
+                        </Link>
+                        <button className="w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-amber-50 hover:border-amber-300 text-sm transition-all shadow-sm" title="Chỉnh sửa">✏️</button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
 
