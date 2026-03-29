@@ -2,6 +2,7 @@
 
 import { ChangeEvent, FormEvent, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { FiEdit, FiEye } from 'react-icons/fi';
 import AlertBanner from '@/components/AlertBanner';
 import Badge from '@/components/Badge';
 import DataTable, { Column } from '@/components/DataTable';
@@ -348,10 +349,11 @@ export default function BaoCaoPage() {
               event.stopPropagation();
               router.push(`/thanh-tra-kiem-dinh/bao-cao/${report.id}`);
             }}
-            className="h-7 w-7 rounded-md border border-slate-200 bg-white text-sm transition-colors hover:bg-slate-50"
+            className="rounded-md border border-slate-200 bg-white p-2 text-blue-500 transition hover:bg-gray-100"
             aria-label={`Xem báo cáo ${report.id}`}
+            title="Xem báo cáo"
           >
-            👁️
+            <FiEye size={18} />
           </button>
           <button
             type="button"
@@ -359,10 +361,11 @@ export default function BaoCaoPage() {
               event.stopPropagation();
               router.push(`/thanh-tra-kiem-dinh/bao-cao/${report.id}/edit`);
             }}
-            className="h-7 w-7 rounded-md border border-slate-200 bg-white text-sm transition-colors hover:bg-slate-50"
+            className="rounded-md border border-slate-200 bg-white p-2 text-amber-500 transition hover:bg-gray-100"
             aria-label={`Chỉnh sửa báo cáo ${report.id}`}
+            title="Chỉnh sửa báo cáo"
           >
-            ✏️
+            <FiEdit size={18} />
           </button>
         </div>
       ),
