@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 
 interface LegalStatus {
   id: string;
@@ -269,7 +270,13 @@ export default function PhapLyPage() {
                   <td className="px-5 py-3.5 text-[13px] text-slate-500 font-mono">{l.updatedDate}</td>
                   <td className="px-5 py-3.5">
                     <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button className="w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-violet-50 hover:border-violet-300 text-sm transition-all shadow-sm" title="Xem">👁</button>
+                      <Link
+                        href={`/co-so-kinh-doanh/phap-ly/${l.id}`}
+                        className="w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-violet-50 hover:border-violet-300 text-sm flex items-center justify-center transition-all shadow-sm"
+                        title="Xem chi tiết"
+                      >
+                        👁
+                      </Link>
                       <button className="w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-amber-50 hover:border-amber-300 text-sm transition-all shadow-sm" title="Chỉnh sửa">✏️</button>
                     </div>
                   </td>
@@ -287,9 +294,8 @@ export default function PhapLyPage() {
               {[1, 2, 3].map((p) => (
                 <button
                   key={p}
-                  className={`w-7 h-7 rounded-lg text-[12px] font-semibold transition-all ${
-                    p === 1 ? 'bg-violet-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-100'
-                  }`}
+                  className={`w-7 h-7 rounded-lg text-[12px] font-semibold transition-all ${p === 1 ? 'bg-violet-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-100'
+                    }`}
                 >
                   {p}
                 </button>

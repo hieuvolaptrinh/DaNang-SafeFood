@@ -1,12 +1,10 @@
 "use client";
 
-import DataTable from "@/components/DataTable";
-import TableCard, {
-  FilterSelect,
-  Pagination,
-  SearchInput,
-} from "@/components/TableCard";
-import { useState } from "react";
+import Link from 'next/link';
+import { useState } from 'react';
+import { FiEdit, FiEye } from 'react-icons/fi';
+import TableCard, { FilterSelect, Pagination, SearchInput } from '@/components/TableCard';
+import DataTable from '@/components/DataTable';
 
 interface Notification {
   id: string;
@@ -133,6 +131,16 @@ const STATS = [
   },
 ];
 
+const columns = [
+  { key: "id", label: "Mã thông báo" },
+  { key: "title", label: "Tiêu đề" },
+  { key: "type", label: "Loại" },
+  { key: "target", label: "Đối tượng" },
+  { key: "sendDate", label: "Ngày gửi" },
+  { key: "status", label: "Trạng thái" },
+  { key: "recipientCount", label: "Số người nhận" },
+];
+
 export default function ThongBaoPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -175,9 +183,9 @@ export default function ThongBaoPage() {
             <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-[13px] font-semibold text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm">
               📥 Xuất CSV
             </button>
-            <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-[13px] font-semibold transition-all shadow-sm">
+            <Link href="/truyen-thong/thong-bao/new" className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-[13px] font-semibold transition-all shadow-sm">
               + Tạo thông báo mới
-            </button>
+            </Link>
           </div>
         </div>
 
@@ -432,13 +440,13 @@ export default function ThongBaoPage() {
                             className="w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-violet-50 hover:border-violet-300 text-sm transition-all shadow-sm"
                             title="Xem"
                           >
-                            👁
+                            <FiEye size={16} className="mx-auto" />
                           </button>
                           <button
                             className="w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-amber-50 hover:border-amber-300 text-sm transition-all shadow-sm"
                             title="Chỉnh sửa"
                           >
-                            ✏️
+                            <FiEdit size={16} className="mx-auto" />
                           </button>
                         </div>
                       </td>

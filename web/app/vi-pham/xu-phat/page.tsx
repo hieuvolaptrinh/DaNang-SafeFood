@@ -1,394 +1,287 @@
 "use client";
 
+import { useState } from 'react';
+import { useRole } from '@/lib/RoleContext';
 import DataTable from "@/components/DataTable";
 import TableCard, {
   FilterSelect,
   Pagination,
   SearchInput,
-} from "@/components/TableCard";
-import { useState } from "react";
+} from "@/components/TableCard";;
 
-interface Penalty {
+interface ViolationApproval {
   id: string;
   businessName: string;
-  violationType: string;
-  penaltyAmount: string;
-  decisionDate: string;
-  status: "pending" | "paid" | "overdue";
-  district: string;
+  violation: string;
+  inspectionReport: string;
+  proposedPenalty: string;
+  date: string;
+  status: 'pending' | 'approved';
 }
 
-const mockPenalties: Penalty[] = [
+const initialMockData: ViolationApproval[] = [
   {
-    id: "XP-2025001",
-    businessName: "Nhà hàng Hải Sản Biển Xanh",
-    violationType: "Vi phạm vệ sinh ATTP mức nghiêm trọng",
-    penaltyAmount: "45.000.000 ₫",
-    decisionDate: "18/03/2025",
-    status: "paid",
-    district: "Hải Châu",
+    id: 'VP-2025004',
+    businessName: 'Quán Bún Chả Hà Nội',
+    violation: 'Bán thực phẩm không đảm bảo an toàn, sử dụng nguyên liệu không rõ nguồn gốc',
+    inspectionReport: 'BB-KD-280325',
+    proposedPenalty: '32.000.000 ₫',
+    date: '28/03/2025',
+    status: 'pending',
   },
   {
-    id: "XP-2025002",
-    businessName: "Quán Ăn Gia Đình Việt",
-    violationType: "Không niêm yết giá",
-    penaltyAmount: "8.000.000 ₫",
-    decisionDate: "12/03/2025",
-    status: "pending",
-    district: "Thanh Khê",
+    id: 'VP-2025005',
+    businessName: 'Siêu thị Mini Mart ABC',
+    violation: 'Hàng hóa hết hạn vẫn bày bán trên kệ',
+    inspectionReport: 'BB-KD-290325',
+    proposedPenalty: '18.000.000 ₫',
+    date: '29/03/2025',
+    status: 'pending',
   },
   {
-    id: "XP-2025003",
-    businessName: "Cửa hàng Thực phẩm Sạch Organic",
-    violationType: "Sử dụng nguyên liệu không rõ nguồn gốc",
-    penaltyAmount: "25.000.000 ₫",
-    decisionDate: "25/03/2025",
-    status: "overdue",
-    district: "Ngũ Hành Sơn",
+    id: 'VP-2025007',
+    businessName: 'Nhà hàng Hải Sản Đại Dương',
+    violation: 'Vi phạm vệ sinh an toàn thực phẩm mức nghiêm trọng',
+    inspectionReport: 'BB-KD-300325',
+    proposedPenalty: '50.000.000 ₫',
+    date: '30/03/2025',
+    status: 'pending',
   },
 ];
 
-const STATUS_CONFIG = {
-  pending: {
-    label: "Chưa nộp",
-    bg: "bg-amber-50",
-    text: "text-amber-700",
-    icon: "⏳",
-    dot: "bg-amber-400",
-    border: "border-amber-200",
-  },
-  paid: {
-    label: "Đã nộp",
-    bg: "bg-emerald-50",
-    text: "text-emerald-700",
-    icon: "✓",
-    dot: "bg-emerald-500",
-    border: "border-emerald-200",
-  },
-  overdue: {
-    label: "Quá hạn",
-    bg: "bg-red-50",
-    text: "text-red-700",
-    icon: "🚨",
-    dot: "bg-red-500",
-    border: "border-red-200",
-  },
-};
+export default function PheDuyetDonViPhamPage() {
+  const { role } = useRole();
 
-const totalAmount = mockPenalties.reduce((sum, p) => {
-  const num = parseInt(p.penaltyAmount.replace(/\D/g, ""), 10);
-  return sum + (isNaN(num) ? 0 : num);
-}, 0);
+  const [violations, setViolations] = useState<ViolationApproval[]>(initialMockData);
+  const [search, setSearch] = useState('');
+  const [approvingId, setApprovingId] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState('');
+  const [districtFilter, setDistrictFilter] = useState('');
 
-const STATS = [
-  {
-    label: "Tổng quyết định",
-    value: String(mockPenalties.length),
-    icon: "📄",
-    color: "from-violet-600 to-purple-600",
-  },
-  {
-    label: "Chưa nộp",
-    value: String(mockPenalties.filter((p) => p.status === "pending").length),
-    icon: "⏳",
-    color: "from-amber-500 to-orange-500",
-  },
-  {
-    label: "Quá hạn",
-    value: String(mockPenalties.filter((p) => p.status === "overdue").length),
-    icon: "🚨",
-    color: "from-red-500 to-rose-600",
-  },
-  {
-    label: "Tổng tiền phạt",
-    value: (totalAmount / 1_000_000).toFixed(0) + "M ₫",
-    icon: "💰",
-    color: "from-emerald-500 to-teal-500",
-  },
-];
+  const pendingViolations = violations.filter(v => v.status === 'pending');
 
-export default function XuPhatPage() {
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
-  const [districtFilter, setDistrictFilter] = useState("");
+  const filteredViolations = pendingViolations.filter(v =>
+    !search ||
+    v.id.toLowerCase().includes(search.toLowerCase()) ||
+    v.businessName.toLowerCase().includes(search.toLowerCase()) ||
+    v.violation.toLowerCase().includes(search.toLowerCase())
+  );
 
-  const districts = [...new Set(mockPenalties.map((p) => p.district))];
+  const isAuthority = role === 'AUTHORITY';
+  
+  // === TEXT THEO ROLE ===
+  const pageTitle = isAuthority ? 'Phê duyệt đơn vi phạm' : 'Gửi kết quả kiểm tra vi phạm';
+  const pageSubtitle = isAuthority 
+    ? 'Xem xét và ban hành quyết định xử phạt' 
+    : 'Xử lý và gửi kết quả vi phạm đến cơ quan thẩm quyền';
 
-  const filtered = mockPenalties.filter((p) => {
-    const matchSearch =
-      !search ||
+  const actionText = isAuthority ? 'ban hành quyết định' : 'gửi kết quả';
+  const successMessage = isAuthority 
+    ? 'Đã phê duyệt và ban hành quyết định xử phạt thành công!' 
+    : 'Đã gửi kết quả thành công!';
+
+  const buttonText = isAuthority ? '✅ Phê duyệt & Ban hành' : '📤 Gửi kết quả';
+  const buttonColor = isAuthority ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-blue-600 hover:bg-blue-700';
+
+  const handleAction = async (id: string) => {
+    const violation = violations.find(v => v.id === id);
+    if (!violation) return;
+
+    if (!confirm(`Bạn có chắc muốn ${actionText} cho "${violation.businessName}"?`)) {
+      return;
+    }
+
+    setApprovingId(id);
+
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1200));
+
+      console.log(`[${role.toUpperCase()}] ${isAuthority ? 'Phê duyệt & Ban hành' : 'Gửi kết quả'}:`, {
+        id: violation.id,
+        businessName: violation.businessName,
+        penalty: violation.proposedPenalty,
+        actionBy: role,
+        timestamp: new Date().toLocaleString('vi-VN'),
+      });
+
+      setViolations(prev => prev.filter(v => v.id !== id));
+
+      alert(`✅ ${successMessage}`);
+    } catch (error) {
+      alert('❌ Có lỗi xảy ra khi thực hiện');
+    } finally {
+      setApprovingId(null);
+    }
+  };
+
+  const handleViewDetail = (violation: ViolationApproval) => {
+    alert(`Chi tiết đơn vi phạm:\n\n` +
+      `Mã đơn: ${violation.id}\n` +
+      `Cơ sở: ${violation.businessName}\n` +
+      `Vi phạm: ${violation.violation}\n` +
+      `Biên bản: ${violation.inspectionReport}\n` +
+      `Mức phạt đề xuất: ${violation.proposedPenalty}\n` +
+      `Ngày lập: ${violation.date}`);
+  };
+
+  const districts = ['Hải Châu', 'Thanh Khê', 'Sơn Trà', 'Ngũ Hành Sơn', 'Liên Chiểu', 'Cẩm Lệ'];
+
+  const columns = [
+    { key: 'id', label: 'Mã quyết định', width: '120px' },
+    { key: 'businessName', label: 'Tên cơ sở', width: '200px' },
+    { key: 'proposedPenalty', label: 'Mức phạt', width: '150px' },
+    { key: 'date', label: 'Ngày lập', width: '120px' },
+    { key: 'status', label: 'Trạng thái', width: '120px' },
+  ];
+
+  const mockPenalties = violations.filter(v => v.status === 'approved');
+
+  const filtered = mockPenalties.filter(p => {
+    const matchesSearch = !search || 
       p.id.toLowerCase().includes(search.toLowerCase()) ||
       p.businessName.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = !statusFilter || p.status === statusFilter;
-    const matchDistrict = !districtFilter || p.district === districtFilter;
-    return matchSearch && matchStatus && matchDistrict;
+    const matchesStatus = !statusFilter || p.status === statusFilter;
+    return matchesSearch && matchesStatus;
   });
 
   return (
     <div className="min-h-screen bg-[#f5f6fa] font-sans">
       <div className="h-1 w-full bg-gradient-to-r from-violet-600 via-purple-500 to-pink-400" />
+
       <div className="max-w-[1200px] mx-auto px-6 py-8">
-        <div className="flex items-start justify-between mb-8">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-[11px] font-bold tracking-[0.12em] uppercase text-violet-500">
-                SỞ AN TOÀN THỰC PHẨM • ĐÀ NẴNG
-              </span>
-            </div>
-            <h1 className="text-[28px] font-black text-slate-900 tracking-tight leading-tight">
-              Quản lý Xử phạt
-            </h1>
-            <p className="text-[13px] text-slate-400 mt-1 font-medium">
-              Quản lý các quyết định xử phạt vi phạm hành chính
-            </p>
+        {/* Header - Đổi theo role */}
+        <div className="mb-8">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-[11px] font-bold tracking-[0.12em] uppercase text-violet-500">
+              SỞ AN TOÀN THỰC PHẨM • ĐÀ NẴNG
+            </span>
           </div>
-          <div className="flex gap-2 pt-1">
-            <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-[13px] font-semibold text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm">
-              📥 Xuất CSV
-            </button>
-            <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-[13px] font-semibold transition-all shadow-sm">
-              + Thêm quyết định
-            </button>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-4 gap-4 mb-8">
-          {STATS.map((s) => (
-            <div
-              key={s.label}
-              className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-shadow"
-            >
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-[12px] font-semibold text-slate-400 uppercase tracking-wide mb-2">
-                    {s.label}
-                  </p>
-                  <p className="text-[30px] font-black text-slate-900 leading-none">
-                    {s.value}
-                  </p>
-                </div>
-                <div
-                  className={`w-10 h-10 rounded-xl bg-gradient-to-br ${s.color} flex items-center justify-center text-lg shadow-sm`}
-                >
-                  {s.icon}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="bg-white rounded-2xl p-5 mb-4 shadow-sm border border-slate-100">
-          <p className="text-[12px] font-bold text-slate-400 uppercase tracking-wider mb-3">
-            Tỷ lệ thu phạt theo trạng thái
+          <h1 className="text-[28px] font-black text-slate-900 tracking-tight leading-tight">
+            {pageTitle}
+          </h1>
+          <p className="text-[13px] text-slate-400 mt-1 font-medium">
+            {pageSubtitle}
           </p>
-          <div className="flex gap-2 h-2 rounded-full overflow-hidden">
-            <div
-              className="bg-emerald-500 rounded-full"
-              style={{
-                flex: mockPenalties.filter((p) => p.status === "paid").length,
-              }}
-            />
-            <div
-              className="bg-amber-400 rounded-full"
-              style={{
-                flex: mockPenalties.filter((p) => p.status === "pending")
-                  .length,
-              }}
-            />
-            <div
-              className="bg-red-500 rounded-full"
-              style={{
-                flex: mockPenalties.filter((p) => p.status === "overdue")
-                  .length,
-              }}
-            />
-          </div>
-          <div className="flex gap-5 mt-2.5">
-            {[
-              {
-                color: "bg-emerald-500",
-                label: "Đã nộp",
-                val: String(
-                  mockPenalties.filter((p) => p.status === "paid").length,
-                ),
-              },
-              {
-                color: "bg-amber-400",
-                label: "Chưa nộp",
-                val: String(
-                  mockPenalties.filter((p) => p.status === "pending").length,
-                ),
-              },
-              {
-                color: "bg-red-500",
-                label: "Quá hạn",
-                val: String(
-                  mockPenalties.filter((p) => p.status === "overdue").length,
-                ),
-              },
-            ].map((item) => (
-              <div key={item.label} className="flex items-center gap-1.5">
-                <span className={`w-2 h-2 rounded-full ${item.color}`} />
-                <span className="text-[12px] text-slate-500 font-medium">
-                  {item.label}
-                </span>
-                <span className="text-[12px] font-bold text-slate-700">
-                  {item.val} quyết định
-                </span>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-3 gap-4 mb-8">
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-[12px] font-semibold text-slate-400 uppercase tracking-wide mb-2">
+                  Đơn chờ xử lý
+                </p>
+                <p className="text-[30px] font-black text-slate-900">{pendingViolations.length}</p>
               </div>
-            ))}
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center text-lg shadow-sm">⏳</div>
+            </div>
+          </div>
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-[12px] font-semibold text-slate-400 uppercase tracking-wide mb-2">Tổng mức phạt đề xuất</p>
+                <p className="text-[30px] font-black text-slate-900">
+                  {(pendingViolations.reduce((sum, v) => {
+                    const num = parseInt(v.proposedPenalty.replace(/\D/g, ''), 10);
+                    return sum + (isNaN(num) ? 0 : num);
+                  }, 0) / 1000000).toFixed(0)}M ₫
+                </p>
+              </div>
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-lg shadow-sm">⚖️</div>
+            </div>
           </div>
         </div>
 
+        {/* Bảng giữ nguyên cấu trúc */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between flex-wrap gap-3">
+          <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <h2 className="text-[15px] font-bold text-slate-800">
-                Tất cả quyết định xử phạt
-              </h2>
-              <span className="px-2 py-0.5 rounded-md bg-slate-100 text-[12px] font-bold text-slate-500">
-                {filtered.length}
+              <h2 className="text-[15px] font-bold text-slate-800">Đơn xử phạt chờ xử lý</h2>
+              <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-700 text-[12px] font-bold">
+                {filteredViolations.length} đơn
               </span>
             </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <div className="relative">
-                <svg
-                  className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                  />
-                </svg>
-                <input
-                  type="text"
-                  placeholder="Tìm mã quyết định, tên cơ sở..."
-                  className="pl-9 pr-4 py-2 rounded-xl border border-slate-200 bg-slate-50 text-[13px] text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent w-[230px] transition-all"
-                  onChange={(e) => setSearch(e.target.value)}
-                />
-              </div>
-              <select
-                className="px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-[13px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-violet-500 cursor-pointer"
-                onChange={(e) => setStatusFilter(e.target.value)}
-              >
-                <option value="">Tất cả trạng thái</option>
-                <option value="pending">Chưa nộp</option>
-                <option value="paid">Đã nộp</option>
-                <option value="overdue">Quá hạn</option>
-              </select>
-              <select
-                className="px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-[13px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-violet-500 cursor-pointer"
-                onChange={(e) => setDistrictFilter(e.target.value)}
-              >
-                <option value="">Tất cả quận/huyện</option>
-                {districts.map((d) => (
-                  <option key={d} value={d}>
-                    {d}
-                  </option>
-                ))}
-              </select>
+
+            <div className="relative w-80">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                type="text"
+                placeholder="Tìm theo mã đơn hoặc tên cơ sở..."
+                className="pl-9 pr-4 py-2 w-full rounded-xl border border-slate-200 bg-slate-50 text-[13px] focus:outline-none focus:ring-2 focus:ring-violet-500"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
             </div>
           </div>
 
           <table className="w-full">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-100">
-                {[
-                  "Mã quyết định",
-                  "Tên cơ sở",
-                  "Loại vi phạm",
-                  "Mức phạt",
-                  "Ngày quyết định",
-                  "Trạng thái",
-                  "Quận/Huyện",
-                  "Thao tác",
-                ].map((h) => (
-                  <th
-                    key={h}
-                    className="px-5 py-3 text-left text-[11px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap"
-                  >
-                    {h}
+                {['Mã đơn', 'Tên cơ sở', 'Nội dung vi phạm', 'Biên bản', 'Mức phạt đề xuất', 'Ngày lập', 'Thao tác'].map((header) => (
+                  <th key={header} className="px-5 py-3 text-left text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                    {header}
                   </th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {filtered.length === 0 ? (
+              {filteredViolations.length === 0 ? (
                 <tr>
-                  <td
-                    colSpan={8}
-                    className="px-5 py-12 text-center text-[13px] text-slate-400"
-                  >
-                    Không tìm thấy quyết định xử phạt nào
+                  <td colSpan={7} className="px-5 py-16 text-center text-slate-400 text-[13px]">
+                    Không có đơn vi phạm nào chờ xử lý
                   </td>
                 </tr>
               ) : (
-                filtered.map((p) => {
-                  const st = STATUS_CONFIG[p.status];
+                filteredViolations.map((violation) => {
+                  const isApproving = approvingId === violation.id;
+
                   return (
-                    <tr
-                      key={p.id}
-                      className="hover:bg-violet-50/30 transition-colors group"
-                    >
-                      <td className="px-5 py-3.5">
-                        <span className="font-mono text-[12px] text-slate-400 font-semibold bg-slate-100 px-2 py-0.5 rounded-md">
-                          {p.id}
+                    <tr key={violation.id} className="hover:bg-violet-50/30 transition-colors group">
+                      <td className="px-5 py-4">
+                        <span className="font-mono text-[12px] font-semibold bg-slate-100 px-2.5 py-1 rounded-md text-slate-500">
+                          {violation.id}
                         </span>
                       </td>
-                      <td className="px-5 py-3.5">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-100 to-purple-200 flex items-center justify-center text-[11px] font-black text-violet-600 flex-shrink-0">
-                            {p.businessName.charAt(0)}
-                          </div>
-                          <span className="font-semibold text-[13px] text-slate-800">
-                            {p.businessName}
-                          </span>
-                        </div>
+                      <td className="px-5 py-4">
+                        <div className="font-semibold text-slate-800">{violation.businessName}</div>
                       </td>
-                      <td className="px-5 py-3.5 text-[13px] text-slate-600 max-w-[180px]">
-                        <span className="line-clamp-1">{p.violationType}</span>
+                      <td className="px-5 py-4 text-[13px] text-slate-600 max-w-[260px]">
+                        <span className="line-clamp-2">{violation.violation}</span>
                       </td>
-                      <td className="px-5 py-3.5">
-                        <span className="font-bold text-[13px] text-slate-800">
-                          {p.penaltyAmount}
-                        </span>
+                      <td className="px-5 py-4 font-mono text-[13px] text-slate-500">
+                        {violation.inspectionReport}
                       </td>
-                      <td className="px-5 py-3.5 text-[13px] text-slate-500 font-mono">
-                        {p.decisionDate}
+                      <td className="px-5 py-4">
+                        <span className="font-bold text-slate-800">{violation.proposedPenalty}</span>
                       </td>
-                      <td className="px-5 py-3.5">
-                        <span
-                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border ${st.bg} ${st.text} ${st.border}`}
-                        >
-                          <span
-                            className={`w-1.5 h-1.5 rounded-full ${st.dot}`}
-                          />
-                          {st.label}
-                        </span>
+                      <td className="px-5 py-4 text-[13px] text-slate-500 font-mono">
+                        {violation.date}
                       </td>
-                      <td className="px-5 py-3.5">
-                        <span className="text-[12px] text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md font-medium">
-                          {p.district}
-                        </span>
-                      </td>
-                      <td className="px-5 py-3.5">
-                        <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-2">
                           <button
-                            className="w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-violet-50 hover:border-violet-300 text-sm transition-all shadow-sm"
-                            title="Xem"
+                            onClick={() => handleViewDetail(violation)}
+                            className="px-4 py-1.5 text-[13px] font-medium border border-slate-200 hover:bg-slate-50 rounded-xl transition-all"
                           >
-                            👁
+                            👁 Xem chi tiết
                           </button>
+
                           <button
-                            className="w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-amber-50 hover:border-amber-300 text-sm transition-all shadow-sm"
-                            title="Chỉnh sửa"
+                            onClick={() => handleAction(violation.id)}
+                            disabled={isApproving}
+                            className={`px-5 py-1.5 text-white text-[13px] font-semibold rounded-xl transition-all flex items-center gap-2 shadow-sm ${buttonColor} disabled:opacity-70`}
                           >
-                            ✏️
+                            {isApproving ? (
+                              <>
+                                <span className="animate-spin w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full" />
+                                Đang xử lý...
+                              </>
+                            ) : (
+                              buttonText
+                            )}
                           </button>
                         </div>
                       </td>
@@ -398,26 +291,10 @@ export default function XuPhatPage() {
               )}
             </tbody>
           </table>
+        </div>
 
-          <div className="px-5 py-3.5 border-t border-slate-100 flex items-center justify-between bg-slate-50/50">
-            <span className="text-[12px] text-slate-400 font-medium">
-              Hiển thị{" "}
-              <strong className="text-slate-600">{filtered.length}</strong>{" "}
-              trong tổng số{" "}
-              <strong className="text-slate-600">{mockPenalties.length}</strong>{" "}
-              quyết định
-            </span>
-            <div className="flex gap-1">
-              {[1, 2, 3].map((p) => (
-                <button
-                  key={p}
-                  className={`w-7 h-7 rounded-lg text-[12px] font-semibold transition-all ${p === 1 ? "bg-violet-600 text-white shadow-sm" : "text-slate-500 hover:bg-slate-100"}`}
-                >
-                  {p}
-                </button>
-              ))}
-            </div>
-          </div>
+        <div className="text-center mt-6 text-[12px] text-slate-400">
+          Chỉ hiển thị các đơn đang chờ xử lý • Hệ thống sẽ tự động lưu lịch sử khi thực hiện
         </div>
       </div>
 
