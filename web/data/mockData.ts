@@ -69,6 +69,33 @@ export interface CitizenFeedback {
   status: RecordStatus;
 }
 
+export type ComplaintStatus = 'pending' | 'processing' | 'resolved';
+
+export interface ComplaintEvidence {
+  id: string;
+  label: string;
+  kind: 'image' | 'file';
+  note: string;
+}
+
+export interface ComplaintRecord {
+  id: string;
+  title: string;
+  submitter: string;
+  submittedAt: string;
+  status: ComplaintStatus;
+  content: string;
+  submitterInfo: {
+    fullName: string;
+    phone: string;
+    email: string;
+    address: string;
+  };
+  evidence: ComplaintEvidence[];
+  handlingResult?: string;
+  inspectionSummary?: string;
+}
+
 // ─────────────────────────────────────────────
 // BUSINESSES
 // ─────────────────────────────────────────────
@@ -152,6 +179,74 @@ export const mockFeedback: CitizenFeedback[] = [
   { id: 'FB-081', submitter: 'Ẩn danh', businessReported: 'Lò Bánh Mì Thanh Khê', type: 'Khiếu nại vệ sinh', date: '09/01/2025', priority: 'high', status: 'open' },
 ];
 
+export const mockComplaints: ComplaintRecord[] = [
+  {
+    id: 'KN-2026-001',
+    title: 'Nghi ngờ thực phẩm bảo quản không đúng nhiệt độ',
+    submitter: 'Nguyễn Thị Hồng',
+    submittedAt: '25/03/2026',
+    status: 'pending',
+    content:
+      'Người dân phản ánh quầy hải sản tại Chợ Tươi Đà Nẵng để thực phẩm ngoài thùng lạnh quá lâu, có mùi lạ vào cuối buổi chiều và không có nhãn truy xuất nguồn gốc.',
+    submitterInfo: {
+      fullName: 'Nguyễn Thị Hồng',
+      phone: '0905 123 456',
+      email: 'hong.nguyen@gmail.com',
+      address: 'An Hải Bắc, Sơn Trà, Đà Nẵng',
+    },
+    evidence: [
+      { id: 'EV-001', label: 'Anh_quay_hai_san.jpg', kind: 'image', note: 'Ảnh chụp khu vực bảo quản lúc 17:40' },
+      { id: 'EV-002', label: 'bien-ban-phan-anh.pdf', kind: 'file', note: 'Bản mô tả chi tiết của người gửi' },
+    ],
+  },
+  {
+    id: 'KN-2026-002',
+    title: 'Phản ánh dầu chiên tái sử dụng nhiều lần',
+    submitter: 'Trần Văn Đức',
+    submittedAt: '24/03/2026',
+    status: 'processing',
+    content:
+      'Người gửi cho biết cơ sở Bánh Mì Hội An sử dụng dầu chiên có màu sẫm, mùi khét, nghi đã tái sử dụng trong nhiều ngày liên tiếp trong giờ cao điểm buổi tối.',
+    submitterInfo: {
+      fullName: 'Trần Văn Đức',
+      phone: '0917 668 220',
+      email: 'duc.tv@gmail.com',
+      address: 'Hòa Cường Bắc, Hải Châu, Đà Nẵng',
+    },
+    evidence: [
+      { id: 'EV-003', label: 'mau-dau-chien.png', kind: 'image', note: 'Ảnh màu dầu trong chảo chiên' },
+      { id: 'EV-004', label: 'ghi-am-nguoi-gui.mp3', kind: 'file', note: 'Tệp ghi âm mô tả thời điểm phát hiện' },
+    ],
+    inspectionSummary:
+      'Đã kiểm tra hiện trường, ghi nhận dầu chiên sẫm màu và yêu cầu cơ sở thay toàn bộ mẻ dầu trong ngày.',
+    handlingResult:
+      'Đã lập biên bản nhắc nhở và yêu cầu cơ sở thay dầu chiên, lưu mẫu dầu để kiểm nghiệm lại trong đợt tái kiểm.',
+  },
+  {
+    id: 'KN-2026-003',
+    title: 'Khiếu nại bao bì thực phẩm không có hạn sử dụng',
+    submitter: 'Lê Minh Anh',
+    submittedAt: '22/03/2026',
+    status: 'resolved',
+    content:
+      'Người dân phản ánh tại cửa hàng thực phẩm đóng gói có nhiều sản phẩm không in hạn sử dụng rõ ràng, gây khó xác định thời điểm an toàn để dùng.',
+    submitterInfo: {
+      fullName: 'Lê Minh Anh',
+      phone: '0935 770 112',
+      email: 'minhanh.le@mail.vn',
+      address: 'Thanh Khê Tây, Thanh Khê, Đà Nẵng',
+    },
+    evidence: [
+      { id: 'EV-005', label: 'nhan-san-pham.jpeg', kind: 'image', note: 'Ảnh chụp nhãn sản phẩm thiếu thông tin' },
+      { id: 'EV-006', label: 'ket-luan-xu-ly.docx', kind: 'file', note: 'Tài liệu tổng hợp hướng xử lý đã ban hành' },
+    ],
+    inspectionSummary:
+      'Đã đối chiếu hồ sơ nhập hàng và kiểm tra ngẫu nhiên 12 sản phẩm tại quầy trưng bày.',
+    handlingResult:
+      'Đã yêu cầu cơ sở thu hồi lô hàng vi phạm, bổ sung nhãn phụ đúng quy định và hoàn tất xác nhận khắc phục trong ngày 23/03/2026.',
+  },
+];
+
 // ─────────────────────────────────────────────
 // ROLE CONFIGS
 // ─────────────────────────────────────────────
@@ -209,9 +304,11 @@ export const roleNavMap: Record<Role, NavItem[]> = {
     {
       label: 'Thanh tra & Kiểm định', icon: 'clipboard', children: [
         { label: 'Hồ sơ thanh tra', href: '/thanh-tra-kiem-dinh' },
+        { label: 'Nhiệm vụ kiểm tra', href: '/thanh-tra-kiem-dinh/nhiem-vu' },
         { label: 'Báo cáo thanh tra', href: '/thanh-tra-kiem-dinh/bao-cao' },
         { label: 'Yêu cầu kiểm nghiệm', href: '/thanh-tra-kiem-dinh/yeu-cau' },
         { label: 'Kết quả kiểm nghiệm', href: '/thanh-tra-kiem-dinh/ket-qua' },
+        { label: 'Khiếu nại', href: '/thanh-tra-kiem-dinh/khieu-nai' },
       ]
     },
   ],
@@ -268,3 +365,74 @@ export const roleColors: Record<Role, string> = {
   TESTER: 'bg-violet-700 text-white',
   BUSINESS: 'bg-cyan-700 text-white',
 };
+
+export type InspectionReportResult = 'pass' | 'fail' | 'scheduled';
+
+export interface InspectionReport {
+  id: string;
+  tenCoSo: string;
+  loaiThanhTra: string;
+  thanhTraVien: string;
+  ngay: string;
+  ketQua: InspectionReportResult;
+  diem: number;
+  quanHuyen: string;
+  noiDung: string;
+  nhanXet: string;
+  tepDinhKem?: string;
+}
+
+export const mockInspectionReports: InspectionReport[] = [
+  {
+    id: 'BC-001',
+    tenCoSo: 'Cơ sở A',
+    loaiThanhTra: 'Thanh tra định kỳ',
+    thanhTraVien: 'Nguyễn Văn Trần',
+    ngay: '2026-03-20',
+    ketQua: 'pass',
+    diem: 92,
+    quanHuyen: 'Hải Châu',
+    noiDung: 'Đã kiểm tra khu vực sơ chế, kho bảo quản và hồ sơ nguồn gốc nguyên liệu của cơ sở.',
+    nhanXet: 'Cơ sở đáp ứng tốt yêu cầu an toàn thực phẩm, cần duy trì việc lưu mẫu đúng quy định.',
+    tepDinhKem: 'bao-cao-bc-001.pdf',
+  },
+  {
+    id: 'BC-002',
+    tenCoSo: 'Cơ sở B',
+    loaiThanhTra: 'Thanh tra đột xuất',
+    thanhTraVien: 'Lê Thị Mai',
+    ngay: '2026-03-18',
+    ketQua: 'fail',
+    diem: 54,
+    quanHuyen: 'Thanh Khê',
+    noiDung: 'Phát hiện khu vực bảo quản thực phẩm chưa tách biệt rõ giữa thực phẩm sống và chín.',
+    nhanXet: 'Yêu cầu khắc phục ngay việc bố trí kho và bổ sung nhật ký vệ sinh theo ngày.',
+    tepDinhKem: 'bao-cao-bc-002.pdf',
+  },
+  {
+    id: 'BC-003',
+    tenCoSo: 'Cơ sở C',
+    loaiThanhTra: 'Thanh tra định kỳ',
+    thanhTraVien: 'Phạm Văn Đức',
+    ngay: '2026-03-21',
+    ketQua: 'pass',
+    diem: 88,
+    quanHuyen: 'Ngũ Hành Sơn',
+    noiDung: 'Đã đối chiếu hồ sơ pháp lý, nhãn mác sản phẩm và điều kiện vệ sinh tại khu chế biến.',
+    nhanXet: 'Cơ sở vận hành ổn định, hồ sơ đầy đủ và nhân sự thực hiện đúng quy trình đã ban hành.',
+    tepDinhKem: 'bao-cao-bc-003.pdf',
+  },
+  {
+    id: 'BC-004',
+    tenCoSo: 'Cơ sở D',
+    loaiThanhTra: 'Thanh tra theo phản ánh',
+    thanhTraVien: 'Nguyễn Văn Trần',
+    ngay: '2026-03-25',
+    ketQua: 'scheduled',
+    diem: 0,
+    quanHuyen: 'Sơn Trà',
+    noiDung: 'Đã tiếp nhận phản ánh và lên lịch kiểm tra thực tế, báo cáo chi tiết sẽ bổ sung sau.',
+    nhanXet: 'Chờ hoàn tất biên bản kiểm tra để cập nhật kết quả cuối cùng.',
+    tepDinhKem: 'bao-cao-bc-004.pdf',
+  },
+];

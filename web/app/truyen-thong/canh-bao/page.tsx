@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useState } from 'react';
 import Link from 'next/link';
@@ -7,53 +7,53 @@ interface FoodSafetyWarning {
   id: string;
   businessName: string;
   warningType: string;
-  level: 'thấp' | 'trung bình' | 'cao';
+  level: "thấp" | "trung bình" | "cao";
   issueDate: string;
   expiryDate: string;
-  status: 'active' | 'resolved' | 'expired';
+  status: "active" | "resolved" | "expired";
   district: string;
 }
 
 const mockWarnings: FoodSafetyWarning[] = [
   {
-    id: 'CB-2025001',
-    businessName: 'Nhà hàng Hải Sản Biển Xanh',
-    warningType: 'Cảnh báo ô nhiễm vi sinh',
-    level: 'cao',
-    issueDate: '20/03/2025',
-    expiryDate: '19/04/2025',
-    status: 'active',
-    district: 'Hải Châu',
+    id: "CB-2025001",
+    businessName: "Nhà hàng Hải Sản Biển Xanh",
+    warningType: "Cảnh báo ô nhiễm vi sinh",
+    level: "cao",
+    issueDate: "20/03/2025",
+    expiryDate: "19/04/2025",
+    status: "active",
+    district: "Hải Châu",
   },
   {
-    id: 'CB-2025002',
-    businessName: 'Quán Ăn Gia Đình Việt',
-    warningType: 'Cảnh báo hạn sử dụng',
-    level: 'trung bình',
-    issueDate: '15/03/2025',
-    expiryDate: '14/04/2025',
-    status: 'resolved',
-    district: 'Thanh Khê',
+    id: "CB-2025002",
+    businessName: "Quán Ăn Gia Đình Việt",
+    warningType: "Cảnh báo hạn sử dụng",
+    level: "trung bình",
+    issueDate: "15/03/2025",
+    expiryDate: "14/04/2025",
+    status: "resolved",
+    district: "Thanh Khê",
   },
   {
-    id: 'CB-2025003',
-    businessName: 'Cửa hàng Thực phẩm Sạch Organic',
-    warningType: 'Cảnh báo nguồn gốc xuất xứ',
-    level: 'thấp',
-    issueDate: '25/03/2025',
-    expiryDate: '24/04/2025',
-    status: 'active',
-    district: 'Ngũ Hành Sơn',
+    id: "CB-2025003",
+    businessName: "Cửa hàng Thực phẩm Sạch Organic",
+    warningType: "Cảnh báo nguồn gốc xuất xứ",
+    level: "thấp",
+    issueDate: "25/03/2025",
+    expiryDate: "24/04/2025",
+    status: "active",
+    district: "Ngũ Hành Sơn",
   },
   {
-    id: 'CB-2025004',
-    businessName: 'Siêu thị Mini Mart Đà Nẵng',
-    warningType: 'Cảnh báo hóa chất bảo quản',
-    level: 'cao',
-    issueDate: '18/03/2025',
-    expiryDate: '17/04/2025',
-    status: 'active',
-    district: 'Sơn Trà',
+    id: "CB-2025004",
+    businessName: "Siêu thị Mini Mart Đà Nẵng",
+    warningType: "Cảnh báo hóa chất bảo quản",
+    level: "cao",
+    issueDate: "18/03/2025",
+    expiryDate: "17/04/2025",
+    status: "active",
+    district: "Sơn Trà",
   },
 ];
 
@@ -77,15 +77,18 @@ const STATS = [
 ];
 
 export default function CanhBaoPage() {
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [levelFilter, setLevelFilter] = useState('');
-  const [districtFilter, setDistrictFilter] = useState('');
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [levelFilter, setLevelFilter] = useState("");
+  const [districtFilter, setDistrictFilter] = useState("");
 
   const districts = [...new Set(mockWarnings.map((w) => w.district))];
 
   const filtered = mockWarnings.filter((w) => {
-    const matchSearch = !search || w.id.toLowerCase().includes(search.toLowerCase()) || w.businessName.toLowerCase().includes(search.toLowerCase());
+    const matchSearch =
+      !search ||
+      w.id.toLowerCase().includes(search.toLowerCase()) ||
+      w.businessName.toLowerCase().includes(search.toLowerCase());
     const matchStatus = !statusFilter || w.status === statusFilter;
     const matchLevel = !levelFilter || w.level === levelFilter;
     const matchDistrict = !districtFilter || w.district === districtFilter;
@@ -96,14 +99,19 @@ export default function CanhBaoPage() {
     <div className="min-h-screen bg-[#f5f6fa] font-sans">
       <div className="h-1 w-full bg-gradient-to-r from-violet-600 via-purple-500 to-pink-400" />
       <div className="max-w-[1200px] mx-auto px-6 py-8">
-
         <div className="flex items-start justify-between mb-8">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-[11px] font-bold tracking-[0.12em] uppercase text-violet-500">SỞ AN TOÀN THỰC PHẨM • ĐÀ NẴNG</span>
+              <span className="text-[11px] font-bold tracking-[0.12em] uppercase text-violet-500">
+                SỞ AN TOÀN THỰC PHẨM • ĐÀ NẴNG
+              </span>
             </div>
-            <h1 className="text-[28px] font-black text-slate-900 tracking-tight leading-tight">Cảnh báo An toàn Thực phẩm</h1>
-            <p className="text-[13px] text-slate-400 mt-1 font-medium">Theo dõi và quản lý các cảnh báo an toàn thực phẩm tại Đà Nẵng</p>
+            <h1 className="text-[28px] font-black text-slate-900 tracking-tight leading-tight">
+              Cảnh báo An toàn Thực phẩm
+            </h1>
+            <p className="text-[13px] text-slate-400 mt-1 font-medium">
+              Theo dõi và quản lý các cảnh báo an toàn thực phẩm tại Đà Nẵng
+            </p>
           </div>
           <div className="flex gap-2 pt-1">
             <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-[13px] font-semibold text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm">
@@ -117,20 +125,33 @@ export default function CanhBaoPage() {
 
         <div className="grid grid-cols-4 gap-4 mb-8">
           {STATS.map((s) => (
-            <div key={s.label} className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+            <div
+              key={s.label}
+              className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-shadow"
+            >
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-[12px] font-semibold text-slate-400 uppercase tracking-wide mb-2">{s.label}</p>
-                  <p className="text-[30px] font-black text-slate-900 leading-none">{s.value}</p>
+                  <p className="text-[12px] font-semibold text-slate-400 uppercase tracking-wide mb-2">
+                    {s.label}
+                  </p>
+                  <p className="text-[30px] font-black text-slate-900 leading-none">
+                    {s.value}
+                  </p>
                 </div>
-                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${s.color} flex items-center justify-center text-lg shadow-sm`}>{s.icon}</div>
+                <div
+                  className={`w-10 h-10 rounded-xl bg-gradient-to-br ${s.color} flex items-center justify-center text-lg shadow-sm`}
+                >
+                  {s.icon}
+                </div>
               </div>
             </div>
           ))}
         </div>
 
         <div className="bg-white rounded-2xl p-5 mb-4 shadow-sm border border-slate-100">
-          <p className="text-[12px] font-bold text-slate-400 uppercase tracking-wider mb-3">Tỷ lệ cảnh báo theo mức độ</p>
+          <p className="text-[12px] font-bold text-slate-400 uppercase tracking-wider mb-3">
+            Tỷ lệ cảnh báo theo mức độ
+          </p>
           <div className="flex gap-2 h-2 rounded-full overflow-hidden">
             <div className="bg-red-500 rounded-full" style={{ flex: mockWarnings.filter(w => w.level === 'cao').length }} />
             <div className="bg-amber-400 rounded-full" style={{ flex: mockWarnings.filter(w => w.level === 'trung bình').length }} />
@@ -144,8 +165,12 @@ export default function CanhBaoPage() {
             ].map((item) => (
               <div key={item.label} className="flex items-center gap-1.5">
                 <span className={`w-2 h-2 rounded-full ${item.color}`} />
-                <span className="text-[12px] text-slate-500 font-medium">{item.label}</span>
-                <span className="text-[12px] font-bold text-slate-700">{item.val} cảnh báo</span>
+                <span className="text-[12px] text-slate-500 font-medium">
+                  {item.label}
+                </span>
+                <span className="text-[12px] font-bold text-slate-700">
+                  {item.val} cảnh báo
+                </span>
               </div>
             ))}
           </div>
@@ -154,33 +179,63 @@ export default function CanhBaoPage() {
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-3">
-              <h2 className="text-[15px] font-bold text-slate-800">Tất cả cảnh báo</h2>
-              <span className="px-2 py-0.5 rounded-md bg-slate-100 text-[12px] font-bold text-slate-500">{filtered.length}</span>
+              <h2 className="text-[15px] font-bold text-slate-800">
+                Tất cả cảnh báo
+              </h2>
+              <span className="px-2 py-0.5 rounded-md bg-slate-100 text-[12px] font-bold text-slate-500">
+                {filtered.length}
+              </span>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               <div className="relative">
-                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                <svg
+                  className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
                 </svg>
-                <input type="text" placeholder="Tìm mã cảnh báo, tên cơ sở..."
+                <input
+                  type="text"
+                  placeholder="Tìm mã cảnh báo, tên cơ sở..."
                   className="pl-9 pr-4 py-2 rounded-xl border border-slate-200 bg-slate-50 text-[13px] text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent w-[230px] transition-all"
-                  onChange={(e) => setSearch(e.target.value)} />
+                  onChange={(e) => setSearch(e.target.value)}
+                />
               </div>
-              <select className="px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-[13px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-violet-500 cursor-pointer" onChange={(e) => setLevelFilter(e.target.value)}>
+              <select
+                className="px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-[13px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-violet-500 cursor-pointer"
+                onChange={(e) => setLevelFilter(e.target.value)}
+              >
                 <option value="">Tất cả mức độ</option>
                 <option value="thấp">Thấp</option>
                 <option value="trung bình">Trung bình</option>
                 <option value="cao">Cao</option>
               </select>
-              <select className="px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-[13px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-violet-500 cursor-pointer" onChange={(e) => setStatusFilter(e.target.value)}>
+              <select
+                className="px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-[13px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-violet-500 cursor-pointer"
+                onChange={(e) => setStatusFilter(e.target.value)}
+              >
                 <option value="">Tất cả trạng thái</option>
                 <option value="active">Đang hiệu lực</option>
                 <option value="resolved">Đã xử lý</option>
                 <option value="expired">Hết hiệu lực</option>
               </select>
-              <select className="px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-[13px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-violet-500 cursor-pointer" onChange={(e) => setDistrictFilter(e.target.value)}>
+              <select
+                className="px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-[13px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-violet-500 cursor-pointer"
+                onChange={(e) => setDistrictFilter(e.target.value)}
+              >
                 <option value="">Tất cả quận/huyện</option>
-                {districts.map((d) => <option key={d} value={d}>{d}</option>)}
+                {districts.map((d) => (
+                  <option key={d} value={d}>
+                    {d}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
@@ -188,26 +243,58 @@ export default function CanhBaoPage() {
           <table className="w-full">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-100">
-                {['Mã cảnh báo', 'Tên cơ sở', 'Loại cảnh báo', 'Mức độ', 'Ngày ban hành', 'Hiệu lực đến', 'Trạng thái', 'Quận/Huyện', 'Thao tác'].map((h) => (
-                  <th key={h} className="px-5 py-3 text-left text-[11px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">{h}</th>
+                {[
+                  "Mã cảnh báo",
+                  "Tên cơ sở",
+                  "Loại cảnh báo",
+                  "Mức độ",
+                  "Ngày ban hành",
+                  "Hiệu lực đến",
+                  "Trạng thái",
+                  "Quận/Huyện",
+                  "Thao tác",
+                ].map((h) => (
+                  <th
+                    key={h}
+                    className="px-5 py-3 text-left text-[11px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap"
+                  >
+                    {h}
+                  </th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
               {filtered.length === 0 ? (
-                <tr><td colSpan={9} className="px-5 py-12 text-center text-[13px] text-slate-400">Không tìm thấy cảnh báo nào</td></tr>
-              ) : filtered.map((w) => {
-                const lv = LEVEL_CONFIG[w.level];
-                const st = STATUS_CONFIG[w.status];
-                return (
-                  <tr key={w.id} className="hover:bg-violet-50/30 transition-colors group">
-                    <td className="px-5 py-3.5">
-                      <span className="font-mono text-[12px] text-slate-400 font-semibold bg-slate-100 px-2 py-0.5 rounded-md">{w.id}</span>
-                    </td>
-                    <td className="px-5 py-3.5">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-100 to-purple-200 flex items-center justify-center text-[11px] font-black text-violet-600 flex-shrink-0">
-                          {w.businessName.charAt(0)}
+                <tr>
+                  <td
+                    colSpan={9}
+                    className="px-5 py-12 text-center text-[13px] text-slate-400"
+                  >
+                    Không tìm thấy cảnh báo nào
+                  </td>
+                </tr>
+              ) : (
+                filtered.map((w) => {
+                  const lv = LEVEL_CONFIG[w.level];
+                  const st = STATUS_CONFIG[w.status];
+                  return (
+                    <tr
+                      key={w.id}
+                      className="hover:bg-violet-50/30 transition-colors group"
+                    >
+                      <td className="px-5 py-3.5">
+                        <span className="font-mono text-[12px] text-slate-400 font-semibold bg-slate-100 px-2 py-0.5 rounded-md">
+                          {w.id}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-100 to-purple-200 flex items-center justify-center text-[11px] font-black text-violet-600 flex-shrink-0">
+                            {w.businessName.charAt(0)}
+                          </div>
+                          <span className="font-semibold text-[13px] text-slate-800">
+                            {w.businessName}
+                          </span>
                         </div>
                         <span className="font-semibold text-[13px] text-slate-800">{w.businessName}</span>
                       </div>
@@ -248,16 +335,72 @@ export default function CanhBaoPage() {
 
           <div className="px-5 py-3.5 border-t border-slate-100 flex items-center justify-between bg-slate-50/50">
             <span className="text-[12px] text-slate-400 font-medium">
-              Hiển thị <strong className="text-slate-600">{filtered.length}</strong> trong tổng số <strong className="text-slate-600">{mockWarnings.length}</strong> cảnh báo
+              Hiển thị{" "}
+              <strong className="text-slate-600">{filtered.length}</strong>{" "}
+              trong tổng số{" "}
+              <strong className="text-slate-600">{mockWarnings.length}</strong>{" "}
+              cảnh báo
             </span>
             <div className="flex gap-1">
               {[1, 2, 3].map((p) => (
-                <button key={p} className={`w-7 h-7 rounded-lg text-[12px] font-semibold transition-all ${p === 1 ? 'bg-violet-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-100'}`}>{p}</button>
+                <button
+                  key={p}
+                  className={`w-7 h-7 rounded-lg text-[12px] font-semibold transition-all ${p === 1 ? "bg-violet-600 text-white shadow-sm" : "text-slate-500 hover:bg-slate-100"}`}
+                >
+                  {p}
+                </button>
               ))}
             </div>
           </div>
         </div>
       </div>
+      <TableCard
+        title="Tất cả cảnh báo"
+        controls={
+          <>
+            <SearchInput
+              placeholder="Tìm mã cảnh báo, tên cơ sở..."
+              onChange={setSearch}
+            />
+            <FilterSelect
+              options={[
+                { value: "", label: "Tất cả mức độ" },
+                { value: "thấp", label: "Thấp" },
+                { value: "trung bình", label: "Trung bình" },
+                { value: "cao", label: "Cao" },
+              ]}
+              onChange={setLevelFilter}
+            />
+            <FilterSelect
+              options={[
+                { value: "", label: "Tất cả trạng thái" },
+                { value: "active", label: "Đang hiệu lực" },
+                { value: "resolved", label: "Đã xử lý" },
+                { value: "expired", label: "Hết hiệu lực" },
+              ]}
+              onChange={setStatusFilter}
+            />
+            <FilterSelect
+              options={[
+                { value: "", label: "Tất cả quận/huyện" },
+                ...districts.map((d) => ({ value: d, label: d })),
+              ]}
+              onChange={setDistrictFilter}
+            />
+          </>
+        }
+        footer={
+          <Pagination
+            info={`Hiển thị 1–${filtered.length} trong tổng số ${mockWarnings.length} cảnh báo`}
+          />
+        }
+      >
+        <DataTable
+          columns={columns}
+          data={filtered}
+          emptyMessage="Không tìm thấy cảnh báo nào"
+        />
+      </TableCard>
     </div>
   );
 }

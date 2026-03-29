@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { FiEdit, FiEye } from 'react-icons/fi';
 import { mockBusinesses, Business } from '@/data/mockData';
 import DataTable, { Column } from '@/components/DataTable';
 import Badge from '@/components/Badge';
@@ -84,13 +85,13 @@ export default function CoSoKinhDoanhPage() {
             className="w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-violet-50 hover:border-violet-300 text-sm transition-all shadow-sm" 
             title="Xem chi tiết"
           >
-            👁
+            <FiEye size={16} className="mx-auto" />
           </button>
           <button 
             className="w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-amber-50 hover:border-amber-300 text-sm transition-all shadow-sm" 
             title="Chỉnh sửa"
           >
-            ✏️
+            <FiEdit size={16} className="mx-auto" />
           </button>
         </div>
       ),
@@ -192,12 +193,12 @@ export default function CoSoKinhDoanhPage() {
         >
           <DataTable 
             columns={columns} 
-            data={filtered as unknown as Record<string, unknown>[]} 
+            data={filtered} 
             emptyMessage="Không tìm thấy cơ sở kinh doanh nào khớp với điều kiện tìm kiếm."
-            rowClassName="hover:bg-violet-50/30 group transition-colors"
           />
         </TableCard>
       </div>
     </div>
   );
 }
+

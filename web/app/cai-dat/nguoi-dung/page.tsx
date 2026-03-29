@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { FiEdit } from 'react-icons/fi';
 import { mockUsers, SystemUser, roleLabels, roleColors, Role } from '@/data/mockData';
 import DataTable, { Column } from '@/components/DataTable';
 import Badge from '@/components/Badge';
@@ -63,7 +64,7 @@ export default function NguoiDungPage() {
       header: 'Thao tác',
       render: () => (
         <div className="flex gap-1.5">
-          <button className="w-7 h-7 rounded-md border border-slate-200 bg-white hover:bg-slate-50 text-sm transition-colors">✏️</button>
+          <button className="w-7 h-7 rounded-md border border-slate-200 bg-white hover:bg-slate-50 text-sm transition-colors"><FiEdit size={16} className="mx-auto" /></button>
           <button className="w-7 h-7 rounded-md border border-red-200 bg-red-50 hover:bg-red-100 text-sm transition-colors">🔒</button>
         </div>
       ),
@@ -120,10 +121,11 @@ export default function NguoiDungPage() {
       >
         <DataTable
           columns={columns}
-          data={filtered as unknown as Record<string, unknown>[]}
+          data={filtered }
           emptyMessage="Không tìm thấy người dùng nào"
         />
       </TableCard>
     </div>
   );
 }
+
