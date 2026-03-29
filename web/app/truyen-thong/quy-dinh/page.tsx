@@ -2,6 +2,9 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import TableCard, { FilterSelect, Pagination, SearchInput } from '@/components/TableCard';
+import { FiEdit, FiEye } from 'react-icons/fi';
+import DataTable from '@/components/DataTable';
 
 interface Regulation {
   id: string;
@@ -122,6 +125,16 @@ const STATS = [
     icon: "📁",
     color: "from-slate-400 to-slate-500",
   },
+];
+
+const columns = [
+  { key: "id", label: "Mã quy định" },
+  { key: "title", label: "Tiêu đề" },
+  { key: "category", label: "Danh mục" },
+  { key: "issueDate", label: "Ngày ban hành" },
+  { key: "effectiveDate", label: "Ngày hiệu lực" },
+  { key: "status", label: "Trạng thái" },
+  { key: "authority", label: "Cơ quan ban hành" },
 ];
 
 export default function QuyDinhPage() {

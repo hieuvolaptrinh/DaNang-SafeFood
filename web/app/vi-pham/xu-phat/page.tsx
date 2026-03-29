@@ -2,6 +2,12 @@
 
 import { useState } from 'react';
 import { useRole } from '@/lib/RoleContext';
+import DataTable from "@/components/DataTable";
+import TableCard, {
+  FilterSelect,
+  Pagination,
+  SearchInput,
+} from "@/components/TableCard";;
 
 interface ViolationApproval {
   id: string;
@@ -49,6 +55,8 @@ export default function PheDuyetDonViPhamPage() {
   const [violations, setViolations] = useState<ViolationApproval[]>(initialMockData);
   const [search, setSearch] = useState('');
   const [approvingId, setApprovingId] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState('');
+  const [districtFilter, setDistrictFilter] = useState('');
 
   const pendingViolations = violations.filter(v => v.status === 'pending');
 
@@ -115,6 +123,26 @@ export default function PheDuyetDonViPhamPage() {
       `Mức phạt đề xuất: ${violation.proposedPenalty}\n` +
       `Ngày lập: ${violation.date}`);
   };
+
+  const districts = ['Hải Châu', 'Thanh Khê', 'Sơn Trà', 'Ngũ Hành Sơn', 'Liên Chiểu', 'Cẩm Lệ'];
+
+  const columns = [
+    { key: 'id', label: 'Mã quyết định', width: '120px' },
+    { key: 'businessName', label: 'Tên cơ sở', width: '200px' },
+    { key: 'proposedPenalty', label: 'Mức phạt', width: '150px' },
+    { key: 'date', label: 'Ngày lập', width: '120px' },
+    { key: 'status', label: 'Trạng thái', width: '120px' },
+  ];
+
+  const mockPenalties = violations.filter(v => v.status === 'approved');
+
+  const filtered = mockPenalties.filter(p => {
+    const matchesSearch = !search || 
+      p.id.toLowerCase().includes(search.toLowerCase()) ||
+      p.businessName.toLowerCase().includes(search.toLowerCase());
+    const matchesStatus = !statusFilter || p.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
 
   return (
     <div className="min-h-screen bg-[#f5f6fa] font-sans">

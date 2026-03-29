@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useState } from 'react';
 import Link from 'next/link';
@@ -98,6 +98,7 @@ export default function CanhBaoPage() {
   return (
     <div className="min-h-screen bg-[#f5f6fa] font-sans">
       <div className="h-1 w-full bg-gradient-to-r from-violet-600 via-purple-500 to-pink-400" />
+
       <div className="max-w-[1200px] mx-auto px-6 py-8">
         <div className="flex items-start justify-between mb-8">
           <div>
@@ -117,12 +118,16 @@ export default function CanhBaoPage() {
             <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-[13px] font-semibold text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm">
               📥 Xuất CSV
             </button>
-            <Link href="/truyen-thong/canh-bao/new" className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-[13px] font-semibold transition-all shadow-sm">
+            <Link 
+              href="/truyen-thong/canh-bao/new" 
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-[13px] font-semibold transition-all shadow-sm"
+            >
               + Tạo cảnh báo mới
             </Link>
           </div>
         </div>
 
+        {/* Stats */}
         <div className="grid grid-cols-4 gap-4 mb-8">
           {STATS.map((s) => (
             <div
@@ -148,6 +153,7 @@ export default function CanhBaoPage() {
           ))}
         </div>
 
+        {/* Tỷ lệ cảnh báo */}
         <div className="bg-white rounded-2xl p-5 mb-4 shadow-sm border border-slate-100">
           <p className="text-[12px] font-bold text-slate-400 uppercase tracking-wider mb-3">
             Tỷ lệ cảnh báo theo mức độ
@@ -165,41 +171,27 @@ export default function CanhBaoPage() {
             ].map((item) => (
               <div key={item.label} className="flex items-center gap-1.5">
                 <span className={`w-2 h-2 rounded-full ${item.color}`} />
-                <span className="text-[12px] text-slate-500 font-medium">
-                  {item.label}
-                </span>
-                <span className="text-[12px] font-bold text-slate-700">
-                  {item.val} cảnh báo
-                </span>
+                <span className="text-[12px] text-slate-500 font-medium">{item.label}</span>
+                <span className="text-[12px] font-bold text-slate-700">{item.val} cảnh báo</span>
               </div>
             ))}
           </div>
         </div>
 
+        {/* Bảng chính */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-3">
-              <h2 className="text-[15px] font-bold text-slate-800">
-                Tất cả cảnh báo
-              </h2>
+              <h2 className="text-[15px] font-bold text-slate-800">Tất cả cảnh báo</h2>
               <span className="px-2 py-0.5 rounded-md bg-slate-100 text-[12px] font-bold text-slate-500">
                 {filtered.length}
               </span>
             </div>
+
             <div className="flex items-center gap-2 flex-wrap">
               <div className="relative">
-                <svg
-                  className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                  />
+                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
                 <input
                   type="text"
@@ -208,6 +200,7 @@ export default function CanhBaoPage() {
                   onChange={(e) => setSearch(e.target.value)}
                 />
               </div>
+
               <select
                 className="px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-[13px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-violet-500 cursor-pointer"
                 onChange={(e) => setLevelFilter(e.target.value)}
@@ -217,6 +210,7 @@ export default function CanhBaoPage() {
                 <option value="trung bình">Trung bình</option>
                 <option value="cao">Cao</option>
               </select>
+
               <select
                 className="px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-[13px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-violet-500 cursor-pointer"
                 onChange={(e) => setStatusFilter(e.target.value)}
@@ -226,6 +220,7 @@ export default function CanhBaoPage() {
                 <option value="resolved">Đã xử lý</option>
                 <option value="expired">Hết hiệu lực</option>
               </select>
+
               <select
                 className="px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-[13px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-violet-500 cursor-pointer"
                 onChange={(e) => setDistrictFilter(e.target.value)}
@@ -266,10 +261,7 @@ export default function CanhBaoPage() {
             <tbody className="divide-y divide-slate-50">
               {filtered.length === 0 ? (
                 <tr>
-                  <td
-                    colSpan={9}
-                    className="px-5 py-12 text-center text-[13px] text-slate-400"
-                  >
+                  <td colSpan={9} className="px-5 py-12 text-center text-[13px] text-slate-400">
                     Không tìm thấy cảnh báo nào
                   </td>
                 </tr>
@@ -277,11 +269,9 @@ export default function CanhBaoPage() {
                 filtered.map((w) => {
                   const lv = LEVEL_CONFIG[w.level];
                   const st = STATUS_CONFIG[w.status];
+
                   return (
-                    <tr
-                      key={w.id}
-                      className="hover:bg-violet-50/30 transition-colors group"
-                    >
+                    <tr key={w.id} className="hover:bg-violet-50/30 transition-colors group">
                       <td className="px-5 py-3.5">
                         <span className="font-mono text-[12px] text-slate-400 font-semibold bg-slate-100 px-2 py-0.5 rounded-md">
                           {w.id}
@@ -296,50 +286,52 @@ export default function CanhBaoPage() {
                             {w.businessName}
                           </span>
                         </div>
-                        <span className="font-semibold text-[13px] text-slate-800">{w.businessName}</span>
-                      </div>
-                    </td>
-                    <td className="px-5 py-3.5 text-[13px] text-slate-600 max-w-[160px]"><span className="line-clamp-1">{w.warningType}</span></td>
-                    <td className="px-5 py-3.5">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border ${lv.bg} ${lv.text} ${lv.border}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${lv.dot}`} />{lv.label}
-                      </span>
-                    </td>
-                    <td className="px-5 py-3.5 text-[13px] text-slate-500 font-mono">{w.issueDate}</td>
-                    <td className="px-5 py-3.5 text-[13px] text-slate-500 font-mono">{w.expiryDate}</td>
-                    <td className="px-5 py-3.5">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border ${st.bg} ${st.text} ${st.border}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} />{st.label}
-                      </span>
-                    </td>
-                    <td className="px-5 py-3.5">
-                      <span className="text-[12px] text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md font-medium">{w.district}</span>
-                    </td>
-                    <td className="px-5 py-3.5">
-                      <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Link
-                          href={`/truyen-thong/canh-bao/${w.id}`}
-                          className="w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-violet-50 hover:border-violet-300 text-sm flex items-center justify-center transition-all shadow-sm"
-                          title="Xem chi tiết"
-                        >
-                          👁
-                        </Link>
-                        <button className="w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-amber-50 hover:border-amber-300 text-sm transition-all shadow-sm" title="Chỉnh sửa">✏️</button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
+                      </td>
+                      <td className="px-5 py-3.5 text-[13px] text-slate-600 max-w-[160px]">
+                        <span className="line-clamp-1">{w.warningType}</span>
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border ${lv.bg} ${lv.text} ${lv.border}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${lv.dot}`} />{lv.label}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3.5 text-[13px] text-slate-500 font-mono">{w.issueDate}</td>
+                      <td className="px-5 py-3.5 text-[13px] text-slate-500 font-mono">{w.expiryDate}</td>
+                      <td className="px-5 py-3.5">
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border ${st.bg} ${st.text} ${st.border}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} />{st.label}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <span className="text-[12px] text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md font-medium">{w.district}</span>
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Link
+                            href={`/truyen-thong/canh-bao/${w.id}`}
+                            className="w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-violet-50 hover:border-violet-300 text-sm flex items-center justify-center transition-all shadow-sm"
+                            title="Xem chi tiết"
+                          >
+                            👁
+                          </Link>
+                          <button 
+                            className="w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-amber-50 hover:border-amber-300 text-sm transition-all shadow-sm" 
+                            title="Chỉnh sửa"
+                          >
+                            ✏️
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
 
           <div className="px-5 py-3.5 border-t border-slate-100 flex items-center justify-between bg-slate-50/50">
             <span className="text-[12px] text-slate-400 font-medium">
-              Hiển thị{" "}
-              <strong className="text-slate-600">{filtered.length}</strong>{" "}
-              trong tổng số{" "}
-              <strong className="text-slate-600">{mockWarnings.length}</strong>{" "}
-              cảnh báo
+              Hiển thị <strong className="text-slate-600">{filtered.length}</strong> trong tổng số <strong className="text-slate-600">{mockWarnings.length}</strong> cảnh báo
             </span>
             <div className="flex gap-1">
               {[1, 2, 3].map((p) => (
@@ -354,53 +346,6 @@ export default function CanhBaoPage() {
           </div>
         </div>
       </div>
-      <TableCard
-        title="Tất cả cảnh báo"
-        controls={
-          <>
-            <SearchInput
-              placeholder="Tìm mã cảnh báo, tên cơ sở..."
-              onChange={setSearch}
-            />
-            <FilterSelect
-              options={[
-                { value: "", label: "Tất cả mức độ" },
-                { value: "thấp", label: "Thấp" },
-                { value: "trung bình", label: "Trung bình" },
-                { value: "cao", label: "Cao" },
-              ]}
-              onChange={setLevelFilter}
-            />
-            <FilterSelect
-              options={[
-                { value: "", label: "Tất cả trạng thái" },
-                { value: "active", label: "Đang hiệu lực" },
-                { value: "resolved", label: "Đã xử lý" },
-                { value: "expired", label: "Hết hiệu lực" },
-              ]}
-              onChange={setStatusFilter}
-            />
-            <FilterSelect
-              options={[
-                { value: "", label: "Tất cả quận/huyện" },
-                ...districts.map((d) => ({ value: d, label: d })),
-              ]}
-              onChange={setDistrictFilter}
-            />
-          </>
-        }
-        footer={
-          <Pagination
-            info={`Hiển thị 1–${filtered.length} trong tổng số ${mockWarnings.length} cảnh báo`}
-          />
-        }
-      >
-        <DataTable
-          columns={columns}
-          data={filtered}
-          emptyMessage="Không tìm thấy cảnh báo nào"
-        />
-      </TableCard>
     </div>
   );
 }
