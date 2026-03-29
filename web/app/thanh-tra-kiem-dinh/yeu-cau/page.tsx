@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { FiEye } from "react-icons/fi";
 import { useRole } from "@/lib/RoleContext";
 import Badge from "@/components/Badge";
 import CreateInspectionRequestForm, {
@@ -275,7 +276,7 @@ export default function YeuCauPage() {
             className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-base transition-all hover:border-violet-300 hover:bg-violet-50"
             title="Xem chi tiết"
           >
-            👁
+            <FiEye size={16} className="mx-auto" />
           </button>
         </div>
       ),
