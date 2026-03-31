@@ -20,10 +20,7 @@ class NotificationDetailPage extends StatelessWidget {
             icon: const Icon(Icons.bookmark_border_rounded),
             onPressed: () {},
           ),
-          IconButton(
-            icon: const Icon(Icons.share_outlined),
-            onPressed: () {},
-          ),
+          IconButton(icon: const Icon(Icons.share_outlined), onPressed: () {}),
         ],
       ),
       body: SingleChildScrollView(
@@ -34,7 +31,7 @@ class NotificationDetailPage extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: const Color(0xFFEF5350).withValues(alpha: 0.1),
+                color: const Color(0xFFEF5350).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
@@ -61,18 +58,32 @@ class NotificationDetailPage extends StatelessWidget {
             const SizedBox(height: 12),
             Row(
               children: [
-                Icon(Icons.calendar_today_outlined, size: 14, color: AppTheme.textSecondary),
+                Icon(
+                  Icons.calendar_today_outlined,
+                  size: 14,
+                  color: AppTheme.textSecondary,
+                ),
                 const SizedBox(width: 6),
                 Text(
                   '22/03/2026',
-                  style: GoogleFonts.inter(color: AppTheme.textSecondary, fontSize: 13),
+                  style: GoogleFonts.inter(
+                    color: AppTheme.textSecondary,
+                    fontSize: 13,
+                  ),
                 ),
                 const SizedBox(width: 16),
-                Icon(Icons.visibility_outlined, size: 14, color: AppTheme.textSecondary),
+                Icon(
+                  Icons.visibility_outlined,
+                  size: 14,
+                  color: AppTheme.textSecondary,
+                ),
                 const SizedBox(width: 6),
                 Text(
                   '1,245 lượt xem',
-                  style: GoogleFonts.inter(color: AppTheme.textSecondary, fontSize: 13),
+                  style: GoogleFonts.inter(
+                    color: AppTheme.textSecondary,
+                    fontSize: 13,
+                  ),
                 ),
               ],
             ),
@@ -91,11 +102,18 @@ class NotificationDetailPage extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.image_outlined, color: AppTheme.textSecondary, size: 40),
+                  Icon(
+                    Icons.image_outlined,
+                    color: AppTheme.textSecondary,
+                    size: 40,
+                  ),
                   const SizedBox(height: 8),
                   Text(
                     'Hình ảnh minh họa',
-                    style: GoogleFonts.inter(color: AppTheme.textSecondary, fontSize: 13),
+                    style: GoogleFonts.inter(
+                      color: AppTheme.textSecondary,
+                      fontSize: 13,
+                    ),
                   ),
                 ],
               ),
@@ -124,7 +142,11 @@ class NotificationDetailPage extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.attach_file_rounded, color: AppTheme.primary, size: 20),
+                  Icon(
+                    Icons.attach_file_rounded,
+                    color: AppTheme.primary,
+                    size: 20,
+                  ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Column(
@@ -140,12 +162,19 @@ class NotificationDetailPage extends StatelessWidget {
                         ),
                         Text(
                           '1.2 MB',
-                          style: GoogleFonts.inter(color: AppTheme.textSecondary, fontSize: 11),
+                          style: GoogleFonts.inter(
+                            color: AppTheme.textSecondary,
+                            fontSize: 11,
+                          ),
                         ),
                       ],
                     ),
                   ),
-                  Icon(Icons.download_outlined, color: AppTheme.primary, size: 20),
+                  Icon(
+                    Icons.download_outlined,
+                    color: AppTheme.primary,
+                    size: 20,
+                  ),
                 ],
               ),
             ),
