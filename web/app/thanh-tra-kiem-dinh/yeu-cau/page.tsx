@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { FiEye, FiArrowLeft, FiCheckCircle, FiAlertCircle } from "react-icons/fi";
+import { LuTestTube, LuClipboardList, LuFileText, LuBuilding2, LuSearch } from "react-icons/lu";
 import { useRole } from "@/lib/RoleContext";
 import Badge from "@/components/Badge";
 import DataTable, { type Column } from "@/components/DataTable";
@@ -833,7 +834,9 @@ export default function YeuCauPage() {
               {/* E1: Not found */}
               {!detailLoading && detailNotFound && (
                 <div className="flex flex-col items-center justify-center py-20 gap-3">
-                  <div className="text-5xl">🔍</div>
+                  <div className="p-4 rounded-2xl bg-slate-100">
+                    <LuSearch className="text-slate-400" size={40} />
+                  </div>
                   <p className="text-[15px] font-semibold text-slate-700">Không tìm thấy yêu cầu kiểm định</p>
                   <p className="text-[13px] text-slate-400">Yêu cầu này có thể đã bị xóa hoặc không tồn tại</p>
                 </div>
@@ -854,7 +857,9 @@ export default function YeuCauPage() {
                     {/* Section 1: Thông tin mẫu */}
                     <div>
                       <div className="flex items-center gap-2 mb-3">
-                        <div className="w-6 h-6 rounded-lg bg-violet-100 flex items-center justify-center text-sm">🧪</div>
+                        <div className="p-1.5 rounded-lg bg-violet-100 flex items-center justify-center">
+                          <LuTestTube className="text-violet-600" size={15} />
+                        </div>
                         <h4 className="text-[14px] font-bold text-slate-800">1. Thông tin mẫu</h4>
                       </div>
                       <div className="grid grid-cols-3 gap-3">
@@ -874,7 +879,9 @@ export default function YeuCauPage() {
                     {/* Section 2: Chỉ tiêu kiểm định */}
                     <div>
                       <div className="flex items-center gap-2 mb-3">
-                        <div className="w-6 h-6 rounded-lg bg-violet-100 flex items-center justify-center text-sm">📋</div>
+                        <div className="p-1.5 rounded-lg bg-violet-100 flex items-center justify-center">
+                          <LuClipboardList className="text-violet-600" size={15} />
+                        </div>
                         <h4 className="text-[14px] font-bold text-slate-800">2. Chỉ tiêu kiểm định</h4>
                       </div>
                       {d.criteria && d.criteria.length > 0 ? (
@@ -896,7 +903,9 @@ export default function YeuCauPage() {
                     {/* Section 3: Nội dung yêu cầu */}
                     <div>
                       <div className="flex items-center gap-2 mb-3">
-                        <div className="w-6 h-6 rounded-lg bg-violet-100 flex items-center justify-center text-sm">📝</div>
+                        <div className="p-1.5 rounded-lg bg-violet-100 flex items-center justify-center">
+                          <LuFileText className="text-violet-600" size={15} />
+                        </div>
                         <h4 className="text-[14px] font-bold text-slate-800">3. Nội dung yêu cầu</h4>
                       </div>
                       <div className="bg-slate-50 rounded-xl px-4 py-3 border border-slate-100 text-[13px] text-slate-700 leading-relaxed min-h-[70px]">
@@ -907,7 +916,9 @@ export default function YeuCauPage() {
                     {/* Section 4: Thông tin gửi */}
                     <div>
                       <div className="flex items-center gap-2 mb-3">
-                        <div className="w-6 h-6 rounded-lg bg-violet-100 flex items-center justify-center text-sm">🏛️</div>
+                        <div className="p-1.5 rounded-lg bg-violet-100 flex items-center justify-center">
+                          <LuBuilding2 className="text-violet-600" size={15} />
+                        </div>
                         <h4 className="text-[14px] font-bold text-slate-800">4. Thông tin gửi</h4>
                       </div>
                       <div className="grid grid-cols-3 gap-3">
