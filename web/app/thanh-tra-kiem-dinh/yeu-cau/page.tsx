@@ -26,6 +26,11 @@ export interface TestRequest {
   result?: string;
   reason?: string;
   stampedFile?: string;
+  // Detail fields
+  sampleId?: string;
+  collectedDate?: string;
+  criteria?: string[];
+  requestContent?: string;
 }
 
 interface MockSample {
@@ -48,6 +53,10 @@ const mockTestRequests: TestRequest[] = [
     status: "processing",
     lab: "Trung tâm Kiểm nghiệm Đà Nẵng",
     result: "Đạt tiêu chuẩn",
+    sampleId: "M-2025-001",
+    collectedDate: "22/03/2025",
+    criteria: ["Vi sinh", "Hóa học"],
+    requestContent: "Kiểm nghiệm mẫu hải sản tươi sống, đảm bảo không nhiễm vi khuẩn E.coli và Salmonella theo QCVN 8-3:2012/BYT.",
   },
   {
     id: "YC-2025002",
@@ -57,6 +66,10 @@ const mockTestRequests: TestRequest[] = [
     deadline: "02/04/2025",
     status: "pending",
     lab: "Lab Việt Nam",
+    sampleId: "M-2025-002",
+    collectedDate: "23/03/2025",
+    criteria: ["Kim loại nặng", "Hóa học", "Cảm quan"],
+    requestContent: "Kiểm tra dư lượng thuốc bảo vệ thực vật và kim loại nặng trong rau hữu cơ theo tiêu chuẩn hữu cơ Việt Nam.",
   },
   {
     id: "YC-2025003",
@@ -68,6 +81,10 @@ const mockTestRequests: TestRequest[] = [
     lab: "Trung tâm Kiểm nghiệm Đà Nẵng",
     result: "Không đạt",
     reason: "Vi phạm giới hạn vi sinh vật",
+    sampleId: "M-2025-003",
+    collectedDate: "19/03/2025",
+    criteria: ["Vi sinh", "Cảm quan"],
+    requestContent: "Kiểm tra chỉ tiêu vi sinh và cảm quan của mẫu nước đá dùng cho thực phẩm tại siêu thị.",
   },
 ];
 
@@ -124,6 +141,12 @@ export default function YeuCauPage() {
   const [reason, setReason] = useState("");
   const [stampedFileName, setStampedFileName] = useState("");
 
+  // ── Detail modal state ──
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [detailRequest, setDetailRequest] = useState<TestRequest | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailNotFound, setDetailNotFound] = useState(false);
+
   // ── Create form state ──
   const [selectedSampleId, setSelectedSampleId] = useState(mockSamples[0]?.id ?? "");
   const [criteria, setCriteria] = useState<Record<string, boolean>>({
@@ -151,6 +174,32 @@ export default function YeuCauPage() {
     const matchStatus = !statusFilter || r.status === statusFilter;
     return matchSearch && matchStatus;
   });
+
+  // ────────────────────────────────────────────────
+  // Handlers – Detail Modal
+  // ────────────────────────────────────────────────
+
+  const openDetail = async (req: TestRequest) => {
+    setDetailRequest(null);
+    setDetailNotFound(false);
+    setDetailLoading(true);
+    setIsDetailOpen(true);
+    // Simulate async fetch (mock 800ms)
+    await new Promise((r) => setTimeout(r, 800));
+    const found = data.find((d) => d.id === req.id) ?? null;
+    if (!found) {
+      setDetailNotFound(true);
+    } else {
+      setDetailRequest(found);
+    }
+    setDetailLoading(false);
+  };
+
+  const closeDetail = () => {
+    setIsDetailOpen(false);
+    setDetailRequest(null);
+    setDetailNotFound(false);
+  };
 
   // ────────────────────────────────────────────────
   // Handlers – Result Modal
@@ -336,7 +385,9 @@ export default function YeuCauPage() {
             </button>
           )}
           <button
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white hover:bg-violet-50 hover:border-violet-300 text-base transition-all"
+            onClick={() => openDetail(r)}
+            disabled={detailLoading}
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white hover:bg-violet-50 hover:border-violet-300 text-base transition-all disabled:opacity-50"
             title="Xem chi tiết"
           >
             <FiEye size={16} />
@@ -737,6 +788,177 @@ export default function YeuCauPage() {
                 className="px-6 py-2.5 bg-violet-600 hover:bg-violet-700 disabled:bg-slate-300 text-white font-semibold rounded-xl transition-colors"
               >
                 Lưu kết quả
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Detail Modal ── */}
+      {isDetailOpen && (
+        <div
+          className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
+          onClick={(e) => { if (e.target === e.currentTarget) closeDetail(); }}
+        >
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="px-6 py-5 border-b flex items-center justify-between bg-gradient-to-r from-violet-50 to-purple-50 flex-shrink-0">
+              <div>
+                <h3 className="text-[16px] font-bold text-slate-900">Chi tiết yêu cầu kiểm định</h3>
+                {detailRequest && (
+                  <p className="text-[12px] text-violet-500 mt-0.5 font-mono">{detailRequest.id}</p>
+                )}
+              </div>
+              <button
+                onClick={closeDetail}
+                className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all text-xl leading-none"
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="overflow-y-auto flex-1">
+              {/* Loading */}
+              {detailLoading && (
+                <div className="flex flex-col items-center justify-center py-20 gap-4">
+                  <svg className="animate-spin h-10 w-10 text-violet-500" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                  </svg>
+                  <p className="text-[13px] text-slate-400 font-medium">Đang tải thông tin...</p>
+                </div>
+              )}
+
+              {/* E1: Not found */}
+              {!detailLoading && detailNotFound && (
+                <div className="flex flex-col items-center justify-center py-20 gap-3">
+                  <div className="text-5xl">🔍</div>
+                  <p className="text-[15px] font-semibold text-slate-700">Không tìm thấy yêu cầu kiểm định</p>
+                  <p className="text-[13px] text-slate-400">Yêu cầu này có thể đã bị xóa hoặc không tồn tại</p>
+                </div>
+              )}
+
+              {/* Detail content */}
+              {!detailLoading && detailRequest && (() => {
+                const d = detailRequest;
+                const statusDetail: Record<TestRequest["status"], { label: string; color: string }> = {
+                  pending:    { label: "Đã gửi",       color: "bg-blue-100 text-blue-700 border-blue-200" },
+                  processing: { label: "Đang xử lý",   color: "bg-amber-100 text-amber-700 border-amber-200" },
+                  completed:  { label: "Hoàn thành",   color: "bg-emerald-100 text-emerald-700 border-emerald-200" },
+                };
+                const sd = statusDetail[d.status];
+                return (
+                  <div className="p-6 space-y-6">
+
+                    {/* Section 1: Thông tin mẫu */}
+                    <div>
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="w-6 h-6 rounded-lg bg-violet-100 flex items-center justify-center text-sm">🧪</div>
+                        <h4 className="text-[14px] font-bold text-slate-800">1. Thông tin mẫu</h4>
+                      </div>
+                      <div className="grid grid-cols-3 gap-3">
+                        {[
+                          { label: "Mã mẫu", value: d.sampleId ?? "—" },
+                          { label: "Tên mẫu", value: d.sampleType },
+                          { label: "Ngày lấy mẫu", value: d.collectedDate ?? "—" },
+                        ].map(({ label, value }) => (
+                          <div key={label} className="bg-slate-50 rounded-xl px-4 py-3 border border-slate-100">
+                            <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide mb-1">{label}</p>
+                            <p className="text-[13px] font-semibold text-slate-800">{value}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Section 2: Chỉ tiêu kiểm định */}
+                    <div>
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="w-6 h-6 rounded-lg bg-violet-100 flex items-center justify-center text-sm">📋</div>
+                        <h4 className="text-[14px] font-bold text-slate-800">2. Chỉ tiêu kiểm định</h4>
+                      </div>
+                      {d.criteria && d.criteria.length > 0 ? (
+                        <div className="flex flex-wrap gap-2">
+                          {d.criteria.map((c) => (
+                            <span
+                              key={c}
+                              className="px-3 py-1.5 rounded-full text-[12px] font-semibold bg-violet-100 text-violet-700 border border-violet-200"
+                            >
+                              ✓ {c}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-[13px] text-slate-400 italic">Chưa có chỉ tiêu</p>
+                      )}
+                    </div>
+
+                    {/* Section 3: Nội dung yêu cầu */}
+                    <div>
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="w-6 h-6 rounded-lg bg-violet-100 flex items-center justify-center text-sm">📝</div>
+                        <h4 className="text-[14px] font-bold text-slate-800">3. Nội dung yêu cầu</h4>
+                      </div>
+                      <div className="bg-slate-50 rounded-xl px-4 py-3 border border-slate-100 text-[13px] text-slate-700 leading-relaxed min-h-[70px]">
+                        {d.requestContent || <span className="italic text-slate-400">Không có mô tả</span>}
+                      </div>
+                    </div>
+
+                    {/* Section 4: Thông tin gửi */}
+                    <div>
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="w-6 h-6 rounded-lg bg-violet-100 flex items-center justify-center text-sm">🏛️</div>
+                        <h4 className="text-[14px] font-bold text-slate-800">4. Thông tin gửi</h4>
+                      </div>
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="bg-slate-50 rounded-xl px-4 py-3 border border-slate-100 col-span-2">
+                          <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide mb-1">Cơ quan kiểm định</p>
+                          <p className="text-[13px] font-semibold text-slate-800">{d.lab}</p>
+                        </div>
+                        <div className="bg-slate-50 rounded-xl px-4 py-3 border border-slate-100">
+                          <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide mb-1">Ngày tạo đơn</p>
+                          <p className="text-[13px] font-semibold text-slate-800">{d.requestDate}</p>
+                        </div>
+                        <div className="bg-slate-50 rounded-xl px-4 py-3 border border-slate-100">
+                          <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide mb-1">Trạng thái</p>
+                          <span className={`inline-block mt-0.5 px-2.5 py-1 rounded-full text-[12px] font-semibold border ${sd.color}`}>
+                            {sd.label}
+                          </span>
+                        </div>
+                        <div className="bg-slate-50 rounded-xl px-4 py-3 border border-slate-100">
+                          <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide mb-1">Hạn hoàn thành</p>
+                          <p className="text-[13px] font-semibold text-slate-800">{d.deadline}</p>
+                        </div>
+                        {d.result && (
+                          <div className="bg-slate-50 rounded-xl px-4 py-3 border border-slate-100">
+                            <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide mb-1">Kết quả</p>
+                            <p className={`text-[13px] font-semibold ${
+                              d.result.includes("Không đạt") ? "text-red-600" : "text-emerald-600"
+                            }`}>{d.result}</p>
+                          </div>
+                        )}
+                      </div>
+                      {d.reason && (
+                        <div className="mt-3 flex items-start gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+                          <FiAlertCircle className="text-red-500 mt-0.5 flex-shrink-0" size={14} />
+                          <p className="text-[13px] text-red-700 font-medium">{d.reason}</p>
+                        </div>
+                      )}
+                    </div>
+
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 border-t bg-slate-50 flex justify-end flex-shrink-0">
+              <button
+                onClick={closeDetail}
+                id="btn-dong-chi-tiet"
+                className="px-6 py-2.5 rounded-xl border border-slate-200 bg-white text-[13px] font-semibold text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all"
+              >
+                Đóng
               </button>
             </div>
           </div>
