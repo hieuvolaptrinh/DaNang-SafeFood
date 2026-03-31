@@ -16,35 +16,40 @@ class NotificationPage extends StatelessWidget {
   static const _mockNotifications = [
     {
       'title': 'Thu hồi sản phẩm nước mắm ABC không đạt chuẩn',
-      'desc': 'Cục ATTP thông báo thu hồi lô hàng nước mắm nhãn hiệu ABC do phát hiện hàm lượng histamine vượt ngưỡng cho phép.',
+      'desc':
+          'Cục ATTP thông báo thu hồi lô hàng nước mắm nhãn hiệu ABC do phát hiện hàm lượng histamine vượt ngưỡng cho phép.',
       'date': '22/03/2026',
       'category': 'Khẩn cấp',
       'status': 'violated',
     },
     {
       'title': 'Tập huấn kiến thức ATTP cho chủ cơ sở kinh doanh',
-      'desc': 'Sở Y tế tổ chức lớp tập huấn cho các cơ sở kinh doanh thực phẩm trên địa bàn quận Hải Châu.',
+      'desc':
+          'Sở Y tế tổ chức lớp tập huấn cho các cơ sở kinh doanh thực phẩm trên địa bàn quận Hải Châu.',
       'date': '21/03/2026',
       'category': 'Tin tức',
       'status': 'safe',
     },
     {
       'title': 'Nghị định mới về xử phạt vi phạm ATTP',
-      'desc': 'Chính phủ ban hành Nghị định mới tăng mức xử phạt vi phạm hành chính về an toàn thực phẩm.',
+      'desc':
+          'Chính phủ ban hành Nghị định mới tăng mức xử phạt vi phạm hành chính về an toàn thực phẩm.',
       'date': '20/03/2026',
       'category': 'Pháp quy',
       'status': 'processing',
     },
     {
       'title': 'Cảnh báo thực phẩm chức năng giả trên mạng',
-      'desc': 'Phát hiện nhiều sản phẩm thực phẩm chức năng bán online sử dụng nhãn mác giả.',
+      'desc':
+          'Phát hiện nhiều sản phẩm thực phẩm chức năng bán online sử dụng nhãn mác giả.',
       'date': '19/03/2026',
       'category': 'Khẩn cấp',
       'status': 'violated',
     },
     {
       'title': 'Đà Nẵng kiểm tra 500 cơ sở trước mùa du lịch',
-      'desc': 'Đoàn kiểm tra liên ngành tiến hành kiểm tra 500 cơ sở kinh doanh ăn uống trước mùa hè 2026.',
+      'desc':
+          'Đoàn kiểm tra liên ngành tiến hành kiểm tra 500 cơ sở kinh doanh ăn uống trước mùa hè 2026.',
       'date': '18/03/2026',
       'category': 'Tin tức',
       'status': 'safe',
@@ -53,10 +58,14 @@ class NotificationPage extends StatelessWidget {
 
   SafetyStatus _parseStatus(String s) {
     switch (s) {
-      case 'violated': return SafetyStatus.violated;
-      case 'warning': return SafetyStatus.warning;
-      case 'processing': return SafetyStatus.processing;
-      default: return SafetyStatus.safe;
+      case 'violated':
+        return SafetyStatus.violated;
+      case 'warning':
+        return SafetyStatus.warning;
+      case 'processing':
+        return SafetyStatus.processing;
+      default:
+        return SafetyStatus.safe;
     }
   }
 
@@ -92,22 +101,35 @@ class NotificationPage extends StatelessWidget {
                     return Padding(
                       padding: const EdgeInsets.only(right: 8),
                       child: GestureDetector(
-                        onTap: () => context.read<NotificationCubit>().filterByCategory(c),
+                        onTap: () => context
+                            .read<NotificationCubit>()
+                            .filterByCategory(c),
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 7,
+                          ),
                           decoration: BoxDecoration(
-                            color: selected ? AppTheme.primary.withValues(alpha: 0.1) : AppTheme.surfaceBg,
+                            color: selected
+                                ? AppTheme.primary.withOpacity(0.1)
+                                : AppTheme.surfaceBg,
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
-                              color: selected ? AppTheme.primary : AppTheme.dividerColor,
+                              color: selected
+                                  ? AppTheme.primary
+                                  : AppTheme.dividerColor,
                             ),
                           ),
                           child: Text(
                             c,
                             style: GoogleFonts.inter(
-                              color: selected ? AppTheme.primary : AppTheme.textSecondary,
+                              color: selected
+                                  ? AppTheme.primary
+                                  : AppTheme.textSecondary,
                               fontSize: 12,
-                              fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                              fontWeight: selected
+                                  ? FontWeight.w600
+                                  : FontWeight.w400,
                             ),
                           ),
                         ),
@@ -131,7 +153,9 @@ class NotificationPage extends StatelessWidget {
 
                 final filtered = state.selectedCategory == 'Tất cả'
                     ? _mockNotifications
-                    : _mockNotifications.where((n) => n['category'] == state.selectedCategory).toList();
+                    : _mockNotifications
+                          .where((n) => n['category'] == state.selectedCategory)
+                          .toList();
 
                 return RefreshIndicator(
                   onRefresh: () => context.read<NotificationCubit>().refresh(),

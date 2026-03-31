@@ -75,7 +75,9 @@ class ProfilePage extends StatelessWidget {
                       const SizedBox(height: 4),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 4),
+                          horizontal: 12,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: AppTheme.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(20),
@@ -131,11 +133,7 @@ class ProfilePage extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      _MenuItem(
-                        icon: Icons.person_outline_rounded,
-                        title: 'Chỉnh sửa hồ sơ',
-                        onTap: () {},
-                      ),
+
                       _MenuItem(
                         icon: Icons.feedback_outlined,
                         title: 'Phản ánh của tôi',
@@ -215,17 +213,24 @@ class ProfilePage extends StatelessWidget {
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFEF5350).withValues(alpha: 0.1),
+                            color: const Color(
+                              0xFFEF5350,
+                            ).withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(14),
                             border: Border.all(
-                              color: const Color(0xFFEF5350).withValues(alpha: 0.3),
+                              color: const Color(
+                                0xFFEF5350,
+                              ).withValues(alpha: 0.3),
                             ),
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Icon(Icons.logout_rounded,
-                                  color: Color(0xFFEF5350), size: 20),
+                              const Icon(
+                                Icons.logout_rounded,
+                                color: Color(0xFFEF5350),
+                                size: 20,
+                              ),
                               const SizedBox(width: 8),
                               Text(
                                 'Đăng xuất',
@@ -273,10 +278,7 @@ class _StatItem extends StatelessWidget {
         const SizedBox(height: 2),
         Text(
           label,
-          style: GoogleFonts.inter(
-            color: AppTheme.textSecondary,
-            fontSize: 11,
-          ),
+          style: GoogleFonts.inter(color: AppTheme.textSecondary, fontSize: 11),
         ),
       ],
     );
@@ -332,8 +334,11 @@ class _MenuItem extends StatelessWidget {
               ),
               const SizedBox(width: 4),
             ],
-            const Icon(Icons.chevron_right_rounded,
-                color: AppTheme.textSecondary, size: 20),
+            const Icon(
+              Icons.chevron_right_rounded,
+              color: AppTheme.textSecondary,
+              size: 20,
+            ),
           ],
         ),
       ),
