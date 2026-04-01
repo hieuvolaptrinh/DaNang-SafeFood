@@ -76,26 +76,26 @@ export default function CoSoKinhDoanhPage() {
       header: 'Thanh tra gần nhất',
       render: (r) => <span className="text-slate-500 font-medium">{r.lastInspection}</span>
     },
-    {
-      key: 'actions',
-      header: 'Thao tác',
-      render: () => (
-        <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-          <button 
-            className="w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-violet-50 hover:border-violet-300 text-sm transition-all shadow-sm" 
-            title="Xem chi tiết"
-          >
-            <FiEye size={16} className="mx-auto" />
-          </button>
-          <button 
-            className="w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-amber-50 hover:border-amber-300 text-sm transition-all shadow-sm" 
-            title="Chỉnh sửa"
-          >
-            <FiEdit size={16} className="mx-auto" />
-          </button>
-        </div>
-      ),
-    },
+    // {  
+    //   key: 'actions',
+    //   header: 'Thao tác',
+    //   render: () => (
+    //     <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+    //       <button 
+    //         className="w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-violet-50 hover:border-violet-300 text-sm transition-all shadow-sm" 
+    //         title="Xem chi tiết"
+    //       >
+    //         <FiEye size={16} className="mx-auto" />
+    //       </button>
+    //       <button 
+    //         className="w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-amber-50 hover:border-amber-300 text-sm transition-all shadow-sm" 
+    //         title="Chỉnh sửa"
+    //       >
+    //         <FiEdit size={16} className="mx-auto" />
+    //       </button>
+    //     </div>
+    //   ),
+    // },
   ];
 
   const districts = [...new Set(mockBusinesses.map((b) => b.district))];
