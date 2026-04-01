@@ -18,7 +18,7 @@ interface Certificate {
 const mockCertificates: Certificate[] = [
   {
     id: 'CN-2025001',
-    businessName: 'Nhà hàng Hải Sản Biển Xanh',
+    businessName: 'Nhà hàng Hải Sản Biển  Xanh',
     type: 'Chứng nhận ATTP',
     issueDate: '15/01/2025',
     expiryDate: '14/01/2026',
