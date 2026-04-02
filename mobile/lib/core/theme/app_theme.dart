@@ -4,18 +4,18 @@ import 'package:google_fonts/google_fonts.dart';
 /// Theme configuration for the app - Light theme only
 class AppTheme {
   // Brand colors
-  static const Color primary = Color(0xFF4CAF50);
-  static const Color primaryLight = Color(0xFF81C784);
-  static const Color accent = Color(0xFFFF9800);
+  static const Color primary = Color(0xFF2E7D32);
+  static const Color primaryLight = Color(0xFF66BB6A);
+  static const Color accent = Color(0xFFF57C00);
 
   // Light-mode semantic colors
-  static const Color textPrimary = Color(0xFF1A1A2E);
-  static const Color textSecondary = Color(0xFF6B7280);
+  static const Color textPrimary = Color(0xFF0D0D1A);
+  static const Color textSecondary = Color(0xFF4B5563);
   static const Color cardColor = Colors.white;
   static const Color surfaceBg = Color(0xFFF5F5F5);
-  static const Color dividerColor = Color(0xFFE5E7EB);
+  static const Color dividerColor = Color(0xFFD1D5DB);
   static const Color scaffoldBg = Color(0xFFFAFAFA);
-  static const Color success = Color(0xFF4CAF50);
+  static const Color success = Color(0xFF2E7D32);
 
   static ThemeData get lightTheme {
     final baseTextTheme = GoogleFonts.interTextTheme(
@@ -50,21 +50,69 @@ class AppTheme {
         ),
       ),
       textTheme: baseTextTheme.copyWith(
-        displayLarge: GoogleFonts.inter(color: textPrimary, fontSize: 32, fontWeight: FontWeight.bold),
-        displayMedium: GoogleFonts.inter(color: textPrimary, fontSize: 28, fontWeight: FontWeight.bold),
-        displaySmall: GoogleFonts.inter(color: textPrimary, fontSize: 24, fontWeight: FontWeight.bold),
-        headlineLarge: GoogleFonts.inter(color: textPrimary, fontSize: 22, fontWeight: FontWeight.w700),
-        headlineMedium: GoogleFonts.inter(color: textPrimary, fontSize: 20, fontWeight: FontWeight.w600),
-        headlineSmall: GoogleFonts.inter(color: textPrimary, fontSize: 18, fontWeight: FontWeight.w600),
-        titleLarge: GoogleFonts.inter(color: textPrimary, fontSize: 18, fontWeight: FontWeight.w600),
-        titleMedium: GoogleFonts.inter(color: textPrimary, fontSize: 16, fontWeight: FontWeight.w500),
-        titleSmall: GoogleFonts.inter(color: textSecondary, fontSize: 14, fontWeight: FontWeight.w500),
+        displayLarge: GoogleFonts.inter(
+          color: textPrimary,
+          fontSize: 32,
+          fontWeight: FontWeight.bold,
+        ),
+        displayMedium: GoogleFonts.inter(
+          color: textPrimary,
+          fontSize: 28,
+          fontWeight: FontWeight.bold,
+        ),
+        displaySmall: GoogleFonts.inter(
+          color: textPrimary,
+          fontSize: 24,
+          fontWeight: FontWeight.bold,
+        ),
+        headlineLarge: GoogleFonts.inter(
+          color: textPrimary,
+          fontSize: 22,
+          fontWeight: FontWeight.w700,
+        ),
+        headlineMedium: GoogleFonts.inter(
+          color: textPrimary,
+          fontSize: 20,
+          fontWeight: FontWeight.w600,
+        ),
+        headlineSmall: GoogleFonts.inter(
+          color: textPrimary,
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+        ),
+        titleLarge: GoogleFonts.inter(
+          color: textPrimary,
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+        ),
+        titleMedium: GoogleFonts.inter(
+          color: textPrimary,
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
+        ),
+        titleSmall: GoogleFonts.inter(
+          color: textSecondary,
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+        ),
         bodyLarge: GoogleFonts.inter(color: textPrimary, fontSize: 16),
         bodyMedium: GoogleFonts.inter(color: textSecondary, fontSize: 14),
         bodySmall: GoogleFonts.inter(color: textSecondary, fontSize: 12),
-        labelLarge: GoogleFonts.inter(color: textPrimary, fontSize: 14, fontWeight: FontWeight.w600),
-        labelMedium: GoogleFonts.inter(color: textSecondary, fontSize: 12, fontWeight: FontWeight.w500),
-        labelSmall: GoogleFonts.inter(color: textSecondary, fontSize: 10, fontWeight: FontWeight.w500),
+        labelLarge: GoogleFonts.inter(
+          color: textPrimary,
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+        ),
+        labelMedium: GoogleFonts.inter(
+          color: textSecondary,
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+        ),
+        labelSmall: GoogleFonts.inter(
+          color: textSecondary,
+          fontSize: 10,
+          fontWeight: FontWeight.w500,
+        ),
       ),
       cardTheme: CardThemeData(
         color: cardColor,
@@ -79,8 +127,13 @@ class AppTheme {
           foregroundColor: Colors.white,
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-          textStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          textStyle: GoogleFonts.inter(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -88,14 +141,22 @@ class AppTheme {
           foregroundColor: textPrimary,
           side: BorderSide(color: Colors.grey[400]!, width: 1),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-          textStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          textStyle: GoogleFonts.inter(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: textSecondary,
-          textStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
+          textStyle: GoogleFonts.inter(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
         ),
       ),
       iconButtonTheme: IconButtonThemeData(
@@ -124,8 +185,15 @@ class AppTheme {
         tileColor: Colors.transparent,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        titleTextStyle: GoogleFonts.inter(color: textPrimary, fontSize: 16, fontWeight: FontWeight.w500),
-        subtitleTextStyle: GoogleFonts.inter(color: textSecondary, fontSize: 14),
+        titleTextStyle: GoogleFonts.inter(
+          color: textPrimary,
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
+        ),
+        subtitleTextStyle: GoogleFonts.inter(
+          color: textSecondary,
+          fontSize: 14,
+        ),
       ),
       bottomSheetTheme: const BottomSheetThemeData(
         backgroundColor: Colors.white,
