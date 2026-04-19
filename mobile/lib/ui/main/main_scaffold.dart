@@ -37,63 +37,103 @@ class _MainScaffoldState extends State<MainScaffold> {
       providers: [
         BlocProvider(create: (_) => HomeCubit()..loadData()),
         BlocProvider(create: (_) => SearchCubit()),
-        BlocProvider(
-            create: (_) => BusinessManagementCubit()..loadData()),
+        BlocProvider(create: (_) => BusinessManagementCubit()..loadData()),
         BlocProvider(create: (_) => ComplaintCubit()..loadComplaints()),
         BlocProvider(create: (_) => ProfileCubit()..loadProfile()),
       ],
       child: Scaffold(
         body: IndexedStack(index: _currentIndex, children: _pages),
         bottomNavigationBar: Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            border: Border(
-              top: BorderSide(color: AppTheme.dividerColor, width: 0.5),
-            ),
-          ),
-          child: BottomNavigationBar(
-            currentIndex: _currentIndex,
-            onTap: (i) => setState(() => _currentIndex = i),
-            type: BottomNavigationBarType.fixed,
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            selectedItemColor: AppTheme.primary,
-            unselectedItemColor: AppTheme.textSecondary,
-            selectedLabelStyle: GoogleFonts.inter(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-            ),
-            unselectedLabelStyle: GoogleFonts.inter(
-              fontSize: 11,
-              fontWeight: FontWeight.w400,
-            ),
-            items: const [
-              BottomNavigationBarItem(
-                icon: Icon(Icons.home_outlined),
-                activeIcon: Icon(Icons.home_rounded),
-                label: 'Trang chủ',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.search_outlined),
-                activeIcon: Icon(Icons.search_rounded),
-                label: 'Tra cứu',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.business_center_outlined),
-                activeIcon: Icon(Icons.business_center_rounded),
-                label: 'Kinh doanh',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.report_outlined),
-                activeIcon: Icon(Icons.report_rounded),
-                label: 'Phản ánh',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.person_outline_rounded),
-                activeIcon: Icon(Icons.person_rounded),
-                label: 'Cá nhân',
+          decoration: BoxDecoration(
+            color: AppTheme.primary,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 8,
+                offset: const Offset(0, -2),
               ),
             ],
+          ),
+          child: SafeArea(
+            child: BottomNavigationBar(
+              currentIndex: _currentIndex,
+              onTap: (i) => setState(() => _currentIndex = i),
+              type: BottomNavigationBarType.fixed,
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              selectedItemColor: Colors.white,
+              unselectedItemColor: Colors.white.withOpacity(0.6),
+              selectedFontSize: 12,
+              unselectedFontSize: 11,
+              iconSize: 26,
+              selectedLabelStyle: GoogleFonts.inter(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                height: 1.5,
+              ),
+              unselectedLabelStyle: GoogleFonts.inter(
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+                height: 1.5,
+              ),
+              items: const [
+                BottomNavigationBarItem(
+                  icon: Padding(
+                    padding: EdgeInsets.only(bottom: 4),
+                    child: Icon(Icons.home_outlined, size: 26),
+                  ),
+                  activeIcon: Padding(
+                    padding: EdgeInsets.only(bottom: 4),
+                    child: Icon(Icons.home_rounded, size: 28),
+                  ),
+                  label: 'Trang chủ',
+                ),
+                BottomNavigationBarItem(
+                  icon: Padding(
+                    padding: EdgeInsets.only(bottom: 4),
+                    child: Icon(Icons.search_outlined, size: 26),
+                  ),
+                  activeIcon: Padding(
+                    padding: EdgeInsets.only(bottom: 4),
+                    child: Icon(Icons.search_rounded, size: 28),
+                  ),
+                  label: 'Tra cứu',
+                ),
+                BottomNavigationBarItem(
+                  icon: Padding(
+                    padding: EdgeInsets.only(bottom: 4),
+                    child: Icon(Icons.business_center_outlined, size: 26),
+                  ),
+                  activeIcon: Padding(
+                    padding: EdgeInsets.only(bottom: 4),
+                    child: Icon(Icons.business_center_rounded, size: 28),
+                  ),
+                  label: 'Kinh doanh',
+                ),
+                BottomNavigationBarItem(
+                  icon: Padding(
+                    padding: EdgeInsets.only(bottom: 4),
+                    child: Icon(Icons.report_outlined, size: 26),
+                  ),
+                  activeIcon: Padding(
+                    padding: EdgeInsets.only(bottom: 4),
+                    child: Icon(Icons.report_rounded, size: 28),
+                  ),
+                  label: 'Phản ánh',
+                ),
+                BottomNavigationBarItem(
+                  icon: Padding(
+                    padding: EdgeInsets.only(bottom: 4),
+                    child: Icon(Icons.person_outline_rounded, size: 26),
+                  ),
+                  activeIcon: Padding(
+                    padding: EdgeInsets.only(bottom: 4),
+                    child: Icon(Icons.person_rounded, size: 28),
+                  ),
+                  label: 'Cá nhân',
+                ),
+              ],
+            ),
           ),
         ),
       ),
