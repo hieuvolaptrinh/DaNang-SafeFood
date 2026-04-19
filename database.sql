@@ -1547,3 +1547,261 @@ GO
 -- Gửi Notification khi có kết quả mẫu: Sử dụng @AfterCommit (Spring ApplicationEvent) khi lưu thành công Mau_ChiTieu để bắn Push Notification cho Cán bộ thanh tra.
 -- Audit Log phức tạp: Bắt sự kiện tạo ViPham để ghi log bao gồm thông tin chi tiết (ai tạo, tạo vì lý do gì, metadata JSON) vào Elasticsearch hoặc File log thay vì lưu DB quan hệ.
 -- Khóa tài khoản Admin: Lắng nghe sự kiện AuthenticationFailureBadCredentialsEvent của Spring Security, nếu sai pass 5 lần thì update cờ isLocked trên bảng NguoiDung.
+
+
+
+-- Kiều : Liệt kê 3 trigger, 3 procedure và code trong sql. Liệt kê 4 trigger khi triển khai sẽ code trong backend 
+-- sau này cho các table đã làm dưới các giao diện actor (Người dân, Cơ sở kinh doanh ) ở tuần trước.
+
+-- ============================================================ 
+--Trigger (Người dân) Trigger giới hạn gửi phản ánh (anti-spam) Người dân chỉ được gửi tối đa X phản ánh/ngày (VD: 5)Nếu vượt → không cho insertTránh spam hệ thốngĐảm bảo dữ liệu sạch
+----------------------
+IF OBJECT_ID('TRG_PhanAnh_LimitSpam', 'TR') IS NOT NULL
+    DROP TRIGGER TRG_PhanAnh_LimitSpam;
+GO
+
+CREATE TRIGGER TRG_PhanAnh_LimitSpam
+ON PhanAnh
+INSTEAD OF INSERT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- nếu vượt quá 5 phản ánh trong ngày
+    IF EXISTS (
+        SELECT 1
+        FROM inserted i
+        JOIN PhanAnh pa 
+            ON pa.maNguoiPhanAnh = i.maNguoiPhanAnh
+        WHERE CAST(pa.ngayGui AS DATE) = CAST(GETDATE() AS DATE)
+        GROUP BY pa.maNguoiPhanAnh
+        HAVING COUNT(*) >= 5
+    )
+    BEGIN
+        RAISERROR (N'Bạn đã gửi quá 5 phản ánh trong ngày!', 16, 1);
+        ROLLBACK TRANSACTION;
+        RETURN;
+    END
+
+    -- nếu hợp lệ thì insert
+    INSERT INTO PhanAnh (maPhanAnh, maNguoiPhanAnh, trangThaiPhanAnh, maCoSo, lyDo, ngayGui, maLoaiPhanAnh)
+    SELECT 
+        maPhanAnh, maNguoiPhanAnh, trangThaiPhanAnh, maCoSo, lyDo, ngayGui, maLoaiPhanAnh
+    FROM inserted;
+END;
+GO
+
+--TEST TRIGGER 1
+PRINT N'===== TEST TRIGGER: TRG_PhanAnh_LimitSpam =====';
+
+-- giả lập gửi nhiều phản ánh
+INSERT INTO PhanAnh VALUES ('PA1','ND001',N'Chưa xử lý','CS001',N'Test 1',GETDATE(),'LPA001');
+INSERT INTO PhanAnh VALUES ('PA2','ND001',N'Chưa xử lý','CS001',N'Test 2',GETDATE(),'LPA001');
+INSERT INTO PhanAnh VALUES ('PA3','ND001',N'Chưa xử lý','CS001',N'Test 3',GETDATE(),'LPA001');
+INSERT INTO PhanAnh VALUES ('PA4','ND001',N'Chưa xử lý','CS001',N'Test 4',GETDATE(),'LPA001');
+INSERT INTO PhanAnh VALUES ('PA5','ND001',N'Chưa xử lý','CS001',N'Test 5',GETDATE(),'LPA001');
+
+-- cái này sẽ lỗi (vượt 5)
+INSERT INTO PhanAnh VALUES ('PA6','ND001',N'Chưa xử lý','CS001',N'Test 6',GETDATE(),'LPA001');
+
+-- cleanup
+DELETE FROM PhanAnh WHERE maPhanAnh LIKE 'PA%';
+GO
+
+--TRIGGER 2 (Cơ sở kinh doanh): Tự động cập nhật trạng thái giấy phép
+IF OBJECT_ID('TRG_CoSo_UpdateTrangThaiGiayPhep', 'TR') IS NOT NULL
+    DROP TRIGGER TRG_CoSo_UpdateTrangThaiGiayPhep;
+GO
+
+CREATE TRIGGER TRG_CoSo_UpdateTrangThaiGiayPhep
+ON CoSoKinhDoanh
+AFTER INSERT, UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE cs
+    SET trangThai = N'Hết hạn'
+    FROM CoSoKinhDoanh cs
+    JOIN inserted i ON cs.maCoSo = i.maCoSo
+    WHERE i.ngayHetHanGiayPhep < GETDATE();
+END;
+GO
+
+--TEST TRIGGER 2
+PRINT N'===== TEST TRIGGER: TRG_CoSo_UpdateTrangThaiGiayPhep =====';
+
+-- insert cơ sở có giấy phép hết hạn
+INSERT INTO CoSoKinhDoanh (maCoSo, tenCoSo, ngayHetHanGiayPhep, trangThai)
+VALUES ('CSTEST1', N'Test Co So', DATEADD(DAY, -1, GETDATE()), N'Hoạt động');
+
+-- kiểm tra
+SELECT maCoSo, trangThai
+FROM CoSoKinhDoanh
+WHERE maCoSo = 'CSTEST1';
+
+-- cleanup
+DELETE FROM CoSoKinhDoanh WHERE maCoSo = 'CSTEST1';
+GO
+
+--TRIGGER 3 (Người dân): Tự động đánh dấu “Đã xem” 
+--khi xem thông báo Khi người dân xem thông báo (UPDATE→ tự động:cập nhật trangThai = 'Đã đọc'
+
+IF OBJECT_ID('TRG_ThongBao_DanhDauDaDoc', 'TR') IS NOT NULL
+    DROP TRIGGER TRG_ThongBao_DanhDauDaDoc;
+GO
+
+CREATE TRIGGER TRG_ThongBao_DanhDauDaDoc
+ON ThongBao_NguoiDung
+AFTER UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- khi có update thì tự chuyển sang "Đã đọc"
+    UPDATE tbnd
+    SET trangThai = N'Đã đọc'
+    FROM ThongBao_NguoiDung tbnd
+    JOIN inserted i 
+        ON tbnd.maThongBao = i.maThongBao
+       AND tbnd.maNguoiDung = i.maNguoiDung;
+END;
+GO
+
+--PRINT N'===== TEST TRIGGER: TRG_ThongBao_DanhDauDaDoc =====';
+
+-- giả lập 1 thông báo chưa đọc
+INSERT INTO ThongBao (maThongBao, tieuDe, noiDung, ngayGui, loaiThongBao, isCongDong)
+VALUES ('TBTEST1', N'Test', N'Test nội dung', GETDATE(), N'Test', 0);
+
+INSERT INTO ThongBao_NguoiDung (maNguoiDung, maThongBao, trangThai)
+VALUES ('ND001', 'TBTEST1', N'Chưa đọc');
+
+-- người dân "mở" thông báo (update giả lập)
+UPDATE ThongBao_NguoiDung
+SET trangThai = N'Đang xem'
+WHERE maNguoiDung = 'ND001' AND maThongBao = 'TBTEST1';
+
+-- kiểm tra kết quả (phải thành "Đã đọc")
+SELECT *
+FROM ThongBao_NguoiDung
+WHERE maThongBao = 'TBTEST1';
+
+-- cleanup
+DELETE FROM ThongBao_NguoiDung WHERE maThongBao = 'TBTEST1';
+DELETE FROM ThongBao WHERE maThongBao = 'TBTEST1';
+
+GO
+
+
+-- ============================================================
+-- PROCEDURE 1: PROCEDURE 1 (Người dân): Tạo phản ánh
+-- ============================================================
+IF OBJECT_ID('PRC_NguoiDan_TaoPhanAnh', 'P') IS NOT NULL
+    DROP PROCEDURE PRC_NguoiDan_TaoPhanAnh;
+GO
+
+CREATE PROCEDURE PRC_NguoiDan_TaoPhanAnh
+    @maPhanAnh VARCHAR(10),
+    @maNguoiPhanAnh VARCHAR(50),
+    @maCoSo VARCHAR(50),
+    @lyDo NVARCHAR(255),
+    @maLoaiPhanAnh VARCHAR(10)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    INSERT INTO PhanAnh
+    (maPhanAnh, maNguoiPhanAnh, trangThaiPhanAnh, maCoSo, lyDo, ngayGui, maLoaiPhanAnh)
+    VALUES
+    (@maPhanAnh, @maNguoiPhanAnh, N'Chưa xử lý', @maCoSo, @lyDo, GETDATE(), @maLoaiPhanAnh);
+END;
+GO
+
+--TEST PROCEDURE 1
+PRINT N'===== TEST: PRC_NguoiDan_TaoPhanAnh =====';
+
+EXEC PRC_NguoiDan_TaoPhanAnh 
+    @maPhanAnh = 'PATEST2',
+    @maNguoiPhanAnh = 'ND001',
+    @maCoSo = 'CS001',
+    @lyDo = N'Test phản ánh procedure',
+    @maLoaiPhanAnh = 'LPA001';
+
+SELECT * FROM PhanAnh WHERE maPhanAnh = 'PATEST2';
+
+DELETE FROM PhanAnh WHERE maPhanAnh = 'PATEST2';
+GO
+
+-- ============================================================
+-- PROCEDURE 2 (Người dân): Xem thông báo
+-- ============================================================
+IF OBJECT_ID('PRC_NguoiDan_XemThongBao', 'P') IS NOT NULL
+    DROP PROCEDURE PRC_NguoiDan_XemThongBao;
+GO
+
+CREATE PROCEDURE PRC_NguoiDan_XemThongBao
+    @maNguoiDung VARCHAR(50)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT 
+        tb.maThongBao,
+        tb.tieuDe,
+        tb.noiDung,
+        tb.ngayGui,
+        tbnd.trangThai
+    FROM ThongBao tb
+    JOIN ThongBao_NguoiDung tbnd 
+        ON tb.maThongBao = tbnd.maThongBao
+    WHERE tbnd.maNguoiDung = @maNguoiDung
+    ORDER BY tb.ngayGui DESC;
+END;
+GO
+
+--TEST PROCEDURE 2
+PRINT N'===== TEST: PRC_NguoiDan_XemThongBao =====';
+
+EXEC PRC_NguoiDan_XemThongBao @maNguoiDung = 'ND001';
+GO
+
+-- ============================================================
+-- PROCEDURE 3 (Cơ sở kinh doanh): Xem hồ sơ & tình trạng pháp lý
+-- ============================================================
+IF OBJECT_ID('PRC_CoSo_XemHoSoVaPhapLy', 'P') IS NOT NULL
+    DROP PROCEDURE PRC_CoSo_XemHoSoVaPhapLy;
+GO
+
+CREATE PROCEDURE PRC_CoSo_XemHoSoVaPhapLy
+    @maCoSo VARCHAR(50)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT 
+        cs.maCoSo,
+        cs.tenCoSo,
+        cs.trangThai,
+        cs.soGiayPhep,
+        cs.ngayHetHanGiayPhep,
+        hs.maHoSo,
+        hs.trangThai AS trangThaiHoSo
+    FROM CoSoKinhDoanh cs
+    LEFT JOIN HoSoDangKy hs 
+        ON cs.maCoSo = hs.maCoSo
+    WHERE cs.maCoSo = @maCoSo;
+END;
+GO
+
+--TEST PROCEDURE 3
+PRINT N'===== TEST: PRC_CoSo_XemHoSoVaPhapLy =====';
+
+EXEC PRC_CoSo_XemHoSoVaPhapLy @maCoSo = 'CS001';
+GO
+
+ --4 Trigger nghiệp vụ viết ở Backend 
+ ---1. (Người dân) Giới hạn spam phản ánh – Backend Giao diện: Tạo phản ánh Dùng @PrePersist trong entity PhanAnhTrước khi lưu → kiểm tra:Số phản ánh của người dân trong ngàyNếu > 5:→ throw exception Chống spam Không cần trigger DB
+ ---2. (Người dân) Tự động đánh dấu “Đã đọc” thông báo Xem thông báo Khi API lấy chi tiết thông báo→ dùng @EventListener hoặc service→ update: trangThai = "Đã đọc"Đồng bộ UIKhông cần update thủ công
+ ---3. (Cơ sở kinh doanh) Cảnh báo giấy phép sắp hết hạnXem tình trạng pháp lýDùng @Scheduled (Spring Scheduler)check ngayHetHanGiayPhep Nếu ≤ 30 ngày:→ tạo notification hoặc gửi emailChủ động cảnh báo Backend xử lý tốt hơn DB trigger
+ ---4. (Cơ sở kinh doanh) Kiểm tra hồ sơ hợp lệ trước khi cập nhật Cập nhật hồ sơ Dùng @PreUpdate trong entity HoSoDangKy Trước khi update: kiểm tra:không null đúng định dạngNếu sai:→ throw exception Đảm bảo dữ liệu hợp lệTránh lỗi hệ thống
