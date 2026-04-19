@@ -483,7 +483,7 @@ export default function DanhSachViPhamPage() {
         </div>
       </div>
 
-      <TableCard
+      {/* <TableCard
         title="Tất cả vi phạm"
         controls={
           <>
@@ -529,7 +529,7 @@ export default function DanhSachViPhamPage() {
           data={filtered}
           emptyMessage="Không tìm thấy vi phạm nào"
         />
-      </TableCard>
+      </TableCard> */}
     </div>
   );
 }
