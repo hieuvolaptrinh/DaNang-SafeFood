@@ -1229,4 +1229,321 @@ GO
 -- 1 Trigger audit bảng ViPham/PhanAnh: ghi lịch sử trước-sau vào bảng nhật ký để backend hiển thị timeline xử lý.
 -- 2 Trigger chống trạng thái sai quy trình: ví dụ PhanAnh chỉ cho chuyển Chưa xử lý -> Đang xử lý -> Đã xử lý.
 -- 3 Trigger cảnh báo giấy phép sắp hết hạn: khi còn <= 30 ngày thì tự tạo sự kiện để backend gửi push/email định kỳ.
---  4 . TỰ động ghi log khi người dùng đăng nhậpS
+--  4 . TỰ động ghi log khi người dùng đăng nhập
+
+GO
+ 
+
+-- Tuấn : Liệt kê 3 trigger, 3 procedure và code trong sql. Liệt kê 4 trigger khi triển khai sẽ code trong backend 
+-- sau này cho các table đã làm dưới các giao diện actor (ADMIN, Kiểm định viên ) ở tuần trước.
+
+
+-- ============================================================
+-- TRIGGER 1: Validate dữ liệu
+-- Ràng buộc ngày kiểm nghiệm không được nhỏ hơn ngày thu mẫu
+-- ============================================================
+ 
+IF OBJECT_ID('TRG_MauKiemNghiem_ValidateNgay', 'TR') IS NOT NULL
+    DROP TRIGGER TRG_MauKiemNghiem_ValidateNgay;
+GO
+ 
+CREATE TRIGGER TRG_MauKiemNghiem_ValidateNgay
+ON MauKiemNghiem
+AFTER INSERT, UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+ 
+    IF EXISTS (
+        SELECT 1 FROM inserted
+        WHERE ngayKiemNghiem IS NOT NULL
+          AND ngayThu IS NOT NULL
+          AND ngayKiemNghiem < ngayThu
+    )
+    BEGIN
+        RAISERROR (N'Ngày kiểm nghiệm không được nhỏ hơn ngày thu mẫu.', 16, 1);
+        ROLLBACK TRANSACTION;
+        RETURN;
+    END
+END
+GO
+ 
+-- TEST TRIGGER 1
+PRINT N'===== TEST TRIGGER 1: TRG_MauKiemNghiem_ValidateNgay =====';
+BEGIN TRY
+    INSERT INTO MauKiemNghiem (maMau, tenMau, ngayThu, ngayKiemNghiem, trangThai, loaiMau, noiDung, ngayYeuCau, hanHoanThanh)
+    VALUES ('MTEST01', N'Mẫu test lỗi', '2024-06-10', '2024-06-05', N'Chờ xét nghiệm', N'Thực phẩm', N'Test validate', '2024-06-01', '2024-06-20');
+    PRINT N'[FAILED] Dữ liệu sai nhưng vẫn insert được.';
+END TRY
+BEGIN CATCH
+    PRINT N'[PASSED] Chặn đúng dữ liệu sai: ' + ERROR_MESSAGE();
+END CATCH;
+ 
+BEGIN TRY
+    INSERT INTO MauKiemNghiem (maMau, tenMau, ngayThu, ngayKiemNghiem, trangThai, loaiMau, noiDung, ngayYeuCau, hanHoanThanh)
+    VALUES ('MTEST02', N'Mẫu test hợp lệ', '2024-06-01', '2024-06-10', N'Chờ xét nghiệm', N'Thực phẩm', N'Test validate', '2024-05-30', '2024-06-20');
+    PRINT N'[PASSED] Insert dữ liệu hợp lệ thành công.';
+END TRY
+BEGIN CATCH
+    PRINT N'[FAILED] Dữ liệu hợp lệ nhưng bị lỗi: ' + ERROR_MESSAGE();
+END CATCH;
+ 
+DELETE FROM MauKiemNghiem WHERE maMau IN ('MTEST01', 'MTEST02');
+GO
+ 
+ 
+-- ============================================================
+-- TRIGGER 2: Tự động cập nhật trạng thái
+-- Đổi trạng thái mẫu thành "Có kết quả" khi nhập kết quả chỉ tiêu
+-- ============================================================
+ 
+IF OBJECT_ID('TRG_MauChiTieu_AutoUpdateTrangThai', 'TR') IS NOT NULL
+    DROP TRIGGER TRG_MauChiTieu_AutoUpdateTrangThai;
+GO
+ 
+CREATE TRIGGER TRG_MauChiTieu_AutoUpdateTrangThai
+ON Mau_ChiTieu
+AFTER INSERT, UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+ 
+    UPDATE MauKiemNghiem
+    SET trangThai = N'Có kết quả'
+    WHERE maMau IN (
+        SELECT DISTINCT maMau FROM inserted
+        WHERE ketQua IS NOT NULL AND ketQua <> ''
+    );
+END
+GO
+ 
+-- TEST TRIGGER 2
+PRINT N'===== TEST TRIGGER 2: TRG_MauChiTieu_AutoUpdateTrangThai =====';
+ 
+-- Cần dữ liệu mẫu hỗ trợ test
+INSERT INTO MauKiemNghiem (maMau, tenMau, ngayThu, ngayKiemNghiem, trangThai, loaiMau, noiDung, ngayYeuCau, hanHoanThanh)
+VALUES ('MTEST03', N'Mẫu test tự động', '2024-06-01', '2024-06-10', N'Chờ xét nghiệm', N'Thực phẩm', N'Test auto update', '2024-05-30', '2024-06-20');
+ 
+INSERT INTO ChiTieuKiemNghiem (maChiTieu, tenChiTieu)
+VALUES ('CTTEST1', N'Chỉ tiêu test');
+ 
+INSERT INTO Mau_ChiTieu (maMau, maChiTieu, ketQua)
+VALUES ('MTEST03', 'CTTEST1', N'Đạt');
+ 
+SELECT maMau, trangThai FROM MauKiemNghiem WHERE maMau = 'MTEST03';
+ 
+DELETE FROM Mau_ChiTieu WHERE maMau = 'MTEST03' AND maChiTieu = 'CTTEST1';
+DELETE FROM MauKiemNghiem WHERE maMau = 'MTEST03';
+DELETE FROM ChiTieuKiemNghiem WHERE maChiTieu = 'CTTEST1';
+GO
+ 
+ 
+-- ============================================================
+-- TRIGGER 3: Logging
+-- Ghi log tự động khi thay đổi quyền hạn của người dùng
+-- ============================================================
+ 
+IF OBJECT_ID('TRG_QuyenHan_NguoiDung_GhiLog', 'TR') IS NOT NULL
+    DROP TRIGGER TRG_QuyenHan_NguoiDung_GhiLog;
+GO
+ 
+CREATE TRIGGER TRG_QuyenHan_NguoiDung_GhiLog
+ON QuyenHan_NguoiDung
+AFTER INSERT, UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+ 
+    DECLARE @maxSo INT;
+    SELECT @maxSo = ISNULL(MAX(TRY_CAST(SUBSTRING(maLog, 2, 10) AS INT)), 0)
+    FROM [Log]
+    WHERE maLog LIKE 'L%';
+ 
+    INSERT INTO [Log] (maLog, ip, [time], maNguoiDung)
+    SELECT
+        'L' + RIGHT(REPLICATE('0', 8) + CAST(@maxSo + ROW_NUMBER() OVER (ORDER BY maNguoiDung) AS VARCHAR(10)), 8),
+        N'System Trigger',
+        GETDATE(),
+        maNguoiDung
+    FROM inserted;
+END
+GO
+ 
+-- TEST TRIGGER 3
+PRINT N'===== TEST TRIGGER 3: TRG_QuyenHan_NguoiDung_GhiLog =====';
+ 
+-- Cần dữ liệu hỗ trợ
+INSERT INTO NguoiDung (maNguoiDung, hoTen, email, soDienThoai, gioiTinh, matKhau, CCCD)
+VALUES ('NDLOG01', N'Test Log User', 'logtest@email.com', '0912345679', N'Nam', 'pass12345', '000000000001');
+ 
+INSERT INTO QuyenHan (maQuyenHan, quyenHan)
+VALUES ('QHTEST1', N'Quyền test log');
+ 
+INSERT INTO QuyenHan_NguoiDung (maQuyenHan, maNguoiDung)
+VALUES ('QHTEST1', 'NDLOG01');
+ 
+SELECT TOP 1 * FROM [Log] WHERE maNguoiDung = 'NDLOG01' ORDER BY [time] DESC;
+ 
+DELETE FROM QuyenHan_NguoiDung WHERE maNguoiDung = 'NDLOG01' AND maQuyenHan = 'QHTEST1';
+DELETE FROM [Log] WHERE maNguoiDung = 'NDLOG01';
+DELETE FROM NguoiDung WHERE maNguoiDung = 'NDLOG01';
+DELETE FROM QuyenHan WHERE maQuyenHan = 'QHTEST1';
+GO
+ 
+ 
+-- ============================================================
+-- FUNCTION 1: Lấy danh sách mẫu chờ kiểm định của một cán bộ
+-- ============================================================
+ 
+IF OBJECT_ID('FN_LayMauChoKiemDinh', 'TF') IS NOT NULL
+    DROP FUNCTION FN_LayMauChoKiemDinh;
+GO
+ 
+CREATE FUNCTION FN_LayMauChoKiemDinh (@maNguoiKiemNghiem VARCHAR(10))
+RETURNS TABLE
+AS
+RETURN (
+    SELECT
+        m.maMau,
+        m.tenMau,
+        m.ngayThu,
+        m.trangThai
+    FROM MauKiemNghiem m
+    JOIN DamNhanKiemNgiem d ON m.maMau = d.maMau
+    WHERE d.maNguoiKiemNghiem = @maNguoiKiemNghiem
+      AND m.trangThai = N'Chờ xét nghiệm'
+);
+GO
+ 
+-- TEST FUNCTION 1
+PRINT N'===== TEST FUNCTION 1: FN_LayMauChoKiemDinh =====';
+SELECT * FROM FN_LayMauChoKiemDinh('ND001');
+GO
+ 
+ 
+-- ============================================================
+-- PROCEDURE 2: Cập nhật kết quả một chỉ tiêu kiểm nghiệm
+-- Nếu đã có thì UPDATE, chưa có thì INSERT
+-- ============================================================
+ 
+IF OBJECT_ID('PRC_CapNhatKetQuaChiTieu', 'P') IS NOT NULL
+    DROP PROCEDURE PRC_CapNhatKetQuaChiTieu;
+GO
+ 
+CREATE PROCEDURE PRC_CapNhatKetQuaChiTieu
+    @maMau      VARCHAR(10),
+    @maChiTieu  VARCHAR(10),
+    @ketQua     NVARCHAR(MAX)
+AS
+BEGIN
+    SET NOCOUNT ON;
+ 
+    IF NOT EXISTS (SELECT 1 FROM MauKiemNghiem WHERE maMau = @maMau)
+    BEGIN
+        RAISERROR (N'Không tìm thấy mã mẫu kiểm nghiệm.', 16, 1);
+        RETURN;
+    END
+ 
+    IF NOT EXISTS (SELECT 1 FROM ChiTieuKiemNghiem WHERE maChiTieu = @maChiTieu)
+    BEGIN
+        RAISERROR (N'Không tìm thấy mã chỉ tiêu kiểm nghiệm.', 16, 1);
+        RETURN;
+    END
+ 
+    IF EXISTS (SELECT 1 FROM Mau_ChiTieu WHERE maMau = @maMau AND maChiTieu = @maChiTieu)
+    BEGIN
+        UPDATE Mau_ChiTieu
+        SET ketQua = @ketQua
+        WHERE maMau = @maMau AND maChiTieu = @maChiTieu;
+    END
+    ELSE
+    BEGIN
+        INSERT INTO Mau_ChiTieu (maMau, maChiTieu, ketQua)
+        VALUES (@maMau, @maChiTieu, @ketQua);
+    END
+END
+GO
+ 
+-- TEST PROCEDURE 2
+PRINT N'===== TEST PROCEDURE 2: PRC_CapNhatKetQuaChiTieu =====';
+ 
+INSERT INTO MauKiemNghiem (maMau, tenMau, ngayThu, ngayKiemNghiem, trangThai, loaiMau, noiDung, ngayYeuCau, hanHoanThanh)
+VALUES ('MTEST04', N'Mẫu test procedure', '2024-06-01', '2024-06-10', N'Chờ xét nghiệm', N'Thực phẩm', N'Test proc', '2024-05-30', '2024-06-20');
+ 
+INSERT INTO ChiTieuKiemNghiem (maChiTieu, tenChiTieu)
+VALUES ('CTTEST2', N'Chỉ tiêu test 2');
+ 
+-- Test INSERT mới
+EXEC PRC_CapNhatKetQuaChiTieu @maMau = 'MTEST04', @maChiTieu = 'CTTEST2', @ketQua = N'Đạt';
+SELECT * FROM Mau_ChiTieu WHERE maMau = 'MTEST04' AND maChiTieu = 'CTTEST2';
+ 
+-- Test UPDATE
+EXEC PRC_CapNhatKetQuaChiTieu @maMau = 'MTEST04', @maChiTieu = 'CTTEST2', @ketQua = N'Không đạt';
+SELECT * FROM Mau_ChiTieu WHERE maMau = 'MTEST04' AND maChiTieu = 'CTTEST2';
+ 
+DELETE FROM Mau_ChiTieu WHERE maMau = 'MTEST04';
+DELETE FROM MauKiemNghiem WHERE maMau = 'MTEST04';
+DELETE FROM ChiTieuKiemNghiem WHERE maChiTieu = 'CTTEST2';
+GO
+ 
+ 
+-- ============================================================
+-- PROCEDURE 3: Tạo đơn vi phạm từ kết quả kiểm định
+-- ============================================================
+ 
+IF OBJECT_ID('PRC_TaoViPhamTuKiemDinh', 'P') IS NOT NULL
+    DROP PROCEDURE PRC_TaoViPhamTuKiemDinh;
+GO
+ 
+CREATE PROCEDURE PRC_TaoViPhamTuKiemDinh
+    @maViPham       VARCHAR(10),
+    @maHoSo         VARCHAR(10),
+    @maLoaiViPham   VARCHAR(10),
+    @moTa           NVARCHAR(MAX)
+AS
+BEGIN
+    SET NOCOUNT ON;
+ 
+    IF EXISTS (SELECT 1 FROM ViPham WHERE maViPham = @maViPham)
+    BEGIN
+        RAISERROR (N'Mã vi phạm đã tồn tại.', 16, 1);
+        RETURN;
+    END
+ 
+    IF NOT EXISTS (SELECT 1 FROM HoSoThanhTra WHERE maHoSo = @maHoSo)
+    BEGIN
+        RAISERROR (N'Không tìm thấy hồ sơ thanh tra tương ứng.', 16, 1);
+        RETURN;
+    END
+ 
+    IF NOT EXISTS (SELECT 1 FROM LoaiViPham WHERE maLoaiViPham = @maLoaiViPham)
+    BEGIN
+        RAISERROR (N'Không tìm thấy loại vi phạm tương ứng.', 16, 1);
+        RETURN;
+    END
+ 
+    INSERT INTO ViPham (maViPham, maHoSo, maLoaiViPham, moTaThem, trangThaiPheDuyet)
+    VALUES (@maViPham, @maHoSo, @maLoaiViPham, @moTa, N'Chờ phê duyệt');
+ 
+    SELECT @maViPham AS maViPhamDaTao;
+END
+GO
+ 
+-- TEST PROCEDURE 3
+PRINT N'===== TEST PROCEDURE 3: PRC_TaoViPhamTuKiemDinh =====';
+EXEC PRC_TaoViPhamTuKiemDinh
+    @maViPham     = 'VPTEST2',
+    @maHoSo       = 'HSTT001',
+    @maLoaiViPham = 'LVP001',
+    @moTa         = N'Vi phạm phát sinh từ kết quả kiểm nghiệm mẫu thực phẩm.';
+ 
+SELECT * FROM ViPham WHERE maViPham = 'VPTEST2';
+ 
+DELETE FROM ViPham WHERE maViPham = 'VPTEST2';
+GO
+
+-- 4 Trigger nghiệp vụ viết ở Backend (Spring Boot) Sử dụng JPA @PrePersist, @PreUpdate hoặc Spring @EventListener thay vì DB Trigger:
+-- Mã hóa mật khẩu tự động: Bắt sự kiện @PrePersist trên entity NguoiDung để gọi Bcrypt băm mật khẩu trước khi lưu xuống DB.
+-- Gửi Notification khi có kết quả mẫu: Sử dụng @AfterCommit (Spring ApplicationEvent) khi lưu thành công Mau_ChiTieu để bắn Push Notification cho Cán bộ thanh tra.
+-- Audit Log phức tạp: Bắt sự kiện tạo ViPham để ghi log bao gồm thông tin chi tiết (ai tạo, tạo vì lý do gì, metadata JSON) vào Elasticsearch hoặc File log thay vì lưu DB quan hệ.
+-- Khóa tài khoản Admin: Lắng nghe sự kiện AuthenticationFailureBadCredentialsEvent của Spring Security, nếu sai pass 5 lần thì update cờ isLocked trên bảng NguoiDung.
