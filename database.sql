@@ -17,7 +17,7 @@ GO
 
 -- [1] QuyenHan
 CREATE TABLE QuyenHan (
-    maQuyenHan  VARCHAR(10)   NOT NULL,
+    maQuyenHan  VARCHAR(20)   NOT NULL,
     quyenHan    NVARCHAR(100) NOT NULL,
     CONSTRAINT PK_QuyenHan PRIMARY KEY (maQuyenHan)
 );
@@ -38,7 +38,7 @@ GO
  
 -- [3] QuyenHan_NguoiDung
 CREATE TABLE QuyenHan_NguoiDung (
-    maQuyenHan   VARCHAR(10) NOT NULL,
+    maQuyenHan   VARCHAR(20) NOT NULL,
     maNguoiDung  VARCHAR(10) NOT NULL,
     CONSTRAINT PK_QuyenHan_NguoiDung PRIMARY KEY (maQuyenHan, maNguoiDung)
 );
@@ -558,7 +558,26 @@ GO
 -- BƯỚC 4: INSERT DỮ LIỆU MOCK (3–5 BẢN GHI MỖI BẢNG)
 -- Thứ tự: bảng cha trước, bảng con sau
 -- ============================================================
- 
+-- ============================================================================
+-- Bo sung schema de khop nghiep vu mo ta
+-- ============================================================================
+ALTER TABLE CoSoKinhDoanh
+    ADD trangThai NVARCHAR(30) NOT NULL
+        CONSTRAINT DF_CoSoKinhDoanh_TrangThai DEFAULT N'Hoat dong';
+GO
+
+ALTER TABLE ViPham
+    ADD mucDo NVARCHAR(30) NOT NULL
+        CONSTRAINT DF_ViPham_MucDo DEFAULT N'Trung binh';
+GO
+
+IF COL_LENGTH('HoSoThanhTra', 'thoiGianKiemTra') IS NULL
+BEGIN
+    ALTER TABLE HoSoThanhTra
+        ADD thoiGianKiemTra DATETIME NULL;
+END
+GO
+
 -- [1] QuyenHan
 INSERT INTO QuyenHan (maQuyenHan, quyenHan) VALUES
     ('ADMIN', N'Quản trị hệ thống'),
@@ -599,6 +618,7 @@ GO
 -- [5] QuyenHan_NguoiDung
 INSERT INTO QuyenHan_NguoiDung (maQuyenHan, maNguoiDung) VALUES
     ('ADMIN', 'ND001'),
+    ('CHICUCATVSTP', 'ND001'),
     ('TTV', 'ND002'),
     ('TTV', 'ND003'),
     ('CSKD', 'ND004'),
@@ -749,6 +769,22 @@ INSERT INTO ViPham (maViPham, maHoSo, maLoaiViPham, moTaThem, khacPhuc, trangTha
     ('VP005', 'HSTT005', 'LVP001', N'Nhân viên không đeo găng tay khi tiếp xúc thực phẩm',N'Cấp phát và yêu cầu sử dụng đồ bảo hộ',         N'Đã phê duyệt');
 GO
  
+UPDATE ViPham SET mucDo = N'Trung binh' WHERE maViPham IN ('VP001', 'VP003', 'VP005');
+UPDATE ViPham SET mucDo = N'Nghiem trong' WHERE maViPham IN ('VP002', 'VP004');
+
+UPDATE cs
+SET cs.trangThai = N'Tam dinh chi'
+FROM CoSoKinhDoanh cs
+WHERE EXISTS (
+    SELECT 1
+    FROM LichThanhTra ltt
+    JOIN HoSoThanhTra hs ON hs.maThanhTra = ltt.maThanhTra
+    JOIN ViPham vp ON vp.maHoSo = hs.maHoSo
+    WHERE ltt.maCoSo = cs.maCoSo
+      AND vp.mucDo = N'Nghiem trong'
+);
+GO
+
 -- [22] HinhThucKhacPhuc
 INSERT INTO HinhThucKhacPhuc (maHinhThucKhacPhuc, soTienKhacPhuc, tinhTrangKhacPhuc) VALUES
     ('HT001', 2000000.00,  N'Đã khắc phục'),
@@ -814,20 +850,35 @@ GO
  
 -- [29] tieuChiDanhGia
 INSERT INTO tieuChiDanhGia (MaTieuChi, TenTieuChi, Nhom, ThuTu) VALUES
-    ('TC001', N'Điều kiện vệ sinh cơ sở vật chất',    N'Cơ sở', 1),
-    ('TC002', N'Điều kiện trang thiết bị, dụng cụ',   N'Cơ sở', 2),
-    ('TC003', N'Điều kiện về con người',               N'Nhân sự', 3),
-    ('TC004', N'Nguồn gốc và chất lượng nguyên liệu',  N'Nguyên liệu', 4),
-    ('TC005', N'Hồ sơ pháp lý, giấy tờ liên quan',    N'Pháp lý', 5);
+    ('TC001', N'Khu chế biến sạch sẽ',          N'Cơ sở vật chất', 1),
+    ('TC002', N'Phân khu sống/chín',            N'Cơ sở vật chất', 2),
+    ('TC003', N'Hệ thống thoát nước',           N'Cơ sở vật chất', 3),
+    ('TC004', N'Không có côn trùng',            N'Cơ sở vật chất', 4),
+    ('TC005', N'Dụng cụ sạch',                  N'Trang thiết bị', 5),
+    ('TC006', N'Tủ bảo quản',                   N'Trang thiết bị', 6),
+    ('TC007', N'Che đậy thực phẩm',             N'Trang thiết bị', 7),
+    ('TC008', N'Dụng cụ riêng sống/chín',       N'Trang thiết bị', 8),
+    ('TC009', N'Nguồn gốc rõ ràng',             N'Nguyên liệu', 9),
+    ('TC010', N'Có hóa đơn',                    N'Nguyên liệu', 10),
+    ('TC011', N'Không hết hạn',                 N'Nguyên liệu', 11),
+    ('TC012', N'Lưu mẫu',                       N'Nguyên liệu', 12),
+    ('TC013', N'Có khám sức khỏe',              N'Nhân viên', 13),
+    ('TC014', N'Có tập huấn ATTP',              N'Nhân viên', 14),
+    ('TC015', N'Mặc bảo hộ',                    N'Nhân viên', 15),
+    ('TC016', N'Không mắc bệnh',                N'Nhân viên', 16),
+    ('TC017', N'Chế biến đúng',                 N'Quy trình', 17),
+    ('TC018', N'Bảo quản đúng',                 N'Quy trình', 18),
+    ('TC019', N'Không lẫn sống/chín',           N'Quy trình', 19),
+    ('TC020', N'Vệ sinh sau chế biến',          N'Quy trình', 20);
 GO
  
 -- [30] kqDanhGia
 INSERT INTO kqDanhGia (maHoSo, MaTieuChi, KetQuaDanhGia) VALUES
-    ('HSTT001', 'TC001', N'Đạt – 20/20 điểm'),
-    ('HSTT001', 'TC003', N'Đạt – 18/20 điểm'),
-    ('HSTT002', 'TC001', N'Không đạt – 10/20 điểm'),
-    ('HSTT002', 'TC004', N'Không đạt – 8/20 điểm'),
-    ('HSTT003', 'TC005', N'Đạt – 20/20 điểm');
+    ('HSTT001', 'TC001', N'Đạt'),
+    ('HSTT001', 'TC002', N'Đạt'),
+    ('HSTT002', 'TC005', N'Không đạt'),
+    ('HSTT002', 'TC006', N'Không đạt'),
+    ('HSTT003', 'TC013', N'Đạt');
 GO
  
 -- [31] BaoCao
@@ -1548,6 +1599,730 @@ GO
 -- Audit Log phức tạp: Bắt sự kiện tạo ViPham để ghi log bao gồm thông tin chi tiết (ai tạo, tạo vì lý do gì, metadata JSON) vào Elasticsearch hoặc File log thay vì lưu DB quan hệ.
 -- Khóa tài khoản Admin: Lắng nghe sự kiện AuthenticationFailureBadCredentialsEvent của Spring Security, nếu sai pass 5 lần thì update cờ isLocked trên bảng NguoiDung.
 
+-- ============================================================================
+-- CODE CUA LE KHAC HIEU - GHI CHU NGHIEP VU THAM KHAO
+-- Cac ten ben duoi dung theo cach dat ten Tieng Viet khong dau ma nhom yeu cau.
+--
+-- 1. TRG_ViPham_TuDongDinhChiCoSo
+--    Muc dich:
+--    Khi phat sinh vi pham muc do nghiem trong, he thong tu dong cap nhat trang
+--    thai co so thanh "Tam dinh chi" de dam bao an toan ngay lap tuc.
+--    Doi chieu schema hien tai:
+--    Da bo sung cot trangThai cho CoSoKinhDoanh va cot mucDo cho ViPham
+--    de trigger nay co the hoat dong dung voi mo ta nghiep vu.
+--
+-- 2. TRG_PhanAnh_CanhBaoKhanCap
+--    Muc dich:
+--    Khi co phan anh co noi dung nguy hiem (vi du: ngo doc, cap cuu), he thong
+--    tu dong tao thong bao khan gui den cap quan ly de uu tien xu ly.
+--    Doi chieu schema hien tai:
+--    Da bo sung trigger rieng de tach voi trigger thong bao phan anh thong thuong.
+--
+-- 3. TRG_LichThanhTra_ThongBaoPhanCong
+--    Muc dich:
+--    Khi can bo duoc phan cong vao bang LichThanhTra_NguoiDung, he thong tao
+--    thong bao de can bo nhan lich cong tac tren ung dung.
+--    Doi chieu schema hien tai:
+--    Da bo sung trigger moi ma khong anh huong den code cu cua nhom.
+--
+-- 4. PRC_ThongKe_ViPham_Theo_KhuVuc
+--    Muc dich:
+--    Tong hop so lieu vi pham theo maPX va khoang thoi gian de phuc vu giao dien
+--    thong ke tong quan cho lanh dao.
+--    Bang lien quan:
+--    CoSoKinhDoanh, LichThanhTra, HoSoThanhTra, ViPham, LoaiViPham.
+--
+-- 5. PRC_LuuHoSoKiemTraATVSTP
+--    Muc dich:
+--    Tong hop ket qua danh gia tu kqDanhGia va noi dung ho so thanh tra tu
+--    HoSoThanhTra de tao noi dung tom tat cho bang BaoCao.
+--    Doi chieu schema hien tai:
+--    Procedure nay duoc bo sung theo huong tao moi hoac cap nhat BaoCao hien co.
+--
+-- 6. PRC_DanhSachGiayPhep_TheoTrangThai
+--    Muc dich:
+--    Loc danh sach giay phep theo trang thai de hien thi tren man hinh quan ly
+--    voi combobox trang thai (Tat ca/Còn hiệu lực/Hết hạn/Đã thu hồi).
+--    Doi chieu schema hien tai:
+--    Procedure moi join GiayPhep -> CoSoKinhDoanh -> PhuongXa de tra ve day du
+--    cac cot giao dien can: ma, ten co so, loai, ngay cap, ngay het han,
+--    trang thai, quan/huyen (phuong xa).
+-- ============================================================================
+
+-- ============================================================================
+-- CODE CUA LE KHAC HIEU - TRIGGER VA PROCEDURE BO SUNG THEO NGHIEP VU
+-- Dat duoi cung de tach biet voi code vua pull ve tu nhanh cua nhom.
+-- ============================================================================
+
+IF OBJECT_ID('TRG_ViPham_TuDongDinhChiCoSo', 'TR') IS NOT NULL
+    DROP TRIGGER TRG_ViPham_TuDongDinhChiCoSo;
+GO
+
+CREATE TRIGGER TRG_ViPham_TuDongDinhChiCoSo
+ON ViPham
+AFTER INSERT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    ;WITH CoSoCanDinhChi AS (
+        SELECT DISTINCT ltt.maCoSo
+        FROM inserted i
+        JOIN HoSoThanhTra hs ON hs.maHoSo = i.maHoSo
+        JOIN LichThanhTra ltt ON ltt.maThanhTra = hs.maThanhTra
+        WHERE i.mucDo COLLATE Vietnamese_CI_AI = N'Nghiem trong'
+          AND ltt.maCoSo IS NOT NULL
+    )
+    UPDATE cs
+    SET cs.trangThai = N'Tam dinh chi'
+    FROM CoSoKinhDoanh cs
+    JOIN CoSoCanDinhChi x ON x.maCoSo = cs.maCoSo
+    WHERE cs.trangThai COLLATE Vietnamese_CI_AI <> N'Tam dinh chi';
+END
+GO
+
+-- ========================= TEST: TRG_ViPham_TuDongDinhChiCoSo =========================
+-- BEGIN TRAN;
+--
+-- -- Tao vi pham nghiem trong de trigger cap nhat trang thai co so.
+-- INSERT INTO ViPham (maViPham, maHoSo, maLoaiViPham, moTaThem, khacPhuc, trangThaiPheDuyet, mucDo)
+-- VALUES ('VPTDH001', 'HSTT001', 'LVP001', N'Test trigger tu dong dinh chi', N'Test', N'Cho phe duyet', N'Nghiem trong');
+--
+-- -- Ky vong: CoSoKinhDoanh cua ho so lien quan duoc cap nhat thanh Tam dinh chi.
+-- SELECT cs.maCoSo, cs.tenCoSo, cs.trangThai
+-- FROM CoSoKinhDoanh cs
+-- JOIN LichThanhTra ltt ON ltt.maCoSo = cs.maCoSo
+-- JOIN HoSoThanhTra hs ON hs.maThanhTra = ltt.maThanhTra
+-- WHERE hs.maHoSo = 'HSTT001';
+--
+-- ROLLBACK TRAN;
+
+IF OBJECT_ID('TRG_PhanAnh_CanhBaoKhanCap', 'TR') IS NOT NULL
+    DROP TRIGGER TRG_PhanAnh_CanhBaoKhanCap;
+GO
+
+CREATE TRIGGER TRG_PhanAnh_CanhBaoKhanCap
+ON PhanAnh
+AFTER INSERT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @maxSo INT;
+    DECLARE @ThongBaoKhan TABLE (maThongBao VARCHAR(10));
+
+    SELECT @maxSo = ISNULL(MAX(TRY_CAST(SUBSTRING(maThongBao, 3, 10) AS INT)), 0)
+    FROM ThongBao
+    WHERE maThongBao LIKE 'TB%';
+
+    ;WITH Nguon AS (
+        SELECT
+            i.maPhanAnh,
+            i.lyDo,
+            cs.tenCoSo,
+            ROW_NUMBER() OVER (ORDER BY i.maPhanAnh) AS rn
+        FROM inserted i
+        LEFT JOIN CoSoKinhDoanh cs ON cs.maCoSo = i.maCoSo
+        WHERE i.lyDo IS NOT NULL
+          AND (
+                i.lyDo COLLATE Vietnamese_CI_AI LIKE N'%ngo doc%'
+             OR i.lyDo COLLATE Vietnamese_CI_AI LIKE N'%cap cuu%'
+             OR i.lyDo COLLATE Vietnamese_CI_AI LIKE N'%nhap vien%'
+             OR i.lyDo COLLATE Vietnamese_CI_AI LIKE N'%tu vong%'
+          )
+    )
+    INSERT INTO ThongBao (maThongBao, tieuDe, noiDung, ngayGui, loaiThongBao, isCongDong)
+    OUTPUT inserted.maThongBao INTO @ThongBaoKhan(maThongBao)
+    SELECT
+        'TB' + RIGHT(REPLICATE('0', 6) + CAST(@maxSo + rn AS VARCHAR(10)), 6),
+        N'Canh bao khan cap tu phan anh nguoi dan',
+        N'Phan anh ma ' + maPhanAnh
+            + N' co dau hieu nguy hiem tai co so '
+            + ISNULL(tenCoSo, N'(khong xac dinh)')
+            + N'. Noi dung: ' + LEFT(ISNULL(lyDo, N''), 300),
+        GETDATE(),
+        N'Khan cap',
+        0
+    FROM Nguon;
+
+    INSERT INTO ThongBao_NguoiDung (maNguoiDung, maThongBao, trangThai)
+    SELECT qnd.maNguoiDung, tb.maThongBao, N'Chua doc'
+    FROM @ThongBaoKhan tb
+    CROSS JOIN (
+        SELECT maNguoiDung
+        FROM QuyenHan_NguoiDung
+        WHERE maQuyenHan = 'CHICUCATVSTP'
+    ) qnd;
+END
+GO
+
+-- ========================= TEST: TRG_PhanAnh_CanhBaoKhanCap =========================
+-- BEGIN TRAN;
+--
+-- -- Tao phan anh co tu khoa khan cap de trigger tao thong bao.
+-- INSERT INTO PhanAnh (maPhanAnh, maNguoiPhanAnh, trangThaiPhanAnh, maCoSo, lyDo, ngayGui, maLoaiPhanAnh)
+-- VALUES ('PA_KC_TEST', 'ND004', N'Chua xu ly', 'CS001', N'Nghi ngo doc thuc pham, can cap cuu gap', GETDATE(), 'LPA001');
+--
+-- -- Ky vong: Co thong bao loai Khan cap va phan bo cho nhom CHICUCATVSTP.
+-- SELECT TOP 5 maThongBao, tieuDe, noiDung, loaiThongBao, ngayGui
+-- FROM ThongBao
+-- WHERE noiDung LIKE N'%PA_KC_TEST%'
+-- ORDER BY ngayGui DESC;
+--
+-- SELECT tbnd.maNguoiDung, tbnd.maThongBao, tbnd.trangThai
+-- FROM ThongBao_NguoiDung tbnd
+-- JOIN ThongBao tb ON tb.maThongBao = tbnd.maThongBao
+-- WHERE tb.noiDung LIKE N'%PA_KC_TEST%';
+--
+-- ROLLBACK TRAN;
+
+IF OBJECT_ID('TRG_LichThanhTra_ThongBaoPhanCong', 'TR') IS NOT NULL
+    DROP TRIGGER TRG_LichThanhTra_ThongBaoPhanCong;
+GO
+
+CREATE TRIGGER TRG_LichThanhTra_ThongBaoPhanCong
+ON LichThanhTra_NguoiDung
+AFTER INSERT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @maxSo INT;
+    DECLARE @ThongBaoPhanCong TABLE (
+        maThongBao   VARCHAR(10),
+        maNguoiDung  VARCHAR(10),
+        tieuDe       NVARCHAR(200),
+        noiDung      NVARCHAR(MAX),
+        ngayGui      DATETIME,
+        loaiThongBao NVARCHAR(50)
+    );
+
+    SELECT @maxSo = ISNULL(MAX(TRY_CAST(SUBSTRING(maThongBao, 3, 10) AS INT)), 0)
+    FROM ThongBao
+    WHERE maThongBao LIKE 'TB%';
+
+    ;WITH Nguon AS (
+        SELECT
+            i.maNguoiThanhTra,
+            i.maThanhTra,
+            i.thoiGianTT,
+            cs.tenCoSo,
+            ROW_NUMBER() OVER (ORDER BY i.maThanhTra, i.maNguoiThanhTra) AS rn
+        FROM inserted i
+        LEFT JOIN LichThanhTra ltt ON ltt.maThanhTra = i.maThanhTra
+        LEFT JOIN CoSoKinhDoanh cs ON cs.maCoSo = ltt.maCoSo
+    )
+    INSERT INTO @ThongBaoPhanCong (maThongBao, maNguoiDung, tieuDe, noiDung, ngayGui, loaiThongBao)
+    SELECT
+        'TB' + RIGHT(REPLICATE('0', 6) + CAST(@maxSo + rn AS VARCHAR(10)), 6),
+        maNguoiThanhTra,
+        N'Thong bao phan cong thanh tra',
+        N'Ban duoc phan cong dot thanh tra '
+            + maThanhTra
+            + N' tai co so ' + ISNULL(tenCoSo, N'(khong xac dinh)')
+            + N'. Thoi gian du kien: '
+            + CONVERT(NVARCHAR(19), thoiGianTT, 120),
+        GETDATE(),
+        N'Phan cong thanh tra'
+    FROM Nguon;
+
+    INSERT INTO ThongBao (maThongBao, tieuDe, noiDung, ngayGui, loaiThongBao, isCongDong)
+    SELECT maThongBao, tieuDe, noiDung, ngayGui, loaiThongBao, 0
+    FROM @ThongBaoPhanCong;
+
+    INSERT INTO ThongBao_NguoiDung (maNguoiDung, maThongBao, trangThai)
+    SELECT maNguoiDung, maThongBao, N'Chua doc'
+    FROM @ThongBaoPhanCong;
+END
+GO
+
+-- ========================= TEST: TRG_LichThanhTra_ThongBaoPhanCong =========================
+-- BEGIN TRAN;
+--
+-- -- Tao lich thanh tra moi va phan cong can bo de trigger tao thong bao phan cong.
+-- INSERT INTO LichThanhTra (maThanhTra, maCoSo, maNguoiThanhTra, trangThai, noiDung)
+-- VALUES ('LTTPC001', 'CS001', 'ND002', N'Len ke hoach', N'Test trigger thong bao phan cong');
+--
+-- INSERT INTO LichThanhTra_NguoiDung (maThanhTra, maNguoiThanhTra, thoiGianTT)
+-- VALUES ('LTTPC001', 'ND003', GETDATE());
+--
+-- -- Ky vong: Tao thong bao va map thong bao-nguoi dung cho ND003.
+-- SELECT TOP 5 maThongBao, tieuDe, noiDung, loaiThongBao, ngayGui
+-- FROM ThongBao
+-- WHERE noiDung LIKE N'%LTTPC001%'
+-- ORDER BY ngayGui DESC;
+--
+-- SELECT TOP 5 *
+-- FROM ThongBao_NguoiDung
+-- WHERE maNguoiDung = 'ND003'
+-- ORDER BY maThongBao DESC;
+--
+-- ROLLBACK TRAN;
+
+IF OBJECT_ID('PRC_ThongKe_ViPham_Theo_KhuVuc', 'P') IS NOT NULL
+    DROP PROCEDURE PRC_ThongKe_ViPham_Theo_KhuVuc;
+GO
+
+CREATE PROCEDURE PRC_ThongKe_ViPham_Theo_KhuVuc
+    @maPX VARCHAR(10) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        vp.maViPham          AS MaViPham,
+        cs.tenCoSo           AS TenCoSo,
+        lv.tenLoaiViPham     AS LoaiViPham,
+        vp.mucDo             AS MucDo,
+        CONVERT(VARCHAR(10), min_tt.ngayPhatHien, 103) AS NgayPhatHien, -- Định dạng DD/MM/YYYY
+        vp.trangThaiPheDuyet AS TrangThai,
+        px.TenPhuongXa       AS QuanHuyen
+    FROM ViPham vp
+    JOIN HoSoThanhTra hs ON hs.maHoSo = vp.maHoSo
+    JOIN LichThanhTra ltt ON ltt.maThanhTra = hs.maThanhTra
+    JOIN CoSoKinhDoanh cs ON cs.maCoSo = ltt.maCoSo
+    JOIN PhuongXa px ON px.maPX = cs.maPX
+    JOIN LoaiViPham lv ON lv.maLoaiViPham = vp.maLoaiViPham
+    OUTER APPLY (
+        SELECT MIN(CAST(lnd.thoiGianTT AS DATE)) AS ngayPhatHien
+        FROM LichThanhTra_NguoiDung lnd
+        WHERE lnd.maThanhTra = ltt.maThanhTra
+    ) min_tt
+    WHERE (@maPX IS NULL OR @maPX = '' OR cs.maPX = @maPX)
+    ORDER BY min_tt.ngayPhatHien DESC, vp.maViPham DESC;
+END
+GO
+
+-- ========================= TEST: PRC_ThongKe_ViPham_Theo_KhuVuc =========================
+-- -- Test 1: Lay tat ca khu vuc
+-- EXEC PRC_ThongKe_ViPham_Theo_KhuVuc @maPX = NULL;
+--
+-- -- Test 2: Loc theo mot ma phuong/xa cu the
+-- EXEC PRC_ThongKe_ViPham_Theo_KhuVuc @maPX = 'PX001';
+
+IF TYPE_ID(N'dbo.TVP_TieuChiDanhGiaATVSTP') IS NOT NULL
+    DROP TYPE dbo.TVP_TieuChiDanhGiaATVSTP;
+GO
+
+CREATE TYPE dbo.TVP_TieuChiDanhGiaATVSTP AS TABLE (
+    MaTieuChi VARCHAR(10) NOT NULL,
+    KetQuaDanhGia NVARCHAR(30) NOT NULL
+);
+GO
+
+IF OBJECT_ID('PRC_LuuHoSoKiemTraATVSTP', 'P') IS NOT NULL
+    DROP PROCEDURE PRC_LuuHoSoKiemTraATVSTP;
+GO
+
+CREATE PROCEDURE PRC_LuuHoSoKiemTraATVSTP
+    @maHoSo VARCHAR(10) OUTPUT,
+    @maThanhTra VARCHAR(10),
+    @maNguoiThanhTra VARCHAR(10),
+    @maCoSo VARCHAR(10),
+    @thoiGianKiemTra DATETIME,
+    @ketLuan NVARCHAR(30),
+    @coViPham BIT,
+    @moTaViPham NVARCHAR(MAX) = NULL,
+    @nhanXetChung NVARCHAR(MAX) = NULL,
+    @bienPhapXuLy NVARCHAR(MAX) = NULL,
+    @kienNghi NVARCHAR(MAX) = NULL,
+    @danhGiaTieuChi dbo.TVP_TieuChiDanhGiaATVSTP READONLY,
+    @maViPham VARCHAR(10) OUTPUT,
+    @maBaoCao VARCHAR(10) OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    IF NOT EXISTS (SELECT 1 FROM LichThanhTra WHERE maThanhTra = @maThanhTra)
+    BEGIN
+        RAISERROR (N'Khong tim thay lich thanh tra.', 16, 1);
+        RETURN;
+    END
+
+    IF NOT EXISTS (SELECT 1 FROM NguoiDung WHERE maNguoiDung = @maNguoiThanhTra)
+    BEGIN
+        RAISERROR (N'Khong tim thay nguoi thanh tra.', 16, 1);
+        RETURN;
+    END
+
+    IF NOT EXISTS (SELECT 1 FROM CoSoKinhDoanh WHERE maCoSo = @maCoSo)
+    BEGIN
+        RAISERROR (N'Khong tim thay co so kinh doanh.', 16, 1);
+        RETURN;
+    END
+
+    IF NOT EXISTS (SELECT 1 FROM @danhGiaTieuChi)
+    BEGIN
+        RAISERROR (N'Danh gia tieu chi khong duoc de trong.', 16, 1);
+        RETURN;
+    END
+
+    IF EXISTS (
+        SELECT 1
+        FROM @danhGiaTieuChi dg
+        LEFT JOIN tieuChiDanhGia tc ON tc.MaTieuChi = dg.MaTieuChi
+        WHERE tc.MaTieuChi IS NULL
+    )
+    BEGIN
+        RAISERROR (N'Co tieu chi trong danh sach khong ton tai.', 16, 1);
+        RETURN;
+    END
+
+    IF EXISTS (
+        SELECT 1
+        FROM @danhGiaTieuChi
+        WHERE KetQuaDanhGia NOT IN (N'Đạt', N'Không đạt')
+    )
+    BEGIN
+        RAISERROR (N'Ket qua tieu chi chi duoc phep la "Đạt" hoac "Không đạt".', 16, 1);
+        RETURN;
+    END
+
+    IF (SELECT COUNT(*) FROM @danhGiaTieuChi) <> 20
+    BEGIN
+        RAISERROR (N'Checklist ATVSTP phai co du 20 tieu chi.', 16, 1);
+        RETURN;
+    END
+
+    IF @coViPham = 1 AND NULLIF(LTRIM(RTRIM(ISNULL(@moTaViPham, N''))), N'') IS NULL
+    BEGIN
+        RAISERROR (N'Vui long nhap mo ta vi pham khi chon co vi pham.', 16, 1);
+        RETURN;
+    END
+
+    IF @coViPham = 0
+    BEGIN
+        SET @moTaViPham = NULL;
+    END
+
+    DECLARE @tongTieuChi INT;
+    DECLARE @soDat INT;
+    DECLARE @diem FLOAT;
+    DECLARE @chiTietDanhGia NVARCHAR(MAX);
+    DECLARE @noiDungBaoCao NVARCHAR(MAX);
+    DECLARE @nhanXetBaoCao NVARCHAR(MAX);
+    DECLARE @maxSo INT;
+
+    SELECT
+        @tongTieuChi = COUNT(*),
+        @soDat = SUM(CASE WHEN KetQuaDanhGia = N'Đạt' THEN 1 ELSE 0 END)
+    FROM @danhGiaTieuChi;
+
+    SET @diem = CASE
+        WHEN @tongTieuChi = 0 THEN 0
+        ELSE ROUND(100.0 * @soDat / @tongTieuChi, 2)
+    END;
+
+    SELECT @chiTietDanhGia =
+        STUFF((
+            SELECT
+                CHAR(10) + N'- '
+                + ISNULL(tc.TenTieuChi, N'(Khong xac dinh)')
+                + N': '
+                + dg.KetQuaDanhGia
+            FROM @danhGiaTieuChi dg
+            INNER JOIN tieuChiDanhGia tc ON tc.MaTieuChi = dg.MaTieuChi
+            ORDER BY tc.ThuTu, tc.MaTieuChi
+            FOR XML PATH(''), TYPE
+        ).value('.', 'NVARCHAR(MAX)'), 1, 1, N'');
+
+    IF NULLIF(LTRIM(RTRIM(ISNULL(@maHoSo, N''))), N'') IS NULL
+    BEGIN
+        SELECT @maxSo = ISNULL(MAX(TRY_CAST(SUBSTRING(maHoSo, 5, 10) AS INT)), 0)
+        FROM HoSoThanhTra
+        WHERE maHoSo LIKE 'HSTT%';
+
+        SET @maHoSo = 'HSTT' + RIGHT(REPLICATE('0', 3) + CAST(@maxSo + 1 AS VARCHAR(10)), 3);
+    END
+
+        SELECT TOP 1 @maBaoCao = maBaoCao
+        FROM BaoCao
+        WHERE maHoSo = @maHoSo
+        ORDER BY maBaoCao DESC;
+
+        SELECT TOP 1 @maViPham = maViPham
+        FROM ViPham
+        WHERE maHoSo = @maHoSo
+            AND ISNULL(moTaThem, N'') = ISNULL(@moTaViPham, N'')
+        ORDER BY maViPham DESC;
+
+    SELECT
+        @noiDungBaoCao =
+            N'Ho so kiem tra ATVSTP cho co so ' + ISNULL(cs.tenCoSo, N'(khong xac dinh)') + N':' + CHAR(10)
+            + N'- Thoi gian kiem tra: ' + CONVERT(NVARCHAR(30), @thoiGianKiemTra, 120) + CHAR(10)
+            + N'- Tong diem danh gia: ' + CONVERT(NVARCHAR(30), @diem) + CHAR(10)
+            + N'- Tinh trang vi pham: ' + CASE WHEN @coViPham = 1 THEN N'Co vi pham' ELSE N'Khong co vi pham' END + CHAR(10)
+            + N'- Ket luan: ' + ISNULL(@ketLuan, N'Chua cap nhat') + CHAR(10)
+            + N'- Nhan xet chung: ' + ISNULL(@nhanXetChung, N'Chua co nhan xet chung') + CHAR(10)
+            + N'- Bien phap xu ly: ' + ISNULL(@bienPhapXuLy, N'Chua co bien phap xu ly') + CHAR(10)
+            + N'- Kien nghi: ' + ISNULL(@kienNghi, N'Chua co kien nghi') + CHAR(10)
+            + N'- Chi tiet danh gia:' + CHAR(10)
+            + ISNULL(@chiTietDanhGia, N'- Chua co du lieu danh gia tieu chi'),
+        @nhanXetBaoCao = ISNULL(@nhanXetChung, N'Chua co nhan xet tong hop')
+    FROM CoSoKinhDoanh cs
+    WHERE cs.maCoSo = @maCoSo;
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        IF EXISTS (SELECT 1 FROM HoSoThanhTra WHERE maHoSo = @maHoSo)
+        BEGIN
+            UPDATE HoSoThanhTra
+            SET maThanhTra = @maThanhTra,
+                thoiGianKiemTra = @thoiGianKiemTra,
+                diem = @diem,
+                tinhTrangViPham = CASE WHEN @coViPham = 1 THEN N'Có vi phạm' ELSE N'Không có vi phạm' END,
+                KetLuan = @ketLuan,
+                NhanXetChung = @nhanXetChung,
+                BienPhapXuLy = @bienPhapXuLy,
+                KienNghi = @kienNghi
+            WHERE maHoSo = @maHoSo;
+        END
+        ELSE
+        BEGIN
+            INSERT INTO HoSoThanhTra (
+                maHoSo,
+                maThanhTra,
+                thoiGianKiemTra,
+                diem,
+                tinhTrangViPham,
+                KetLuan,
+                NhanXetChung,
+                BienPhapXuLy,
+                KienNghi
+            )
+            VALUES (
+                @maHoSo,
+                @maThanhTra,
+                @thoiGianKiemTra,
+                @diem,
+                CASE WHEN @coViPham = 1 THEN N'Có vi phạm' ELSE N'Không có vi phạm' END,
+                @ketLuan,
+                @nhanXetChung,
+                @bienPhapXuLy,
+                @kienNghi
+            );
+        END
+
+        DELETE FROM kqDanhGia WHERE maHoSo = @maHoSo;
+
+        INSERT INTO kqDanhGia (maHoSo, MaTieuChi, KetQuaDanhGia)
+        SELECT @maHoSo, dg.MaTieuChi, dg.KetQuaDanhGia
+        FROM @danhGiaTieuChi dg;
+
+        IF @coViPham = 1
+        BEGIN
+            IF NULLIF(LTRIM(RTRIM(ISNULL(@maViPham, N''))), N'') IS NULL
+            BEGIN
+                SELECT @maxSo = ISNULL(MAX(TRY_CAST(SUBSTRING(maViPham, 3, 10) AS INT)), 0)
+                FROM ViPham
+                WHERE maViPham LIKE 'VP%';
+
+                SET @maViPham = 'VP' + RIGHT(REPLICATE('0', 6) + CAST(@maxSo + 1 AS VARCHAR(10)), 6);
+            END
+
+            IF EXISTS (SELECT 1 FROM ViPham WHERE maHoSo = @maHoSo AND ISNULL(moTaThem, N'') = ISNULL(@moTaViPham, N''))
+            BEGIN
+                UPDATE ViPham
+                SET khacPhuc = @bienPhapXuLy,
+                    trangThaiPheDuyet = N'Đã ghi nhận'
+                WHERE maHoSo = @maHoSo
+                  AND ISNULL(moTaThem, N'') = ISNULL(@moTaViPham, N'');
+            END
+            ELSE
+            BEGIN
+                INSERT INTO ViPham (
+                    maViPham,
+                    maHoSo,
+                    maLoaiViPham,
+                    moTaThem,
+                    khacPhuc,
+                    trangThaiPheDuyet
+                )
+                VALUES (
+                    @maViPham,
+                    @maHoSo,
+                    NULL,
+                    @moTaViPham,
+                    @bienPhapXuLy,
+                    N'Đã ghi nhận'
+                );
+            END
+        END
+
+        IF NULLIF(LTRIM(RTRIM(ISNULL(@maBaoCao, N''))), N'') IS NULL
+        BEGIN
+            SELECT @maxSo = ISNULL(MAX(TRY_CAST(SUBSTRING(maBaoCao, 3, 10) AS INT)), 0)
+            FROM BaoCao
+            WHERE maBaoCao LIKE 'BC%';
+
+            SET @maBaoCao = 'BC' + RIGHT(REPLICATE('0', 6) + CAST(@maxSo + 1 AS VARCHAR(10)), 6);
+        END
+
+        IF EXISTS (SELECT 1 FROM BaoCao WHERE maHoSo = @maHoSo)
+        BEGIN
+            UPDATE BaoCao
+            SET NoiDung = @noiDungBaoCao,
+                nhanXet = @nhanXetBaoCao
+            WHERE maHoSo = @maHoSo;
+        END
+        ELSE
+        BEGIN
+            INSERT INTO BaoCao (maBaoCao, maHoSo, NoiDung, nhanXet)
+            VALUES (@maBaoCao, @maHoSo, @noiDungBaoCao, @nhanXetBaoCao);
+        END
+
+        UPDATE LichThanhTra
+        SET trangThai = N'Đã hoàn thành',
+            noiDung = ISNULL(@nhanXetChung, noiDung)
+        WHERE maThanhTra = @maThanhTra;
+
+        IF EXISTS (
+            SELECT 1
+            FROM LichThanhTra_NguoiDung
+            WHERE maThanhTra = @maThanhTra
+              AND maNguoiThanhTra = @maNguoiThanhTra
+        )
+        BEGIN
+            UPDATE LichThanhTra_NguoiDung
+            SET thoiGianTT = @thoiGianKiemTra
+            WHERE maThanhTra = @maThanhTra
+              AND maNguoiThanhTra = @maNguoiThanhTra;
+        END
+        ELSE
+        BEGIN
+            INSERT INTO LichThanhTra_NguoiDung (maThanhTra, maNguoiThanhTra, thoiGianTT)
+            VALUES (@maThanhTra, @maNguoiThanhTra, @thoiGianKiemTra);
+        END
+
+        COMMIT TRANSACTION;
+
+        SELECT
+            @maHoSo AS maHoSo,
+            @maViPham AS maViPham,
+            @maBaoCao AS maBaoCao,
+            @diem AS diemTong,
+            CASE WHEN @coViPham = 1 THEN N'Có vi phạm' ELSE N'Không có vi phạm' END AS tinhTrangViPham;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+
+        THROW;
+    END CATCH
+END
+GO
+
+-- ========================= TEST: PRC_LuuHoSoKiemTraATVSTP =========================
+-- BEGIN TRAN;
+
+-- -- 1. Khai báo thêm biến chứa thời gian
+-- DECLARE @now DATETIME = GETDATE(); 
+
+-- DECLARE @maHoSoTest VARCHAR(10) = NULL;
+-- DECLARE @maViPhamTest VARCHAR(10) = NULL;
+-- DECLARE @maBaoCaoTest VARCHAR(10) = NULL;
+-- DECLARE @dg dbo.TVP_TieuChiDanhGiaATVSTP;
+
+-- INSERT INTO @dg (MaTieuChi, KetQuaDanhGia)
+-- VALUES
+-- ('TC001', N'Đạt'), ('TC002', N'Đạt'), ('TC003', N'Đạt'), ('TC004', N'Đạt'), ('TC005', N'Đạt'),
+-- ('TC006', N'Đạt'), ('TC007', N'Đạt'), ('TC008', N'Đạt'), ('TC009', N'Đạt'), ('TC010', N'Đạt'),
+-- ('TC011', N'Đạt'), ('TC012', N'Đạt'), ('TC013', N'Đạt'), ('TC014', N'Đạt'), ('TC015', N'Đạt'),
+-- ('TC016', N'Đạt'), ('TC017', N'Đạt'), ('TC018', N'Đạt'), ('TC019', N'Đạt'), ('TC020', N'Đạt');
+
+-- -- 2. Truyền biến @now vào thay vì gọi hàm trực tiếp
+-- EXEC dbo.PRC_LuuHoSoKiemTraATVSTP
+--     @maHoSo = @maHoSoTest OUTPUT,
+--     @maThanhTra = 'LTT001',
+--     @maNguoiThanhTra = 'ND002',
+--     @maCoSo = 'CS001',
+--     @thoiGianKiemTra = @now, -- Dùng biến đã gán ở trên, không dùng GETDATE() ở đây
+--     @ketLuan = N'Dat yeu cau',
+--     @coViPham = 0,
+--     @moTaViPham = NULL,
+--     @nhanXetChung = N'Test luu ho so',
+--     @bienPhapXuLy = N'Khong',
+--     @kienNghi = N'Tiep tuc duy tri',
+--     @danhGiaTieuChi = @dg,
+--     @maViPham = @maViPhamTest OUTPUT,
+--     @maBaoCao = @maBaoCaoTest OUTPUT;
+
+-- SELECT @maHoSoTest AS maHoSoTest, @maViPhamTest AS maViPhamTest, @maBaoCaoTest AS maBaoCaoTest;
+
+-- ROLLBACK TRAN;
+
+IF OBJECT_ID('PRC_DanhSachGiayPhep_TheoTrangThai', 'P') IS NOT NULL
+    DROP PROCEDURE PRC_DanhSachGiayPhep_TheoTrangThai;
+GO
+
+-- ============================================================================
+-- PROCEDURE: PRC_DanhSachGiayPhep_TheoTrangThai
+-- Muc dich:
+--   - Tra ve danh sach giay phep cho man hinh Quan ly giay phep.
+--   - Ho tro loc theo combobox trang thai.
+-- Dau vao:
+--   @trangThai: NULL / '' / N'Tat ca trang thai' => khong loc
+--               N'Con hieu luc' / N'Het han' / N'Da thu hoi' => loc theo trang thai
+-- Dau ra:
+--   Ma giay phep, Ten co so, Loai giay phep, Ngay cap, Ngay het han,
+--   Trang thai, Quan/Huyen (lay theo PhuongXa).
+-- ============================================================================
+CREATE PROCEDURE PRC_DanhSachGiayPhep_TheoTrangThai
+    @trangThai NVARCHAR(30) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @trangThaiLoc NVARCHAR(30);
+
+    -- Chuan hoa gia tri combobox de xu ly nhat quan.
+    SET @trangThaiLoc = NULLIF(LTRIM(RTRIM(ISNULL(@trangThai, N''))), N'');
+
+    IF @trangThaiLoc IN (N'Tat ca trang thai', N'Tất cả trạng thái')
+    BEGIN
+        SET @trangThaiLoc = NULL;
+    END
+
+    SELECT
+        gp.maGiayPhep  AS MaGiayPhep,
+        cs.tenCoSo     AS TenCoSo,
+        gp.loaiGiayPhep AS LoaiGiayPhep,
+        gp.ngayCap     AS NgayCap,
+        gp.ngayHetHan  AS NgayHetHan,
+        gp.trangThai   AS TrangThai,
+        px.TenPhuongXa AS QuanHuyen
+    FROM GiayPhep gp
+    JOIN CoSoKinhDoanh cs ON cs.maCoSo = gp.maCoSo
+    LEFT JOIN PhuongXa px ON px.maPX = cs.maPX
+    WHERE @trangThaiLoc IS NULL
+       OR gp.trangThai COLLATE Vietnamese_CI_AI = @trangThaiLoc COLLATE Vietnamese_CI_AI
+    ORDER BY gp.ngayHetHan ASC, gp.maGiayPhep ASC;
+END
+GO
+
+-- ========================= TEST: PRC_DanhSachGiayPhep_TheoTrangThai =========================
+-- -- Test 1: Tat ca trang thai
+-- EXEC PRC_DanhSachGiayPhep_TheoTrangThai @trangThai = N'Tất cả trạng thái';
+--
+-- -- Test 2: Con hieu luc
+-- EXEC PRC_DanhSachGiayPhep_TheoTrangThai @trangThai = N'Còn hiệu lực';
+--
+-- -- Test 3: Het han
+-- EXEC PRC_DanhSachGiayPhep_TheoTrangThai @trangThai = N'Hết hạn';
+--
+-- -- Test 4: Da thu hoi
+-- EXEC PRC_DanhSachGiayPhep_TheoTrangThai @trangThai = N'Đã thu hồi';
+
+
+
+-- Trigger gửi thông báo cho cơ can kiểm định khi sắp tới hạn nhiệm vụ 
+-- Trigger (Cán bộ thanh tra) Ràng buộc không cho phép tạo "Đơn kiểm định" nếu mẫu chưa được thu thập
+-- Trigger gửi tự động gửi thông báo cho toàn dân khi cơ quan quản lý vsattp tạo cảnh báo mới
+--=========================END TASK LE KHAC HIEU====================================
+
+
 
 
 -- Kiều : Liệt kê 3 trigger, 3 procedure và code trong sql. Liệt kê 4 trigger khi triển khai sẽ code trong backend 
@@ -1788,7 +2563,7 @@ BEGIN
         hs.maHoSo,
         hs.trangThai AS trangThaiHoSo
     FROM CoSoKinhDoanh cs
-    LEFT JOIN HoSoDangKy hs 
+    LEFT JOIN HoSoDangKiKinhDoanh hs 
         ON cs.maCoSo = hs.maCoSo
     WHERE cs.maCoSo = @maCoSo;
 END;
@@ -1804,4 +2579,5 @@ GO
  ---1. (Người dân) Giới hạn spam phản ánh – Backend Giao diện: Tạo phản ánh Dùng @PrePersist trong entity PhanAnhTrước khi lưu → kiểm tra:Số phản ánh của người dân trong ngàyNếu > 5:→ throw exception Chống spam Không cần trigger DB
  ---2. (Người dân) Tự động đánh dấu “Đã đọc” thông báo Xem thông báo Khi API lấy chi tiết thông báo→ dùng @EventListener hoặc service→ update: trangThai = "Đã đọc"Đồng bộ UIKhông cần update thủ công
  ---3. (Cơ sở kinh doanh) Cảnh báo giấy phép sắp hết hạnXem tình trạng pháp lýDùng @Scheduled (Spring Scheduler)check ngayHetHanGiayPhep Nếu ≤ 30 ngày:→ tạo notification hoặc gửi emailChủ động cảnh báo Backend xử lý tốt hơn DB trigger
- ---4. (Cơ sở kinh doanh) Kiểm tra hồ sơ hợp lệ trước khi cập nhật Cập nhật hồ sơ Dùng @PreUpdate trong entity HoSoDangKy Trước khi update: kiểm tra:không null đúng định dạngNếu sai:→ throw exception Đảm bảo dữ liệu hợp lệTránh lỗi hệ thống
+ ---4. (Cơ sở kinh doanh) Kiểm tra hồ sơ hợp lệ trước khi cập nhật Cập nhật hồ sơ Dùng @PreUpdate trong entity HoSoDangKiKinhDoanh Trước khi update: kiểm tra:không null đúng định dạngNếu sai:→ throw exception Đảm bảo dữ liệu hợp lệTránh lỗi hệ thống
+
