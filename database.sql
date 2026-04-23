@@ -1253,6 +1253,11 @@ DELETE FROM ThongBao WHERE noiDung LIKE N'%PATEST2%';
 DELETE FROM PhanAnh WHERE maPhanAnh = 'PATEST2';
 GO
 
+-- Ý tưởng thêm 3 trigger dùng trong backend
+-- 1 Trigger audit bảng ViPham/PhanAnh: ghi lịch sử trước-sau vào bảng nhật ký để backend hiển thị timeline xử lý.
+-- 2 Trigger chống trạng thái sai quy trình: ví dụ PhanAnh chỉ cho chuyển Chưa xử lý -> Đang xử lý -> Đã xử lý.
+-- 3 Trigger cảnh báo giấy phép sắp hết hạn: khi còn <= 30 ngày thì tự tạo sự kiện để backend gửi push/email định kỳ.
+--  4 . TỰ động ghi log khi người dùng đăng nhập
 
 -- ============================================================
 -- TRIGGERS & PROCEDURES: TUẤN
@@ -1538,10 +1543,68 @@ SELECT maViPham, maHoSo, trangThaiPheDuyet FROM ViPham WHERE maViPham = 'VPTEST2
 DELETE FROM ViPham WHERE maViPham = 'VPTEST2';
 GO
 
+-- 4 Trigger nghiệp vụ viết ở Backend (Spring Boot) Sử dụng JPA @PrePersist, @PreUpdate hoặc Spring @EventListener thay vì DB Trigger:
+-- Mã hóa mật khẩu tự động: Bắt sự kiện @PrePersist trên entity NguoiDung để gọi Bcrypt băm mật khẩu trước khi lưu xuống DB.
+-- Gửi Notification khi có kết quả mẫu: Sử dụng @AfterCommit (Spring ApplicationEvent) khi lưu thành công Mau_ChiTieu để bắn Push Notification cho Cán bộ thanh tra.
+-- Audit Log phức tạp: Bắt sự kiện tạo ViPham để ghi log bao gồm thông tin chi tiết (ai tạo, tạo vì lý do gì, metadata JSON) vào Elasticsearch hoặc File log thay vì lưu DB quan hệ.
+-- Khóa tài khoản Admin: Lắng nghe sự kiện AuthenticationFailureBadCredentialsEvent của Spring Security, nếu sai pass 5 lần thì update cờ isLocked trên bảng NguoiDung.
 
--- ============================================================
--- TRIGGERS & PROCEDURES: LÊ KHẮC HIẾU
--- ============================================================
+
+
+-- ============================================================================
+-- CODE CUA LE KHAC HIEU - GHI CHU NGHIEP VU THAM KHAO
+-- Cac ten ben duoi dung theo cach dat ten Tieng Viet khong dau ma nhom yeu cau.
+--
+-- 1. TRG_ViPham_TuDongDinhChiCoSo
+--    Muc dich:
+--    Khi phat sinh vi pham muc do nghiem trong, he thong tu dong cap nhat trang
+--    thai co so thanh "Tam dinh chi" de dam bao an toan ngay lap tuc.
+--    Doi chieu schema hien tai:
+--    Da bo sung cot trangThai cho CoSoKinhDoanh va cot mucDo cho ViPham
+--    de trigger nay co the hoat dong dung voi mo ta nghiep vu.
+--
+-- 2. TRG_PhanAnh_CanhBaoKhanCap
+--    Muc dich:
+--    Khi co phan anh co noi dung nguy hiem (vi du: ngo doc, cap cuu), he thong
+--    tu dong tao thong bao khan gui den cap quan ly de uu tien xu ly.
+--    Doi chieu schema hien tai:
+--    Da bo sung trigger rieng de tach voi trigger thong bao phan anh thong thuong.
+--
+-- 3. TRG_LichThanhTra_ThongBaoPhanCong
+--    Muc dich:
+--    Khi can bo duoc phan cong vao bang LichThanhTra_NguoiDung, he thong tao
+--    thong bao de can bo nhan lich cong tac tren ung dung.
+--    Doi chieu schema hien tai:
+--    Da bo sung trigger moi ma khong anh huong den code cu cua nhom.
+--
+-- 4. PRC_ThongKe_ViPham_Theo_KhuVuc
+--    Muc dich:
+--    Tong hop so lieu vi pham theo maPX va khoang thoi gian de phuc vu giao dien
+--    thong ke tong quan cho lanh dao.
+--    Bang lien quan:
+--    CoSoKinhDoanh, LichThanhTra, HoSoThanhTra, ViPham, LoaiViPham.
+--
+-- 5. PRC_LuuHoSoKiemTraATVSTP
+--    Muc dich:
+--    Tong hop ket qua danh gia tu kqDanhGia va noi dung ho so thanh tra tu
+--    HoSoThanhTra de tao noi dung tom tat cho bang BaoCao.
+--    Doi chieu schema hien tai:
+--    Procedure nay duoc bo sung theo huong tao moi hoac cap nhat BaoCao hien co.
+--
+-- 6. PRC_DanhSachGiayPhep_TheoTrangThai
+--    Muc dich:
+--    Loc danh sach giay phep theo trang thai de hien thi tren man hinh quan ly
+--    voi combobox trang thai (Tat ca/Còn hiệu lực/Hết hạn/Đã thu hồi).
+--    Doi chieu schema hien tai:
+--    Procedure moi join GiayPhep -> CoSoKinhDoanh -> PhuongXa de tra ve day du
+--    cac cot giao dien can: ma, ten co so, loai, ngay cap, ngay het han,
+--    trang thai, quan/huyen (phuong xa).
+-- ============================================================================
+
+-- ============================================================================
+-- CODE CUA LE KHAC HIEU - TRIGGER VA PROCEDURE BO SUNG THEO NGHIEP VU
+-- Dat duoi cung de tach biet voi code vua pull ve tu nhanh cua nhom.
+-- ============================================================================
 
 IF OBJECT_ID('TRG_ViPham_TuDongDinhChiCoSo', 'TR') IS NOT NULL
     DROP TRIGGER TRG_ViPham_TuDongDinhChiCoSo;
@@ -1997,6 +2060,26 @@ BEGIN
 END
 GO
 
+-- ========================= TEST: PRC_DanhSachGiayPhep_TheoTrangThai =========================
+-- -- Test 1: Tat ca trang thai
+-- EXEC PRC_DanhSachGiayPhep_TheoTrangThai @trangThai = N'Tất cả trạng thái';
+--
+-- -- Test 2: Con hieu luc
+-- EXEC PRC_DanhSachGiayPhep_TheoTrangThai @trangThai = N'Còn hiệu lực';
+--
+-- -- Test 3: Het han
+-- EXEC PRC_DanhSachGiayPhep_TheoTrangThai @trangThai = N'Hết hạn';
+--
+-- -- Test 4: Da thu hoi
+-- EXEC PRC_DanhSachGiayPhep_TheoTrangThai @trangThai = N'Đã thu hồi';
+
+
+
+-- Trigger gửi thông báo cho cơ can kiểm định khi sắp tới hạn nhiệm vụ 
+-- Trigger (Cán bộ thanh tra) Ràng buộc không cho phép tạo "Đơn kiểm định" nếu mẫu chưa được thu thập
+-- Trigger gửi tự động gửi thông báo cho toàn dân khi cơ quan quản lý vsattp tạo cảnh báo mới
+--=========================END TASK LE KHAC HIEU====================================
+
 
 -- ============================================================
 -- TRIGGERS & PROCEDURES: KIỀU
@@ -2217,6 +2300,12 @@ BEGIN
     WHERE cs.maCoSo = @maCoSo;
 END;
 GO
+
+ --4 Trigger nghiệp vụ viết ở Backend 
+ ---1. (Người dân) Giới hạn spam phản ánh – Backend Giao diện: Tạo phản ánh Dùng @PrePersist trong entity PhanAnhTrước khi lưu → kiểm tra:Số phản ánh của người dân trong ngàyNếu > 5:→ throw exception Chống spam Không cần trigger DB
+ ---2. (Người dân) Tự động đánh dấu “Đã đọc” thông báo Xem thông báo Khi API lấy chi tiết thông báo→ dùng @EventListener hoặc service→ update: trangThai = "Đã đọc"Đồng bộ UIKhông cần update thủ công
+ ---3. (Cơ sở kinh doanh) Cảnh báo giấy phép sắp hết hạnXem tình trạng pháp lýDùng @Scheduled (Spring Scheduler)check ngayHetHanGiayPhep Nếu ≤ 30 ngày:→ tạo notification hoặc gửi emailChủ động cảnh báo Backend xử lý tốt hơn DB trigger
+ ---4. (Cơ sở kinh doanh) Kiểm tra hồ sơ hợp lệ trước khi cập nhật Cập nhật hồ sơ Dùng @PreUpdate trong entity HoSoDangKiKinhDoanh Trước khi update: kiểm tra:không null đúng định dạngNếu sai:→ throw exception Đảm bảo dữ liệu hợp lệTránh lỗi hệ thống
 
 PRINT N'===== TEST: PRC_CoSo_XemHoSoVaPhapLy =====';
 EXEC PRC_CoSo_XemHoSoVaPhapLy @maCoSo = 'CS001';
