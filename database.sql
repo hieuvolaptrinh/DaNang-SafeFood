@@ -478,14 +478,13 @@ GO
 -- ============================================================
 -- CHECK CONSTRAINTS & NOT NULL (Tuấn)
 -- ============================================================
-
--- Log: ip không được rỗng, phải đúng định dạng IPv4/IPv6
+-- Log: ip khong duoc rong, phai dung dinh dang IPv4/IPv6
 ALTER TABLE [Log] ALTER COLUMN ip VARCHAR(50) NOT NULL;
 ALTER TABLE [Log] ALTER COLUMN [time] DATETIME NOT NULL;
 ALTER TABLE [Log] ALTER COLUMN maNguoiDung VARCHAR(10) NOT NULL;
 ALTER TABLE [Log]
     ADD CONSTRAINT CHK_Log_IP
-        CHECK (ip LIKE '%.%.%.%' OR ip LIKE '%:%');
+        CHECK (ip LIKE '%.%.%.%' OR ip LIKE '%:%'); -- [ADDED] kiem tra IP hop le
 GO
 
 -- MauKiemNghiem
@@ -496,7 +495,6 @@ ALTER TABLE MauKiemNghiem ALTER COLUMN hanHoanThanh DATE NOT NULL;
 ALTER TABLE MauKiemNghiem ALTER COLUMN trangThai NVARCHAR(30) NOT NULL;
 ALTER TABLE MauKiemNghiem ALTER COLUMN loaiMau NVARCHAR(50) NOT NULL;
 
--- FIX 1: Thêm 'Có kết quả' và 'Đang xét nghiệm' vào constraint trangThai
 ALTER TABLE MauKiemNghiem
     ADD CONSTRAINT CHK_MauKiemNghiem_TrangThai
         CHECK (trangThai IN (
@@ -507,30 +505,31 @@ ALTER TABLE MauKiemNghiem
             N'Hoàn thành',
             N'Có kết quả',
             N'Hủy'
-        ));
-GO
+        )); -- [ADDED] gioi han trang thai mau hop le
 
 ALTER TABLE MauKiemNghiem
     ADD CONSTRAINT CHK_MauKiemNghiem_LoaiMau
-        CHECK (loaiMau IN (N'Thực phẩm', N'Nước', N'Môi trường', N'Khác'));
+        CHECK (loaiMau IN (N'Thực phẩm', N'Nước', N'Môi trường', N'Khác')); -- [ADDED] gioi han loai mau hop le
+
 ALTER TABLE MauKiemNghiem
     ADD CONSTRAINT CHK_MauKiemNghiem_NgayKiemNghiem
-        CHECK (ngayKiemNghiem >= ngayThu);
+        CHECK (ngayKiemNghiem >= ngayThu); -- [ADDED] ngay kiem nghiem khong nho hon ngay thu
+
 ALTER TABLE MauKiemNghiem
     ADD CONSTRAINT CHK_MauKiemNghiem_HanHoanThanh
-        CHECK (hanHoanThanh >= ngayYeuCau);
+        CHECK (hanHoanThanh >= ngayYeuCau); -- [ADDED] han hoan thanh khong nho hon ngay yeu cau
+
 ALTER TABLE MauKiemNghiem
-    ADD CONSTRAINT UQ_MauKiemNghiem_TenMau UNIQUE (tenMau);
+    ADD CONSTRAINT UQ_MauKiemNghiem_TenMau UNIQUE (tenMau); -- [ADDED] khong cho trung ten mau
 GO
 
--- Mau_ChiTieu: FIX 2 - bỏ constraint ketQua để cho phép text mô tả kết quả (không chỉ 'Đạt'/'Không đạt')
--- Không thêm CHECK constraint CHK_MauChiTieu_KetQua vì dữ liệu thực tế cần lưu kết quả mô tả đầy đủ
+-- Mau_ChiTieu: khong ap CHECK cho ketQua de giu ket qua mo ta do dai
 GO
 
 -- ChiTieuKiemNghiem
 ALTER TABLE ChiTieuKiemNghiem ALTER COLUMN tenChiTieu NVARCHAR(200) NOT NULL;
 ALTER TABLE ChiTieuKiemNghiem
-    ADD CONSTRAINT UQ_ChiTieuKiemNghiem_Ten UNIQUE (tenChiTieu);
+    ADD CONSTRAINT UQ_ChiTieuKiemNghiem_Ten UNIQUE (tenChiTieu); -- [ADDED] khong cho trung ten chi tieu
 GO
 
 -- ViPham
@@ -538,10 +537,40 @@ ALTER TABLE ViPham ALTER COLUMN maHoSo VARCHAR(10) NOT NULL;
 ALTER TABLE ViPham ALTER COLUMN maLoaiViPham VARCHAR(10) NOT NULL;
 ALTER TABLE ViPham ALTER COLUMN trangThaiPheDuyet NVARCHAR(30) NOT NULL;
 
--- FIX 3: Thêm 'Đã ghi nhận' vào constraint trangThaiPheDuyet
 ALTER TABLE ViPham
     ADD CONSTRAINT CHK_ViPham_TrangThaiPheDuyet
-        CHECK (trangThaiPheDuyet IN (N'Chờ duyệt', N'Đã duyệt', N'Từ chối', N'Đã ghi nhận'));
+        CHECK (trangThaiPheDuyet IN (N'Chờ duyệt', N'Đã duyệt', N'Từ chối', N'Đã ghi nhận')); -- [ADDED] gioi han trang thai phe duyet hop le
+GO
+
+-- Le Khac Hieu Check constraint table
+-- NguoiDung: soDienThoai phai la 10 chu so
+ALTER TABLE NguoiDung ALTER COLUMN soDienThoai VARCHAR(20) NOT NULL;
+ALTER TABLE NguoiDung
+    ADD CONSTRAINT CHK_NguoiDung_SoDienThoai
+        CHECK (soDienThoai LIKE '[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'); -- [ADDED] so dien thoai Viet Nam 10 chu so
+GO
+
+-- ChungNhanATVSTP: ngay ban hanh phai nho hon ngay het han
+ALTER TABLE ChungNhanATVSTP ALTER COLUMN ngayBanHanh DATE NOT NULL;
+ALTER TABLE ChungNhanATVSTP ALTER COLUMN ngayHetHan DATE NOT NULL;
+ALTER TABLE ChungNhanATVSTP
+    ADD CONSTRAINT CHK_ChungNhanATVSTP_Ngay
+        CHECK (ngayBanHanh < ngayHetHan); -- [ADDED] ngay ban hanh phai truoc ngay het han
+GO
+
+-- GiayPhep: ngay cap phai nho hon ngay het han
+ALTER TABLE GiayPhep ALTER COLUMN ngayCap DATE NOT NULL;
+ALTER TABLE GiayPhep ALTER COLUMN ngayHetHan DATE NOT NULL;
+ALTER TABLE GiayPhep
+    ADD CONSTRAINT CHK_GiayPhep_Ngay
+        CHECK (ngayCap < ngayHetHan); -- [ADDED] ngay cap phai truoc ngay het han
+GO
+
+-- HinhThucKhacPhuc: so tien khac phuc khong duoc am
+ALTER TABLE HinhThucKhacPhuc ALTER COLUMN soTienKhacPhuc DECIMAL(18, 2) NOT NULL;
+ALTER TABLE HinhThucKhacPhuc
+    ADD CONSTRAINT CHK_HinhThucKhacPhuc_SoTien
+        CHECK (soTienKhacPhuc >= 0); -- [ADDED] so tien khac phuc phai khong am
 GO
 
 -- ============================================================
