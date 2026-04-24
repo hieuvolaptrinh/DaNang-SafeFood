@@ -572,6 +572,36 @@ ALTER TABLE HinhThucKhacPhuc
     ADD CONSTRAINT CHK_HinhThucKhacPhuc_SoTien
         CHECK (soTienKhacPhuc >= 0); -- [ADDED] so tien khac phuc phai khong am
 GO
+----Nhật kiều Unique,Check
+-- NguoiDung: email không được trùng
+ALTER TABLE NguoiDung 
+ADD CONSTRAINT UQ_NguoiDung_Email UNIQUE (email);
+
+-- NguoiDung: CCCD là duy nhất
+ALTER TABLE NguoiDung 
+ADD CONSTRAINT UQ_NguoiDung_CCCD UNIQUE (CCCD);
+
+-- CoSoKinhDoanh: số giấy phép là duy nhất
+ALTER TABLE CoSoKinhDoanh 
+ADD CONSTRAINT UQ_CoSo_SoGiayPhep UNIQUE (soGiayPhep);
+
+-- GiayPhep: mỗi cơ sở chỉ có 1 loại giấy phép
+ALTER TABLE GiayPhep
+ADD CONSTRAINT UQ_GiayPhep_CoSo_Loai UNIQUE (maCoSo, loaiGiayPhep);
+-- Hồ sơ đăng ký: ngày nộp không được ở tương lai
+ALTER TABLE HoSoDangKiKinhDoanh
+ADD CONSTRAINT CHK_HSDKKD_NgayNop
+CHECK (ngayNop <= GETDATE());
+
+-- Phản ánh: ngày gửi không vượt hiện tại
+ALTER TABLE PhanAnh
+ADD CONSTRAINT CHK_PhanAnh_NgayGui
+CHECK (ngayGui <= GETDATE());
+
+-- Khiếu nại: thời gian không vượt hiện tại
+ALTER TABLE KhieuNai
+ADD CONSTRAINT CHK_KhieuNai_ThoiGian
+CHECK (thoiGianKhieuNai <= GETDATE());
 
 -- ============================================================
 -- BỔ SUNG SCHEMA
