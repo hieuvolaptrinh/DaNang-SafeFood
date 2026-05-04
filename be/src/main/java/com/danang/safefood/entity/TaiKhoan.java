@@ -54,7 +54,7 @@ public class TaiKhoan {
     @Enumerated(EnumType.STRING)
     @Column(name = "role", length = 30, nullable = false)
     @Builder.Default
-    private Role role = Role.USER;
+    private Role role = Role.NGUOI_TIEU_DUNG;
 
     @Column(name = "enabled", nullable = false)
     @Builder.Default
