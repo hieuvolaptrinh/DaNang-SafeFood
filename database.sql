@@ -652,9 +652,9 @@ GO
 INSERT INTO CoSoKinhDoanh (maCoSo, tenCoSo, soGiayPhep, maCoSoTrue, ngayHetHanGiayPhep, maChuSoHuu, maPX) VALUES
     ('CS001', N'Nhà hàng Sông Hàn',           'GP-2022-001', NULL,    '2025-12-31', 'ND004', 'PX001'),
     ('CS002', N'Quán Cơm Miền Trung',          'GP-2022-002', NULL,    '2025-06-30', 'ND005', 'PX002'),
-    ('CS003', N'Cơ sở chế biến Thủy Sản ABC',  'GP-2023-003', NULL,    '2026-03-15', 'ND004', 'PX003'),
-    ('CS004', N'Nhà hàng Sông Hàn – CN1',      'GP-2023-004', 'CS001', '2025-12-31', 'ND004', 'PX004'),
-    ('CS005', N'Bánh mỳ Đà Nẵng Express',      'GP-2023-005', NULL,    '2026-01-20', 'ND005', 'PX005');
+    ('CS003', N'Cơ sở chế biến Thủy Sản ABC',  'GP-2023-003', NULL,    '2026-06-15', 'ND004', 'PX003'),
+    ('CS004', N'Nhà hàng Sông Hàn – CN1',      'GP-2023-004', 'CS001', '2026-12-31', 'ND004', 'PX004'),
+    ('CS005', N'Bánh mỳ Đà Nẵng Express',      'GP-2023-005', NULL,    '2026-09-20', 'ND005', 'PX005');
 GO
  
 -- [5] QuyenHan_NguoiDung
@@ -1072,10 +1072,8 @@ BEGIN CATCH
     PRINT N'[FAILED] ' + ERROR_MESSAGE();
 END CATCH;
 
-SELECT TOP 1 maThongBao, tieuDe, noiDung
+SELECT  *
 FROM ThongBao
-WHERE tieuDe = N'Cảnh báo vi phạm ATTP'
-  AND noiDung LIKE N'%VPTEST1%'
 ORDER BY ngayGui DESC;
 
 DELETE FROM ViPham WHERE maViPham = 'VPTEST1';
@@ -1137,7 +1135,7 @@ PRINT N'===== TEST TRIGGER 3: TRG_PhanAnh_AutoThongBaoChiCuc =====';
 INSERT INTO PhanAnh (maPhanAnh, maNguoiPhanAnh, trangThaiPhanAnh, maCoSo, lyDo, ngayGui, maLoaiPhanAnh)
 VALUES ('PATEST1', 'ND004', N'Chưa xử lý', 'CS001', N'Test phản ánh mới', GETDATE(), 'LPA001');
 
-SELECT TOP 1 maThongBao, tieuDe, noiDung
+SELECT *
 FROM ThongBao
 WHERE tieuDe = N'Phản ánh mới cần xử lý'
   AND noiDung LIKE N'%PATEST1%'
@@ -1187,6 +1185,7 @@ BEGIN
 END
 GO
 
+SELECT * FROM CoSoKinhDoanh
 PRINT N'===== TEST PROCEDURE 1: PRC_DanhSachCoSoSapHetHanGiayPhep =====';
 EXEC PRC_DanhSachCoSoSapHetHanGiayPhep @soNgayCanhBao = 400;
 GO
@@ -1312,11 +1311,33 @@ DELETE FROM ThongBao WHERE noiDung LIKE N'%PATEST2%';
 DELETE FROM PhanAnh WHERE maPhanAnh = 'PATEST2';
 GO
 
--- Ý tưởng thêm 3 trigger dùng trong backend
--- 1 Trigger audit bảng ViPham/PhanAnh: ghi lịch sử trước-sau vào bảng nhật ký để backend hiển thị timeline xử lý.
--- 2 Trigger chống trạng thái sai quy trình: ví dụ PhanAnh chỉ cho chuyển Chưa xử lý -> Đang xử lý -> Đã xử lý.
--- 3 Trigger cảnh báo giấy phép sắp hết hạn: khi còn <= 30 ngày thì tự tạo sự kiện để backend gửi push/email định kỳ.
---  4 . TỰ động ghi log khi người dùng đăng nhập
+-- ============================================================
+-- BACKEND TRIGGERS: 4 Ý TƯỞNG DÙNG SPRING BOOT
+-- ============================================================
+-- 
+-- 1. TRIGGER AUDIT: Ghi lịch sử mọi thay đổi ViPham/PhanAnh
+--    Cách làm: @EntityListener + JPA @CreatedBy, @CreatedDate
+--    Kết quả: Lưu before/after JSON → hiển thị timeline trên UI
+--    Lợi ích: Dễ debug, tuân thủ pháp lý, dễ test
+-- 
+-- 2. TRIGGER STATE MACHINE: Chặn chuyển trạng thái sai quy trình
+--    Cách làm: Spring Statemachine framework + @Configuration
+--    Quy trình: Chưa xử lý → Đang xử lý → Đã xử lý (chỉ đúng thứ tự này)
+--    Lợi ích: Bảo vệ workflow, phát hiện sai sót nhanh
+-- 
+-- 3. TRIGGER SCHEDULER: Cảnh báo giấy phép sắp hết hạn hằng ngày
+--    Cách làm: @Scheduled(cron = "0 7 * * *") + JdbcTemplate gọi stored procedure
+--    Khi chạy: Kiểm tra giấy phép ≤ 30 ngày → tạo ThongBao → gửi push/email
+--    Lợi ích: Chủ động cảnh báo, giảm vi phạm
+-- 
+-- 4. TRIGGER LOGIN LOG: Ghi log đăng nhập + khóa account khi sai ≥ 5 lần
+--    Cách làm: Spring Security @EventListener + AuthenticationSuccessEvent/FailureBadCredentialsEvent
+--    Logic: Lần sai += 1 → Nếu = 5: khóa 24h, gửi email admin
+--    Lợi ích: Bảo vệ brute-force, audit trail đầy đủ
+-- 
+-- LỢI ÍCH CHUNG: Code Spring Boot dễ test, debug, maintain hơn DB trigger
+
+
 
 -- ============================================================
 -- TRIGGERS & PROCEDURES: TUẤN
