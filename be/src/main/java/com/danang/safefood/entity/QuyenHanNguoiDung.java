@@ -6,7 +6,7 @@ import lombok.*;
 import java.io.Serializable;
 
 @Entity
-@Table(name = "QuyenHan_NguoiDung")
+@Table(name = "quyen_han_nguoi_dung")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -19,22 +19,22 @@ public class QuyenHanNguoiDung {
     private String maQuyenHan;
 
     @Id
-    @Column(name = "maNguoiDung", length = 10, nullable = false)
-    private String maNguoiDung;
+    @Column(name = "tai_khoan_id")
+    private Long taiKhoanId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "maQuyenHan", insertable = false, updatable = false)
     private QuyenHan quyenHan;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "maNguoiDung", insertable = false, updatable = false)
-    private NguoiDung nguoiDung;
+    @JoinColumn(name = "tai_khoan_id", insertable = false, updatable = false)
+    private TaiKhoan taiKhoan;
 
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
     public static class QuyenHanNguoiDungId implements Serializable {
         private String maQuyenHan;
-        private String maNguoiDung;
+        private Long taiKhoanId;
     }
 }

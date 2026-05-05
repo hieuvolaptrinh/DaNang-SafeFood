@@ -6,7 +6,7 @@ import lombok.*;
 import java.io.Serializable;
 
 @Entity
-@Table(name = "Mau_ChiTieu")
+@Table(name = "mau_chi_tieu")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
