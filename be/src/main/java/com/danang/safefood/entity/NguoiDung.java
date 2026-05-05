@@ -5,7 +5,7 @@ import jakarta.validation.constraints.Pattern;
 import lombok.*;
 
 @Entity
-@Table(name = "NguoiDung",
+@Table(name = "nguoi_dung",
         uniqueConstraints = {
                 @UniqueConstraint(name = "UQ_NguoiDung_Email", columnNames = "email"),
                 @UniqueConstraint(name = "UQ_NguoiDung_CCCD",  columnNames = "CCCD")
@@ -24,8 +24,8 @@ public class NguoiDung {
     @Column(name = "hoTen", length = 100)
     private String hoTen;
 
-    @Column(name = "email", length = 150, unique = true)
-    private String email;
+//    @Column(name = "email", length = 150, unique = true)
+//    private String email;
 
     @Column(name = "soDienThoai", length = 20, nullable = false)
     @Pattern(regexp = "\\d{10}", message = "Số điện thoại phải đúng 10 chữ số")
@@ -34,9 +34,13 @@ public class NguoiDung {
     @Column(name = "gioiTinh", length = 10)
     private String gioiTinh;
 
-    @Column(name = "matKhau", length = 255)
-    private String matKhau;
+//    @Column(name = "matKhau", length = 255)
+//    private String matKhau;
 
     @Column(name = "CCCD", length = 20, unique = true)
     private String cccd;
+
+    @OneToOne
+    @JoinColumn(name = "tai_khoan_id", nullable = false)
+    private TaiKhoan taiKhoan;
 }
