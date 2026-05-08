@@ -23,7 +23,7 @@ public class PhanAnhController {
     private final PhanAnhService phanAnhService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('LANH_DAO_ATVSTP','CAN_BO_THANH_TRA','QUAN_TRI_HE_THONG')")
+    @PreAuthorize("hasAnyRole('LD_ATVSTP','CAN_BO_THANH_TRA','QUAN_TRI_HE_THONG')")
     public ResponseEntity<ApiResponse<Page<PhanAnhResponse>>> getAll(
             @RequestParam(required = false) String trangThai,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
@@ -33,13 +33,13 @@ public class PhanAnhController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('LANH_DAO_ATVSTP','CAN_BO_THANH_TRA','QUAN_TRI_HE_THONG')")
+    @PreAuthorize("hasAnyRole('LD_ATVSTP','CAN_BO_THANH_TRA','QUAN_TRI_HE_THONG')")
     public ResponseEntity<ApiResponse<PhanAnhResponse>> getById(@PathVariable String id) {
         return ResponseEntity.ok(ApiResponse.success(phanAnhService.getById(id)));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('LANH_DAO_ATVSTP','QUAN_TRI_HE_THONG')")
+    @PreAuthorize("hasAnyRole('LD_ATVSTP','QUAN_TRI_HE_THONG')")
     public ResponseEntity<ApiResponse<PhanAnhResponse>> update(
             @PathVariable String id,
             @RequestBody PhanAnhUpdateRequest req) {

@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/xuphat")
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyRole('LANH_DAO_ATVSTP','QUAN_TRI_HE_THONG')")
+@PreAuthorize("hasAnyRole('LD_ATVSTP','QUAN_TRI_HE_THONG')")
 public class XuPhatController {
 
     private final XuPhatService xuPhatService;

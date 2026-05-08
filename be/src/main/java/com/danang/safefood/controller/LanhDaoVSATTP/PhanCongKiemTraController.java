@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/phancong-kiemtra")
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyRole('LANH_DAO_ATVSTP','CAN_BO_THANH_TRA','QUAN_TRI_HE_THONG')")
+@PreAuthorize("hasAnyRole('LD_ATVSTP','CAN_BO_THANH_TRA','QUAN_TRI_HE_THONG')")
 public class PhanCongKiemTraController {
 
     private final PhanCongService phanCongService;
