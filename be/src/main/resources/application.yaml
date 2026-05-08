@@ -23,7 +23,7 @@ spring:
 
   sql:
     init:
-      mode: never                 # ← Quan trọng: always để chạy data.sql
+      mode: embedded                # ← Quan trọng: always để chạy data.sql
       encoding: UTF-8
       continue-on-error: false
       separator: ;
