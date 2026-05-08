@@ -1,4 +1,4 @@
-package com.danang.safefood.controller;
+package com.danang.safefood.controller.common;
 
 import com.danang.safefood.dto.auth.AuthRequest;
 import com.danang.safefood.dto.auth.AuthResponse;
