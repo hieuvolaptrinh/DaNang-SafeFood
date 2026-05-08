@@ -9,7 +9,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: none
       naming:
         physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
     show-sql: true
@@ -18,8 +18,15 @@ spring:
         format_sql: true
 
   flyway:
-    enabled: true
+    enabled: false
     locations: classpath:db/migration
+
+  sql:
+    init:
+      mode: never                 # ← Quan trọng: always để chạy data.sql
+      encoding: UTF-8
+      continue-on-error: false
+      separator: ;
 
 server:
   port: 8080

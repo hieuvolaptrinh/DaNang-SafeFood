@@ -16,7 +16,7 @@ import java.time.LocalDate;
 @RestController
 @RequestMapping("/api/thongke")
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyRole('LANH_DAO_ATVSTP','QUAN_TRI_HE_THONG')")
+@PreAuthorize("hasAnyRole('LD_ATVSTP','QUAN_TRI_HE_THONG')")
 public class ThongKeController {
 
     private final ThongKeService thongKeService;

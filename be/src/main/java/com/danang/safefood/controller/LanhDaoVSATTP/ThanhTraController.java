@@ -22,7 +22,7 @@ public class ThanhTraController {
     private final ThanhTraService thanhTraService;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('LANH_DAO_ATVSTP','CAN_BO_THANH_TRA','QUAN_TRI_HE_THONG')")
+    @PreAuthorize("hasAnyRole('LD_ATVSTP','CAN_BO_THANH_TRA','QUAN_TRI_HE_THONG')")
     public ResponseEntity<ApiResponse<ThanhTraResponse>> taoThanhTra(
             @Valid @RequestBody ThanhTraRequest req) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -30,7 +30,7 @@ public class ThanhTraController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('LANH_DAO_ATVSTP','CAN_BO_THANH_TRA','QUAN_TRI_HE_THONG')")
+    @PreAuthorize("hasAnyRole('LD_ATVSTP','CAN_BO_THANH_TRA','QUAN_TRI_HE_THONG')")
     public ResponseEntity<ApiResponse<Page<ThanhTraResponse>>> getAll(
             @RequestParam(required = false) String trangThai,
             @PageableDefault(size = 20) Pageable pageable) {

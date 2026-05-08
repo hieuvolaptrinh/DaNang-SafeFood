@@ -26,7 +26,7 @@ public class CSKDController {
     private final CoSoKinhDoanhService coSoService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('LANH_DAO_ATVSTP','CAN_BO_THANH_TRA','CAN_BO_KIEM_DINH','QUAN_TRI_HE_THONG')")
+    @PreAuthorize("hasAnyRole('LD_ATVSTP','CAN_BO_THANH_TRA','CAN_BO_KIEM_DINH','QUAN_TRI_HE_THONG')")
     public ResponseEntity<ApiResponse<Page<CoSoKinhDoanhResponse>>> getAll(
             @RequestParam(required = false) String trangThai,
             @RequestParam(required = false) String maPX,
@@ -35,19 +35,19 @@ public class CSKDController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('LANH_DAO_ATVSTP','CAN_BO_THANH_TRA','CAN_BO_KIEM_DINH','QUAN_TRI_HE_THONG')")
+    @PreAuthorize("hasAnyRole('LD_ATVSTPP','CAN_BO_THANH_TRA','CAN_BO_KIEM_DINH','QUAN_TRI_HE_THONG')")
     public ResponseEntity<ApiResponse<CoSoKinhDoanhResponse>> getById(@PathVariable String id) {
         return ResponseEntity.ok(ApiResponse.success(coSoService.getById(id)));
     }
 
     @GetMapping("/{id}/giaychungnhan")
-    @PreAuthorize("hasAnyRole('LANH_DAO_ATVSTP','CAN_BO_THANH_TRA','QUAN_TRI_HE_THONG')")
+    @PreAuthorize("hasAnyRole('LD_ATVSTP','CAN_BO_THANH_TRA','QUAN_TRI_HE_THONG')")
     public ResponseEntity<ApiResponse<List<GiayChungNhanResponse>>> getChungNhan(@PathVariable String id) {
         return ResponseEntity.ok(ApiResponse.success(coSoService.getChungNhan(id)));
     }
 
     @PutMapping("/{id}/dangky")
-    @PreAuthorize("hasAnyRole('LANH_DAO_ATVSTP','QUAN_TRI_HE_THONG')")
+    @PreAuthorize("hasAnyRole('LD_ATVSTP','QUAN_TRI_HE_THONG')")
     public ResponseEntity<ApiResponse<CoSoKinhDoanhResponse>> updateDangKy(
             @PathVariable String id,
             @RequestBody CoSoKinhDoanhDangKyRequest req) {
@@ -55,7 +55,7 @@ public class CSKDController {
     }
 
     @PostMapping("/{id}/kiemtra")
-    @PreAuthorize("hasAnyRole('LANH_DAO_ATVSTP','CAN_BO_THANH_TRA','QUAN_TRI_HE_THONG')")
+    @PreAuthorize("hasAnyRole('LD_ATVSTP','CAN_BO_THANH_TRA','QUAN_TRI_HE_THONG')")
     public ResponseEntity<ApiResponse<Void>> taoKiemTra(
             @PathVariable String id,
             @Valid @RequestBody KiemTraCSKDRequest req) {
