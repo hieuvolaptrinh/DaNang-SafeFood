@@ -6,7 +6,7 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "PhanAnh")
+@Table(name = "phan_anh")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -22,6 +22,9 @@ public class PhanAnh {
 
     @Column(name = "lyDo", columnDefinition = "TEXT")
     private String lyDo;
+
+    @Column(name = "ghiChu", columnDefinition = "TEXT")
+    private String ghiChu;
 
     // CHECK: ngayGui <= GETDATE() enforced at DB level
     @Column(name = "ngayGui")

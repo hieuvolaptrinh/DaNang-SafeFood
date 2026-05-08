@@ -1,7 +1,11 @@
 package com.danang.safefood.entity;
 
 public enum Role {
-    USER,
-    ADMIN
+    QTH,
+    LD_ATVSTP,
+    CSKD,
+    CB_THANH_TRA,
+    CB_KIEM_DINH,
+    NTD
 }
 

@@ -23,9 +23,10 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        Role role = user.getRole();
-        String roleName = (role == null) ? "USER" : role.name();
-        return List.of(new SimpleGrantedAuthority("ROLE_" + roleName));
+        return user.getQuyenHanNguoiDungList().stream()
+                .map(qhnd -> qhnd.getQuyenHan().getMaQuyenHan())
+                .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
+                .toList();
     }
 
     @Override

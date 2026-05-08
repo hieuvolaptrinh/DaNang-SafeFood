@@ -1,0 +1,202 @@
+-- -- ============================================================
+-- -- V2: Create domain tables (IF NOT EXISTS – safe to re-run)
+-- -- ============================================================
+--
+-- -- NguoiDung
+-- create table if not exists "NguoiDung" (
+--     "maNguoiDung"  varchar(10)  primary key,
+--     "hoTen"        varchar(100),
+--     "email"        varchar(150) unique,
+--     "soDienThoai"  varchar(20)  not null,
+--     "gioiTinh"     varchar(10),
+--     "matKhau"      varchar(255),
+--     "CCCD"         varchar(20)  unique
+-- );
+--
+-- -- PhuongXa
+-- create table if not exists "PhuongXa" (
+--     "maPX"         varchar(10)  primary key,
+--     "TenPhuongXa"  varchar(100)
+-- );
+--
+-- -- LoaiHinhKinhDoanh
+-- create table if not exists "LoaiHinhKinhDoanh" (
+--     "maLoaiHinh"   varchar(10)  primary key,
+--     "tenLoaiHinh"  varchar(100)
+-- );
+--
+-- -- CoSoKinhDoanh
+-- create table if not exists "CoSoKinhDoanh" (
+--     "maCoSo"              varchar(10)  primary key,
+--     "tenCoSo"             varchar(200),
+--     "soGiayPhep"          varchar(50)  unique,
+--     "ngayHetHanGiayPhep"  date,
+--     "trangThai"           varchar(30)  not null default 'Hoat dong',
+--     "maChuSoHuu"          varchar(10)  references "NguoiDung"("maNguoiDung"),
+--     "maPX"                varchar(10)  references "PhuongXa"("maPX"),
+--     "maCoSoTrue"          varchar(10)  references "CoSoKinhDoanh"("maCoSo")
+-- );
+--
+-- -- GiayPhep
+-- create table if not exists "GiayPhep" (
+--     "maGiayPhep"   varchar(10)  primary key,
+--     "loaiGiayPhep" varchar(100),
+--     "trangThai"    varchar(30),
+--     "ngayCap"      date         not null,
+--     "ngayHetHan"   date         not null,
+--     "maCoSo"       varchar(10)  references "CoSoKinhDoanh"("maCoSo"),
+--     constraint chk_giay_phep_dates check ("ngayCap" < "ngayHetHan"),
+--     constraint uq_giay_phep_coso_loai unique ("maCoSo", "loaiGiayPhep")
+-- );
+--
+-- -- ChungNhanATVSTP
+-- create table if not exists "ChungNhanATVSTP" (
+--     "maCN"              varchar(10)  primary key,
+--     "tenChungNhan"      varchar(200),
+--     "ngayBanHanh"       date         not null,
+--     "ngayHetHan"        date         not null,
+--     "trangThai"         varchar(30),
+--     "maCoSoKinhDoanh"   varchar(10)  references "CoSoKinhDoanh"("maCoSo"),
+--     constraint chk_chung_nhan_dates check ("ngayBanHanh" < "ngayHetHan")
+-- );
+--
+-- -- LoaiPhanAnh
+-- create table if not exists "LoaiPhanAnh" (
+--     "maLoaiPhanAnh"  varchar(10)  primary key,
+--     "tenLoai"        varchar(100)
+-- );
+--
+-- -- PhanAnh
+-- create table if not exists "PhanAnh" (
+--     "maPhanAnh"         varchar(10)  primary key,
+--     "trangThaiPhanAnh"  varchar(30),
+--     "lyDo"              text,
+--     "ngayGui"           timestamptz,
+--     "ghiChu"            text,
+--     "maNguoiPhanAnh"    varchar(10)  references "NguoiDung"("maNguoiDung"),
+--     "maCoSo"            varchar(10)  references "CoSoKinhDoanh"("maCoSo"),
+--     "maLoaiPhanAnh"     varchar(10)  references "LoaiPhanAnh"("maLoaiPhanAnh"),
+--     constraint chk_phan_anh_ngay_gui check ("ngayGui" <= now())
+-- );
+--
+-- -- KhieuNai
+-- create table if not exists "KhieuNai" (
+--     "maKhieuNai"       varchar(10)  primary key,
+--     "trangThai"        varchar(30),
+--     "thoiGianKhieuNai" timestamptz,
+--     "moTaChiTiet"      text,
+--     "maCoSo"           varchar(10)  references "CoSoKinhDoanh"("maCoSo")
+-- );
+--
+-- -- LichThanhTra
+-- create table if not exists "LichThanhTra" (
+--     "maThanhTra"       varchar(10)  primary key,
+--     "trangThai"        varchar(30),
+--     "noiDung"          text,
+--     "maCoSo"           varchar(10)  references "CoSoKinhDoanh"("maCoSo"),
+--     "maNguoiThanhTra"  varchar(10)  references "NguoiDung"("maNguoiDung")
+-- );
+--
+-- -- LichThanhTra_NguoiDung (assignment junction)
+-- create table if not exists "LichThanhTra_NguoiDung" (
+--     "maThanhTra"       varchar(10)  not null references "LichThanhTra"("maThanhTra"),
+--     "maNguoiThanhTra"  varchar(10)  not null references "NguoiDung"("maNguoiDung"),
+--     "thoiGianTT"       timestamptz,
+--     primary key ("maThanhTra", "maNguoiThanhTra")
+-- );
+--
+-- -- HoSoThanhTra
+-- create table if not exists "HoSoThanhTra" (
+--     "maHoSo"           varchar(10)  primary key,
+--     "diem"             double precision,
+--     "tinhTrangViPham"  varchar(50),
+--     "KetLuan"          text,
+--     "NhanXetChung"     text,
+--     "BienPhapXuLy"     text,
+--     "KienNghi"         text,
+--     "thoiGianKiemTra"  timestamptz,
+--     "maThanhTra"       varchar(10)  references "LichThanhTra"("maThanhTra")
+-- );
+--
+-- -- LoaiViPham
+-- create table if not exists "LoaiViPham" (
+--     "maLoaiViPham"  varchar(10)  primary key,
+--     "tenLoai"       varchar(100)
+-- );
+--
+-- -- ViPham
+-- create table if not exists "ViPham" (
+--     "maViPham"           varchar(10)  primary key,
+--     "moTaThem"           text,
+--     "khacPhuc"           text,
+--     "trangThaiPheDuyet"  varchar(30)  not null,
+--     "mucDo"              varchar(30)  not null default 'Trung binh',
+--     "maHoSo"             varchar(10)  not null references "HoSoThanhTra"("maHoSo"),
+--     "maLoaiViPham"       varchar(10)  not null references "LoaiViPham"("maLoaiViPham"),
+--     constraint chk_vi_pham_trang_thai check ("trangThaiPheDuyet" in ('Cho duyet','Da duyet','Tu choi','Da ghi nhan'))
+-- );
+--
+-- -- ThongBao
+-- create table if not exists "ThongBao" (
+--     "maThongBao"   varchar(10)  primary key,
+--     "tieuDe"       varchar(200),
+--     "noiDung"      text,
+--     "ngayGui"      timestamptz,
+--     "loaiThongBao" varchar(50),
+--     "isCongDong"   boolean
+-- );
+--
+-- -- ThongBao_NguoiDung
+-- create table if not exists "ThongBao_NguoiDung" (
+--     "maThongBao"    varchar(10)  not null references "ThongBao"("maThongBao"),
+--     "maNguoiDung"   varchar(10)  not null references "NguoiDung"("maNguoiDung"),
+--     "daDoc"         boolean      not null default false,
+--     "thoiGianNhan"  timestamptz,
+--     primary key ("maThongBao", "maNguoiDung")
+-- );
+--
+-- -- BaoCao
+-- create table if not exists "BaoCao" (
+--     "maBaoCao"  varchar(10)  primary key,
+--     "NoiDung"   text,
+--     "nhanXet"   text,
+--     "maHoSo"    varchar(10)  references "HoSoThanhTra"("maHoSo")
+-- );
+--
+-- -- HoSoDangKiKinhDoanh
+-- create table if not exists "HoSoDangKiKinhDoanh" (
+--     "maHoSo"    varchar(10)  primary key,
+--     "trangThai" varchar(30),
+--     "maCoSo"    varchar(10)  references "CoSoKinhDoanh"("maCoSo")
+-- );
+--
+-- -- ============================================================
+-- -- NEW TABLES (QuyDinh, XuPhat)
+-- -- ============================================================
+--
+-- create table if not exists quy_dinh (
+--     ma_quy_dinh         varchar(10)     primary key,
+--     tieu_de             varchar(200)    not null,
+--     noi_dung            text,
+--     loai                varchar(30)     not null,
+--     trang_thai          varchar(30)     not null default 'NHAP',
+--     ngay_ban_hanh       date            not null,
+--     nguoi_ban_hanh_id   bigint          references tai_khoan(id),
+--     created_by          varchar(100),
+--     created_at          timestamptz     not null,
+--     updated_at          timestamptz     not null
+-- );
+--
+-- create table if not exists xu_phat (
+--     ma_xu_phat              varchar(10)     primary key,
+--     so_quyet_dinh           varchar(50),
+--     muc_phat                numeric(15,2),
+--     ly_do_xu_phat           text,
+--     trang_thai              varchar(30)     not null default 'CHO_NOP',
+--     ngay_xu_phat            date            not null,
+--     ma_co_so                varchar(10)     references "CoSoKinhDoanh"("maCoSo"),
+--     nguoi_ra_quyet_dinh_id  bigint          references tai_khoan(id),
+--     created_by              varchar(100),
+--     created_at              timestamptz     not null,
+--     updated_at              timestamptz     not null
+-- );

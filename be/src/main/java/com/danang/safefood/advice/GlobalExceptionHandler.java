@@ -49,7 +49,7 @@ public class GlobalExceptionHandler {
                 LocalDateTime.now(),
                 HttpStatus.UNAUTHORIZED.value(),
                 "Unauthorized",
-                "Email hoặc mật khẩu không đúng",
+                "Username hoặc mật khẩu không đúng",
                 request.getRequestURI()
         );
 
