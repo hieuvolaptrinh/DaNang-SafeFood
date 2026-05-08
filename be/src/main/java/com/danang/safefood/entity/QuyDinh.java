@@ -15,13 +15,13 @@ import java.time.LocalDate;
 public class QuyDinh {
 
     @Id
-    @Column(name = "ma_quy_dinh", length = 10, nullable = false)
+    @Column(name = "maQuyDinh", length = 10, nullable = false)
     private String maQuyDinh;
 
-    @Column(name = "tieu_de", length = 200, nullable = false)
+    @Column(name = "tieuDe", length = 200, nullable = false)
     private String tieuDe;
 
-    @Column(name = "noi_dung", columnDefinition = "TEXT")
+    @Column(name = "noiDung", columnDefinition = "TEXT")
     private String noiDung;
 
     @Enumerated(EnumType.STRING)
@@ -29,25 +29,25 @@ public class QuyDinh {
     private LoaiQuyDinh loai;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "trang_thai", length = 30, nullable = false)
+    @Column(name = "trangThai", length = 30, nullable = false)
     @Builder.Default
     private TrangThaiQuyDinh trangThai = TrangThaiQuyDinh.NHAP;
 
-    @Column(name = "ngay_ban_hanh", nullable = false)
+    @Column(name = "ngayBanHanh", nullable = false)
     private LocalDate ngayBanHanh;
 
     /** Tài khoản lãnh đạo ban hành */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "nguoi_ban_hanh_id")
+    @JoinColumn(name = "nguoiBanHanhId")
     private TaiKhoan nguoiBanHanh;
 
-    @Column(name = "created_by", length = 100)
+    @Column(name = "createdBy", length = 100)
     private String createdBy;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(name = "createdAt", nullable = false, updatable = false)
     private Instant createdAt;
 
-    @Column(name = "updated_at", nullable = false)
+    @Column(name = "updatedAt", nullable = false)
     private Instant updatedAt;
 
     @PrePersist
