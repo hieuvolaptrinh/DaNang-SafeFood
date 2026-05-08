@@ -15,19 +15,19 @@ import java.io.Serializable;
 public class QuyenHanNguoiDung {
 
     @Id
-    @Column(name = "ma_quyen_han", length = 20, nullable = false)
+    @Column(name = "maQuyenHan", length = 20, nullable = false)
     private String maQuyenHan;
 
     @Id
-    @Column(name = "tai_khoan_id", nullable = false)
+    @Column(name = "taiKhoanId", nullable = false)
     private Long taiKhoanId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ma_quyen_han", insertable = false, updatable = false)
+    @JoinColumn(name = "maQuyenHan", insertable = false, updatable = false)
     private QuyenHan quyenHan;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "tai_khoan_id", insertable = false, updatable = false)
+    @JoinColumn(name = "taiKhoanId", insertable = false, updatable = false)
     private TaiKhoan taiKhoan;
 
     // IdClass

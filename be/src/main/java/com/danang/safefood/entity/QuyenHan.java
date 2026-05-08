@@ -12,9 +12,9 @@ import lombok.*;
 public class QuyenHan {
 
     @Id
-    @Column(name = "ma_quyen_han", length = 20, nullable = false)  // ← Đổi thành snake_case
+    @Column(name = "maQuyenHan", length = 20, nullable = false)
     private String maQuyenHan;
 
-    @Column(name = "quyen_han", length = 100, nullable = false)
+    @Column(name = "quyenHan", length = 100, nullable = false)
     private String quyenHan;
 }

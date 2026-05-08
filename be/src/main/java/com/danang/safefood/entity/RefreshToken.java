@@ -19,12 +19,9 @@ import lombok.NoArgsConstructor;
 import java.time.Instant;
 
 @Entity
-@Table(
-        name = "refresh_token",
-        uniqueConstraints = {
-                @UniqueConstraint(name = "uq_refresh_token_token", columnNames = "token")
-        }
-)
+@Table(name = "refresh_token", uniqueConstraints = {
+        @UniqueConstraint(name = "uq_refresh_token_token", columnNames = "token")
+})
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -39,17 +36,17 @@ public class RefreshToken {
     private String token;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "userId", nullable = false)
     private TaiKhoan user;
 
-    @Column(name = "expires_at", nullable = false)
+    @Column(name = "expiresAt", nullable = false)
     private Instant expiresAt;
 
     @Column(name = "revoked", nullable = false)
     @Builder.Default
     private boolean revoked = false;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(name = "createdAt", nullable = false, updatable = false)
     private Instant createdAt;
 
     @PrePersist
@@ -57,4 +54,3 @@ public class RefreshToken {
         this.createdAt = Instant.now();
     }
 }
-

@@ -10,13 +10,10 @@ import java.time.Instant;
 import java.util.List;
 
 @Entity
-@Table(
-        name = "tai_khoan",
-        uniqueConstraints = {
-                @UniqueConstraint(name = "uq_tai_khoan_username", columnNames = "username"),
-                @UniqueConstraint(name = "uq_tai_khoan_email", columnNames = "email")
-        }
-)
+@Table(name = "tai_khoan", uniqueConstraints = {
+        @UniqueConstraint(name = "uq_tai_khoan_username", columnNames = "username"),
+        @UniqueConstraint(name = "uq_tai_khoan_email", columnNames = "email")
+})
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -33,7 +30,7 @@ public class TaiKhoan {
     @Column(name = "password", length = 255, nullable = false)
     private String password;
 
-    @Column(name = "full_name", length = 150)
+    @Column(name = "fullName", length = 150)
     private String fullName;
 
     @Column(name = "email", length = 150)
@@ -42,10 +39,10 @@ public class TaiKhoan {
     @Column(name = "phone", length = 20)
     private String phone;
 
-//    @Enumerated(EnumType.STRING)
-//    @Column(name = "role", length = 30, nullable = false)
-//    @Builder.Default
-//    private Role role = Role.NGUOI_TIEU_DUNG;
+    // @Enumerated(EnumType.STRING)
+    // @Column(name = "role", length = 30, nullable = false)
+    // @Builder.Default
+    // private Role role = Role.NGUOI_TIEU_DUNG;
 
     @OneToMany(mappedBy = "taiKhoan", fetch = FetchType.LAZY)
     private List<QuyenHanNguoiDung> quyenHanNguoiDungList;
@@ -54,10 +51,10 @@ public class TaiKhoan {
     @Builder.Default
     private boolean enabled = true;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(name = "createdAt", nullable = false, updatable = true)
     private Instant createdAt;
 
-    @Column(name = "updated_at", nullable = false)
+    @Column(name = "updatedAt", nullable = true)
     private Instant updatedAt;
 
     @PrePersist
@@ -72,4 +69,3 @@ public class TaiKhoan {
         this.updatedAt = Instant.now();
     }
 }
-
