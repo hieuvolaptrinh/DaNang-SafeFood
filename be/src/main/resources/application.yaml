@@ -3,8 +3,8 @@ spring:
     name: danang-safefood-backend
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/danang_safefood
-    username: postgres
+    url: jdbc:postgresql://localhost:5432/danang_safe_food
+    username: root
     password: 123456
 
   jpa:
