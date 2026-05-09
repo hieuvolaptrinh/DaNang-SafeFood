@@ -2,6 +2,7 @@ package com.danang.safefood.controller.common;
 
 import com.danang.safefood.dto.auth.AuthRequest;
 import com.danang.safefood.dto.auth.AuthResponse;
+import com.danang.safefood.dto.auth.MobileAuthRequest;
 import com.danang.safefood.dto.auth.RefreshTokenRequest;
 import com.danang.safefood.service.AuthenticationService;
 import jakarta.validation.Valid;
@@ -22,6 +23,11 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody AuthRequest request) {
         return ResponseEntity.ok(authenticationService.login(request.username(), request.password()));
+    }
+
+    @PostMapping("/login-mobile")
+    public ResponseEntity<AuthResponse> loginMobile(@Valid @RequestBody MobileAuthRequest request) {
+        return ResponseEntity.ok(authenticationService.loginMobile(request.identifier(), request.password()));
     }
 
     @PostMapping("/refresh-token")

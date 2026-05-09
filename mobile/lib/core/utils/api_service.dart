@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:frontend_flutter/core/app_exception.dart';
+import 'package:mobile_ui/core/utils/app_exception.dart';
 
 Future<T> handleStandardResponse<T>(http.Response res) async {
   final body = jsonDecode(res.body) as Map<String, dynamic>;
@@ -8,9 +8,8 @@ Future<T> handleStandardResponse<T>(http.Response res) async {
   final int statusCode = body['statusCode'] ?? res.statusCode;
 
   if (statusCode >= 400) {
-    final error = body['error'];
-
-    throw ApiException(statusCode: statusCode, error: error);
+    final message = body['message'];
+    throw ApiException(statusCode: statusCode, message: message);
   }
 
   // Thành công => trả về data

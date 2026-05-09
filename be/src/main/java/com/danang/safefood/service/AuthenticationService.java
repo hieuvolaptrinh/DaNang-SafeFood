@@ -3,6 +3,7 @@ package com.danang.safefood.service;
 import com.danang.safefood.dto.auth.AuthResponse;
 import com.danang.safefood.dto.auth.UserInfoDto;
 import com.danang.safefood.entity.RefreshToken;
+import com.danang.safefood.entity.TaiKhoan;
 import com.danang.safefood.repository.RefreshTokenRepository;
 import com.danang.safefood.repository.TaiKhoanRepository;
 import com.danang.safefood.security.jwt.JwtService;
@@ -12,6 +13,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,28 +29,25 @@ public class AuthenticationService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final JwtService jwtService;
 
+    /**
+     * Login bằng username (dành cho Web).
+     */
     @Transactional
     public AuthResponse login(String username, String password) {
-        Authentication auth = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(username, password)
-        );
+        return authenticate(username, password);
+    }
 
-        UserDetails userDetails = (UserDetails) auth.getPrincipal();
-        String accessToken = jwtService.generateAccessToken(userDetails);
-        String refreshTokenJwt = jwtService.generateRefreshToken(userDetails);
+    /**
+     * Login bằng email hoặc số điện thoại (dành cho Mobile).
+     * Tìm user bằng email/phone trước, sau đó authenticate bằng username thực tế.
+     */
+    @Transactional
+    public AuthResponse loginMobile(String identifier, String password) {
+        TaiKhoan user = taiKhoanRepository.findByEmailOrPhone(identifier)
+                .orElseThrow(() -> new UsernameNotFoundException(
+                        "Không tìm thấy tài khoản với email hoặc số điện thoại: " + identifier));
 
-        var user = taiKhoanRepository.findByUsername(username)
-                .orElseThrow(() -> new IllegalStateException("User not found after authentication"));
-
-        RefreshToken refreshToken = RefreshToken.builder()
-                .token(refreshTokenJwt)
-                .user(user)
-                .expiresAt(jwtService.getExpirationTime(refreshTokenJwt))
-                .revoked(false)
-                .build();
-        refreshTokenRepository.save(refreshToken);
-
-        return new AuthResponse(accessToken, refreshTokenJwt, UserInfoDto.fromEntity(user));
+        return authenticate(user.getUsername(), password);
     }
 
     @Transactional
@@ -95,5 +94,31 @@ public class AuthenticationService {
             refreshTokenRepository.save(rt);
         });
     }
+
+    // ── Private helper ──────────────────────────────────────────────────
+
+    private AuthResponse authenticate(String username, String password) {
+        Authentication auth = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(username, password)
+        );
+
+        UserDetails userDetails = (UserDetails) auth.getPrincipal();
+        String accessToken = jwtService.generateAccessToken(userDetails);
+        String refreshTokenJwt = jwtService.generateRefreshToken(userDetails);
+
+        var user = taiKhoanRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalStateException("User not found after authentication"));
+
+        RefreshToken refreshToken = RefreshToken.builder()
+                .token(refreshTokenJwt)
+                .user(user)
+                .expiresAt(jwtService.getExpirationTime(refreshTokenJwt))
+                .revoked(false)
+                .build();
+        refreshTokenRepository.save(refreshToken);
+
+        return new AuthResponse(accessToken, refreshTokenJwt, UserInfoDto.fromEntity(user));
+    }
 }
+
 
