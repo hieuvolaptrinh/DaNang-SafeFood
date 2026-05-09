@@ -3,13 +3,13 @@ spring:
     name: danang-safefood-backend
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/danang_safefood
-    username: postgres
+    url: jdbc:postgresql://localhost:5432/danang_safe_food
+    username: root
     password: 123456
 
   jpa:
     hibernate:
-      ddl-auto: none
+      ddl-auto: update
       naming:
         physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
     show-sql: true
@@ -23,7 +23,7 @@ spring:
 
   sql:
     init:
-      mode: embedded                # ← Quan trọng: always để chạy data.sql
+      mode: never # ← Quan trọng: always để chạy data.sql
       encoding: UTF-8
       continue-on-error: false
       separator: ;
@@ -31,9 +31,16 @@ spring:
 server:
   port: 8080
 
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: alpha
+  api-docs:
+    path: /v3/api-docs
+
 jwt:
   # Base64 secret (>= 256-bit). Example generate:
   #  - PowerShell: [Convert]::ToBase64String((1..32 | ForEach-Object {Get-Random -Maximum 256}))
   secret: "DaNangSafeFood2026SuperSecretKeyForJWTAuthentication1234567890"
-  access-token-expiration-ms: 900000     # 15 minutes
+  access-token-expiration-ms: 900000 # 15 minutes
   refresh-token-expiration-ms: 604800000 # 7 days

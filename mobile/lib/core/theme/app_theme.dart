@@ -54,16 +54,19 @@ class AppTheme {
           color: textPrimary,
           fontSize: 32,
           fontWeight: FontWeight.bold,
+          letterSpacing: -0.5,
         ),
         displayMedium: GoogleFonts.inter(
           color: textPrimary,
           fontSize: 28,
           fontWeight: FontWeight.bold,
+          letterSpacing: -0.3,
         ),
         displaySmall: GoogleFonts.inter(
           color: textPrimary,
           fontSize: 24,
           fontWeight: FontWeight.bold,
+          letterSpacing: -0.2,
         ),
         headlineLarge: GoogleFonts.inter(
           color: textPrimary,
