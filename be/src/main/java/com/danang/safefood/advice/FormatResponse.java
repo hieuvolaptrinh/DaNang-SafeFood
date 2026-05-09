@@ -19,21 +19,25 @@ public class FormatResponse implements ResponseBodyAdvice<Object> {
 
     @Override
     public boolean supports(MethodParameter returnType,
-                            Class<? extends HttpMessageConverter<?>> converterType) {
+            Class<? extends HttpMessageConverter<?>> converterType) {
         // Áp dụng cho tất cả response
         return true;
     }
 
     @Override
     public Object beforeBodyWrite(Object body,
-                                  MethodParameter returnType,
-                                  MediaType selectedContentType,
-                                  Class<? extends HttpMessageConverter<?>> selectedConverterType,
-                                  ServerHttpRequest request,
-                                  ServerHttpResponse response) {
+            MethodParameter returnType,
+            MediaType selectedContentType,
+            Class<? extends HttpMessageConverter<?>> selectedConverterType,
+            ServerHttpRequest request,
+            ServerHttpResponse response) {
 
-        HttpServletResponse servletResponse =
-                ((ServletServerHttpResponse) response).getServletResponse();
+        String path = request.getURI().getPath();
+        if (path.startsWith("/v3/api-docs") || path.startsWith("/swagger-ui")) {
+            return body;
+        }
+
+        HttpServletResponse servletResponse = ((ServletServerHttpResponse) response).getServletResponse();
 
         int status = servletResponse.getStatus();
 
@@ -44,8 +48,7 @@ public class FormatResponse implements ResponseBodyAdvice<Object> {
 
         // ✅ 2. Xử lý riêng cho String (tránh lỗi JSON)
         if (body instanceof String) {
-            ApiResponse<Object> apiResponse =
-                    new ApiResponse<>(status, "Success", body);
+            ApiResponse<Object> apiResponse = new ApiResponse<>(status, "Success", body);
             try {
                 return objectMapper.writeValueAsString(apiResponse);
             } catch (Exception e) {

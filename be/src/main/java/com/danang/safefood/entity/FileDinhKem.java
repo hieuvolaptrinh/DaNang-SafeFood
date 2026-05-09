@@ -23,6 +23,9 @@ public class FileDinhKem {
     @Column(name = "thoiGianGui")
     private LocalDateTime thoiGianGui;
 
+    @Column(name = "urlFile")
+    private String urlFile;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "maMinhChung")
     private MinhChungKhacPhuc minhChungKhacPhuc;

@@ -16,42 +16,42 @@ import java.time.LocalDate;
 public class XuPhat {
 
     @Id
-    @Column(name = "ma_xu_phat", length = 10, nullable = false)
+    @Column(name = "maXuPhat", length = 10, nullable = false)
     private String maXuPhat;
 
-    @Column(name = "so_quyet_dinh", length = 50)
+    @Column(name = "soQuyetDinh", length = 50)
     private String soQuyetDinh;
 
-    @Column(name = "muc_phat", precision = 15, scale = 2)
+    @Column(name = "mucPhat", precision = 15, scale = 2)
     private BigDecimal mucPhat;
 
-    @Column(name = "ly_do_xu_phat", columnDefinition = "TEXT")
+    @Column(name = "lyDoXuPhat", columnDefinition = "TEXT")
     private String lyDoXuPhat;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "trang_thai", length = 30, nullable = false)
+    @Column(name = "trangThai", length = 30, nullable = false)
     @Builder.Default
     private TrangThaiXuPhat trangThai = TrangThaiXuPhat.CHO_NOP;
 
-    @Column(name = "ngay_xu_phat", nullable = false)
+    @Column(name = "ngayXuPhat", nullable = false)
     private LocalDate ngayXuPhat;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ma_co_so")
+    @JoinColumn(name = "maCoSo")
     private CoSoKinhDoanh coSoKinhDoanh;
 
     /** Lãnh đạo ký quyết định */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "nguoi_ra_quyet_dinh_id")
+    @JoinColumn(name = "nguoiRaQuyetDinhId")
     private TaiKhoan nguoiRaQuyetDinh;
 
-    @Column(name = "created_by", length = 100)
+    @Column(name = "createdBy", length = 100)
     private String createdBy;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(name = "createdAt", nullable = false, updatable = false)
     private Instant createdAt;
 
-    @Column(name = "updated_at", nullable = false)
+    @Column(name = "updatedAt", nullable = false)
     private Instant updatedAt;
 
     @PrePersist

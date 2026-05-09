@@ -10,26 +10,36 @@ CREATE TABLE QuyenHan (
     maQuyenHan  VARCHAR(10)   NOT NULL PRIMARY KEY,
     quyenHan    VARCHAR(100)  NOT NULL
 );
+
+-- [2] TaiKhoan
+CREATE TABLE TaiKhoan (
+    id          SERIAL        NOT NULL PRIMARY KEY,
+    username    VARCHAR(50)   NOT NULL UNIQUE,
+    password    VARCHAR(255)  NOT NULL,
+    email       VARCHAR(150)  NOT NULL UNIQUE,
+    soDienThoai VARCHAR(20),
+    enabled     BOOLEAN       DEFAULT true,
+    createdAt   TIMESTAMP     DEFAULT NOW(),
+    updatedAt   TIMESTAMP     DEFAULT NOW()
+);
  
--- [2] NguoiDung
+-- [3] NguoiDung
 CREATE TABLE NguoiDung (
     maNguoiDung  VARCHAR(10)   NOT NULL PRIMARY KEY,
     hoTen        VARCHAR(100),
-    email        VARCHAR(150),
-    soDienThoai  VARCHAR(20),
     gioiTinh     VARCHAR(10),
-    matKhau      VARCHAR(255),
-    CCCD         VARCHAR(20)
+    CCCD         VARCHAR(20),
+    taiKhoanId   INTEGER       UNIQUE  -- FK → TaiKhoan (1-1)
 );
  
--- [3] QuyenHan_NguoiDung
+-- [4] QuyenHan_NguoiDung
 CREATE TABLE QuyenHan_NguoiDung (
     maQuyenHan   VARCHAR(10) NOT NULL,
     maNguoiDung  VARCHAR(10) NOT NULL,
     PRIMARY KEY (maQuyenHan, maNguoiDung)
 );
  
--- [4] ThongBao
+-- [5] ThongBao
 CREATE TABLE ThongBao (
     maThongBao   VARCHAR(10)    NOT NULL PRIMARY KEY,
     tieuDe       VARCHAR(200),
@@ -38,7 +48,7 @@ CREATE TABLE ThongBao (
     loaiThongBao VARCHAR(50)
 );
  
--- [5] ThongBao_NguoiDung
+-- [6] ThongBao_NguoiDung
 CREATE TABLE ThongBao_NguoiDung (
     maNguoiDung  VARCHAR(10) NOT NULL,
     maThongBao   VARCHAR(10) NOT NULL,
@@ -46,7 +56,7 @@ CREATE TABLE ThongBao_NguoiDung (
     PRIMARY KEY (maNguoiDung, maThongBao)
 );
  
--- [6] Log
+-- [7] Log
 CREATE TABLE "Log" (
     maLog       VARCHAR(10) NOT NULL PRIMARY KEY,
     ip          VARCHAR(50),
@@ -54,13 +64,13 @@ CREATE TABLE "Log" (
     maNguoiDung VARCHAR(10)
 );
  
--- [7] PhuongXa
+-- [8] PhuongXa
 CREATE TABLE PhuongXa (
     maPX        VARCHAR(10)   NOT NULL PRIMARY KEY,
     TenPhuongXa VARCHAR(100)
 );
  
--- [8] CoSoKinhDoanh
+-- [9] CoSoKinhDoanh
 CREATE TABLE CoSoKinhDoanh (
     maCoSo              VARCHAR(10)   NOT NULL PRIMARY KEY,
     tenCoSo             VARCHAR(200),
@@ -71,7 +81,7 @@ CREATE TABLE CoSoKinhDoanh (
     maPX                VARCHAR(10)        -- FK → PhuongXa
 );
  
--- [9] ChiNhanh
+-- [10] ChiNhanh
 CREATE TABLE ChiNhanh (
     maChiNhanh            VARCHAR(10)   NOT NULL PRIMARY KEY,
     diaChi                VARCHAR(200),
@@ -81,14 +91,14 @@ CREATE TABLE ChiNhanh (
     lianThanhTraGanNhat   VARCHAR(10)        -- FK → LichThanhTra
 );
  
--- [10] LoaiHinhKinhDoanh
+-- [11] LoaiHinhKinhDoanh
 CREATE TABLE LoaiHinhKinhDoanh (
     maLoaiHinhKinhDoanh  VARCHAR(10)   NOT NULL PRIMARY KEY,
     tenLoaiHinhKinhDoanh VARCHAR(100),
     moTa                 TEXT
 );
  
--- [11] CoSo_LoaiHinh
+-- [12] CoSo_LoaiHinh
 CREATE TABLE CoSo_LoaiHinh (
     maCoSo               VARCHAR(10) NOT NULL,
     maLoaiHinhKinhDoanh  VARCHAR(10) NOT NULL,
@@ -104,7 +114,7 @@ CREATE TABLE LichThanhTra (
     noiDung          TEXT
 );
  
--- [13] LichThanhTra_NguoiDung
+-- [14] LichThanhTra_NguoiDung
 CREATE TABLE LichThanhTra_NguoiDung (
     maThanhTra       VARCHAR(10) NOT NULL,
     maNguoiThanhTra  VARCHAR(10) NOT NULL,
@@ -284,6 +294,11 @@ CREATE TABLE FileDinhKem (
 -- BƯỚC 3: ALTER TABLE – THÊM FOREIGN KEY CONSTRAINTS
 -- ============================================================
 
+-- NguoiDung → TaiKhoan (1-1)
+ALTER TABLE NguoiDung
+    ADD CONSTRAINT FK_ND_TaiKhoan
+        FOREIGN KEY (taiKhoanId) REFERENCES TaiKhoan(id);
+
 -- QuyenHan_NguoiDung
 ALTER TABLE QuyenHan_NguoiDung
     ADD CONSTRAINT FK_QND_QuyenHan
@@ -319,7 +334,6 @@ ALTER TABLE CoSoKinhDoanh
 ALTER TABLE CoSoKinhDoanh
     ADD CONSTRAINT FK_CSKD_TruSo
         FOREIGN KEY (maCoSoTrue) REFERENCES CoSoKinhDoanh(maCoSo);
-GO
  
 -- ChiNhanh
 ALTER TABLE ChiNhanh
@@ -329,7 +343,6 @@ ALTER TABLE ChiNhanh
 ALTER TABLE ChiNhanh
     ADD CONSTRAINT FK_CN_LichThanhTra
         FOREIGN KEY (lianThanhTraGanNhat) REFERENCES LichThanhTra(maThanhTra);
-GO
  
 -- CoSo_LoaiHinh
 ALTER TABLE CoSo_LoaiHinh
@@ -339,7 +352,6 @@ ALTER TABLE CoSo_LoaiHinh
 ALTER TABLE CoSo_LoaiHinh
     ADD CONSTRAINT FK_CSLH_LoaiHinh
         FOREIGN KEY (maLoaiHinhKinhDoanh) REFERENCES LoaiHinhKinhDoanh(maLoaiHinhKinhDoanh);
-GO
  
 -- LichThanhTra
 ALTER TABLE LichThanhTra
@@ -473,23 +485,37 @@ ALTER TABLE FileDinhKem
 -- Thứ tự: bảng cha trước, bảng con sau
 -- ============================================================
 
--- [1] QuyenHan
+-- =============================================
+-- DATA.SQL - Dữ liệu test SafeFood
+-- =============================================
+
+-- [1] Quyền hạn
 INSERT INTO QuyenHan (maQuyenHan, quyenHan) VALUES
-    ('QH001', 'Quản trị hệ thống'),
-    ('QH002', 'Thanh tra viên'),
-    ('QH003', 'Cán bộ kiểm nghiệm'),
-    ('QH004', 'Chủ cơ sở kinh doanh'),
-    ('QH005', 'Người dùng thông thường');
+    ('QTH', 'Quản trị hệ thống'),
+    ('LD_ATVSTP', 'Lãnh đạo ATVSTP'),
+    ('CSKD', 'Chuyên viên Kinh doanh'),
+    ('CB_THANH_TRA', 'Cán bộ Thanh tra'),
+    ('CB_KIEM_DINH', 'Cán bộ Kiểm định'),
+    ('NTD', 'Người tiêu dùng');
+
+-- [2] Tài khoản test
+-- password = 123456 (đã mã hóa bằng BCrypt)
+INSERT INTO tai_khoan (id, username, password, full_name, email, phone, enabled, created_at, updated_at) VALUES
+    (1, 'admin', '$2a$10$v3eu725GjfHQ34OHA43qN.oddPUR.Be6qDjfVo3iSErVaWpH5OuTq', 'Administrator', 'admin@safefood.vn', '0901234567', true, NOW(), NOW()),
+    (2, 'ld1', '$2a$10$v3eu725GjfHQ34OHA43qN.oddPUR.Be6qDjfVo3iSErVaWpH5OuTq', 'Lãnh đạo ATVSTP', 'ld@safefood.vn', '0901234568', true, NOW(), NOW()),
+    (3, 'thanhtra', '$2a$10$v3eu725GjfHQ34OHA43qN.oddPUR.Be6qDjfVo3iSErVaWpH5OuTq', 'Cán bộ Thanh tra', 'thanhtra@safefood.vn', '0901234569', true, NOW(), NOW()),
+    (4, 'kiemdinh', '$2a$10$v3eu725GjfHQ34OHA43qN.oddPUR.Be6qDjfVo3iSErVaWpH5OuTq', 'Cán bộ Kiểm định', 'kiemdinh@safefood.vn', '0901234570', true, NOW(), NOW()),
+    (5, 'user1', '$2a$10$v3eu725GjfHQ34OHA43qN.oddPUR.Be6qDjfVo3iSErVaWpH5OuTq', 'Nguyễn Văn A', 'user1@gmail.com', '0987654321', true, NOW(), NOW());
+
+-- [3] Người dùng
+INSERT INTO NguoiDung (maNguoiDung, hoTen, soDienThoai, gioiTinh, CCCD, tai_khoan_id) VALUES
+    ('ND001', 'Administrator', '0901234567', 'Nam', '012345678901', 1),
+    ('ND002', 'Lãnh đạo ATVSTP', '0901234568', 'Nữ', '012345678902', 2),
+    ('ND003', 'Cán bộ Thanh tra', '0901234569', 'Nam', '012345678903', 3),
+    ('ND004', 'Cán bộ Kiểm định', '0901234570', 'Nam', '012345678904', 4),
+    ('ND005', 'Nguyễn Văn A', '0987654321', 'Nam', '012345678905', 5);
  
--- [2] NguoiDung
-INSERT INTO NguoiDung (maNguoiDung, hoTen, email, soDienThoai, gioiTinh, matKhau, CCCD) VALUES
-    ('ND001', 'Nguyễn Văn An',    'an.nguyen@danang.gov.vn',  '0901234561', 'Nam',  'hash_pw_001', '048200001234'),
-    ('ND002', 'Trần Thị Bình',    'binh.tran@danang.gov.vn',  '0901234562', 'Nữ',   'hash_pw_002', '048200005678'),
-    ('ND003', 'Lê Minh Cường',    'cuong.le@danang.gov.vn',   '0901234563', 'Nam',  'hash_pw_003', '048200009012'),
-    ('ND004', 'Phạm Thị Dung',    'dung.pham@email.com',      '0912345671', 'Nữ',   'hash_pw_004', '048200003456'),
-    ('ND005', 'Hoàng Văn Em',     'em.hoang@email.com',       '0912345672', 'Nam',  'hash_pw_005', '048200007890');
- 
--- [3] PhuongXa
+-- [5] PhuongXa
 INSERT INTO PhuongXa (maPX, TenPhuongXa) VALUES
     ('PX001', 'Phường Hải Châu 1'),
     ('PX002', 'Phường Hải Châu 2'),
@@ -497,7 +523,7 @@ INSERT INTO PhuongXa (maPX, TenPhuongXa) VALUES
     ('PX004', 'Phường Sơn Trà'),
     ('PX005', 'Phường Ngũ Hành Sơn');
  
--- [4] CoSoKinhDoanh (maCoSoTrue NULL cho trụ sở chính)
+-- [6] CoSoKinhDoanh (maCoSoTrue NULL cho trụ sở chính)
 INSERT INTO CoSoKinhDoanh (maCoSo, tenCoSo, soGiayPhep, maCoSoTrue, ngayHetHanGiayPhep, maChuSoHuu, maPX) VALUES
     ('CS001', 'Nhà hàng Sông Hàn',          'GP-2022-001', NULL,    '2025-12-31', 'ND004', 'PX001'),
     ('CS002', 'Quán Cơm Miền Trung',         'GP-2022-002', NULL,    '2025-06-30', 'ND005', 'PX002'),
@@ -505,22 +531,24 @@ INSERT INTO CoSoKinhDoanh (maCoSo, tenCoSo, soGiayPhep, maCoSoTrue, ngayHetHanGi
     ('CS004', 'Nhà hàng Sông Hàn – CN1',     'GP-2023-004', 'CS001', '2025-12-31', 'ND004', 'PX004'),
     ('CS005', 'Bánh mỳ Đà Nẵng Express',     'GP-2023-005', NULL,    '2026-01-20', 'ND005', 'PX005');
  
--- [5] QuyenHan_NguoiDung
-INSERT INTO QuyenHan_NguoiDung (maQuyenHan, maNguoiDung) VALUES
-    ('QH001', 'ND001'),
-    ('QH002', 'ND002'),
-    ('QH002', 'ND003'),
-    ('QH004', 'ND004'),
-    ('QH004', 'ND005');
+-- [4] Phân quyền tài khoản
+INSERT INTO QuyenHan_NguoiDung (maQuyenHan, tai_khoan_id) VALUES
+    ('QTH', 1),
+    ('LD_ATVSTP', 2),
+    ('CB_THANH_TRA', 3),
+    ('CB_KIEM_DINH', 4),
+    ('NTD', 5);
+
+-- Reset sequence cho tai_khoan
+ALTER SEQUENCE tai_khoan_id_seq RESTART WITH 6;
  
--- [6] ThongBao
+-- [7] ThongBao
 INSERT INTO ThongBao (maThongBao, tieuDe, noiDung, ngayGui, loaiThongBao) VALUES
     ('TB001', N'Lịch thanh tra tháng 6',        N'Đề nghị chuẩn bị hồ sơ cho đợt thanh tra tháng 6/2025.',     '2025-05-28 08:00:00', N'Hành chính'),
     ('TB002', N'Gia hạn giấy phép',             N'Giấy phép của cơ sở CS002 sắp hết hạn, vui lòng gia hạn.',  '2025-05-30 09:00:00', N'Nhắc nhở'),
     ('TB003', N'Kết quả kiểm nghiệm mẫu MK001', N'Mẫu kiểm nghiệm MK001 đã có kết quả, vui lòng xem chi tiết.','2025-06-01 10:00:00', N'Kết quả'),
     ('TB004', N'Phân ánh mới từ người dân',      N'Có 2 phản ánh mới cần xử lý về cơ sở CS001.',               '2025-06-02 14:00:00', N'Phản ánh'),
     ('TB005', N'Cập nhật chứng nhận ATVS',       N'Chứng nhận ATVS của CS003 đã được cấp mới.',                '2025-06-03 08:30:00', N'Thông báo');
-GO
  
 -- [7] ThongBao_NguoiDung
 INSERT INTO ThongBao_NguoiDung (maNguoiDung, maThongBao, trangThai) VALUES
