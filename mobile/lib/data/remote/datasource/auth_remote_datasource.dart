@@ -11,7 +11,7 @@ class AuthRemoteDataSource {
   Future<AuthResponse> login(AuthRequest request) async {
     try {
       final response = await dio.post(
-        '/api/auth/login',
+        '/api/auth/login-mobile',
         data: request.toJson(),
       );
 

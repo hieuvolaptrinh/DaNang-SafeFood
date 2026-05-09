@@ -9,11 +9,11 @@ class AuthRepository {
   AuthRepository({required this.remoteDataSource, required this.tokenStorage});
 
   Future<AuthResponse> login({
-    required String username,
+    required String identifier,
     required String password,
   }) async {
     final response = await remoteDataSource.login(
-      AuthRequest(username: username, password: password),
+      AuthRequest(identifier: identifier, password: password),
     );
 
     await tokenStorage.saveTokens(

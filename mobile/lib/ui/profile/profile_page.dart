@@ -3,16 +3,32 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile_ui/core/theme/app_theme.dart';
 import 'package:mobile_ui/routes/routes.dart';
+import 'package:mobile_ui/viewmodel/auth/auth_cubit.dart';
+import 'package:mobile_ui/viewmodel/auth/auth_state.dart';
 import 'package:mobile_ui/viewmodel/profile/profile_cubit.dart';
 import 'package:mobile_ui/viewmodel/profile/profile_state.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
 
+  /// Chuyển mã quyền sang tên hiển thị tiếng Việt
+  String _roleLabel(AuthState auth) {
+    if (auth.isCSKD) return 'Cơ sở kinh doanh';
+    if (auth.isNTD) return 'Người tiêu dùng';
+    if (auth.isAdmin) return 'Quản trị viên';
+    return 'Người dùng';
+  }
+
   @override
   Widget build(BuildContext context) {
+    final authState = context.watch<AuthCubit>().state;
+
     return BlocBuilder<ProfileCubit, ProfileState>(
       builder: (context, state) {
+        // Lấy thông tin từ AuthCubit (ưu tiên) rồi fallback về ProfileCubit
+        final displayName = authState.fullName ?? state.name;
+        final displayEmail = authState.email ?? state.email;
+        final displayRole = _roleLabel(authState);
         return SafeArea(
           child: SingleChildScrollView(
             child: Column(
@@ -44,8 +60,8 @@ class ProfilePage extends StatelessWidget {
                         ),
                         child: Center(
                           child: Text(
-                            state.name.isNotEmpty
-                                ? state.name[0].toUpperCase()
+                            displayName.isNotEmpty
+                                ? displayName[0].toUpperCase()
                                 : 'U',
                             style: GoogleFonts.inter(
                               color: Colors.white,
@@ -57,7 +73,7 @@ class ProfilePage extends StatelessWidget {
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        state.name.isNotEmpty ? state.name : 'Người dùng',
+                        displayName.isNotEmpty ? displayName : 'Người dùng',
                         style: GoogleFonts.inter(
                           color: AppTheme.textPrimary,
                           fontSize: 20,
@@ -66,7 +82,7 @@ class ProfilePage extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        state.email,
+                        displayEmail ?? '',
                         style: GoogleFonts.inter(
                           color: AppTheme.textSecondary,
                           fontSize: 13,
@@ -83,7 +99,7 @@ class ProfilePage extends StatelessWidget {
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
-                          state.role.isNotEmpty ? state.role : 'Người dân',
+                          displayRole,
                           style: GoogleFonts.inter(
                             color: AppTheme.primary,
                             fontSize: 12,
@@ -201,13 +217,9 @@ class ProfilePage extends StatelessWidget {
 
                       // Logout
                       GestureDetector(
-                        onTap: () {
-                          context.read<ProfileCubit>().logout();
-                          Navigator.pushNamedAndRemoveUntil(
-                            context,
-                            Routes.login,
-                            (route) => false,
-                          );
+                        onTap: () async {
+                          // Logout qua AuthCubit → main.dart rebuild → về Login
+                          await context.read<AuthCubit>().logout();
                         },
                         child: Container(
                           width: double.infinity,
