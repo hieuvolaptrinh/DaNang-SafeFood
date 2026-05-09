@@ -52,8 +52,8 @@ class _AppTextFieldState extends State<AppTextField> {
   void didUpdateWidget(covariant AppTextField oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.focusNode != widget.focusNode) {
+      _focusNode.removeListener(_handleFocusChange);
       if (_ownsFocusNode) {
-        _focusNode.removeListener(_handleFocusChange);
         _focusNode.dispose();
       }
       _ownsFocusNode = widget.focusNode == null;
