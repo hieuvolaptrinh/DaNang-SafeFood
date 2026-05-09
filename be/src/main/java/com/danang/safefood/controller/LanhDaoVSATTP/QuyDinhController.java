@@ -18,7 +18,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/regulations")
+@RequestMapping("/api/v1/regulations")
 @RequiredArgsConstructor
 @PreAuthorize("hasAnyRole('LD_ATVSTP','QUAN_TRI_HE_THONG')")
 public class QuyDinhController {
@@ -30,7 +30,8 @@ public class QuyDinhController {
             @Valid @RequestBody QuyDinhRequest req,
             @AuthenticationPrincipal UserDetails principal) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Quy định đã được ban hành", quyDinhService.create(req, principal.getUsername())));
+                .body(ApiResponse.success("Quy định đã được ban hành",
+                        quyDinhService.create(req, principal.getUsername())));
     }
 
     @PutMapping("/{id}")

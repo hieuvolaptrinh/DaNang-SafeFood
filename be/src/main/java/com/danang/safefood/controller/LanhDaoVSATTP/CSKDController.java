@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/cosokinhdoanh")
+@RequestMapping("/api/v1/cosokinhdoanh")
 @RequiredArgsConstructor
 public class CSKDController {
 
@@ -60,6 +60,7 @@ public class CSKDController {
             @PathVariable String id,
             @Valid @RequestBody KiemTraCSKDRequest req) {
         coSoService.taoLichKiemTra(id, req);
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success("Tạo lịch kiểm tra thành công", null));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Tạo lịch kiểm tra thành công", null));
     }
 }
