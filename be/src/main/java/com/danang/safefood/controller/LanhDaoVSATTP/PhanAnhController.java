@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 
 @RestController
-@RequestMapping("/api/phananh")
+@RequestMapping("/api/v1/phananh")
 @RequiredArgsConstructor
 public class PhanAnhController {
 

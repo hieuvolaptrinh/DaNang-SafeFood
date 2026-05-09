@@ -26,14 +26,23 @@ import 'package:mobile_ui/viewmodel/forgot_password/forgot_password_cubit.dart';
 import 'package:mobile_ui/viewmodel/account/account_cubit.dart';
 import 'package:mobile_ui/viewmodel/notification/notification_cubit.dart';
 import 'package:mobile_ui/viewmodel/business_status/business_status_cubit.dart';
+import 'package:mobile_ui/core/utils/dio_client.dart';
+import 'package:mobile_ui/data/local/token_storage.dart';
+import 'package:mobile_ui/data/remote/datasource/auth_remote_datasource.dart';
+import 'package:mobile_ui/data/remote/repository/auth_repository.dart';
 
 class AppRouter {
+  static final AuthRepository _authRepository = AuthRepository(
+    remoteDataSource: AuthRemoteDataSource(dio: DioClient().dio),
+    tokenStorage: TokenStorage(),
+  );
+
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
       case Routes.login:
         return MaterialPageRoute(
           builder: (_) => BlocProvider(
-            create: (_) => LoginCubit(),
+            create: (_) => LoginCubit(authRepository: _authRepository),
             child: const LoginPage(),
           ),
         );
@@ -152,7 +161,7 @@ class AppRouter {
       default:
         return MaterialPageRoute(
           builder: (_) => BlocProvider(
-            create: (_) => LoginCubit(),
+            create: (_) => LoginCubit(authRepository: _authRepository),
             child: const LoginPage(),
           ),
         );

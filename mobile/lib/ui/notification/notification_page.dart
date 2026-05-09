@@ -71,157 +71,170 @@ class NotificationPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 20),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Text(
-              'Thông báo',
-              style: GoogleFonts.inter(
-                color: AppTheme.textPrimary,
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+    return Scaffold(
+      backgroundColor: AppTheme.scaffoldBg,
+      appBar: AppBar(
+        title: Text(
+          'Thông báo',
+          style: GoogleFonts.inter(
+            color: AppTheme.textPrimary,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
           ),
-          const SizedBox(height: 16),
-
-          SizedBox(
-            height: 36,
-            child: BlocBuilder<NotificationCubit, NotificationState>(
-              builder: (context, state) {
-                return ListView(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  children: _categories.map((c) {
-                    final selected = state.selectedCategory == c;
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: GestureDetector(
-                        onTap: () => context
-                            .read<NotificationCubit>()
-                            .filterByCategory(c),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 7,
-                          ),
-                          decoration: BoxDecoration(
-                            color: selected
-                                ? AppTheme.primary.withOpacity(0.1)
-                                : AppTheme.surfaceBg,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: selected
-                                  ? AppTheme.primary
-                                  : AppTheme.dividerColor,
-                            ),
-                          ),
-                          child: Text(
-                            c,
-                            style: GoogleFonts.inter(
-                              color: selected
-                                  ? AppTheme.primary
-                                  : AppTheme.textSecondary,
-                              fontSize: 12,
-                              fontWeight: selected
-                                  ? FontWeight.w600
-                                  : FontWeight.w400,
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                );
-              },
-            ),
+        ),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back_rounded,
+            color: AppTheme.textPrimary,
           ),
-          const SizedBox(height: 12),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 16),
 
-          Expanded(
-            child: BlocBuilder<NotificationCubit, NotificationState>(
-              builder: (context, state) {
-                if (state.status == NotificationStatus.loading) {
-                  return const Center(
-                    child: CircularProgressIndicator(color: AppTheme.primary),
-                  );
-                }
-
-                final filtered = state.selectedCategory == 'Tất cả'
-                    ? _mockNotifications
-                    : _mockNotifications
-                          .where((n) => n['category'] == state.selectedCategory)
-                          .toList();
-
-                return RefreshIndicator(
-                  onRefresh: () => context.read<NotificationCubit>().refresh(),
-                  color: AppTheme.primary,
-                  child: ListView.builder(
+            SizedBox(
+              height: 36,
+              child: BlocBuilder<NotificationCubit, NotificationState>(
+                builder: (context, state) {
+                  return ListView(
+                    scrollDirection: Axis.horizontal,
                     padding: const EdgeInsets.symmetric(horizontal: 20),
-                    itemCount: filtered.length,
-                    itemBuilder: (context, index) {
-                      final item = filtered[index];
-                      return AppCard(
-                        onTap: () => Navigator.pushNamed(
-                          context,
-                          Routes.notificationDetail,
-                          arguments: {'title': item['title']},
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                StatusBadge(
-                                  status: _parseStatus(item['status']!),
-                                  customLabel: item['category'],
-                                ),
-                                const Spacer(),
-                                Text(
-                                  item['date']!,
-                                  style: GoogleFonts.inter(
-                                    color: AppTheme.textSecondary,
-                                    fontSize: 11,
-                                  ),
-                                ),
-                              ],
+                    children: _categories.map((c) {
+                      final selected = state.selectedCategory == c;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: GestureDetector(
+                          onTap: () => context
+                              .read<NotificationCubit>()
+                              .filterByCategory(c),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 7,
                             ),
-                            const SizedBox(height: 10),
-                            Text(
-                              item['title']!,
-                              style: GoogleFonts.inter(
-                                color: AppTheme.textPrimary,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
+                            decoration: BoxDecoration(
+                              color: selected
+                                  ? AppTheme.primary.withOpacity(0.1)
+                                  : AppTheme.surfaceBg,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: selected
+                                    ? AppTheme.primary
+                                    : AppTheme.dividerColor,
                               ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
                             ),
-                            const SizedBox(height: 6),
-                            Text(
-                              item['desc']!,
+                            child: Text(
+                              c,
                               style: GoogleFonts.inter(
-                                color: AppTheme.textSecondary,
+                                color: selected
+                                    ? AppTheme.primary
+                                    : AppTheme.textSecondary,
                                 fontSize: 12,
-                                height: 1.4,
+                                fontWeight: selected
+                                    ? FontWeight.w600
+                                    : FontWeight.w400,
                               ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
                             ),
-                          ],
+                          ),
                         ),
                       );
-                    },
-                  ),
-                );
-              },
+                    }).toList(),
+                  );
+                },
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: 12),
+
+            Expanded(
+              child: BlocBuilder<NotificationCubit, NotificationState>(
+                builder: (context, state) {
+                  if (state.status == NotificationStatus.loading) {
+                    return const Center(
+                      child: CircularProgressIndicator(color: AppTheme.primary),
+                    );
+                  }
+
+                  final filtered = state.selectedCategory == 'Tất cả'
+                      ? _mockNotifications
+                      : _mockNotifications
+                            .where(
+                              (n) => n['category'] == state.selectedCategory,
+                            )
+                            .toList();
+
+                  return RefreshIndicator(
+                    onRefresh: () =>
+                        context.read<NotificationCubit>().refresh(),
+                    color: AppTheme.primary,
+                    child: ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      itemCount: filtered.length,
+                      itemBuilder: (context, index) {
+                        final item = filtered[index];
+                        return AppCard(
+                          onTap: () => Navigator.pushNamed(
+                            context,
+                            Routes.notificationDetail,
+                            arguments: {'title': item['title']},
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  StatusBadge(
+                                    status: _parseStatus(item['status']!),
+                                    customLabel: item['category'],
+                                  ),
+                                  const Spacer(),
+                                  Text(
+                                    item['date']!,
+                                    style: GoogleFonts.inter(
+                                      color: AppTheme.textSecondary,
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 10),
+                              Text(
+                                item['title']!,
+                                style: GoogleFonts.inter(
+                                  color: AppTheme.textPrimary,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                item['desc']!,
+                                style: GoogleFonts.inter(
+                                  color: AppTheme.textSecondary,
+                                  fontSize: 12,
+                                  height: 1.4,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

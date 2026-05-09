@@ -6,6 +6,7 @@ import 'package:mobile_ui/core/widgets/app_button.dart';
 import 'package:mobile_ui/core/widgets/app_card.dart';
 import 'package:mobile_ui/core/widgets/app_text_field.dart';
 import 'package:mobile_ui/routes/routes.dart';
+import 'package:mobile_ui/viewmodel/auth/auth_cubit.dart';
 import 'package:mobile_ui/viewmodel/login/login_cubit.dart';
 import 'package:mobile_ui/viewmodel/login/login_state.dart';
 
@@ -179,8 +180,16 @@ class _LoginPageState extends State<LoginPage> {
                                   text: 'Đăng nhập',
                                   isLoading:
                                       state.status == LoginStatus.loading,
-                                  onPressed: () =>
-                                      context.read<LoginCubit>().login(),
+                                  onPressed: () async {
+                                    final response = await context
+                                        .read<LoginCubit>()
+                                        .login();
+                                    if (response != null && context.mounted) {
+                                      context
+                                          .read<AuthCubit>()
+                                          .onLoginSuccess(response);
+                                    }
+                                  },
                                 ),
                                 const SizedBox(height: 16),
                                 Row(
