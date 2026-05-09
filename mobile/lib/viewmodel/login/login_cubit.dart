@@ -1,8 +1,12 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile_ui/core/utils/app_exception.dart';
+import 'package:mobile_ui/data/remote/repository/auth_repository.dart';
 import 'package:mobile_ui/viewmodel/login/login_state.dart';
 
 class LoginCubit extends Cubit<LoginState> {
-  LoginCubit() : super(const LoginState());
+  final AuthRepository authRepository;
+
+  LoginCubit({required this.authRepository}) : super(const LoginState());
 
   void emailChanged(String value) {
     emit(state.copyWith(email: value, emailError: null));
@@ -30,7 +34,9 @@ class LoginCubit extends Cubit<LoginState> {
     }
 
     if (emailError != null || passwordError != null) {
-      emit(state.copyWith(emailError: emailError, passwordError: passwordError));
+      emit(
+        state.copyWith(emailError: emailError, passwordError: passwordError),
+      );
       return false;
     }
     return true;
@@ -39,12 +45,25 @@ class LoginCubit extends Cubit<LoginState> {
   Future<void> login() async {
     if (!_validate()) return;
 
-    emit(state.copyWith(status: LoginStatus.loading));
+    emit(state.copyWith(status: LoginStatus.loading, errorMessage: null));
 
-    // Mock API call
-    await Future.delayed(const Duration(seconds: 2));
-
-    // Simulate success
-    emit(state.copyWith(status: LoginStatus.success));
+    try {
+      await authRepository.login(
+        username: state.email.trim(),
+        password: state.password,
+      );
+      emit(state.copyWith(status: LoginStatus.success));
+    } on ApiException catch (error) {
+      emit(
+        state.copyWith(status: LoginStatus.error, errorMessage: error.message),
+      );
+    } catch (_) {
+      emit(
+        state.copyWith(
+          status: LoginStatus.error,
+          errorMessage: 'Có lỗi xảy ra. Vui lòng thử lại',
+        ),
+      );
+    }
   }
 }
