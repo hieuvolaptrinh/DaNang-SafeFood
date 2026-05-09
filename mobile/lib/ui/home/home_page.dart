@@ -7,6 +7,7 @@ import 'package:mobile_ui/core/widgets/section_header.dart';
 import 'package:mobile_ui/core/widgets/status_badge.dart';
 import 'package:mobile_ui/core/widgets/error_state_view.dart';
 import 'package:mobile_ui/routes/routes.dart';
+import 'package:mobile_ui/viewmodel/auth/auth_cubit.dart';
 import 'package:mobile_ui/viewmodel/home/home_cubit.dart';
 import 'package:mobile_ui/viewmodel/home/home_state.dart';
 
@@ -29,29 +30,32 @@ class HomePage extends StatelessWidget {
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             child: SafeArea(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 20),
-                  // Greeting header
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                state.greeting.isNotEmpty
-                                    ? state.greeting
-                                    : 'Xin chào!',
-                                style: GoogleFonts.inter(
-                                  color: AppTheme.textPrimary,
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
+              child: Builder(
+                builder: (context) {
+                  final authState = context.watch<AuthCubit>().state;
+                  final userName = authState.fullName ?? 'Bạn';
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 20),
+                      // Greeting header
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Xin chào, $userName!',
+                                    style: GoogleFonts.inter(
+                                      color: AppTheme.textPrimary,
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                               const SizedBox(height: 4),
                               Text(
                                 'An toàn thực phẩm Đà Nẵng',
@@ -242,6 +246,8 @@ class HomePage extends StatelessWidget {
                   ),
                   const SizedBox(height: 100),
                 ],
+              );
+                },
               ),
             ),
           ),

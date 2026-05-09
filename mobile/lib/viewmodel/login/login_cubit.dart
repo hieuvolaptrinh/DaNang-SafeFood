@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile_ui/core/utils/app_exception.dart';
+import 'package:mobile_ui/data/remote/model/auth_models.dart';
 import 'package:mobile_ui/data/remote/repository/auth_repository.dart';
 import 'package:mobile_ui/viewmodel/login/login_state.dart';
 
@@ -42,21 +43,25 @@ class LoginCubit extends Cubit<LoginState> {
     return true;
   }
 
-  Future<void> login() async {
-    if (!_validate()) return;
+  /// Trả về AuthResponse nếu login thành công, null nếu thất bại.
+  /// AuthCubit sẽ dùng kết quả này để cập nhật session toàn cục.
+  Future<AuthResponse?> login() async {
+    if (!_validate()) return null;
 
     emit(state.copyWith(status: LoginStatus.loading, errorMessage: null));
 
     try {
-      await authRepository.login(
-        username: state.email.trim(),
+      final response = await authRepository.login(
+        identifier: state.email.trim(),
         password: state.password,
       );
       emit(state.copyWith(status: LoginStatus.success));
+      return response;
     } on ApiException catch (error) {
       emit(
         state.copyWith(status: LoginStatus.error, errorMessage: error.message),
       );
+      return null;
     } catch (_) {
       emit(
         state.copyWith(
@@ -64,6 +69,8 @@ class LoginCubit extends Cubit<LoginState> {
           errorMessage: 'Có lỗi xảy ra. Vui lòng thử lại',
         ),
       );
+      return null;
     }
   }
 }
+
