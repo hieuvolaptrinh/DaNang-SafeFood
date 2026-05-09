@@ -15,7 +15,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/thongbao")
+@RequestMapping("/api/v1/thongbao")
 @RequiredArgsConstructor
 @PreAuthorize("hasAnyRole('LD_ATVSTP','QUAN_TRI_HE_THONG')")
 public class ThongBaoController {

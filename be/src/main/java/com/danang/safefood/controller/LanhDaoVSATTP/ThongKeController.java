@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 
 @RestController
-@RequestMapping("/api/thongke")
+@RequestMapping("/api/v1/thongke")
 @RequiredArgsConstructor
 @PreAuthorize("hasAnyRole('LD_ATVSTP','QUAN_TRI_HE_THONG')")
 public class ThongKeController {
