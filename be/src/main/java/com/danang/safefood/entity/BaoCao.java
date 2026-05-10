@@ -24,4 +24,7 @@ public class BaoCao {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "maHoSo")
     private HoSoThanhTra hoSoThanhTra;
+
+    @Column(name = "tepDinhKem")
+    private String tepDinhKem;
 }

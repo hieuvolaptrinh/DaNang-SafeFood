@@ -9,4 +9,6 @@ public interface NguoiDungRepository extends JpaRepository<NguoiDung, String> {
 
 
     Optional<NguoiDung> findByCccd(String cccd);
+
+    Optional<NguoiDung> findByTaiKhoan_Username(String username);
 }
