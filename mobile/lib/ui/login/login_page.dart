@@ -32,13 +32,13 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return BlocListener<LoginCubit, LoginState>(
       listener: (context, state) {
-        if (state.status == LoginStatus.success) {
-          Navigator.pushReplacementNamed(context, Routes.main);
-        } else if (state.status == LoginStatus.error) {
+        // Lỗi → hiển thị snackbar
+        if (state.status == LoginStatus.error) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(state.errorMessage ?? 'Đăng nhập thất bại')),
           );
         }
+        // Navigation được AuthCubit trong main.dart xử lý khi status → authenticated
       },
       child: Scaffold(
         body: Container(
@@ -184,6 +184,8 @@ class _LoginPageState extends State<LoginPage> {
                                     final response = await context
                                         .read<LoginCubit>()
                                         .login();
+                                    // AuthCubit.onLoginSuccess → emit authenticated
+                                    // → main.dart rebuild → navigate tới MainScaffold
                                     if (response != null && context.mounted) {
                                       context
                                           .read<AuthCubit>()

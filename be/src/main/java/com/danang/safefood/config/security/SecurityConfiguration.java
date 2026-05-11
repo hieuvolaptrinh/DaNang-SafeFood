@@ -1,6 +1,6 @@
-package com.danang.safefood.security;
+package com.danang.safefood.config.security;
 
-import com.danang.safefood.security.jwt.JwtAuthenticationFilter;
+import com.danang.safefood.config.security.jwt.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -26,7 +26,7 @@ import java.util.List;
 @EnableWebSecurity
 @EnableMethodSecurity
 @RequiredArgsConstructor
-public class SecurityConfig {
+public class SecurityConfiguration {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 

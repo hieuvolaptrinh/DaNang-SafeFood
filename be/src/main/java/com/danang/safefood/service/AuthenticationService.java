@@ -6,7 +6,7 @@ import com.danang.safefood.entity.RefreshToken;
 import com.danang.safefood.entity.TaiKhoan;
 import com.danang.safefood.repository.RefreshTokenRepository;
 import com.danang.safefood.repository.TaiKhoanRepository;
-import com.danang.safefood.security.jwt.JwtService;
+import com.danang.safefood.config.security.jwt.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;

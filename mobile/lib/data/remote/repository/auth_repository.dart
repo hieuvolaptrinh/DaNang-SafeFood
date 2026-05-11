@@ -23,4 +23,22 @@ class AuthRepository {
 
     return response;
   }
+
+  /// Gửi mã OTP về email
+  Future<String> sendOtp({required String email}) {
+    return remoteDataSource.sendOtp(email);
+  }
+
+  /// Xác thực OTP và đặt lại mật khẩu
+  Future<String> resetPassword({
+    required String email,
+    required String otp,
+    required String newPassword,
+  }) {
+    return remoteDataSource.resetPassword(
+      email: email,
+      otp: otp,
+      newPassword: newPassword,
+    );
+  }
 }
