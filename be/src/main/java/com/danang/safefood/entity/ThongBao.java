@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import com.danang.safefood.util.LoaiThongBaoEnum;
 
 @Entity
 @Table(name = "thong_bao")
@@ -26,8 +27,9 @@ public class ThongBao {
     @Column(name = "ngayGui")
     private LocalDateTime ngayGui;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "loaiThongBao", length = 50)
-    private String loaiThongBao;
+    private LoaiThongBaoEnum loaiThongBao;
 
     @Column(name = "isCongDong")
     private Boolean isCongDong;

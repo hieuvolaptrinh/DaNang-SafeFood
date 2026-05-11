@@ -18,7 +18,7 @@ public record ThongBaoResponse(
                 e.getTieuDe(),
                 e.getNoiDung(),
                 e.getNgayGui(),
-                e.getLoaiThongBao(),
+                e.getLoaiThongBao() != null ? e.getLoaiThongBao().getLabel() : null,
                 e.getIsCongDong()
         );
     }

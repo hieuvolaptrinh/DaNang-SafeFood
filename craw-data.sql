@@ -249,11 +249,19 @@ INSERT INTO bao_cao (maBaoCao, maHoSo, NoiDung, nhanXet) VALUES
 
 -- [31.5] ThongBao
 INSERT INTO thong_bao (maThongBao, tieuDe, noiDung, ngayGui, loaiThongBao, isCongDong) VALUES
-    ('TB001', 'Thông báo kiểm tra định kỳ', 'Lịch kiểm tra định kỳ quý II/2025', '2025-04-10 08:00:00', 'Thanh tra', true),
-    ('TB002', 'Thông báo nhắc nhở', 'Nhắc nhở bổ sung hồ sơ kinh doanh', '2025-05-01 09:30:00', 'Hồ sơ', false),
-    ('TB003', 'Thông báo kết quả kiểm nghiệm', 'Kết quả kiểm nghiệm mẫu MK002', '2025-05-23 14:00:00', 'Kiểm nghiệm', false),
-    ('TB004', 'Thông báo xử lý phản ánh', 'Phản ánh PA004 đang được xử lý', '2025-06-04 10:15:00', 'Phản ánh', false),
-    ('TB005', 'Thông báo chung', 'Cập nhật quy định an toàn thực phẩm', '2025-06-06 16:30:00', 'Quy định', true);
+    ('TB001', 'Thông báo kiểm tra định kỳ', 'Lịch kiểm tra định kỳ quý II/2025', '2025-04-10 08:00:00', 'PHAP_QUY', true),
+    ('TB002', 'Thông báo nhắc nhở', 'Nhắc nhở bổ sung hồ sơ kinh doanh', '2025-05-01 09:30:00', 'TIN_TUC', false),
+    ('TB003', 'Thông báo kết quả kiểm nghiệm', 'Kết quả kiểm nghiệm mẫu MK002', '2025-05-23 14:00:00', 'KHAN_CAP', false),
+    ('TB004', 'Thông báo xử lý phản ánh', 'Phản ánh PA004 đang được xử lý', '2025-06-04 10:15:00', 'KHAN_CAP', false),
+    ('TB005', 'Thông báo chung', 'Cập nhật quy định an toàn thực phẩm', '2025-06-06 16:30:00', 'KHAN_CAP', true);
+
+-- [31.6] ThongBaoNguoiDung (Thông báo cá nhân gửi đến người dùng cụ thể)
+INSERT INTO thong_bao_nguoi_dung (maNguoiDung, maThongBao, trangThai) VALUES
+    ('ND005', 'TB002', 'Chưa đọc'),
+    ('ND005', 'TB003', 'Chưa đọc'),
+    ('ND006', 'TB002', 'Đã đọc'),
+    ('ND006', 'TB003', 'Chưa đọc'),
+    ('ND006', 'TB004', 'Chưa đọc');
 
 -- [32] FileDinhKem
 -- ĐÃ FIX: Thêm dấu phẩy bị thiếu, gộp các chuỗi URL lại thành 1 chuỗi hợp lệ (nếu cần thiết, hoặc chỉ để 1 URL đại diện).
