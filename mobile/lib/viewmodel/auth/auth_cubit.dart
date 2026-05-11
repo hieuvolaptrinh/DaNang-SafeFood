@@ -40,9 +40,20 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   /// Gọi sau khi LoginCubit login thành công.
-  /// Nhận AuthResponse từ LoginCubit, decode JWT và cập nhật state.
+  /// Đọc thông tin user trực tiếp từ AuthResponse thay vì decode JWT
+  /// để tránh lỗi khi JWT không chứa đủ claims.
   void onLoginSuccess(AuthResponse response) {
-    _emitFromToken(response.accessToken);
+    final user = response.user;
+    emit(AuthState(
+      status: AuthStatus.authenticated,
+      accessToken: response.accessToken,
+      username: user.username,
+      userId: user.id,
+      fullName: user.fullName,
+      email: user.email,
+      phone: user.phone,
+      roles: user.role,
+    ));
   }
 
   /// Đăng xuất — xóa token và reset state

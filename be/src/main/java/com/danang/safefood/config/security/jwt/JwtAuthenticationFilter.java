@@ -1,4 +1,4 @@
-package com.danang.safefood.security.jwt;
+package com.danang.safefood.config.security.jwt;
 
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;

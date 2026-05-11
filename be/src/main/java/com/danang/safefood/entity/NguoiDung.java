@@ -1,3 +1,4 @@
+
 package com.danang.safefood.entity;
 
 import jakarta.persistence.*;
@@ -24,9 +25,9 @@ public class NguoiDung {
     // @Column(name = "email", length = 150, unique = true)
     // private String email;
 
-    @Column(name = "soDienThoai", length = 20, nullable = false)
-    @Pattern(regexp = "\\d{10}", message = "Số điện thoại phải đúng 10 chữ số")
-    private String soDienThoai;
+    // @Column(name = "soDienThoai", length = 20, nullable = false)
+    // @Pattern(regexp = "\\d{10}", message = "Số điện thoại phải đúng 10 chữ số")
+    // private String soDienThoai;
 
     @Column(name = "gioiTinh", length = 10)
     private String gioiTinh;

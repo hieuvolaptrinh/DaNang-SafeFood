@@ -58,7 +58,7 @@ class AppRouter {
       case Routes.forgotPassword:
         return MaterialPageRoute(
           builder: (_) => BlocProvider(
-            create: (_) => ForgotPasswordCubit(),
+            create: (_) => ForgotPasswordCubit(authRepository: _authRepository),
             child: const ForgotPasswordPage(),
           ),
         );

@@ -49,6 +49,113 @@ class AuthRemoteDataSource {
         details: error.message,
       );
     } catch (error) {
+      if (error is ApiException) rethrow;
+      throw ApiException(
+        statusCode: 500,
+        message: 'Có lỗi xảy ra. Vui lòng thử lại',
+        details: error,
+      );
+    }
+  }
+
+  /// Gửi OTP về email
+  Future<String> sendOtp(String email) async {
+    try {
+      final response = await dio.post(
+        '/api/auth/forgot-password/send-otp',
+        data: {'email': email},
+      );
+
+      final wrapper = ApiResponseWrapper<String>.fromJson(
+        response.data as Map<String, dynamic>,
+        (json) => json as String,
+      );
+
+      if (!wrapper.isSuccess) {
+        throw ApiException(
+          statusCode: wrapper.code,
+          message: wrapper.message,
+        );
+      }
+
+      return wrapper.message;
+    } on DioException catch (error) {
+      final response = error.response;
+      if (response?.data is Map<String, dynamic>) {
+        final data = response!.data as Map<String, dynamic>;
+        final wrapper = ApiResponseWrapper<Object?>.fromJson(
+          data,
+          (json) => json,
+        );
+        throw ApiException(
+          statusCode: wrapper.code,
+          message: wrapper.message,
+        );
+      }
+      throw ApiException(
+        statusCode: response?.statusCode ?? 500,
+        message: 'Không thể kết nối tới máy chủ',
+        details: error.message,
+      );
+    } catch (error) {
+      if (error is ApiException) rethrow;
+      throw ApiException(
+        statusCode: 500,
+        message: 'Có lỗi xảy ra. Vui lòng thử lại',
+        details: error,
+      );
+    }
+  }
+
+  /// Xác thực OTP và đặt lại mật khẩu
+  Future<String> resetPassword({
+    required String email,
+    required String otp,
+    required String newPassword,
+  }) async {
+    try {
+      final response = await dio.post(
+        '/api/auth/forgot-password/reset',
+        data: {
+          'email': email,
+          'otp': otp,
+          'newPassword': newPassword,
+        },
+      );
+
+      final wrapper = ApiResponseWrapper<Object?>.fromJson(
+        response.data as Map<String, dynamic>,
+        (json) => json,
+      );
+
+      if (!wrapper.isSuccess) {
+        throw ApiException(
+          statusCode: wrapper.code,
+          message: wrapper.message,
+        );
+      }
+
+      return wrapper.message;
+    } on DioException catch (error) {
+      final response = error.response;
+      if (response?.data is Map<String, dynamic>) {
+        final data = response!.data as Map<String, dynamic>;
+        final wrapper = ApiResponseWrapper<Object?>.fromJson(
+          data,
+          (json) => json,
+        );
+        throw ApiException(
+          statusCode: wrapper.code,
+          message: wrapper.message,
+        );
+      }
+      throw ApiException(
+        statusCode: response?.statusCode ?? 500,
+        message: 'Không thể kết nối tới máy chủ',
+        details: error.message,
+      );
+    } catch (error) {
+      if (error is ApiException) rethrow;
       throw ApiException(
         statusCode: 500,
         message: 'Có lỗi xảy ra. Vui lòng thử lại',

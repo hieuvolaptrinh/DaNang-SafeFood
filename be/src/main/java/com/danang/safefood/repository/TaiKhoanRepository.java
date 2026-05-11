@@ -14,9 +14,18 @@ public interface TaiKhoanRepository extends JpaRepository<TaiKhoan, Long> {
         LEFT JOIN FETCH qhnd.quyenHan
         WHERE tk.username = :username
     """)
-    Optional<TaiKhoan> findByUsername(String username);;
+    Optional<TaiKhoan> findByUsername(String username);
     boolean existsByUsername(String username);
     boolean existsByEmail(String email);
+
+    @Query("""
+        SELECT DISTINCT tk
+        FROM TaiKhoan tk
+        LEFT JOIN FETCH tk.quyenHanNguoiDungList qhnd
+        LEFT JOIN FETCH qhnd.quyenHan
+        WHERE tk.email = :email
+    """)
+    Optional<TaiKhoan> findByEmail(String email);
 
     @Query("""
         SELECT DISTINCT tk

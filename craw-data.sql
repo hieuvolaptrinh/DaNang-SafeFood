@@ -29,13 +29,13 @@ INSERT INTO tai_khoan (id, username, password, fullName, email, phone, enabled, 
 SELECT setval('tai_khoan_id_seq', (SELECT MAX(id) FROM tai_khoan));
 
 -- [3] Người dùng (Tham chiếu tai_khoan_id)
-INSERT INTO nguoi_dung (maNguoiDung, hoTen, soDienThoai, gioiTinh, CCCD, taiKhoanId) VALUES
-('ND001', 'Administrator', '0901234567', 'Nam', '012345678901', 1),
-('ND002', 'Lãnh đạo ATVSTP', '0901234568', 'Nữ', '012345678902', 2),
-('ND003', 'Cán bộ Thanh tra', '0901234569', 'Nam', '012345678903', 3),
-('ND004', 'Cán bộ Kiểm định', '0901234570', 'Nam', '012345678904', 4),
-('ND005', 'Nguyễn Văn A', '0987654321', 'Nam', '012345678905', 5),
-('ND006', 'Nguyễn Văn B', '0987654322', 'Nam', '012345678906', 6);
+INSERT INTO nguoi_dung (maNguoiDung, hoTen,  gioiTinh, CCCD, taiKhoanId) VALUES
+('ND001', 'Administrator',  'Nam', '012345678901', 1),
+('ND002', 'Lãnh đạo ATVSTP',  'Nữ', '012345678902', 2),
+('ND003', 'Cán bộ Thanh tra',  'Nam', '012345678903', 3),
+('ND004', 'Cán bộ Kiểm định', , 'Nam', '012345678904', 4),
+('ND005', 'Nguyễn Văn A',  'Nam', '012345678905', 5),
+('ND006', 'Nguyễn Văn B',  'Nam', '012345678906', 6);
 
 -- [4] Phân quyền người dùng (Phải đủ dấu phẩy)
 INSERT INTO quyen_han_nguoi_dung (maQuyenHan, taiKhoanId) VALUES
