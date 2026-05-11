@@ -29,12 +29,22 @@ import 'package:mobile_ui/viewmodel/business_status/business_status_cubit.dart';
 import 'package:mobile_ui/core/utils/dio_client.dart';
 import 'package:mobile_ui/data/local/token_storage.dart';
 import 'package:mobile_ui/data/remote/datasource/auth_remote_datasource.dart';
+import 'package:mobile_ui/data/remote/datasource/notification_datasource.dart';
 import 'package:mobile_ui/data/remote/repository/auth_repository.dart';
+import 'package:mobile_ui/data/remote/repository/notification_repository.dart';
+import 'package:mobile_ui/data/remote/model/notification_model.dart';
 
 class AppRouter {
+  static final _dio = DioClient().dio;
+
   static final AuthRepository _authRepository = AuthRepository(
-    remoteDataSource: AuthRemoteDataSource(dio: DioClient().dio),
+    remoteDataSource: AuthRemoteDataSource(dio: _dio),
     tokenStorage: TokenStorage(),
+  );
+
+  static final NotificationRepository _notificationRepository =
+      NotificationRepository(
+    remoteDataSource: NotificationRemoteDataSource(dio: _dio),
   );
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
@@ -58,7 +68,8 @@ class AppRouter {
       case Routes.forgotPassword:
         return MaterialPageRoute(
           builder: (_) => BlocProvider(
-            create: (_) => ForgotPasswordCubit(authRepository: _authRepository),
+            create: (_) =>
+                ForgotPasswordCubit(authRepository: _authRepository),
             child: const ForgotPasswordPage(),
           ),
         );
@@ -77,25 +88,32 @@ class AppRouter {
       case Routes.businessDetail:
         final args = settings.arguments as Map<String, dynamic>?;
         return MaterialPageRoute(
-          builder: (_) => BusinessDetailPage(businessName: args?['name'] ?? ''),
+          builder: (_) =>
+              BusinessDetailPage(businessName: args?['name'] ?? ''),
         );
 
       case Routes.notificationDetail:
-        final args = settings.arguments as Map<String, dynamic>?;
+        final notification = settings.arguments as NotificationModel;
         return MaterialPageRoute(
-          builder: (_) => NotificationDetailPage(title: args?['title'] ?? ''),
+          builder: (_) =>
+              NotificationDetailPage(notification: notification),
         );
 
       case Routes.notifications:
         return MaterialPageRoute(
-          builder: (_) => BlocProvider(
-            create: (_) => NotificationCubit()..loadNotifications(),
-            child: const NotificationPage(),
-          ),
+          builder: (_) {
+            return BlocProvider(
+              create: (_) => NotificationCubit(
+                repository: _notificationRepository,
+              )..loadAll(),
+              child: const NotificationPage(),
+            );
+          },
         );
 
       case Routes.complaintForm:
-        return MaterialPageRoute(builder: (_) => const ComplaintFormPage());
+        return MaterialPageRoute(
+            builder: (_) => const ComplaintFormPage());
 
       case Routes.complaintDetail:
         final args = settings.arguments as Map<String, dynamic>?;
@@ -108,7 +126,8 @@ class AppRouter {
       case Routes.bizDetail:
         final args = settings.arguments as Map<String, dynamic>?;
         return MaterialPageRoute(
-          builder: (_) => BizDetailPage(businessName: args?['name'] ?? ''),
+          builder: (_) =>
+              BizDetailPage(businessName: args?['name'] ?? ''),
         );
 
       case Routes.businessRegistration:
@@ -117,7 +136,8 @@ class AppRouter {
         );
 
       case Routes.violationList:
-        return MaterialPageRoute(builder: (_) => const ViolationListPage());
+        return MaterialPageRoute(
+            builder: (_) => const ViolationListPage());
 
       case Routes.violationDetail:
         final args = settings.arguments as Map<String, dynamic>?;
@@ -127,7 +147,8 @@ class AppRouter {
         );
 
       case Routes.businessComplaint:
-        return MaterialPageRoute(builder: (_) => const BusinessComplaintPage());
+        return MaterialPageRoute(
+            builder: (_) => const BusinessComplaintPage());
 
       case Routes.updateEvidence:
         final args = settings.arguments as Map<String, dynamic>?;
@@ -141,13 +162,15 @@ class AppRouter {
       case Routes.inspectionDetail:
         final args = settings.arguments as Map<String, dynamic>?;
         return MaterialPageRoute(
-          builder: (_) => InspectionDetailPage(title: args?['title'] ?? ''),
+          builder: (_) =>
+              InspectionDetailPage(title: args?['title'] ?? ''),
         );
 
       case Routes.testingDetail:
         final args = settings.arguments as Map<String, dynamic>?;
         return MaterialPageRoute(
-          builder: (_) => TestingDetailPage(title: args?['title'] ?? ''),
+          builder: (_) =>
+              TestingDetailPage(title: args?['title'] ?? ''),
         );
 
       case Routes.businessStatus:

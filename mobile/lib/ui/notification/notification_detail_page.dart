@@ -1,181 +1,217 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile_ui/core/theme/app_theme.dart';
+import 'package:mobile_ui/data/remote/model/notification_model.dart';
 
 class NotificationDetailPage extends StatelessWidget {
-  final String title;
+  final NotificationModel notification;
 
-  const NotificationDetailPage({super.key, required this.title});
+  const NotificationDetailPage({super.key, required this.notification});
 
   @override
   Widget build(BuildContext context) {
+    final color = _typeColor(notification.loaiThongBao);
+
     return Scaffold(
+      backgroundColor: AppTheme.scaffoldBg,
       appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_rounded, size: 20),
+          icon: Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: AppTheme.surfaceBg,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(
+              Icons.arrow_back_ios_rounded,
+              size: 18,
+              color: AppTheme.textPrimary,
+            ),
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.bookmark_border_rounded),
+            icon: const Icon(Icons.share_outlined, color: AppTheme.textPrimary),
             onPressed: () {},
           ),
-          IconButton(icon: const Icon(Icons.share_outlined), onPressed: () {}),
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Header section with gradient
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: const Color(0xFFEF5350).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                'Khẩn cấp',
-                style: GoogleFonts.inter(
-                  color: const Color(0xFFEF5350),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              title.isNotEmpty
-                  ? title
-                  : 'Thu hồi sản phẩm nước mắm ABC không đạt chuẩn',
-              style: GoogleFonts.inter(
-                color: AppTheme.textPrimary,
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                height: 1.3,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Icon(
-                  Icons.calendar_today_outlined,
-                  size: 14,
-                  color: AppTheme.textSecondary,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  '22/03/2026',
-                  style: GoogleFonts.inter(
-                    color: AppTheme.textSecondary,
-                    fontSize: 13,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Icon(
-                  Icons.visibility_outlined,
-                  size: 14,
-                  color: AppTheme.textSecondary,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  '1,245 lượt xem',
-                  style: GoogleFonts.inter(
-                    color: AppTheme.textSecondary,
-                    fontSize: 13,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            const Divider(color: AppTheme.dividerColor),
-            const SizedBox(height: 20),
-
-            // Image placeholder
-            Container(
-              height: 180,
               width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
               decoration: BoxDecoration(
-                color: AppTheme.surfaceBg,
-                borderRadius: BorderRadius.circular(16),
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(
-                    Icons.image_outlined,
-                    color: AppTheme.textSecondary,
-                    size: 40,
+                  // Badges row
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: color.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              _typeIcon(notification.loaiThongBao),
+                              size: 14,
+                              color: color,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              notification.loaiThongBao ?? 'Thông báo',
+                              style: GoogleFonts.inter(
+                                color: color,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (notification.isCongDong) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primary.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.public,
+                                size: 14,
+                                color: AppTheme.primary,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Cộng đồng',
+                                style: GoogleFonts.inter(
+                                  color: AppTheme.primary,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 16),
+                  // Title
                   Text(
-                    'Hình ảnh minh họa',
+                    notification.tieuDe,
                     style: GoogleFonts.inter(
-                      color: AppTheme.textSecondary,
-                      fontSize: 13,
+                      color: AppTheme.textPrimary,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      height: 1.3,
                     ),
+                  ),
+                  const SizedBox(height: 12),
+                  // Date info
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.schedule_rounded,
+                        size: 16,
+                        color: AppTheme.textSecondary,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        notification.formattedDate,
+                        style: GoogleFonts.inter(
+                          color: AppTheme.textSecondary,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 20),
-
-            Text(
-              'Ngày 22/03/2026, Cục An toàn thực phẩm (Bộ Y tế) ra thông báo thu hồi toàn bộ lô hàng nước mắm nhãn hiệu ABC, mã lô SX-2026-03-15.\n\n'
-              'Qua kiểm nghiệm, lô hàng này có hàm lượng histamine vượt 3 lần ngưỡng cho phép theo QCVN 8-2:2011/BYT, tiềm ẩn nguy cơ gây ngộ độc thực phẩm.\n\n'
-              'Người tiêu dùng đang sở hữu sản phẩm thuộc lô này vui lòng ngừng sử dụng và liên hệ nơi mua để đổi trả.\n\n'
-              'Các cơ sở kinh doanh cần rà soát và thu hồi sản phẩm theo đúng quy định.',
-              style: GoogleFonts.inter(
-                color: AppTheme.textPrimary,
-                fontSize: 15,
-                height: 1.7,
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: AppTheme.surfaceBg,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppTheme.dividerColor),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.attach_file_rounded,
-                    color: AppTheme.primary,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+            // Content body
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
                       children: [
-                        Text(
-                          'QD-ThuHoi-2026-03-22.pdf',
-                          style: GoogleFonts.inter(
-                            color: AppTheme.textPrimary,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
+                        Container(
+                          width: 4,
+                          height: 20,
+                          decoration: BoxDecoration(
+                            color: color,
+                            borderRadius: BorderRadius.circular(2),
                           ),
                         ),
+                        const SizedBox(width: 10),
                         Text(
-                          '1.2 MB',
+                          'Nội dung thông báo',
                           style: GoogleFonts.inter(
-                            color: AppTheme.textSecondary,
-                            fontSize: 11,
+                            color: AppTheme.textPrimary,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ],
                     ),
-                  ),
-                  Icon(
-                    Icons.download_outlined,
-                    color: AppTheme.primary,
-                    size: 20,
-                  ),
-                ],
+                    const SizedBox(height: 16),
+                    Text(
+                      notification.noiDung,
+                      style: GoogleFonts.inter(
+                        color: AppTheme.textPrimary,
+                        fontSize: 15,
+                        height: 1.7,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 40),
@@ -183,5 +219,31 @@ class NotificationDetailPage extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Color _typeColor(String? type) {
+    switch (type) {
+      case 'Khẩn Cấp':
+        return const Color(0xFFEF5350);
+      case 'Tin Tức':
+        return AppTheme.primary;
+      case 'Pháp Quy':
+        return const Color(0xFF42A5F5);
+      default:
+        return AppTheme.textSecondary;
+    }
+  }
+
+  IconData _typeIcon(String? type) {
+    switch (type) {
+      case 'Khẩn Cấp':
+        return Icons.warning_amber_rounded;
+      case 'Tin Tức':
+        return Icons.newspaper_rounded;
+      case 'Pháp Quy':
+        return Icons.gavel_rounded;
+      default:
+        return Icons.notifications_outlined;
+    }
   }
 }
