@@ -23,7 +23,7 @@ INSERT INTO tai_khoan (id, username, password, fullName, email, phone, enabled, 
 (3, 'thanhtra', '$2a$10$v3eu725GjfHQ34OHA43qN.oddPUR.Be6qDjfVo3iSErVaWpH5OuTq', 'Cán bộ Thanh tra', 'thanhtra@safefood.vn', '0901234569', true, NOW(), NOW()),
 (4, 'kiemdinh', '$2a$10$v3eu725GjfHQ34OHA43qN.oddPUR.Be6qDjfVo3iSErVaWpH5OuTq', 'Cán bộ Kiểm định', 'kiemdinh@safefood.vn', '0901234570', true, NOW(), NOW()),
 (5, 'user1', '$2a$10$v3eu725GjfHQ34OHA43qN.oddPUR.Be6qDjfVo3iSErVaWpH5OuTq', 'Nguyễn Văn A', 'user1@gmail.com', '0987654321', true, NOW(), NOW()),
-(6, 'kinhdoanh1', '$2a$10$v3eu725GjfHQ34OHA43qN.oddPUR.Be6qDjfVo3iSErVaWpH5OuTq', 'Nguyễn Văn B', 'kinhdoanh1@gmail.com', '0987654322', true, NOW(), NOW());
+(6, 'kinhdoanh1', '$2a$10$v3eu725GjfHQ34OHA43qN.oddPUR.Be6qDjfVo3iSErVaWpH5OuTq', 'Nguyễn Văn B', 'vndhieuak@gmail.com', '0987654322', true, NOW(), NOW());
 
 -- Reset sequence cho ID tự tăng của tài khoản
 SELECT setval('tai_khoan_id_seq', (SELECT MAX(id) FROM tai_khoan));

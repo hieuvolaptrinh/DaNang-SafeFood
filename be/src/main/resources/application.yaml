@@ -6,7 +6,18 @@ spring:
     url: jdbc:postgresql://localhost:5432/danang_safe_food
     username: root
     password: 123456
-
+#    mail sender configuration
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: vndhieu05@gmail.com
+    password: duzq ufne rbjo obav
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
   jpa:
     hibernate:
       ddl-auto: update
