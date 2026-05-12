@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:mobile_ui/data/remote/model/notification_model.dart';
 
 enum HomeStatus { initial, loading, loaded, error }
 
@@ -9,6 +10,9 @@ class HomeState extends Equatable {
   final int recentViolations;
   final int newComplaints;
   final int inspectedPlaces;
+  final NotificationModel? banner;
+  final List<NotificationModel> news;
+  final List<NotificationModel> alerts;
 
   const HomeState({
     this.status = HomeStatus.initial,
@@ -17,6 +21,9 @@ class HomeState extends Equatable {
     this.recentViolations = 0,
     this.newComplaints = 0,
     this.inspectedPlaces = 0,
+    this.banner,
+    this.news = const [],
+    this.alerts = const [],
   });
 
   HomeState copyWith({
@@ -26,6 +33,9 @@ class HomeState extends Equatable {
     int? recentViolations,
     int? newComplaints,
     int? inspectedPlaces,
+    NotificationModel? banner,
+    List<NotificationModel>? news,
+    List<NotificationModel>? alerts,
   }) {
     return HomeState(
       status: status ?? this.status,
@@ -34,9 +44,22 @@ class HomeState extends Equatable {
       recentViolations: recentViolations ?? this.recentViolations,
       newComplaints: newComplaints ?? this.newComplaints,
       inspectedPlaces: inspectedPlaces ?? this.inspectedPlaces,
+      banner: banner ?? this.banner,
+      news: news ?? this.news,
+      alerts: alerts ?? this.alerts,
     );
   }
 
   @override
-  List<Object?> get props => [status, greeting, errorMessage, recentViolations, newComplaints, inspectedPlaces];
+  List<Object?> get props => [
+    status,
+    greeting,
+    errorMessage,
+    recentViolations,
+    newComplaints,
+    inspectedPlaces,
+    banner,
+    news,
+    alerts,
+  ];
 }

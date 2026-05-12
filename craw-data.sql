@@ -48,20 +48,18 @@ INSERT INTO quyen_han_nguoi_dung (maQuyenHan, taiKhoanId) VALUES
 
 -- [5] Phường xã
 INSERT INTO phuong_xa (maPX, TenPhuongXa) VALUES
-('PX001', 'Phường Hải Châu 1'),
-('PX002', 'Phường Hải Châu 2'),
-('PX003', 'Phường Thanh Khê'),
-('PX004', 'Phường Sơn Trà'),
-('PX005', 'Phường Ngũ Hành Sơn');
+('PX001', 'Hải Châu 1'),
+('PX002', 'Hải Châu 2'),
+('PX003', 'Thanh Khê'),
+('PX004', 'Sơn Trà'),
+('PX005', 'Ngũ Hành Sơn');
 
 -- [6] Cơ sở kinh doanh (Bảng Cha)
 -- Lưu ý: ND004, ND005, ND006 và các PX00x đều đã tồn tại ở trên
-INSERT INTO co_so_kinh_doanh (maCoSo, tenCoSo, soGiayPhep, maCoSoTrue, ngayHetHanGiayPhep, trangThai, maChuSoHuu, maPX) VALUES
-('CS001', 'Nhà hàng Sông Hàn', 'GP-2022-001', 'CS001', '2025-12-31', 'Hoat dong', 'ND004', 'PX001'),
-('CS002', 'Quán Cơm Miền Trung', 'GP-2022-002', 'CS002', '2025-06-30', 'Hoat dong', 'ND005', 'PX002'),
-('CS003', 'Cơ sở chế biến Thủy Sản ABC', 'GP-2023-003', 'CS003', '2026-03-15', 'Hoat dong', 'ND004', 'PX003'),
-('CS004', 'Nhà hàng Sông Hàn – CN1', 'GP-2023-004', 'CS001', '2025-12-31', 'Hoat dong', 'ND006', 'PX004'),
-('CS005', 'Bánh mỳ Đà Nẵng Express', 'GP-2023-005', 'CS005', '2026-01-20', 'Hoat dong', 'ND006', 'PX005');
+INSERT INTO co_so_kinh_doanh (maCoSo, tenCoSo, soGiayPhep, maCoSoTrue, ngayHetHanGiayPhep, trangThai, maChuSoHuu,anhBia, maPX) VALUES
+('CS001', 'Nhà hàng Sông Hàn', 'GP-2022-001', 'CS001', '2025-12-31', 'Hoat dong', 'ND006', 'https://res.cloudinary.com/dt7ekojue/image/upload/v1778601100/bien-quang-cao-quan-an-sang-1_qnxymu.jpg', 'PX001'),
+('CS002', 'Quán Cơm Miền Trung', 'GP-2022-002', 'CS002', '2025-06-30', 'Hoat dong', 'ND006', 'https://res.cloudinary.com/dt7ekojue/image/upload/v1778601101/2-bien-quang-cao-quan-an-sang-co-day-du-thong-tin-ve-mon-an-va-ten-quan_lldjkh.jpg', 'PX002'),
+('CS003', 'Cơ sở chế biến Thủy Sản ABC', 'GP-2023-003', 'CS003', '2026-03-15', 'Hoat dong', 'ND006', 'https://res.cloudinary.com/dt7ekojue/image/upload/v1778601108/truong-cd-sp-kt-da-nang_difjjv.png', 'PX003');
 
 -- [7] Loại hình kinh doanh
 INSERT INTO loai_hinh_kinh_doanh (maLoaiHinhKinhDoanh, tenLoaiHinhKinhDoanh, moTa) VALUES

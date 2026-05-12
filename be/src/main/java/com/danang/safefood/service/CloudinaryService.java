@@ -20,7 +20,7 @@ public class CloudinaryService {
 
     private final Cloudinary cloudinary;
 
-    @Value("${cloudinary.folder:danang-safefood}")
+    @Value("${cloudinary.folder:da-nang-safe-food}")
     private String folder;
 
     public String uploadImage(MultipartFile file) throws IOException {

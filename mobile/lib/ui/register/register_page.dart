@@ -40,6 +40,11 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     return BlocListener<RegisterCubit, RegisterState>(
+      listenWhen: (previous, current) {
+        return previous.status != current.status ||
+            previous.errorMessage != current.errorMessage ||
+            previous.successMessage != current.successMessage;
+      },
       listener: (context, state) {
         if (state.errorMessage != null && state.errorMessage!.isNotEmpty) {
           ScaffoldMessenger.of(

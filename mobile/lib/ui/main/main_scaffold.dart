@@ -16,6 +16,12 @@ import 'package:mobile_ui/viewmodel/business_management/business_management_cubi
 import 'package:mobile_ui/viewmodel/complaint/complaint_cubit.dart';
 import 'package:mobile_ui/viewmodel/profile/profile_cubit.dart';
 import 'package:mobile_ui/viewmodel/business_status/business_status_cubit.dart';
+import 'package:mobile_ui/core/utils/dio_client.dart';
+import 'package:mobile_ui/data/remote/datasource/home_remote_datasource.dart';
+import 'package:mobile_ui/data/remote/datasource/notification_datasource.dart';
+import 'package:mobile_ui/data/remote/datasource/business_remote_datasource.dart';
+import 'package:mobile_ui/data/remote/repository/home_repository.dart';
+import 'package:mobile_ui/data/remote/repository/business_repository.dart';
 
 class MainScaffold extends StatefulWidget {
   const MainScaffold({super.key});
@@ -26,6 +32,14 @@ class MainScaffold extends StatefulWidget {
 
 class _MainScaffoldState extends State<MainScaffold> {
   int _currentIndex = 0;
+  static final _dio = DioClient().dio;
+  static final HomeRepository _homeRepository = HomeRepository(
+    homeRemoteDataSource: HomeRemoteDataSource(dio: _dio),
+    notificationRemoteDataSource: NotificationRemoteDataSource(dio: _dio),
+  );
+  static final BusinessRepository _businessRepository = BusinessRepository(
+    remoteDataSource: BusinessRemoteDataSource(dio: _dio),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -39,8 +53,10 @@ class _MainScaffoldState extends State<MainScaffold> {
 
     return MultiBlocProvider(
       providers: [
-        BlocProvider(create: (_) => HomeCubit()..loadData()),
-        BlocProvider(create: (_) => SearchCubit()),
+        BlocProvider(
+          create: (_) => HomeCubit(homeRepository: _homeRepository)..loadData(),
+        ),
+        BlocProvider(create: (_) => SearchCubit(businessRepository: _businessRepository)),
         BlocProvider(create: (_) => BusinessManagementCubit()..loadData()),
         BlocProvider(create: (_) => ComplaintCubit()..loadComplaints()),
         BlocProvider(create: (_) => ProfileCubit()..loadProfile()),
