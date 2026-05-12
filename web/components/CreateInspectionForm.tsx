@@ -44,6 +44,7 @@ interface ChecklistGroup {
 }
 
 interface InspectionFormState {
+  facilityId: string;
   businessName: string;
   address: string;
   phone: string;
@@ -70,6 +71,12 @@ const businessTypeOptions = [
   'Cơ sở chế biến thực phẩm',
   'Cửa hàng thực phẩm',
   'Thức ăn đường phố',
+];
+
+const mockFacilities = [
+  { id: 'CS001', name: 'Nhà hàng Biển Đông', license: '001', address: 'Hải Châu', owner: 'Nguyễn Văn A', phone: '0905123456', type: 'Nhà hàng' },
+  { id: 'CS002', name: 'Nhà hàng Biển Đông 2', license: '002', address: 'Sơn Trà', owner: 'Trần Thị B', phone: '0905987654', type: 'Nhà hàng' },
+  { id: 'CS003', name: 'Quán ăn Cô Ba', license: '003', address: 'Thanh Khê', owner: 'Lê Văn C', phone: '0905111222', type: 'Quán ăn' },
 ];
 
 const checklistGroups: ChecklistGroup[] = [
@@ -131,6 +138,7 @@ function createInitialChecklist() {
 
 function createInitialFormState(): InspectionFormState {
   return {
+    facilityId: '',
     businessName: '',
     address: '',
     phone: '',
@@ -154,11 +162,7 @@ function createInitialFormState(): InspectionFormState {
 function buildValidation(state: InspectionFormState) {
   const fieldErrors: Partial<Record<keyof InspectionFormState, string>> = {};
   const requiredFields: Array<keyof InspectionFormState> = [
-    'businessName',
-    'address',
-    'phone',
-    'owner',
-    'businessType',
+    'facilityId',
     'inspectionTime',
     'violationStatus',
     'conclusion',
@@ -339,79 +343,80 @@ export default function CreateInspectionForm({
           <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-5">
             <div>
               <h2 className="text-base font-bold text-slate-900">1. Thông tin cơ sở</h2>
-              <p className="mt-1 text-sm text-slate-500">Nhập đầy đủ thông tin cơ sở và thời gian kiểm tra.</p>
+              <p className="mt-1 text-sm text-slate-500">Tìm kiếm và chọn cơ sở kinh doanh đã được cấp phép.</p>
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2 md:col-span-2">
+                <FieldLabel htmlFor="facilitySearch">Tìm kiếm cơ sở kinh doanh</FieldLabel>
+                <Input
+                  id="facilitySearch"
+                  list="facilities"
+                  placeholder="Gõ để tìm kiếm..."
+                  defaultValue={
+                    isViewMode || isEditMode
+                      ? `${form.businessName}` // Just a fallback for view mode
+                      : ''
+                  }
+                  disabled={isViewMode || isEditMode}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    const found = mockFacilities.find(
+                      (f) => `${f.name} - Số GP: ${f.license} - Địa chỉ: ${f.address}` === val
+                    );
+                    if (found) {
+                      updateField('facilityId', found.id);
+                      updateField('businessName', found.name);
+                      updateField('owner', found.owner);
+                      updateField('address', found.address);
+                      updateField('phone', found.phone);
+                      updateField('businessType', found.type);
+                      updateField('businessLicense', found.license);
+                    } else {
+                      updateField('facilityId', '');
+                      updateField('businessName', '');
+                      updateField('owner', '');
+                      updateField('address', '');
+                      updateField('phone', '');
+                      updateField('businessType', '');
+                      updateField('businessLicense', '');
+                    }
+                  }}
+                  className={cn(getFieldError('facilityId') ? 'border-red-500 ring-2 ring-red-100' : '')}
+                />
+                <datalist id="facilities">
+                  {mockFacilities.map((f) => (
+                    <option key={f.id} value={`${f.name} - Số GP: ${f.license} - Địa chỉ: ${f.address}`} />
+                  ))}
+                </datalist>
+                {getFieldError('facilityId') && (
+                  <p className="text-sm text-red-600">Vui lòng chọn cơ sở hợp lệ từ danh sách</p>
+                )}
+              </div>
+
               <div className="space-y-2">
                 <FieldLabel htmlFor="businessName">Tên cơ sở</FieldLabel>
-                <Input
-                  id="businessName"
-                  value={form.businessName}
-                  onChange={(event) => updateField('businessName', event.target.value)}
-                  aria-invalid={Boolean(getFieldError('businessName'))}
-                />
-                {getFieldError('businessName') && (
-                  <p className="text-sm text-red-600">{getFieldError('businessName')}</p>
-                )}
+                <Input id="businessName" value={form.businessName} disabled className="bg-slate-50 text-slate-500" />
               </div>
 
               <div className="space-y-2">
                 <FieldLabel htmlFor="owner">Chủ cơ sở</FieldLabel>
-                <Input
-                  id="owner"
-                  value={form.owner}
-                  onChange={(event) => updateField('owner', event.target.value)}
-                  aria-invalid={Boolean(getFieldError('owner'))}
-                />
-                {getFieldError('owner') && <p className="text-sm text-red-600">{getFieldError('owner')}</p>}
+                <Input id="owner" value={form.owner} disabled className="bg-slate-50 text-slate-500" />
               </div>
 
               <div className="space-y-2 md:col-span-2">
                 <FieldLabel htmlFor="address">Địa chỉ</FieldLabel>
-                <Input
-                  id="address"
-                  value={form.address}
-                  onChange={(event) => updateField('address', event.target.value)}
-                  aria-invalid={Boolean(getFieldError('address'))}
-                />
-                {getFieldError('address') && <p className="text-sm text-red-600">{getFieldError('address')}</p>}
+                <Input id="address" value={form.address} disabled className="bg-slate-50 text-slate-500" />
               </div>
 
               <div className="space-y-2">
                 <FieldLabel htmlFor="phone">Số điện thoại</FieldLabel>
-                <Input
-                  id="phone"
-                  value={form.phone}
-                  onChange={(event) => updateField('phone', event.target.value)}
-                  aria-invalid={Boolean(getFieldError('phone'))}
-                />
-                {getFieldError('phone') && <p className="text-sm text-red-600">{getFieldError('phone')}</p>}
+                <Input id="phone" value={form.phone} disabled className="bg-slate-50 text-slate-500" />
               </div>
 
               <div className="space-y-2">
                 <FieldLabel htmlFor="businessType">Loại hình kinh doanh</FieldLabel>
-                <select
-                  id="businessType"
-                  value={form.businessType}
-                  onChange={(event) => updateField('businessType', event.target.value)}
-                  className={cn(
-                    'h-8 w-full rounded-lg border bg-white px-2.5 text-sm text-slate-800 outline-none transition',
-                    getFieldError('businessType')
-                      ? 'border-red-500 ring-2 ring-red-100'
-                      : 'border-slate-200 focus:border-blue-500'
-                  )}
-                >
-                  <option value="">Chọn loại hình kinh doanh</option>
-                  {businessTypeOptions.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
-                {getFieldError('businessType') && (
-                  <p className="text-sm text-red-600">{getFieldError('businessType')}</p>
-                )}
+                <Input id="businessType" value={form.businessType} disabled className="bg-slate-50 text-slate-500" />
               </div>
 
               <div className="space-y-2">
