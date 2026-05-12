@@ -153,7 +153,7 @@ class _MainScaffoldState extends State<MainScaffold> {
               padding: EdgeInsets.only(bottom: 4),
               child: Icon(Icons.description_rounded, size: 26),
             ),
-            label: 'Hồ sơ',
+            label: 'Pháp lý',
           ),
         ),
         commonProfile,

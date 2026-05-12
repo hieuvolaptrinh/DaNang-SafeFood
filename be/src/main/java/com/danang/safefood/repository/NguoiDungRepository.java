@@ -7,8 +7,9 @@ import java.util.Optional;
 
 public interface NguoiDungRepository extends JpaRepository<NguoiDung, String> {
 
-
     Optional<NguoiDung> findByCccd(String cccd);
 
     Optional<NguoiDung> findByTaiKhoan_Username(String username);
+    /** Tìm người dùng theo ID tài khoản (từ JWT userId) */
+    Optional<NguoiDung> findByTaiKhoan_Id(Long taiKhoanId);
 }

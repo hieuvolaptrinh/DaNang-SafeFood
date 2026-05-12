@@ -23,19 +23,19 @@ INSERT INTO tai_khoan (id, username, password, fullName, email, phone, enabled, 
 (3, 'thanhtra', '$2a$10$v3eu725GjfHQ34OHA43qN.oddPUR.Be6qDjfVo3iSErVaWpH5OuTq', 'Cán bộ Thanh tra', 'thanhtra@safefood.vn', '0901234569', true, NOW(), NOW()),
 (4, 'kiemdinh', '$2a$10$v3eu725GjfHQ34OHA43qN.oddPUR.Be6qDjfVo3iSErVaWpH5OuTq', 'Cán bộ Kiểm định', 'kiemdinh@safefood.vn', '0901234570', true, NOW(), NOW()),
 (5, 'user1', '$2a$10$v3eu725GjfHQ34OHA43qN.oddPUR.Be6qDjfVo3iSErVaWpH5OuTq', 'Nguyễn Văn A', 'user1@gmail.com', '0987654321', true, NOW(), NOW()),
-(6, 'kinhdoanh1', '$2a$10$v3eu725GjfHQ34OHA43qN.oddPUR.Be6qDjfVo3iSErVaWpH5OuTq', 'Nguyễn Văn B', 'kinhdoanh1@gmail.com', '0987654322', true, NOW(), NOW());
+(6, 'kinhdoanh1', '$2a$10$v3eu725GjfHQ34OHA43qN.oddPUR.Be6qDjfVo3iSErVaWpH5OuTq', 'Nguyễn Văn B', 'vndhieuak@gmail.com', '0987654322', true, NOW(), NOW());
 
 -- Reset sequence cho ID tự tăng của tài khoản
 SELECT setval('tai_khoan_id_seq', (SELECT MAX(id) FROM tai_khoan));
 
 -- [3] Người dùng (Tham chiếu tai_khoan_id)
-INSERT INTO nguoi_dung (maNguoiDung, hoTen, soDienThoai, gioiTinh, CCCD, taiKhoanId) VALUES
-('ND001', 'Administrator', '0901234567', 'Nam', '012345678901', 1),
-('ND002', 'Lãnh đạo ATVSTP', '0901234568', 'Nữ', '012345678902', 2),
-('ND003', 'Cán bộ Thanh tra', '0901234569', 'Nam', '012345678903', 3),
-('ND004', 'Cán bộ Kiểm định', '0901234570', 'Nam', '012345678904', 4),
-('ND005', 'Nguyễn Văn A', '0987654321', 'Nam', '012345678905', 5),
-('ND006', 'Nguyễn Văn B', '0987654322', 'Nam', '012345678906', 6);
+INSERT INTO nguoi_dung (maNguoiDung, hoTen,  gioiTinh, CCCD, taiKhoanId) VALUES
+('ND001', 'Administrator',  'Nam', '012345678901', 1),
+('ND002', 'Lãnh đạo ATVSTP',  'Nữ', '012345678902', 2),
+('ND003', 'Cán bộ Thanh tra',  'Nam', '012345678903', 3),
+('ND004', 'Cán bộ Kiểm định', , 'Nam', '012345678904', 4),
+('ND005', 'Nguyễn Văn A',  'Nam', '012345678905', 5),
+('ND006', 'Nguyễn Văn B',  'Nam', '012345678906', 6);
 
 -- [4] Phân quyền người dùng (Phải đủ dấu phẩy)
 INSERT INTO quyen_han_nguoi_dung (maQuyenHan, taiKhoanId) VALUES
@@ -249,11 +249,19 @@ INSERT INTO bao_cao (maBaoCao, maHoSo, NoiDung, nhanXet) VALUES
 
 -- [31.5] ThongBao
 INSERT INTO thong_bao (maThongBao, tieuDe, noiDung, ngayGui, loaiThongBao, isCongDong) VALUES
-    ('TB001', 'Thông báo kiểm tra định kỳ', 'Lịch kiểm tra định kỳ quý II/2025', '2025-04-10 08:00:00', 'Thanh tra', true),
-    ('TB002', 'Thông báo nhắc nhở', 'Nhắc nhở bổ sung hồ sơ kinh doanh', '2025-05-01 09:30:00', 'Hồ sơ', false),
-    ('TB003', 'Thông báo kết quả kiểm nghiệm', 'Kết quả kiểm nghiệm mẫu MK002', '2025-05-23 14:00:00', 'Kiểm nghiệm', false),
-    ('TB004', 'Thông báo xử lý phản ánh', 'Phản ánh PA004 đang được xử lý', '2025-06-04 10:15:00', 'Phản ánh', false),
-    ('TB005', 'Thông báo chung', 'Cập nhật quy định an toàn thực phẩm', '2025-06-06 16:30:00', 'Quy định', true);
+    ('TB001', 'Thông báo kiểm tra định kỳ', 'Lịch kiểm tra định kỳ quý II/2025', '2025-04-10 08:00:00', 'PHAP_QUY', true),
+    ('TB002', 'Thông báo nhắc nhở', 'Nhắc nhở bổ sung hồ sơ kinh doanh', '2025-05-01 09:30:00', 'TIN_TUC', false),
+    ('TB003', 'Thông báo kết quả kiểm nghiệm', 'Kết quả kiểm nghiệm mẫu MK002', '2025-05-23 14:00:00', 'KHAN_CAP', false),
+    ('TB004', 'Thông báo xử lý phản ánh', 'Phản ánh PA004 đang được xử lý', '2025-06-04 10:15:00', 'KHAN_CAP', false),
+    ('TB005', 'Thông báo chung', 'Cập nhật quy định an toàn thực phẩm', '2025-06-06 16:30:00', 'KHAN_CAP', true);
+
+-- [31.6] ThongBaoNguoiDung (Thông báo cá nhân gửi đến người dùng cụ thể)
+INSERT INTO thong_bao_nguoi_dung (maNguoiDung, maThongBao, trangThai) VALUES
+    ('ND005', 'TB002', 'Chưa đọc'),
+    ('ND005', 'TB003', 'Chưa đọc'),
+    ('ND006', 'TB002', 'Đã đọc'),
+    ('ND006', 'TB003', 'Chưa đọc'),
+    ('ND006', 'TB004', 'Chưa đọc');
 
 -- [32] FileDinhKem
 -- ĐÃ FIX: Thêm dấu phẩy bị thiếu, gộp các chuỗi URL lại thành 1 chuỗi hợp lệ (nếu cần thiết, hoặc chỉ để 1 URL đại diện).
