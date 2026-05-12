@@ -191,6 +191,7 @@ CREATE TABLE ViPham (
     maViPham          VARCHAR(10) NOT NULL PRIMARY KEY,
     maHoSo            VARCHAR(10),   -- FK → HoSoThanhTra
     maLoaiViPham      VARCHAR(10),   -- FK → LoaiViPham
+    maCoSo            VARCHAR(10),   -- FK → CoSoKinhDoanh
     moTaThem          TEXT,
     khacPhuc          TEXT,
     trangThaiPheDuyet VARCHAR(30)

@@ -161,12 +161,12 @@ INSERT INTO loai_vi_pham (maLoaiViPham, tenLoaiViPham, moTaThem) VALUES
     ('LVP006', 'Vi phạm hành chính',            'Vi phạm hành chính');
 
 -- [21] ViPham
-INSERT INTO vi_pham (maViPham, maHoSo, maLoaiViPham, moTaThem, khacPhuc, trangThaiPheDuyet, mucDo) VALUES
-    ('VP001', 'HSTT001', 'LVP001', 'Sàn nhà khu chế biến còn ướt và trơn',                'Lau khô sàn, lắp thêm tấm chống trơn',          'Đã Duyệt', 'Trung binh'),
-    ('VP002', 'HSTT002', 'LVP002', 'Phát hiện 5kg thịt heo không có giấy kiểm dịch',     'Tiêu hủy lô hàng, cam kết nhập từ nguồn hợp lệ', 'Đã Duyệt', 'Trung binh'),
-    ('VP003', 'HSTT002', 'LVP004', 'Hai nhân viên bếp không có chứng chỉ ATVS',          'Đăng ký tập huấn trong vòng 30 ngày',            'Chờ Duyệt', 'Trung binh'),
-    ('VP004', 'HSTT004', 'LVP003', 'Tủ lạnh bảo quản thịt sống đang ở +8°C (quá chuẩn)','Kiểm tra và thay thế tủ lạnh',                   'Đã Duyệt', 'Trung binh'),
-    ('VP005', 'HSTT005', 'LVP001', 'Nhân viên không đeo găng tay khi tiếp xúc thực phẩm','Cấp phát và yêu cầu sử dụng đồ bảo hộ',         'Đã Duyệt', 'Trung binh');
+INSERT INTO vi_pham (maViPham, maHoSo, maLoaiViPham, maCoSo, moTaThem, khacPhuc, trangThaiPheDuyet, mucDo) VALUES
+    ('VP001', 'HSTT001', 'LVP001', 'CS001', 'Sàn nhà khu chế biến còn ướt và trơn',                'Lau khô sàn, lắp thêm tấm chống trơn',          'Đã Duyệt', 'Trung binh'),
+    ('VP002', 'HSTT002', 'LVP002', 'CS002', 'Phát hiện 5kg thịt heo không có giấy kiểm dịch',     'Tiêu hủy lô hàng, cam kết nhập từ nguồn hợp lệ', 'Đã Duyệt', 'Trung binh'),
+    ('VP003', 'HSTT002', 'LVP004', 'CS002', 'Hai nhân viên bếp không có chứng chỉ ATVS',          'Đăng ký tập huấn trong vòng 30 ngày',            'Chờ Duyệt', 'Trung binh'),
+    ('VP004', 'HSTT004', 'LVP003', 'CS004', 'Tủ lạnh bảo quản thịt sống đang ở +8°C (quá chuẩn)','Kiểm tra và thay thế tủ lạnh',                   'Đã Duyệt', 'Trung binh'),
+    ('VP005', 'HSTT005', 'LVP001', 'CS005', 'Nhân viên không đeo găng tay khi tiếp xúc thực phẩm','Cấp phát và yêu cầu sử dụng đồ bảo hộ',         'Đã Duyệt', 'Trung binh');
 
 -- [22] HinhThucKhacPhuc
 INSERT INTO hinh_thuc_khac_phuc (maHinhThucKhacPhuc, soTienKhacPhuc, tinhTrangKhacPhuc, maViPham) VALUES

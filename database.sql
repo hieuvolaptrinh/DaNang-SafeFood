@@ -229,6 +229,7 @@ CREATE TABLE ViPham (
     maViPham          VARCHAR(10) NOT NULL,
     maHoSo            VARCHAR(10),
     maLoaiViPham      VARCHAR(10),
+    maCoSo            VARCHAR(10),
     moTaThem          NVARCHAR(MAX),
     khacPhuc          NVARCHAR(MAX),
     trangThaiPheDuyet NVARCHAR(30),

@@ -41,6 +41,10 @@ public class ViPham {
     @JoinColumn(name = "maLoaiViPham", nullable = false)
     private LoaiViPham loaiViPham;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "maCoSo")
+    private CoSoKinhDoanh coSoKinhDoanh;
+
     @OneToMany(mappedBy = "viPham", fetch = FetchType.LAZY)
     @Builder.Default
     private List<HinhThucKhacPhuc> hinhThucKhacPhucList = new ArrayList<>();

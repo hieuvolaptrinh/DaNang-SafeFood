@@ -136,6 +136,10 @@ public class KiemDinhVienService {
 
         String mucDo = (req.mucDo() != null && !req.mucDo().isBlank()) ? req.mucDo() : "Trung bình";
 
+        CoSoKinhDoanh coSoKinhDoanh = hoSo.getLichThanhTra() != null
+                ? hoSo.getLichThanhTra().getCoSoKinhDoanh()
+                : null;
+
         ViPham viPham = ViPham.builder()
                 .maViPham(IdGenerator.generate("VP"))
                 .moTaThem(req.moTaThem())
@@ -144,6 +148,7 @@ public class KiemDinhVienService {
                 .mucDo(mucDo)
                 .hoSoThanhTra(hoSo)
                 .loaiViPham(loaiViPham)
+                .coSoKinhDoanh(coSoKinhDoanh)
                 .build();
 
         return ViPhamResponse.from(viPhamRepo.save(viPham));
