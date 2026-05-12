@@ -11,8 +11,11 @@ import org.springframework.data.repository.query.Param;
 public interface BaoCaoRepository extends JpaRepository<BaoCao, String>, JpaSpecificationExecutor<BaoCao> {
 
     @Query("SELECT b FROM BaoCao b " +
-           "WHERE (:keyword IS NULL OR LOWER(b.maBaoCao) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(b.hoSoThanhTra.lichThanhTra.coSoKinhDoanh.tenCoSo) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
-           "AND (:resultFilter IS NULL OR b.hoSoThanhTra.tinhTrangViPham = :resultFilter)")
+           "LEFT JOIN b.hoSoThanhTra hs " +
+           "LEFT JOIN hs.lichThanhTra ltt " +
+           "LEFT JOIN ltt.coSoKinhDoanh cskd " +
+           "WHERE (:keyword IS NULL OR LOWER(b.maBaoCao) LIKE LOWER(CONCAT('%', CAST(:keyword AS String), '%')) OR LOWER(cskd.tenCoSo) LIKE LOWER(CONCAT('%', CAST(:keyword AS String), '%'))) " +
+           "AND (:resultFilter IS NULL OR hs.tinhTrangViPham = :resultFilter)")
     Page<BaoCao> searchBaoCao(@Param("keyword") String keyword, @Param("resultFilter") String resultFilter, Pageable pageable);
 
     @Query("SELECT COUNT(b) FROM BaoCao b WHERE b.hoSoThanhTra.tinhTrangViPham IN ('pass', 'fail')")
