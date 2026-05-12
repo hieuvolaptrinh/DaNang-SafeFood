@@ -9,6 +9,7 @@ import com.danang.safefood.dto.response.ViPhamResponse;
 import com.danang.safefood.entity.*;
 import com.danang.safefood.repository.*;
 import com.danang.safefood.util.IdGenerator;
+import com.danang.safefood.util.TrangThaiViPham;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

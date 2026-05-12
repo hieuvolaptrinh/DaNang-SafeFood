@@ -1,4 +1,4 @@
-package com.danang.safefood.entity;
+package com.danang.safefood.util;
 
 public enum LoaiQuyDinh {
     QUY_DINH,

@@ -1,13 +1,11 @@
 package com.danang.safefood.config.security.user;
 
-import com.danang.safefood.entity.Role;
 import com.danang.safefood.entity.TaiKhoan;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
-import java.util.List;
 
 public class CustomUserDetails implements UserDetails {
 
