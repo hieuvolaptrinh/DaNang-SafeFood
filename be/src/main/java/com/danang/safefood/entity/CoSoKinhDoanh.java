@@ -50,4 +50,6 @@ public class CoSoKinhDoanh {
         @OneToMany(mappedBy = "coSoKinhDoanh", fetch = FetchType.LAZY)
         @Builder.Default
         private List<ViPham> viPhamList = new ArrayList<>();
+
+        private String anhBia;
 }

@@ -26,12 +26,15 @@ import 'package:mobile_ui/viewmodel/forgot_password/forgot_password_cubit.dart';
 import 'package:mobile_ui/viewmodel/account/account_cubit.dart';
 import 'package:mobile_ui/viewmodel/notification/notification_cubit.dart';
 import 'package:mobile_ui/viewmodel/business_status/business_status_cubit.dart';
+import 'package:mobile_ui/viewmodel/search/business_detail_cubit.dart';
 import 'package:mobile_ui/core/utils/dio_client.dart';
 import 'package:mobile_ui/data/local/token_storage.dart';
 import 'package:mobile_ui/data/remote/datasource/auth_remote_datasource.dart';
 import 'package:mobile_ui/data/remote/datasource/notification_datasource.dart';
+import 'package:mobile_ui/data/remote/datasource/business_remote_datasource.dart';
 import 'package:mobile_ui/data/remote/repository/auth_repository.dart';
 import 'package:mobile_ui/data/remote/repository/notification_repository.dart';
+import 'package:mobile_ui/data/remote/repository/business_repository.dart';
 import 'package:mobile_ui/data/remote/model/notification_model.dart';
 
 class AppRouter {
@@ -86,8 +89,18 @@ class AppRouter {
 
       case Routes.businessDetail:
         final args = settings.arguments as Map<String, dynamic>?;
+        final maCoSo = args?['maCoSo'] as String? ?? '';
         return MaterialPageRoute(
-          builder: (_) => BusinessDetailPage(businessName: args?['name'] ?? ''),
+          builder: (_) => BlocProvider(
+            create: (_) {
+              final repo = BusinessRepository(
+                remoteDataSource: BusinessRemoteDataSource(dio: _dio),
+              );
+              return BusinessDetailCubit(businessRepository: repo)
+                ..loadDetail(maCoSo);
+            },
+            child: BusinessDetailPage(maCoSo: maCoSo),
+          ),
         );
 
       case Routes.notificationDetail:

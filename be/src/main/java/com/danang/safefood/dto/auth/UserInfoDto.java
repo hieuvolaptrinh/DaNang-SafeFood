@@ -13,15 +13,18 @@ public record UserInfoDto(
                 List<String> role,
                 boolean enabled) {
         public static UserInfoDto fromEntity(TaiKhoan user) {
+                var roles = user.getQuyenHanNguoiDungList() == null
+                                ? List.<String>of()
+                                : user.getQuyenHanNguoiDungList().stream()
+                                                .map(qhnd -> "ROLE_" + qhnd.getQuyenHan().getMaQuyenHan())
+                                                .toList();
                 return new UserInfoDto(
                                 user.getId(),
                                 user.getUsername(),
                                 user.getFullName(),
                                 user.getEmail(),
                                 user.getPhone(),
-                                user.getQuyenHanNguoiDungList().stream()
-                                                .map(qhnd -> "ROLE_" + qhnd.getQuyenHan().getMaQuyenHan())
-                                                .toList(),
+                                roles,
                                 user.isEnabled());
         }
 }

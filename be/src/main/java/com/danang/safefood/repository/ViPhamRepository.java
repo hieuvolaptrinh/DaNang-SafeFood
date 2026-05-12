@@ -13,4 +13,6 @@ public interface ViPhamRepository extends JpaRepository<ViPham, String> {
     Page<ViPham> findByTrangThaiPheDuyetOrderByMaViPhamDesc(TrangThaiViPham trangThaiPheDuyet, Pageable pageable);
 
     Page<ViPham> findAllByOrderByMaViPhamDesc(Pageable pageable);
+    
+    Integer countByCoSoKinhDoanh_MaCoSo(String maCoSo);
 }
