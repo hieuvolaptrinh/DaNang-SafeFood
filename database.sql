@@ -241,6 +241,7 @@ CREATE TABLE HinhThucKhacPhuc (
     maHinhThucKhacPhuc  VARCHAR(10)    NOT NULL,
     soTienKhacPhuc      DECIMAL(18, 2),
     tinhTrangKhacPhuc   NVARCHAR(50),
+    maViPham            VARCHAR(10),
     CONSTRAINT PK_HinhThucKhacPhuc PRIMARY KEY (maHinhThucKhacPhuc)
 );
 GO

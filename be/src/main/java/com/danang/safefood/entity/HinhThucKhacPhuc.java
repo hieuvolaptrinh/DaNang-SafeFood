@@ -23,4 +23,9 @@ public class HinhThucKhacPhuc {
 
     @Column(name = "tinhTrangKhacPhuc", length = 50)
     private String tinhTrangKhacPhuc;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "maViPham")
+    private ViPham viPham;
+
 }

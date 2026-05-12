@@ -1,5 +1,6 @@
 package com.danang.safefood.repository;
 
+import com.danang.safefood.entity.TrangThaiViPham;
 import com.danang.safefood.entity.ViPham;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -9,7 +10,7 @@ public interface ViPhamRepository extends JpaRepository<ViPham, String> {
 
     Page<ViPham> findByHoSoThanhTra_MaHoSoOrderByMaViPhamDesc(String maHoSo, Pageable pageable);
 
-    Page<ViPham> findByTrangThaiPheDuyetOrderByMaViPhamDesc(String trangThaiPheDuyet, Pageable pageable);
+    Page<ViPham> findByTrangThaiPheDuyetOrderByMaViPhamDesc(TrangThaiViPham trangThaiPheDuyet, Pageable pageable);
 
     Page<ViPham> findAllByOrderByMaViPhamDesc(Pageable pageable);
 }

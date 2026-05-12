@@ -157,23 +157,24 @@ INSERT INTO loai_vi_pham (maLoaiViPham, tenLoaiViPham, moTaThem) VALUES
     ('LVP002', 'Vi phạm về nguồn gốc thực phẩm', 'Sử dụng nguyên liệu không rõ nguồn gốc, không có hóa đơn'),
     ('LVP003', 'Vi phạm bảo quản thực phẩm',   'Nhiệt độ bảo quản không đúng quy định'),
     ('LVP004', 'Vi phạm về nhân sự',            'Người lao động không có chứng chỉ tập huấn ATVS'),
-    ('LVP005', 'Vi phạm về giấy tờ pháp lý',   'Kinh doanh khi giấy phép đã hết hạn');
+    ('LVP005', 'Vi phạm về giấy tờ pháp lý',   'Kinh doanh khi giấy phép đã hết hạn'),
+    ('LVP006', 'Vi phạm hành chính',            'Vi phạm hành chính');
 
 -- [21] ViPham
 INSERT INTO vi_pham (maViPham, maHoSo, maLoaiViPham, moTaThem, khacPhuc, trangThaiPheDuyet, mucDo) VALUES
-    ('VP001', 'HSTT001', 'LVP001', 'Sàn nhà khu chế biến còn ướt và trơn',                'Lau khô sàn, lắp thêm tấm chống trơn',          'Đã phê duyệt', 'Trung binh'),
-    ('VP002', 'HSTT002', 'LVP002', 'Phát hiện 5kg thịt heo không có giấy kiểm dịch',     'Tiêu hủy lô hàng, cam kết nhập từ nguồn hợp lệ', 'Đã phê duyệt', 'Trung binh'),
-    ('VP003', 'HSTT002', 'LVP004', 'Hai nhân viên bếp không có chứng chỉ ATVS',          'Đăng ký tập huấn trong vòng 30 ngày',            'Chờ phê duyệt', 'Trung binh'),
-    ('VP004', 'HSTT004', 'LVP003', 'Tủ lạnh bảo quản thịt sống đang ở +8°C (quá chuẩn)','Kiểm tra và thay thế tủ lạnh',                   'Đã phê duyệt', 'Trung binh'),
-    ('VP005', 'HSTT005', 'LVP001', 'Nhân viên không đeo găng tay khi tiếp xúc thực phẩm','Cấp phát và yêu cầu sử dụng đồ bảo hộ',         'Đã phê duyệt', 'Trung binh');
+    ('VP001', 'HSTT001', 'LVP001', 'Sàn nhà khu chế biến còn ướt và trơn',                'Lau khô sàn, lắp thêm tấm chống trơn',          'Đã Duyệt', 'Trung binh'),
+    ('VP002', 'HSTT002', 'LVP002', 'Phát hiện 5kg thịt heo không có giấy kiểm dịch',     'Tiêu hủy lô hàng, cam kết nhập từ nguồn hợp lệ', 'Đã Duyệt', 'Trung binh'),
+    ('VP003', 'HSTT002', 'LVP004', 'Hai nhân viên bếp không có chứng chỉ ATVS',          'Đăng ký tập huấn trong vòng 30 ngày',            'Chờ Duyệt', 'Trung binh'),
+    ('VP004', 'HSTT004', 'LVP003', 'Tủ lạnh bảo quản thịt sống đang ở +8°C (quá chuẩn)','Kiểm tra và thay thế tủ lạnh',                   'Đã Duyệt', 'Trung binh'),
+    ('VP005', 'HSTT005', 'LVP001', 'Nhân viên không đeo găng tay khi tiếp xúc thực phẩm','Cấp phát và yêu cầu sử dụng đồ bảo hộ',         'Đã Duyệt', 'Trung binh');
 
 -- [22] HinhThucKhacPhuc
-INSERT INTO hinh_thuc_khac_phuc (maHinhThucKhacPhuc, soTienKhacPhuc, tinhTrangKhacPhuc) VALUES
-    ('HT001', 2000000.00,  'Đã khắc phục'),
-    ('HT002', 5000000.00,  'Đang khắc phục'),
-    ('HT003', 0.00,        'Đã khắc phục'),
-    ('HT004', 10000000.00, 'Chưa khắc phục'),
-    ('HT005', 500000.00,   'Đã khắc phục');
+INSERT INTO hinh_thuc_khac_phuc (maHinhThucKhacPhuc, soTienKhacPhuc, tinhTrangKhacPhuc, maViPham) VALUES
+    ('HT001', 2000000.00,  'Đã khắc phục', 'VP001'),
+    ('HT002', 5000000.00,  'Đang khắc phục', 'VP002'),
+    ('HT003', 0.00,        'Đã khắc phục', 'VP001'),
+    ('HT004', 10000000.00, 'Chưa khắc phục', 'VP003'),
+    ('HT005', 500000.00,   'Đã khắc phục', 'VP005');
 
 -- [23] MinhChungKhacPhuc
 INSERT INTO minh_chung_khac_phuc (maMinhChung, maViPham, thoiGianGui) VALUES
