@@ -1,4 +1,4 @@
-package com.danang.safefood.entity;
+package com.danang.safefood.util;
 
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;

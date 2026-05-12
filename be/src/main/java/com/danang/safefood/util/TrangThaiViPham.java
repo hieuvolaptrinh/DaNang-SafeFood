@@ -1,4 +1,4 @@
-package com.danang.safefood.entity;
+package com.danang.safefood.util;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;

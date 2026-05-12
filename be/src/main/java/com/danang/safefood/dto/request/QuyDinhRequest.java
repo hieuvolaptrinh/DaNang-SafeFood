@@ -1,7 +1,7 @@
 package com.danang.safefood.dto.request;
 
-import com.danang.safefood.entity.LoaiQuyDinh;
-import com.danang.safefood.entity.TrangThaiQuyDinh;
+import com.danang.safefood.util.LoaiQuyDinh;
+import com.danang.safefood.util.TrangThaiQuyDinh;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 

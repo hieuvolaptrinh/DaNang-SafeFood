@@ -1,6 +1,6 @@
 package com.danang.safefood.repository;
 
-import com.danang.safefood.entity.TrangThaiViPham;
+import com.danang.safefood.util.TrangThaiViPham;
 import com.danang.safefood.entity.ViPham;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

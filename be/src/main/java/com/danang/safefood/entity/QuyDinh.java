@@ -1,5 +1,7 @@
 package com.danang.safefood.entity;
 
+import com.danang.safefood.util.LoaiQuyDinh;
+import com.danang.safefood.util.TrangThaiQuyDinh;
 import jakarta.persistence.*;
 import lombok.*;
 

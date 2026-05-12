@@ -9,6 +9,38 @@ class AuthRequest {
   }
 }
 
+class RegisterVerifyRequest {
+  final String fullName;
+  final String email;
+  final String? phone;
+  final String password;
+  final String otp;
+  final String role;
+  final String? businessName;
+
+  const RegisterVerifyRequest({
+    required this.fullName,
+    required this.email,
+    this.phone,
+    required this.password,
+    required this.otp,
+    required this.role,
+    this.businessName,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'fullName': fullName,
+      'email': email,
+      'phone': phone,
+      'password': password,
+      'otp': otp,
+      'role': role,
+      'businessName': businessName,
+    };
+  }
+}
+
 class AuthResponse {
   final String accessToken;
   final String refreshToken;

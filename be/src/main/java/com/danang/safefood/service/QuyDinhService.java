@@ -3,7 +3,7 @@ package com.danang.safefood.service;
 import com.danang.safefood.dto.request.QuyDinhRequest;
 import com.danang.safefood.dto.response.QuyDinhResponse;
 import com.danang.safefood.entity.QuyDinh;
-import com.danang.safefood.entity.TrangThaiQuyDinh;
+import com.danang.safefood.util.TrangThaiQuyDinh;
 import com.danang.safefood.repository.QuyDinhRepository;
 import com.danang.safefood.repository.TaiKhoanRepository;
 import com.danang.safefood.util.IdGenerator;
