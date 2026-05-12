@@ -28,15 +28,25 @@ public record HoSoThanhTraResponse(
         String conclusion,
         String generalComment,
         String actionMeasure,
-        String recommendation
-) {
+        String recommendation) {
     public static HoSoThanhTraResponse from(HoSoThanhTra hs) {
         String type = "Kiểm tra ATVSTP";
-        String inspector = hs.getLichThanhTra() != null && hs.getLichThanhTra().getNguoiPhuTrach() != null ? hs.getLichThanhTra().getNguoiPhuTrach().getHoTen() : "";
-        String business = hs.getLichThanhTra() != null && hs.getLichThanhTra().getCoSoKinhDoanh() != null ? hs.getLichThanhTra().getCoSoKinhDoanh().getTenCoSo() : "";
-        String date = hs.getThoiGianKiemTra() != null ? hs.getThoiGianKiemTra().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")) : "";
+        String inspector = hs.getLichThanhTra() != null && hs.getLichThanhTra().getNguoiPhuTrach() != null
+                ? hs.getLichThanhTra().getNguoiPhuTrach().getHoTen()
+                : "";
+        String business = hs.getLichThanhTra() != null && hs.getLichThanhTra().getCoSoKinhDoanh() != null
+                ? hs.getLichThanhTra().getCoSoKinhDoanh().getTenCoSo()
+                : "";
+        String date = hs.getThoiGianKiemTra() != null
+                ? hs.getThoiGianKiemTra().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+                : "";
         String result = hs.getKetLuan() != null ? hs.getKetLuan() : "";
         
+        com.danang.safefood.entity.CoSoKinhDoanh coSo = hs.getLichThanhTra() != null ? hs.getLichThanhTra().getCoSoKinhDoanh() : null;
+        String address = (coSo != null && coSo.getPhuongXa() != null) ? coSo.getPhuongXa().getTenPhuongXa() : "";
+        String owner = (coSo != null && coSo.getChuSoHuu() != null) ? coSo.getChuSoHuu().getHoTen() : "";
+        String phone = (coSo != null && coSo.getChuSoHuu() != null && coSo.getChuSoHuu().getTaiKhoan() != null) ? coSo.getChuSoHuu().getTaiKhoan().getPhone() : "";
+
         return new HoSoThanhTraResponse(
                 hs.getMaHoSo(),
                 business,
@@ -46,7 +56,7 @@ public record HoSoThanhTraResponse(
                 result,
                 hs.getDiem(),
                 business,
-                "", "", "", "",
+                address, phone, owner, "",
                 date,
                 "Hợp lệ", "Hợp lệ", "Hợp lệ", "Hợp lệ",
                 Map.of(),
@@ -55,7 +65,6 @@ public record HoSoThanhTraResponse(
                 result,
                 hs.getNhanXetChung(),
                 hs.getBienPhapXuLy(),
-                hs.getKienNghi()
-        );
+                hs.getKienNghi());
     }
 }

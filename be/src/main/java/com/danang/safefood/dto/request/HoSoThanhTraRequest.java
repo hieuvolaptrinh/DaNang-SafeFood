@@ -4,11 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import java.util.Map;
 
 public record HoSoThanhTraRequest(
-        @NotBlank String businessName,
-        String address,
-        String phone,
-        String owner,
-        String businessType,
+        @NotBlank String facilityId,
         String inspectionTime,
         String businessLicense,
         String foodSafetyCertificate,

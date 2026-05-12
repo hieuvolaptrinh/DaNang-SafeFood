@@ -56,16 +56,9 @@ public class HoSoThanhTraService {
 
     @Transactional
     public HoSoThanhTraResponse create(HoSoThanhTraRequest req) {
-        // Tìm hoặc tạo Cơ sở kinh doanh
-        CoSoKinhDoanh coSo = coSoKinhDoanhRepository.findFirstByTenCoSo(req.businessName())
-                .orElseGet(() -> {
-                    CoSoKinhDoanh newCs = new CoSoKinhDoanh();
-                    newCs.setMaCoSo(IdGenerator.generate("CS"));
-                    newCs.setTenCoSo(req.businessName());
-                    newCs.setSoGiayPhep(req.businessLicense());
-                    newCs.setTrangThai("Hoat dong");
-                    return coSoKinhDoanhRepository.save(newCs);
-                });
+        // Tìm Cơ sở kinh doanh theo ID
+        CoSoKinhDoanh coSo = coSoKinhDoanhRepository.findById(req.facilityId())
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy cơ sở kinh doanh với ID: " + req.facilityId()));
 
         // Lấy người phụ trách (user đang đăng nhập)
         String username = null;
