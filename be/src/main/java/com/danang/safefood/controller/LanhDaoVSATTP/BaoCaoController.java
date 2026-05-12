@@ -22,7 +22,7 @@ public class BaoCaoController {
     private final BaoCaoService baoCaoService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('LD_ATVSTP','CAN_BO_THANH_TRA','CAN_BO_KIEM_DINH','QUAN_TRI_HE_THONG')")
+    @PreAuthorize("hasAnyRole('LD_ATVSTP','CB_THANH_TRA','CB_KIEM_DINH','QTH')")
     public ResponseEntity<ApiResponse<Page<BaoCaoResponse>>> getAllBaoCao(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String resultFilter,
@@ -31,19 +31,19 @@ public class BaoCaoController {
     }
 
     @GetMapping("/thong-ke")
-    @PreAuthorize("hasAnyRole('LD_ATVSTP','CAN_BO_THANH_TRA','CAN_BO_KIEM_DINH','QUAN_TRI_HE_THONG')")
+    @PreAuthorize("hasAnyRole('LD_ATVSTP','CB_THANH_TRA','CB_KIEM_DINH','QTH')")
     public ResponseEntity<ApiResponse<com.danang.safefood.dto.response.BaoCaoStatsResponse>> getStats() {
         return ResponseEntity.ok(ApiResponse.success(baoCaoService.getStats()));
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('LD_ATVSTP','CAN_BO_THANH_TRA','CAN_BO_KIEM_DINH','QUAN_TRI_HE_THONG')")
+    @PreAuthorize("hasAnyRole('LD_ATVSTP','CB_THANH_TRA','CB_KIEM_DINH','QTH')")
     public ResponseEntity<ApiResponse<BaoCaoResponse>> getBaoCaoById(@PathVariable String id) {
         return ResponseEntity.ok(ApiResponse.success(baoCaoService.getBaoCaoById(id)));
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('LD_ATVSTP','CAN_BO_THANH_TRA','CAN_BO_KIEM_DINH','QUAN_TRI_HE_THONG')")
+    @PreAuthorize("hasAnyRole('LD_ATVSTP','CB_THANH_TRA','CB_KIEM_DINH','QTH')")
     public ResponseEntity<ApiResponse<BaoCaoResponse>> createBaoCao(
             @Valid @RequestBody BaoCaoRequest req) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -51,7 +51,7 @@ public class BaoCaoController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('LD_ATVSTP','CAN_BO_THANH_TRA','CAN_BO_KIEM_DINH','QUAN_TRI_HE_THONG')")
+    @PreAuthorize("hasAnyRole('LD_ATVSTP','CB_THANH_TRA','CB_KIEM_DINH','QTH')")
     public ResponseEntity<ApiResponse<BaoCaoResponse>> updateBaoCao(
             @PathVariable String id,
             @Valid @RequestBody BaoCaoRequest req) {
@@ -59,7 +59,7 @@ public class BaoCaoController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('LD_ATVSTP','CAN_BO_THANH_TRA','CAN_BO_KIEM_DINH','QUAN_TRI_HE_THONG')")
+    @PreAuthorize("hasAnyRole('LD_ATVSTP','CB_THANH_TRA','CB_KIEM_DINH','QTH')")
     public ResponseEntity<ApiResponse<Void>> deleteBaoCao(@PathVariable String id) {
         baoCaoService.deleteBaoCao(id);
         return ResponseEntity.ok(ApiResponse.success("Xóa báo cáo thành công", null));

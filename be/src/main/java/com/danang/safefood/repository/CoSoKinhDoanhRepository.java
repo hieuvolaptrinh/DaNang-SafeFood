@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface CoSoKinhDoanhRepository extends JpaRepository<CoSoKinhDoanh, String> {
+    java.util.Optional<CoSoKinhDoanh> findFirstByTenCoSo(String tenCoSo);
 
     Page<CoSoKinhDoanh> findAllByOrderByTenCoSoAsc(Pageable pageable);
 
