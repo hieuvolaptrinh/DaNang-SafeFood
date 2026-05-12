@@ -12,9 +12,12 @@ import java.util.List;
 public interface HoSoThanhTraRepository extends JpaRepository<HoSoThanhTra, String> {
 
     @Query("SELECT h FROM HoSoThanhTra h " +
-           "WHERE (:keyword IS NULL OR LOWER(h.maHoSo) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(h.lichThanhTra.coSoKinhDoanh.tenCoSo) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+           "LEFT JOIN h.lichThanhTra ltt " +
+           "LEFT JOIN ltt.coSoKinhDoanh cskd " +
+           "LEFT JOIN ltt.nguoiPhuTrach npt " +
+           "WHERE (:keyword IS NULL OR LOWER(h.maHoSo) LIKE LOWER(CONCAT('%', CAST(:keyword AS String), '%')) OR LOWER(cskd.tenCoSo) LIKE LOWER(CONCAT('%', CAST(:keyword AS String), '%'))) " +
            "AND (:resultFilter IS NULL OR h.ketLuan = :resultFilter) " +
-           "AND (:inspectorFilter IS NULL OR LOWER(h.lichThanhTra.nguoiPhuTrach.hoTen) LIKE LOWER(CONCAT('%', :inspectorFilter, '%')))")
+           "AND (:inspectorFilter IS NULL OR LOWER(npt.hoTen) LIKE LOWER(CONCAT('%', CAST(:inspectorFilter AS String), '%')))")
     Page<HoSoThanhTra> searchHoSo(
             @Param("keyword") String keyword, 
             @Param("resultFilter") String resultFilter, 

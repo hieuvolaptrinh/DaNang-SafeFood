@@ -28,7 +28,12 @@ public record JwtPrincipal(
         String email,
         String phone,
         List<String> roles
-) {
+) implements java.security.Principal {
+    
+    @Override
+    public String getName() {
+        return this.username;
+    }
     @SuppressWarnings("unchecked")
     public static JwtPrincipal fromClaims(Claims claims) {
         return new JwtPrincipal(
