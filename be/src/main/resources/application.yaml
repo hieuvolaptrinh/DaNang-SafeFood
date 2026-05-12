@@ -8,9 +8,9 @@ spring:
       port: ${REDIS_PORT:6379}
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/danang_safefood
-    username: postgres
-    password: 123456
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/danang_safe_food}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:123456}
 
   mail:
     host: smtp.gmail.com

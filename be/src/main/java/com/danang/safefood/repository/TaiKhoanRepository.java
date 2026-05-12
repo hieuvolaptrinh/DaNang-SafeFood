@@ -8,32 +8,35 @@ import java.util.Optional;
 
 public interface TaiKhoanRepository extends JpaRepository<TaiKhoan, Long> {
     @Query("""
-        SELECT DISTINCT tk
-        FROM TaiKhoan tk
-        LEFT JOIN FETCH tk.quyenHanNguoiDungList qhnd
-        LEFT JOIN FETCH qhnd.quyenHan
-        WHERE tk.username = :username
-    """)
+                SELECT DISTINCT tk
+                FROM TaiKhoan tk
+                LEFT JOIN FETCH tk.quyenHanNguoiDungList qhnd
+                LEFT JOIN FETCH qhnd.quyenHan
+                WHERE tk.username = :username
+            """)
     Optional<TaiKhoan> findByUsername(String username);
+
     boolean existsByUsername(String username);
+
     boolean existsByEmail(String email);
 
+    boolean existsByPhone(String phone);
+
     @Query("""
-        SELECT DISTINCT tk
-        FROM TaiKhoan tk
-        LEFT JOIN FETCH tk.quyenHanNguoiDungList qhnd
-        LEFT JOIN FETCH qhnd.quyenHan
-        WHERE tk.email = :email
-    """)
+                SELECT DISTINCT tk
+                FROM TaiKhoan tk
+                LEFT JOIN FETCH tk.quyenHanNguoiDungList qhnd
+                LEFT JOIN FETCH qhnd.quyenHan
+                WHERE tk.email = :email
+            """)
     Optional<TaiKhoan> findByEmail(String email);
 
     @Query("""
-        SELECT DISTINCT tk
-        FROM TaiKhoan tk
-        LEFT JOIN FETCH tk.quyenHanNguoiDungList qhnd
-        LEFT JOIN FETCH qhnd.quyenHan
-        WHERE tk.email = :identifier OR tk.phone = :identifier
-    """)
+                SELECT DISTINCT tk
+                FROM TaiKhoan tk
+                LEFT JOIN FETCH tk.quyenHanNguoiDungList qhnd
+                LEFT JOIN FETCH qhnd.quyenHan
+                WHERE tk.email = :identifier OR tk.phone = :identifier
+            """)
     Optional<TaiKhoan> findByEmailOrPhone(String identifier);
 }
-

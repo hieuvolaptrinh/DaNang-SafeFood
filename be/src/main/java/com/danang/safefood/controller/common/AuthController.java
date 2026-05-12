@@ -5,10 +5,13 @@ import com.danang.safefood.dto.auth.AuthResponse;
 import com.danang.safefood.dto.auth.MobileAuthRequest;
 import com.danang.safefood.dto.auth.RefreshTokenRequest;
 import com.danang.safefood.dto.request.ForgotPasswordRequest;
+import com.danang.safefood.dto.request.RegisterSendOtpRequest;
+import com.danang.safefood.dto.request.RegisterVerifyRequest;
 import com.danang.safefood.dto.request.ResetPasswordRequest;
 import com.danang.safefood.dto.response.ApiResponse;
 import com.danang.safefood.service.AuthenticationService;
 import com.danang.safefood.service.ForgotPasswordService;
+import com.danang.safefood.service.RegisterService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -24,20 +27,50 @@ public class AuthController {
 
     private final AuthenticationService authenticationService;
     private final ForgotPasswordService forgotPasswordService;
+    private final RegisterService registerService;
 
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody AuthRequest request) {
-        return ResponseEntity.ok(ApiResponse.success(authenticationService.login(request.username(), request.password())));
+        return ResponseEntity
+                .ok(ApiResponse.success(authenticationService.login(request.username(), request.password())));
     }
 
     @PostMapping("/login-mobile")
     public ResponseEntity<ApiResponse<AuthResponse>> loginMobile(@Valid @RequestBody MobileAuthRequest request) {
-        return ResponseEntity.ok(ApiResponse.success(authenticationService.loginMobile(request.identifier(), request.password())));
+        return ResponseEntity
+                .ok(ApiResponse.success(authenticationService.loginMobile(request.identifier(), request.password())));
     }
 
     @PostMapping("/refresh-token")
     public ResponseEntity<ApiResponse<AuthResponse>> refreshToken(@Valid @RequestBody RefreshTokenRequest request) {
         return ResponseEntity.ok(ApiResponse.success(authenticationService.refreshToken(request.refreshToken())));
+    }
+
+    /**
+     * Gửi OTP xác nhận đăng ký.
+     */
+    @PostMapping("/register/send-otp")
+    public ResponseEntity<ApiResponse<String>> sendRegisterOtp(@Valid @RequestBody RegisterSendOtpRequest request) {
+        try {
+            String email = registerService.sendOtp(request.email());
+            return ResponseEntity.ok(ApiResponse.success("Mã OTP đã được gửi đến email của bạn.", email));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(400, e.getMessage()));
+        }
+    }
+
+    /**
+     * Xác thực OTP và tạo tài khoản.
+     */
+    @PostMapping("/register/verify")
+    public ResponseEntity<ApiResponse<AuthResponse>> verifyRegister(
+            @Valid @RequestBody RegisterVerifyRequest request) {
+        try {
+            AuthResponse response = registerService.verifyOtpAndRegister(request);
+            return ResponseEntity.ok(ApiResponse.success("Đăng ký thành công.", response));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(400, e.getMessage()));
+        }
     }
 
     /**
@@ -60,8 +93,7 @@ public class AuthController {
     public ResponseEntity<ApiResponse<Void>> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
         try {
             forgotPasswordService.verifyOtpAndResetPassword(
-                    request.email(), request.otp(), request.newPassword()
-            );
+                    request.email(), request.otp(), request.newPassword());
             return ResponseEntity.ok(ApiResponse.success("Đặt lại mật khẩu thành công.", null));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(400, e.getMessage()));

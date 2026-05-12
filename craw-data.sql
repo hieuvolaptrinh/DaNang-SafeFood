@@ -1,6 +1,6 @@
 
 TRUNCATE TABLE file_dinh_kem, hinh_thuc_khac_phuc, minh_chung_khac_phuc, vi_pham, loai_vi_pham,
-               bao_cao, kq_danh_gia, tieu_chi_danh_gia, dam_nhan_kiem_ngiem, mau_chi_tieu,
+               bao_cao, kq_danh_gia, tieu_chi_danh_gia, dam_nhan_kiem_nghiem, mau_chi_tieu,
                mau_kiem_nghiem, chi_tieu_kiem_nghiem, khieu_nai, giay_phep, phan_anh,
                loai_phan_anh, chung_nhan_atvstp, ho_so_dang_ki_kinh_doanh, chi_nhanh,
                lich_thanh_tra_nguoi_dung, lich_thanh_tra, co_so_loai_hinh, co_so_kinh_doanh,
@@ -33,7 +33,7 @@ INSERT INTO nguoi_dung (maNguoiDung, hoTen,  gioiTinh, CCCD, taiKhoanId) VALUES
 ('ND001', 'Administrator',  'Nam', '012345678901', 1),
 ('ND002', 'Lãnh đạo ATVSTP',  'Nữ', '012345678902', 2),
 ('ND003', 'Cán bộ Thanh tra',  'Nam', '012345678903', 3),
-('ND004', 'Cán bộ Kiểm định', , 'Nam', '012345678904', 4),
+('ND004', 'Cán bộ Kiểm định', 'Nam', '012345678904', 4),
 ('ND005', 'Nguyễn Văn A',  'Nam', '012345678905', 5),
 ('ND006', 'Nguyễn Văn B',  'Nam', '012345678906', 6);
 
@@ -104,7 +104,7 @@ INSERT INTO chi_nhanh (maChiNhanh, diaChi, soDienThoai, trangThai, maCoSo, lianT
     ('CN005', '99 Lê Duẩn, Hải Châu, Đà Nẵng',      '02363456793', 'Đang hoạt động', 'CS005', 'LTT005');
 
 -- [14] HoSoDangKiKinhDoanh
-INSERT INTO ho_so_kinh_doanh (maHoSo, ngayNop, trangThai, maCoSo) VALUES
+INSERT INTO ho_so_dang_ki_kinh_doanh (maHoSo, ngayNop, trangThai, maCoSo) VALUES
     ('HSD001', '2022-01-10', 'Đã duyệt','CS001'),
     ('HSD002', '2022-03-15', 'Đã duyệt','CS002'),
     ('HSD003', '2023-02-20', 'Đã duyệt','CS003'),

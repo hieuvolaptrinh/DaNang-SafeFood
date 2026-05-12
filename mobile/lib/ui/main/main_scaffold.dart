@@ -124,10 +124,26 @@ class _MainScaffoldState extends State<MainScaffold> {
       ),
     );
 
+    final commonSearch = _TabInfo(
+      page: const SearchPage(),
+      navItem: const BottomNavigationBarItem(
+        icon: Padding(
+          padding: EdgeInsets.only(bottom: 4),
+          child: Icon(Icons.search_outlined, size: 24),
+        ),
+        activeIcon: Padding(
+          padding: EdgeInsets.only(bottom: 4),
+          child: Icon(Icons.search_rounded, size: 26),
+        ),
+        label: 'Tra cứu',
+      ),
+    );
+
     if (authState.isCSKD) {
-      // ── CSKD: Trang chủ | Kinh doanh | Hồ sơ | Cá nhân ──
+      // ── CSKD: Trang chủ | Tra cứu | Kinh doanh | Pháp lý | Cá nhân ──
       return [
         commonHome,
+        commonSearch,
         _TabInfo(
           page: const BusinessManagementPage(),
           navItem: const BottomNavigationBarItem(
@@ -163,20 +179,7 @@ class _MainScaffoldState extends State<MainScaffold> {
     // ── NTD (default): Trang chủ | Tra cứu | Phản ánh | Cá nhân ──
     return [
       commonHome,
-      _TabInfo(
-        page: const SearchPage(),
-        navItem: const BottomNavigationBarItem(
-          icon: Padding(
-            padding: EdgeInsets.only(bottom: 4),
-            child: Icon(Icons.search_outlined, size: 24),
-          ),
-          activeIcon: Padding(
-            padding: EdgeInsets.only(bottom: 4),
-            child: Icon(Icons.search_rounded, size: 26),
-          ),
-          label: 'Tra cứu',
-        ),
-      ),
+      commonSearch,
       _TabInfo(
         page: const ComplaintPage(),
         navItem: const BottomNavigationBarItem(
@@ -202,4 +205,3 @@ class _TabInfo {
 
   const _TabInfo({required this.page, required this.navItem});
 }
-

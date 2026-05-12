@@ -15,60 +15,185 @@ class BusinessStatusPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_rounded, size: 20),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          'Tình trạng pháp lý',
-          style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600),
+      backgroundColor: AppTheme.background,
+      body: SafeArea(
+        child: BlocBuilder<BusinessStatusCubit, BusinessStatusState>(
+          builder: (context, state) {
+            if (state.status == BusinessStatusType.loading) {
+              return const Center(
+                child: CircularProgressIndicator(color: AppTheme.primary),
+              );
+            }
+
+            if (state.status == BusinessStatusType.error) {
+              return ErrorStateView(
+                message: 'Không thể tải thông tin lúc này, thử lại sau',
+                onRetry: () =>
+                    context.read<BusinessStatusCubit>().loadDocuments(),
+              );
+            }
+
+            // Trường hợp E1: Empty
+            if (state.status == BusinessStatusType.empty ||
+                (state.status == BusinessStatusType.loaded &&
+                    state.documents.isEmpty)) {
+              return const EmptyStateView(
+                icon: Icons.shield_outlined,
+                title: 'Chưa có thông tin pháp lý',
+                subtitle:
+                    'Thông tin pháp lý của cơ sở đang được cập nhật, vui lòng quay lại sau.',
+              );
+            }
+
+            return RefreshIndicator(
+              onRefresh: () => context.read<BusinessStatusCubit>().refresh(),
+              color: AppTheme.primary,
+              child: CustomScrollView(
+                slivers: [
+                  // Header
+                  SliverToBoxAdapter(
+                    child: Container(
+                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Tình trạng pháp lý',
+                            style: GoogleFonts.inter(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w700,
+                              color: AppTheme.textPrimary,
+                              height: 1.2,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Quản lý giấy phép và chứng nhận của cơ sở',
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              color: AppTheme.textSecondary,
+                              height: 1.4,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  // Summary Card
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+                      child: _SummaryCard(documents: state.documents),
+                    ),
+                  ),
+                  // Document List
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                    sliver: SliverList(
+                      delegate: SliverChildBuilderDelegate((context, index) {
+                        final doc = state.documents[index];
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: _DocumentCard(data: doc),
+                        );
+                      }, childCount: state.documents.length),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
         ),
       ),
-      body: BlocBuilder<BusinessStatusCubit, BusinessStatusState>(
-        builder: (context, state) {
-          if (state.status == BusinessStatusType.loading) {
-            return const Center(
-              child: CircularProgressIndicator(color: AppTheme.primary),
-            );
-          }
+    );
+  }
+}
 
-          if (state.status == BusinessStatusType.error) {
-            return ErrorStateView(
-              message: 'Không thể tải thông tin lúc này, thử lại sau',
-              onRetry: () => context.read<BusinessStatusCubit>().loadDocuments(),
-            );
-          }
+class _SummaryCard extends StatelessWidget {
+  final List<BusinessStatusData> documents;
 
-          // Trường hợp E1: Empty
-          if (state.status == BusinessStatusType.empty ||
-              (state.status == BusinessStatusType.loaded &&
-                  state.documents.isEmpty)) {
-            return const EmptyStateView(
-              icon: Icons.shield_outlined,
-              title: 'Chưa có thông tin pháp lý',
-              subtitle:
-                  'Thông tin pháp lý của cơ sở đang được cập nhật, vui lòng quay lại sau.',
-            );
-          }
+  const _SummaryCard({required this.documents});
 
-          return RefreshIndicator(
-            onRefresh: () => context.read<BusinessStatusCubit>().refresh(),
-            color: AppTheme.primary,
-            child: ListView.builder(
-              padding: const EdgeInsets.all(20),
-              itemCount: state.documents.length,
-              itemBuilder: (context, index) {
-                final doc = state.documents[index];
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: _DocumentCard(data: doc),
-                );
-              },
+  @override
+  Widget build(BuildContext context) {
+    final active = documents.where((d) => d.status == 'active').length;
+    final expired = documents.where((d) => d.status == 'expired').length;
+    final revoked = documents.where((d) => d.status == 'revoked').length;
+
+    return AppCard(
+      child: Row(
+        children: [
+          Expanded(
+            child: _SummaryItem(
+              icon: Icons.check_circle_outline,
+              iconColor: AppTheme.success,
+              label: 'Còn hiệu lực',
+              value: active.toString(),
             ),
-          );
-        },
+          ),
+          Container(width: 1, height: 40, color: AppTheme.dividerColor),
+          Expanded(
+            child: _SummaryItem(
+              icon: Icons.warning_amber_rounded,
+              iconColor: AppTheme.warning,
+              label: 'Hết hạn',
+              value: expired.toString(),
+            ),
+          ),
+          Container(width: 1, height: 40, color: AppTheme.dividerColor),
+          Expanded(
+            child: _SummaryItem(
+              icon: Icons.cancel_outlined,
+              iconColor: AppTheme.error,
+              label: 'Thu hồi',
+              value: revoked.toString(),
+            ),
+          ),
+        ],
       ),
+    );
+  }
+}
+
+class _SummaryItem extends StatelessWidget {
+  final IconData icon;
+  final Color iconColor;
+  final String label;
+  final String value;
+
+  const _SummaryItem({
+    required this.icon,
+    required this.iconColor,
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Icon(icon, color: iconColor, size: 24),
+        const SizedBox(height: 6),
+        Text(
+          value,
+          style: GoogleFonts.inter(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            color: AppTheme.textPrimary,
+            height: 1.2,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: 11,
+            color: AppTheme.textSecondary,
+            height: 1.3,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ],
     );
   }
 }
@@ -93,22 +218,25 @@ class _DocumentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final statusColor = _getStatusColor(data.status);
+
     return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Header với status badge
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: AppTheme.primary.withValues(alpha: 0.1),
+                  color: statusColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(
-                  Icons.verified_user_outlined,
-                  color: AppTheme.primary,
+                child: Icon(
+                  _getStatusIcon(data.status),
+                  color: statusColor,
                   size: 22,
                 ),
               ),
@@ -117,21 +245,42 @@ class _DocumentCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      data.title,
-                      style: GoogleFonts.inter(
-                        color: AppTheme.textPrimary,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        height: 1.3,
-                      ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            data.title,
+                            style: GoogleFonts.inter(
+                              color: AppTheme.textPrimary,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              height: 1.3,
+                            ),
+                          ),
+                        ),
+                        StatusBadge(
+                          status: _mapStatus(data.status),
+                          customLabel: data.statusLabel,
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Số: ${data.licenseNumber}',
-                      style: GoogleFonts.inter(
-                        color: AppTheme.textSecondary,
-                        fontSize: 12,
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppTheme.background,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        'Số: ${data.licenseNumber}',
+                        style: GoogleFonts.inter(
+                          color: AppTheme.textSecondary,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
                   ],
@@ -142,56 +291,107 @@ class _DocumentCard extends StatelessWidget {
           const SizedBox(height: 16),
           Divider(color: AppTheme.dividerColor, height: 1),
           const SizedBox(height: 14),
+          // Thông tin ngày tháng
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Ngày cấp',
-                    style: GoogleFonts.inter(
-                      color: AppTheme.textSecondary,
-                      fontSize: 11,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    data.issueDate,
-                    style: GoogleFonts.inter(
-                      color: AppTheme.textPrimary,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
+              Expanded(
+                child: _InfoItem(
+                  icon: Icons.calendar_today_outlined,
+                  label: 'Ngày cấp',
+                  value: data.issueDate,
+                ),
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Ngày hết hạn',
-                    style: GoogleFonts.inter(
-                      color: AppTheme.textSecondary,
-                      fontSize: 11,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    data.expiryDate,
-                    style: GoogleFonts.inter(
-                      color: AppTheme.textPrimary,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-              StatusBadge(
-                status: _mapStatus(data.status),
-                customLabel: data.statusLabel,
+              const SizedBox(width: 12),
+              Expanded(
+                child: _InfoItem(
+                  icon: Icons.event_outlined,
+                  label: 'Hết hạn',
+                  value: data.expiryDate,
+                  valueColor: data.status == 'expired'
+                      ? AppTheme.error
+                      : AppTheme.textPrimary,
+                ),
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'active':
+        return AppTheme.success;
+      case 'expired':
+        return AppTheme.warning;
+      case 'revoked':
+        return AppTheme.error;
+      default:
+        return AppTheme.textSecondary;
+    }
+  }
+
+  IconData _getStatusIcon(String status) {
+    switch (status) {
+      case 'active':
+        return Icons.verified_user_outlined;
+      case 'expired':
+        return Icons.warning_amber_rounded;
+      case 'revoked':
+        return Icons.block_outlined;
+      default:
+        return Icons.description_outlined;
+    }
+  }
+}
+
+class _InfoItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color? valueColor;
+
+  const _InfoItem({
+    required this.icon,
+    required this.label,
+    required this.value,
+    this.valueColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppTheme.background,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 14, color: AppTheme.textSecondary),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: GoogleFonts.inter(
+                  color: AppTheme.textSecondary,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: GoogleFonts.inter(
+              color: valueColor ?? AppTheme.textPrimary,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),
