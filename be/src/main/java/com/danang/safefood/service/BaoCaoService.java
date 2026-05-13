@@ -46,7 +46,7 @@ public class BaoCaoService {
         LichThanhTra lich = new LichThanhTra();
         lich.setMaThanhTra(IdGenerator.generate("TT"));
         lich.setCoSoKinhDoanh(coSo);
-        lich.setTrangThai("Đã hoàn thành");
+        lich.setTrangThai("Hoàn thành");
         lich.setNoiDung(req.inspectionType());
         lich.setNguoiPhuTrach(currentUser);
         lich = lichThanhTraRepository.save(lich);

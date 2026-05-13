@@ -11,4 +11,39 @@ public interface LichThanhTraNguoiDungRepository
     List<LichThanhTraNguoiDung> findByMaThanhTra(String maThanhTra);
 
     boolean existsByMaThanhTraAndMaNguoiThanhTra(String maThanhTra, String maNguoiThanhTra);
+
+    @org.springframework.data.jpa.repository.Query("SELECT COUNT(ln) FROM LichThanhTraNguoiDung ln " +
+            "WHERE ln.maNguoiThanhTra = :maNguoiThanhTra")
+    long countTongSoNhiemVu(@org.springframework.data.repository.query.Param("maNguoiThanhTra") String maNguoiThanhTra);
+
+    @org.springframework.data.jpa.repository.Query("SELECT COUNT(ln) FROM LichThanhTraNguoiDung ln " +
+            "WHERE ln.maNguoiThanhTra = :maNguoiThanhTra AND ln.trangThai = :trangThai")
+    long countNhiemVuByTrangThai(@org.springframework.data.repository.query.Param("maNguoiThanhTra") String maNguoiThanhTra, 
+                                 @org.springframework.data.repository.query.Param("trangThai") String trangThai);
+
+    @org.springframework.data.jpa.repository.Query(
+            value = "SELECT ln FROM LichThanhTraNguoiDung ln " +
+                    "LEFT JOIN FETCH ln.lichThanhTra l " +
+                    "LEFT JOIN FETCH l.coSoKinhDoanh c " +
+                    "LEFT JOIN FETCH l.nguoiPhuTrach n " +
+                    "WHERE ln.maNguoiThanhTra = :maNguoiThanhTra " +
+                    "AND (:trangThai IS NULL OR ln.trangThai = :trangThai) " +
+                    "AND (:keyword IS NULL OR " +
+                    "     LOWER(CAST(l.maThanhTra AS String)) LIKE LOWER(CONCAT('%', CAST(:keyword AS String), '%')) OR " +
+                    "     LOWER(CAST(c.tenCoSo AS String)) LIKE LOWER(CONCAT('%', CAST(:keyword AS String), '%'))) " +
+                    "ORDER BY ln.thoiGianTT DESC",
+            countQuery = "SELECT COUNT(ln) FROM LichThanhTraNguoiDung ln " +
+                    "LEFT JOIN ln.lichThanhTra l " +
+                    "LEFT JOIN l.coSoKinhDoanh c " +
+                    "WHERE ln.maNguoiThanhTra = :maNguoiThanhTra " +
+                    "AND (:trangThai IS NULL OR ln.trangThai = :trangThai) " +
+                    "AND (:keyword IS NULL OR " +
+                    "     LOWER(CAST(l.maThanhTra AS String)) LIKE LOWER(CONCAT('%', CAST(:keyword AS String), '%')) OR " +
+                    "     LOWER(CAST(c.tenCoSo AS String)) LIKE LOWER(CONCAT('%', CAST(:keyword AS String), '%')))"
+    )
+    org.springframework.data.domain.Page<LichThanhTraNguoiDung> searchNhiemVu(
+            @org.springframework.data.repository.query.Param("maNguoiThanhTra") String maNguoiThanhTra,
+            @org.springframework.data.repository.query.Param("keyword") String keyword,
+            @org.springframework.data.repository.query.Param("trangThai") String trangThai,
+            org.springframework.data.domain.Pageable pageable);
 }

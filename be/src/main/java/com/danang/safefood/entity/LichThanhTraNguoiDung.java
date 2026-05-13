@@ -26,6 +26,12 @@ public class LichThanhTraNguoiDung {
     @Column(name = "thoiGianTT")
     private LocalDateTime thoiGianTT;
 
+    @Column(name = "trangThai", length = 30)
+    private String trangThai;
+
+    @Column(name = "ghiChu", columnDefinition = "text")
+    private String ghiChu;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "maThanhTra", insertable = false, updatable = false)
     private LichThanhTra lichThanhTra;
