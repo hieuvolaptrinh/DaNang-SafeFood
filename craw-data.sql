@@ -59,7 +59,9 @@ INSERT INTO phuong_xa (maPX, TenPhuongXa) VALUES
 INSERT INTO co_so_kinh_doanh (maCoSo, tenCoSo, soGiayPhep, maCoSoTrue, ngayHetHanGiayPhep, trangThai, maChuSoHuu,anhBia, maPX) VALUES
 ('CS001', 'Nhà hàng Sông Hàn', 'GP-2022-001', 'CS001', '2025-12-31', 'Hoat dong', 'ND006', 'https://res.cloudinary.com/dt7ekojue/image/upload/v1778601100/bien-quang-cao-quan-an-sang-1_qnxymu.jpg', 'PX001'),
 ('CS002', 'Quán Cơm Miền Trung', 'GP-2022-002', 'CS002', '2025-06-30', 'Hoat dong', 'ND006', 'https://res.cloudinary.com/dt7ekojue/image/upload/v1778601101/2-bien-quang-cao-quan-an-sang-co-day-du-thong-tin-ve-mon-an-va-ten-quan_lldjkh.jpg', 'PX002'),
-('CS003', 'Cơ sở chế biến Thủy Sản ABC', 'GP-2023-003', 'CS003', '2026-03-15', 'Hoat dong', 'ND006', 'https://res.cloudinary.com/dt7ekojue/image/upload/v1778601108/truong-cd-sp-kt-da-nang_difjjv.png', 'PX003');
+('CS003', 'Cơ sở chế biến Thủy Sản ABC', 'GP-2023-003', 'CS003', '2026-03-15', 'Hoat dong', 'ND006', 'https://res.cloudinary.com/dt7ekojue/image/upload/v1778601108/truong-cd-sp-kt-da-nang_difjjv.png', 'PX003'),
+('CS004', 'Chi nhánh Nhà hàng Sông Hàn', 'GP-2023-004', 'CS001', '2026-06-30', 'Hoat dong', 'ND006', 'https://res.cloudinary.com/dt7ekojue/image/upload/v1778601100/bien-quang-cao-quan-an-sang-1_qnxymu.jpg', 'PX001'),
+('CS005', 'Quán ăn bình dân Thần Tốc', 'GP-2023-005', 'CS005', '2026-09-30', 'Hoat dong', 'ND006', 'https://res.cloudinary.com/dt7ekojue/image/upload/v1778601101/2-bien-quang-cao-quan-an-sang-co-day-du-thong-tin-ve-mon-an-va-ten-quan_lldjkh.jpg', 'PX002');
 
 -- [7] Loại hình kinh doanh
 INSERT INTO loai_hinh_kinh_doanh (maLoaiHinhKinhDoanh, tenLoaiHinhKinhDoanh, moTa) VALUES
@@ -73,7 +75,9 @@ INSERT INTO loai_hinh_kinh_doanh (maLoaiHinhKinhDoanh, tenLoaiHinhKinhDoanh, moT
 INSERT INTO co_so_loai_hinh (maCoSo, maLoaiHinhKinhDoanh) VALUES
 ('CS001', 'LH001'),
 ('CS002', 'LH002'),
-('CS003', 'LH003');
+('CS003', 'LH003'),
+('CS004', 'LH001'),
+('CS005', 'LH002');
 
 -- [11] LichThanhTra
 INSERT INTO lich_thanh_tra (maThanhTra, maCoSo, maNguoiThanhTra, trangThai, noiDung) VALUES
@@ -84,11 +88,11 @@ INSERT INTO lich_thanh_tra (maThanhTra, maCoSo, maNguoiThanhTra, trangThai, noiD
     ('LTT005', 'CS005', 'ND003', 'Chưa nhận',  'Thanh tra định kỳ quý III/2025');
 
 -- [12] LichThanhTra_NguoiDung
-INSERT INTO lich_thanh_tra_nguoi_dung (maThanhTra, maNguoiThanhTra, thoiGianTT) VALUES
-    ('LTT001', 'ND002', '2025-04-15 08:00:00'),
-    ('LTT001', 'ND003', '2025-04-15 08:00:00'),
-    ('LTT002', 'ND002', '2025-05-20 09:00:00'),
-    ('LTT003', 'ND003', '2025-05-10 08:30:00');
+INSERT INTO lich_thanh_tra_nguoi_dung (maThanhTra, maNguoiThanhTra, thoiGianTT, trangThai, ghiChu) VALUES
+    ('LTT001', 'ND002', '2025-04-15 08:00:00', 'Đã nhận', NULL),
+    ('LTT001', 'ND003', '2025-04-15 08:00:00', 'Chưa nhận', NULL),
+    ('LTT002', 'ND002', '2025-05-20 09:00:00', 'Đang thực hiện', NULL),
+    ('LTT003', 'ND003', '2025-05-10 08:30:00', 'Hoàn thành', NULL);
 
 -- [13] ChiNhanh
 INSERT INTO chi_nhanh (maChiNhanh, diaChi, soDienThoai, trangThai, maCoSo, lianThanhTraGanNhat) VALUES
@@ -132,10 +136,12 @@ INSERT INTO giay_phep (maGiayPhep, loaiGiayPhep, trangThai, ngayCap, ngayHetHan,
     ('GP003', 'Giấy phép sản xuất thực phẩm',    'Còn hiệu lực', '2023-02-25', '2026-02-25', 'CS003');
 
 -- [19] HoSoThanhTra
-INSERT INTO ho_so_thanh_tra (maHoSo, maThanhTra, diem, tinhTrangViPham, KetLuan, NhanXetChung, BienPhapXuLy, KienNghi) VALUES
-    ('HSTT001', 'LTT001', 85.0, 'Có vi phạm nhỏ',   'Cơ sở đạt tiêu chuẩn nhưng cần khắc phục một số điểm nhỏ', 'Nhìn chung vệ sinh tốt',         'Yêu cầu bổ sung biển cảnh báo',     'Tăng cường kiểm tra định kỳ'),
-    ('HSTT002', 'LTT002', 60.0, 'Vi phạm nghiêm trọng', 'Cơ sở vi phạm nhiều điều khoản về vệ sinh',             'Nhiều hạng mục không đạt chuẩn',  'Đình chỉ hoạt động tạm thời',       'Kiểm tra lại sau 30 ngày'),
-    ('HSTT003', 'LTT003', 92.0, 'Không vi phạm',    'Cơ sở đạt xuất sắc các tiêu chí',                          'Hệ thống VSATTP được duy trì tốt', 'Không cần biện pháp xử lý',        'Tiếp tục duy trì');
+INSERT INTO ho_so_thanh_tra (maHoSo, maThanhTra, diem, tinhTrangViPham, KetLuan, NhanXetChung, BienPhapXuLy, KienNghi, thoiGianKiemTra) VALUES
+    ('HSTT001', 'LTT001', 85.0, 'Có vi phạm nhỏ',   'Cơ sở đạt tiêu chuẩn nhưng cần khắc phục một số điểm nhỏ', 'Nhìn chung vệ sinh tốt',         'Yêu cầu bổ sung biển cảnh báo',     'Tăng cường kiểm tra định kỳ', '2025-04-15 08:30:00'),
+    ('HSTT002', 'LTT002', 60.0, 'Vi phạm nghiêm trọng', 'Cơ sở vi phạm nhiều điều khoản về vệ sinh',             'Nhiều hạng mục không đạt chuẩn',  'Đình chỉ hoạt động tạm thời',       'Kiểm tra lại sau 30 ngày', '2025-05-20 09:15:00'),
+    ('HSTT003', 'LTT003', 92.0, 'Không vi phạm',    'Cơ sở đạt xuất sắc các tiêu chí',                          'Hệ thống VSATTP được duy trì tốt', 'Không cần biện pháp xử lý',        'Tiếp tục duy trì', '2025-05-10 09:00:00'),
+    ('HSTT004', 'LTT004', 78.0, 'Có vi phạm nhỏ',   'Chi nhánh đạt tiêu chuẩn nhưng cần khắc phục bảo quản lạnh', 'Thiết bị bảo quản cần bảo trì',  'Yêu cầu kiểm tra thiết bị trong 14 ngày', 'Kiểm tra lại sau 14 ngày', '2025-06-01 08:45:00'),
+    ('HSTT005', 'LTT005', 88.0, 'Có vi phạm nhỏ',   'Cơ sở đạt tiêu chuẩn tốt, chỉ có vi phạm nhỏ lẻ',          'Vi phạm nhỏ đã được nhắc nhở',   'Không cần biện pháp xử lý',         'Tiếp tục duy trì chất lượng', '2025-06-03 08:00:00');
 -- [20] LoaiViPham
 INSERT INTO loai_vi_pham (maLoaiViPham, tenLoaiViPham, moTaThem) VALUES
     ('LVP001', 'Vi phạm vệ sinh cơ sở',        'Không đảm bảo điều kiện vệ sinh nhà xưởng, khu chế biến'),
@@ -223,12 +229,12 @@ INSERT INTO kq_danh_gia (maHoSo, MaTieuChi, KetQuaDanhGia) VALUES
     ('HSTT003', 'TC005', 'Đạt – 20/20 điểm');
 
 -- [31] BaoCao
-INSERT INTO bao_cao (maBaoCao, maHoSo, NoiDung, nhanXet) VALUES
-    ('BC001', 'HSTT001', 'Báo cáo đợt thanh tra tháng 4 năm 2025 tại Nhà hàng Sông Hàn. Kết quả đạt 85/100 điểm.',         'Cơ sở hoạt động tốt, cần cải thiện khu vực sàn'),
-    ('BC002', 'HSTT002', 'Báo cáo đợt thanh tra đột xuất tháng 5 năm 2025 tại Quán Cơm Miền Trung. Nhiều vi phạm.',       'Kiến nghị đình chỉ tạm thời để khắc phục'),
-    ('BC003', 'HSTT003', 'Báo cáo đợt thanh tra định kỳ tháng 5 năm 2025 tại Cơ sở Thủy Sản ABC. Đạt xuất sắc.',         'Đây là mô hình điển hình về VSATTP'),
-    ('BC004', 'HSTT004', 'Báo cáo đợt thanh tra chi nhánh tháng 6 năm 2025. Phát hiện vi phạm bảo quản lạnh.',            'Yêu cầu khắc phục thiết bị trong 14 ngày'),
-    ('BC005', 'HSTT005', 'Báo cáo sơ bộ đợt thanh tra quý III/2025 tại Bánh mỳ Đà Nẵng Express.',                         'Nhìn chung tốt, vi phạm nhỏ đã được nhắc nhở');
+INSERT INTO bao_cao (maBaoCao, maHoSo, NoiDung, nhanXet, tepDinhKem) VALUES
+    ('BC001', 'HSTT001', 'Báo cáo đợt thanh tra tháng 4 năm 2025 tại Nhà hàng Sông Hàn. Kết quả đạt 85/100 điểm.',         'Cơ sở hoạt động tốt, cần cải thiện khu vực sàn', NULL),
+    ('BC002', 'HSTT002', 'Báo cáo đợt thanh tra đột xuất tháng 5 năm 2025 tại Quán Cơm Miền Trung. Nhiều vi phạm.',       'Kiến nghị đình chỉ tạm thời để khắc phục', NULL),
+    ('BC003', 'HSTT003', 'Báo cáo đợt thanh tra định kỳ tháng 5 năm 2025 tại Cơ sở Thủy Sản ABC. Đạt xuất sắc.',         'Đây là mô hình điển hình về VSATTP', NULL),
+    ('BC004', 'HSTT004', 'Báo cáo đợt thanh tra chi nhánh tháng 6 năm 2025. Phát hiện vi phạm bảo quản lạnh.',            'Yêu cầu khắc phục thiết bị trong 14 ngày', NULL),
+    ('BC005', 'HSTT005', 'Báo cáo sơ bộ đợt thanh tra quý III/2025 tại Bánh mỳ Đà Nẵng Express.',                         'Nhìn chung tốt, vi phạm nhỏ đã được nhắc nhở', NULL);
 
 -- [31.5] ThongBao
 INSERT INTO thong_bao (maThongBao, tieuDe, noiDung, ngayGui, loaiThongBao, isCongDong) VALUES
