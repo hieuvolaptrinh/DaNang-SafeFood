@@ -7,25 +7,27 @@ import java.time.LocalDateTime;
 public record PhanAnhResponse(
         String maPhanAnh,
         String trangThaiPhanAnh,
+        String tieuDe,
         String lyDo,
+        String diaDiem,
         String ghiChu,
         LocalDateTime ngayGui,
         String maNguoiPhanAnh,
         String tenNguoiPhanAnh,
         String maCoSo,
-        String tenCoSo
-) {
+        String tenCoSo) {
     public static PhanAnhResponse from(PhanAnh e) {
         return new PhanAnhResponse(
                 e.getMaPhanAnh(),
                 e.getTrangThaiPhanAnh(),
+                e.getTieuDe(),
                 e.getLyDo(),
+                e.getDiaDiem(),
                 e.getGhiChu(),
                 e.getNgayGui(),
                 e.getNguoiPhanAnh() != null ? e.getNguoiPhanAnh().getMaNguoiDung() : null,
                 e.getNguoiPhanAnh() != null ? e.getNguoiPhanAnh().getHoTen() : null,
                 e.getCoSoKinhDoanh() != null ? e.getCoSoKinhDoanh().getMaCoSo() : null,
-                e.getCoSoKinhDoanh() != null ? e.getCoSoKinhDoanh().getTenCoSo() : null
-        );
+                e.getCoSoKinhDoanh() != null ? e.getCoSoKinhDoanh().getTenCoSo() : null);
     }
 }

@@ -20,8 +20,10 @@ import 'package:mobile_ui/core/utils/dio_client.dart';
 import 'package:mobile_ui/data/remote/datasource/home_remote_datasource.dart';
 import 'package:mobile_ui/data/remote/datasource/notification_datasource.dart';
 import 'package:mobile_ui/data/remote/datasource/business_remote_datasource.dart';
+import 'package:mobile_ui/data/remote/datasource/complaint_remote_datasource.dart';
 import 'package:mobile_ui/data/remote/repository/home_repository.dart';
 import 'package:mobile_ui/data/remote/repository/business_repository.dart';
+import 'package:mobile_ui/data/remote/repository/complaint_repository.dart';
 
 class MainScaffold extends StatefulWidget {
   const MainScaffold({super.key});
@@ -40,6 +42,9 @@ class _MainScaffoldState extends State<MainScaffold> {
   static final BusinessRepository _businessRepository = BusinessRepository(
     remoteDataSource: BusinessRemoteDataSource(dio: _dio),
   );
+  static final ComplaintRepository _complaintRepository = ComplaintRepository(
+    remoteDataSource: ComplaintRemoteDataSource(dio: _dio),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -56,53 +61,28 @@ class _MainScaffoldState extends State<MainScaffold> {
         BlocProvider(
           create: (_) => HomeCubit(homeRepository: _homeRepository)..loadData(),
         ),
-        BlocProvider(create: (_) => SearchCubit(businessRepository: _businessRepository)),
+        BlocProvider(
+          create: (_) => SearchCubit(businessRepository: _businessRepository),
+        ),
         BlocProvider(create: (_) => BusinessManagementCubit()..loadData()),
-        BlocProvider(create: (_) => ComplaintCubit()..loadComplaints()),
+        BlocProvider(
+          create: (_) => ComplaintCubit(repository: _complaintRepository)
+            ..loadComplaints()
+            ..loadTypes(),
+        ),
         BlocProvider(create: (_) => ProfileCubit()..loadProfile()),
         BlocProvider(create: (_) => BusinessStatusCubit()..loadDocuments()),
       ],
       child: Scaffold(
+        backgroundColor: AppTheme.scaffoldBg,
         body: IndexedStack(
           index: _currentIndex,
           children: tabs.map((t) => t.page).toList(),
         ),
-        bottomNavigationBar: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.06),
-                blurRadius: 16,
-                offset: const Offset(0, -4),
-              ),
-            ],
-          ),
-          child: SafeArea(
-            child: BottomNavigationBar(
-              currentIndex: _currentIndex,
-              onTap: (i) => setState(() => _currentIndex = i),
-              type: BottomNavigationBarType.fixed,
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              selectedItemColor: AppTheme.primary,
-              unselectedItemColor: AppTheme.textSecondary.withOpacity(0.5),
-              selectedFontSize: 12,
-              unselectedFontSize: 11,
-              iconSize: 24,
-              selectedLabelStyle: GoogleFonts.inter(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                height: 1.5,
-              ),
-              unselectedLabelStyle: GoogleFonts.inter(
-                fontSize: 11,
-                fontWeight: FontWeight.w500,
-                height: 1.5,
-              ),
-              items: tabs.map((t) => t.navItem).toList(),
-            ),
-          ),
+        bottomNavigationBar: _ModernBottomNav(
+          currentIndex: _currentIndex,
+          items: tabs.map((t) => t.navItem).toList(),
+          onTap: (i) => setState(() => _currentIndex = i),
         ),
       ),
     );
@@ -112,45 +92,27 @@ class _MainScaffoldState extends State<MainScaffold> {
   List<_TabInfo> _buildTabs(AuthState authState) {
     final commonHome = _TabInfo(
       page: const HomePage(),
-      navItem: const BottomNavigationBarItem(
-        icon: Padding(
-          padding: EdgeInsets.only(bottom: 4),
-          child: Icon(Icons.home_outlined, size: 24),
-        ),
-        activeIcon: Padding(
-          padding: EdgeInsets.only(bottom: 4),
-          child: Icon(Icons.home_rounded, size: 26),
-        ),
+      navItem: _NavItem(
+        icon: Icons.home_outlined,
+        activeIcon: Icons.home_rounded,
         label: 'Trang chủ',
       ),
     );
 
     final commonProfile = _TabInfo(
       page: const ProfilePage(),
-      navItem: const BottomNavigationBarItem(
-        icon: Padding(
-          padding: EdgeInsets.only(bottom: 4),
-          child: Icon(Icons.person_outline_rounded, size: 24),
-        ),
-        activeIcon: Padding(
-          padding: EdgeInsets.only(bottom: 4),
-          child: Icon(Icons.person_rounded, size: 26),
-        ),
+      navItem: _NavItem(
+        icon: Icons.person_outline_rounded,
+        activeIcon: Icons.person_rounded,
         label: 'Cá nhân',
       ),
     );
 
     final commonSearch = _TabInfo(
       page: const SearchPage(),
-      navItem: const BottomNavigationBarItem(
-        icon: Padding(
-          padding: EdgeInsets.only(bottom: 4),
-          child: Icon(Icons.search_outlined, size: 24),
-        ),
-        activeIcon: Padding(
-          padding: EdgeInsets.only(bottom: 4),
-          child: Icon(Icons.search_rounded, size: 26),
-        ),
+      navItem: _NavItem(
+        icon: Icons.search_outlined,
+        activeIcon: Icons.search_rounded,
         label: 'Tra cứu',
       ),
     );
@@ -162,29 +124,17 @@ class _MainScaffoldState extends State<MainScaffold> {
         commonSearch,
         _TabInfo(
           page: const BusinessManagementPage(),
-          navItem: const BottomNavigationBarItem(
-            icon: Padding(
-              padding: EdgeInsets.only(bottom: 4),
-              child: Icon(Icons.store_outlined, size: 24),
-            ),
-            activeIcon: Padding(
-              padding: EdgeInsets.only(bottom: 4),
-              child: Icon(Icons.store_rounded, size: 26),
-            ),
+          navItem: _NavItem(
+            icon: Icons.store_outlined,
+            activeIcon: Icons.store_rounded,
             label: 'Kinh doanh',
           ),
         ),
         _TabInfo(
           page: const BusinessStatusPage(),
-          navItem: const BottomNavigationBarItem(
-            icon: Padding(
-              padding: EdgeInsets.only(bottom: 4),
-              child: Icon(Icons.description_outlined, size: 24),
-            ),
-            activeIcon: Padding(
-              padding: EdgeInsets.only(bottom: 4),
-              child: Icon(Icons.description_rounded, size: 26),
-            ),
+          navItem: _NavItem(
+            icon: Icons.description_outlined,
+            activeIcon: Icons.description_rounded,
             label: 'Pháp lý',
           ),
         ),
@@ -198,15 +148,9 @@ class _MainScaffoldState extends State<MainScaffold> {
       commonSearch,
       _TabInfo(
         page: const ComplaintPage(),
-        navItem: const BottomNavigationBarItem(
-          icon: Padding(
-            padding: EdgeInsets.only(bottom: 4),
-            child: Icon(Icons.campaign_outlined, size: 24),
-          ),
-          activeIcon: Padding(
-            padding: EdgeInsets.only(bottom: 4),
-            child: Icon(Icons.campaign_rounded, size: 26),
-          ),
+        navItem: _NavItem(
+          icon: Icons.campaign_outlined,
+          activeIcon: Icons.campaign_rounded,
           label: 'Phản ánh',
         ),
       ),
@@ -217,7 +161,127 @@ class _MainScaffoldState extends State<MainScaffold> {
 
 class _TabInfo {
   final Widget page;
-  final BottomNavigationBarItem navItem;
+  final _NavItem navItem;
 
   const _TabInfo({required this.page, required this.navItem});
+}
+
+class _NavItem {
+  final IconData icon;
+  final IconData activeIcon;
+  final String label;
+
+  const _NavItem({
+    required this.icon,
+    required this.activeIcon,
+    required this.label,
+  });
+}
+
+/// Modern Bottom Navigation with smooth animations
+class _ModernBottomNav extends StatelessWidget {
+  final int currentIndex;
+  final List<_NavItem> items;
+  final ValueChanged<int> onTap;
+
+  const _ModernBottomNav({
+    required this.currentIndex,
+    required this.items,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: AppShadow.level3,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: SafeArea(
+        child: Container(
+          height: 72,
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: List.generate(
+              items.length,
+              (index) => _NavButton(
+                item: items[index],
+                isSelected: currentIndex == index,
+                onTap: () => onTap(index),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _NavButton extends StatelessWidget {
+  final _NavItem item;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _NavButton({
+    required this.item,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: AnimatedContainer(
+          duration: AppDuration.normal,
+          curve: AppCurves.emphasized,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? AppTheme.primary.withOpacity(0.12)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              AnimatedSwitcher(
+                duration: AppDuration.fast,
+                transitionBuilder: (child, animation) {
+                  return ScaleTransition(scale: animation, child: child);
+                },
+                child: Icon(
+                  isSelected ? item.activeIcon : item.icon,
+                  key: ValueKey(isSelected),
+                  color: isSelected ? AppTheme.primary : AppTheme.textTertiary,
+                  size: isSelected ? 26 : 24,
+                ),
+              ),
+              const SizedBox(height: 4),
+              AnimatedDefaultTextStyle(
+                duration: AppDuration.normal,
+                curve: AppCurves.standard,
+                style: GoogleFonts.inter(
+                  fontSize: isSelected ? 12 : 11,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                  color: isSelected ? AppTheme.primary : AppTheme.textTertiary,
+                  height: 1.2,
+                ),
+                child: Text(
+                  item.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
