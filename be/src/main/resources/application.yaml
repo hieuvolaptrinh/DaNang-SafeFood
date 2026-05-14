@@ -8,9 +8,9 @@ spring:
       port: ${REDIS_PORT:6379}
 
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/danang_safe_food}
-    username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD:123456}
+    url: ${DB_URL:jdbc:postgresql://ep-cool-bread-ao4jwz0n-pooler.c-2.ap-southeast-1.aws.neon.tech/danang_safefood?sslmode=require&channel_binding=require}
+    username: ${DB_USERNAME:neondb_owner}
+    password: ${DB_PASSWORD:npg_JTXH9DNq3Fwv}
 
   mail:
     host: smtp.gmail.com
