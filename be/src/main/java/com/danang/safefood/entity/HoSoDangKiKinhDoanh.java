@@ -39,6 +39,10 @@ public class HoSoDangKiKinhDoanh {
     @Column(name = "ngayHetHan")
     private LocalDate ngayHetHan;
 
+    /** URL file đã upload lên Cloudinary */
+    @Column(name = "urlFile", length = 500)
+    private String urlFile;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "maCoSo")
     private CoSoKinhDoanh coSoKinhDoanh;

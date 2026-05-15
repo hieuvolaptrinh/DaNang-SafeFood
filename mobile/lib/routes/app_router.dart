@@ -45,6 +45,9 @@ import 'package:mobile_ui/data/remote/model/notification_model.dart';
 import 'package:mobile_ui/viewmodel/complaint/complaint_cubit.dart';
 import 'package:mobile_ui/viewmodel/violation/violation_cubit.dart';
 import 'package:mobile_ui/viewmodel/profile/profile_cubit.dart';
+import 'package:mobile_ui/viewmodel/business_management/business_management_cubit.dart';
+import 'package:mobile_ui/data/remote/datasource/my_business_remote_datasource.dart';
+import 'package:mobile_ui/data/remote/repository/my_business_repository.dart';
 import 'package:mobile_ui/ui/profile/edit_profile_page.dart';
 import 'package:mobile_ui/ui/profile/change_password_page.dart';
 import 'package:mobile_ui/ui/profile/my_complaints_page.dart';
@@ -170,7 +173,14 @@ class AppRouter {
       case Routes.bizDetail:
         final args = settings.arguments as Map<String, dynamic>?;
         return MaterialPageRoute(
-          builder: (_) => BizDetailPage(businessName: args?['name'] ?? ''),
+          builder: (_) => BlocProvider(
+            create: (_) => BusinessManagementCubit(
+              repository: MyBusinessRepository(
+                remote: MyBusinessRemoteDataSource(dio: _dio),
+              ),
+            )..loadData(),
+            child: BizDetailPage(businessName: args?['name'] ?? ''),
+          ),
         );
 
       case Routes.businessRegistration:

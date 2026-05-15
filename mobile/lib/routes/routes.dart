@@ -12,6 +12,7 @@ class Routes {
 
   // Business Management
   static const String bizDetail = '/biz-detail';
+  static const String allBusinesses = '/all-businesses';
   static const String businessRegistration = '/business-registration';
   static const String violationList = '/violation-list';
   static const String violationDetail = '/violation-detail';

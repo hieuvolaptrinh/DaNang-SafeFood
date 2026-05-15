@@ -7,6 +7,8 @@ class MyBusinessModel extends Equatable {
   final String? soGiayPhep;
   final DateTime? ngayHetHanGiayPhep;
   final String trangThai;
+  final String? trangThaiKinhDoanh;
+  final String? trangThaiKinhDoanhLabel;
   final String? tenPhuongXa;
   final String? anhBia;
 
@@ -16,6 +18,8 @@ class MyBusinessModel extends Equatable {
     this.soGiayPhep,
     this.ngayHetHanGiayPhep,
     required this.trangThai,
+    this.trangThaiKinhDoanh,
+    this.trangThaiKinhDoanhLabel,
     this.tenPhuongXa,
     this.anhBia,
   });
@@ -29,6 +33,8 @@ class MyBusinessModel extends Equatable {
           ? DateTime.tryParse(json['ngayHetHanGiayPhep'] as String)
           : null,
       trangThai: json['trangThai'] as String? ?? 'Hoat dong',
+      trangThaiKinhDoanh: json['trangThaiKinhDoanh'] as String?,
+      trangThaiKinhDoanhLabel: json['trangThaiKinhDoanhLabel'] as String?,
       tenPhuongXa: json['tenPhuongXa'] as String?,
       anhBia: json['anhBia'] as String?,
     );
@@ -41,6 +47,8 @@ class MyBusinessModel extends Equatable {
     soGiayPhep,
     ngayHetHanGiayPhep,
     trangThai,
+    trangThaiKinhDoanh,
+    trangThaiKinhDoanhLabel,
     tenPhuongXa,
     anhBia,
   ];
@@ -50,16 +58,26 @@ class MyBusinessModel extends Equatable {
 class HoSoDangKiModel extends Equatable {
   final String maHoSo;
   final DateTime? ngayNop;
+  final DateTime? ngayCap;
+  final DateTime? ngayHetHan;
   final String? trangThai;
+  final String? urlFile;
   final String? maCoSo;
   final String? tenCoSo;
+  final String? maLoaiGiayTo;
+  final String? tenLoaiGiayTo;
 
   const HoSoDangKiModel({
     required this.maHoSo,
     this.ngayNop,
+    this.ngayCap,
+    this.ngayHetHan,
     this.trangThai,
+    this.urlFile,
     this.maCoSo,
     this.tenCoSo,
+    this.maLoaiGiayTo,
+    this.tenLoaiGiayTo,
   });
 
   factory HoSoDangKiModel.fromJson(Map<String, dynamic> json) {
@@ -68,9 +86,18 @@ class HoSoDangKiModel extends Equatable {
       ngayNop: json['ngayNop'] != null
           ? DateTime.tryParse(json['ngayNop'] as String)
           : null,
+      ngayCap: json['ngayCap'] != null
+          ? DateTime.tryParse(json['ngayCap'] as String)
+          : null,
+      ngayHetHan: json['ngayHetHan'] != null
+          ? DateTime.tryParse(json['ngayHetHan'] as String)
+          : null,
       trangThai: json['trangThai'] as String?,
+      urlFile: json['urlFile'] as String?,
       maCoSo: json['maCoSo'] as String?,
       tenCoSo: json['tenCoSo'] as String?,
+      maLoaiGiayTo: json['maLoaiGiayTo'] as String?,
+      tenLoaiGiayTo: json['tenLoaiGiayTo'] as String?,
     );
   }
 
@@ -78,8 +105,21 @@ class HoSoDangKiModel extends Equatable {
     if (maCoSo != null) 'maCoSo': maCoSo,
     if (ngayNop != null) 'ngayNop': ngayNop!.toIso8601String().substring(0, 10),
     if (trangThai != null) 'trangThai': trangThai,
+    if (maLoaiGiayTo != null) 'maLoaiGiayTo': maLoaiGiayTo,
+    if (urlFile != null) 'urlFile': urlFile,
   };
 
   @override
-  List<Object?> get props => [maHoSo, ngayNop, trangThai, maCoSo, tenCoSo];
+  List<Object?> get props => [
+    maHoSo,
+    ngayNop,
+    ngayCap,
+    ngayHetHan,
+    trangThai,
+    urlFile,
+    maCoSo,
+    tenCoSo,
+    maLoaiGiayTo,
+    tenLoaiGiayTo,
+  ];
 }

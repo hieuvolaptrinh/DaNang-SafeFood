@@ -58,17 +58,27 @@ class MyBusinessRemoteDataSource {
 
   Future<HoSoDangKiModel> createHoSo({
     required String maCoSo,
+    String? maLoaiGiayTo,
     DateTime? ngayNop,
+    DateTime? ngayCap,
+    DateTime? ngayHetHan,
     String? trangThai,
+    String? urlFile,
   }) async {
     try {
       final res = await dio.post(
         '/api/user/my-business/ho-so',
         data: {
           'maCoSo': maCoSo,
+          if (maLoaiGiayTo != null) 'maLoaiGiayTo': maLoaiGiayTo,
           if (ngayNop != null)
             'ngayNop': ngayNop.toIso8601String().substring(0, 10),
+          if (ngayCap != null)
+            'ngayCap': ngayCap.toIso8601String().substring(0, 10),
+          if (ngayHetHan != null)
+            'ngayHetHan': ngayHetHan.toIso8601String().substring(0, 10),
           if (trangThai != null) 'trangThai': trangThai,
+          if (urlFile != null) 'urlFile': urlFile,
         },
       );
       final w = ApiResponseWrapper<Map<String, dynamic>>.fromJson(
@@ -85,17 +95,27 @@ class MyBusinessRemoteDataSource {
   Future<HoSoDangKiModel> updateHoSo({
     required String maHoSo,
     required String maCoSo,
+    String? maLoaiGiayTo,
     DateTime? ngayNop,
+    DateTime? ngayCap,
+    DateTime? ngayHetHan,
     String? trangThai,
+    String? urlFile,
   }) async {
     try {
       final res = await dio.put(
         '/api/user/my-business/ho-so/$maHoSo',
         data: {
           'maCoSo': maCoSo,
+          if (maLoaiGiayTo != null) 'maLoaiGiayTo': maLoaiGiayTo,
           if (ngayNop != null)
             'ngayNop': ngayNop.toIso8601String().substring(0, 10),
+          if (ngayCap != null)
+            'ngayCap': ngayCap.toIso8601String().substring(0, 10),
+          if (ngayHetHan != null)
+            'ngayHetHan': ngayHetHan.toIso8601String().substring(0, 10),
           if (trangThai != null) 'trangThai': trangThai,
+          if (urlFile != null) 'urlFile': urlFile,
         },
       );
       final w = ApiResponseWrapper<Map<String, dynamic>>.fromJson(

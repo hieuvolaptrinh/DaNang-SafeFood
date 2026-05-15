@@ -5,8 +5,10 @@ import com.danang.safefood.dto.response.HoSoDangKiResponse;
 import com.danang.safefood.dto.response.MyBusinessResponse;
 import com.danang.safefood.entity.CoSoKinhDoanh;
 import com.danang.safefood.entity.HoSoDangKiKinhDoanh;
+import com.danang.safefood.entity.LoaiGiayTo;
 import com.danang.safefood.repository.CoSoKinhDoanhRepository;
 import com.danang.safefood.repository.HoSoDangKiKinhDoanhRepository;
+import com.danang.safefood.repository.LoaiGiayToRepository;
 import com.danang.safefood.util.IdGenerator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,8 +23,8 @@ public class MyBusinessService {
 
     private final CoSoKinhDoanhRepository coSoRepo;
     private final HoSoDangKiKinhDoanhRepository hoSoRepo;
+    private final LoaiGiayToRepository loaiGiayToRepo;
 
-    /** Lấy danh sách cơ sở của CSKD (chủ sở hữu = tài khoản đăng nhập). */
     @Transactional(readOnly = true)
     public List<MyBusinessResponse> getMyBusinesses(Long taiKhoanId) {
         return coSoRepo.findByChuSoHuu_TaiKhoan_Id(taiKhoanId)
@@ -31,7 +33,6 @@ public class MyBusinessService {
                 .toList();
     }
 
-    /** Lấy danh sách hồ sơ đăng kí kinh doanh của CSKD (tất cả cơ sở). */
     @Transactional(readOnly = true)
     public List<HoSoDangKiResponse> getMyHoSoList(Long taiKhoanId) {
         return hoSoRepo.findByCoSoKinhDoanh_ChuSoHuu_TaiKhoan_IdOrderByNgayNopDesc(taiKhoanId)
@@ -40,7 +41,6 @@ public class MyBusinessService {
                 .toList();
     }
 
-    /** Lấy hồ sơ theo cơ sở. */
     @Transactional(readOnly = true)
     public List<HoSoDangKiResponse> getHoSoByCoSo(String maCoSo) {
         return hoSoRepo.findByCoSoKinhDoanh_MaCoSoOrderByNgayNopDesc(maCoSo)
@@ -49,41 +49,74 @@ public class MyBusinessService {
                 .toList();
     }
 
-    /** Tạo mới hồ sơ đăng kí. */
+    /**
+     * Tạo mới hồ sơ.
+     * Nếu cơ sở đã có hồ sơ với cùng loại giấy tờ thì sẽ cập nhật thay vì tạo mới.
+     */
     @Transactional
     public HoSoDangKiResponse createHoSo(HoSoDangKiRequest req, Long taiKhoanId) {
         CoSoKinhDoanh coSo = findOwnedCoSo(req.maCoSo(), taiKhoanId);
+        LoaiGiayTo loai = req.maLoaiGiayTo() != null
+                ? loaiGiayToRepo.findById(req.maLoaiGiayTo())
+                        .orElseThrow(() -> new RuntimeException("Không tìm thấy loại giấy tờ: " + req.maLoaiGiayTo()))
+                : null;
+
+        // Kiểm tra trùng loại
+        if (loai != null) {
+            var existing = hoSoRepo.findByCoSoKinhDoanh_MaCoSoOrderByNgayNopDesc(coSo.getMaCoSo())
+                    .stream()
+                    .filter(h -> h.getLoaiGiayTo() != null
+                            && h.getLoaiGiayTo().getMaLoaiGiayTo().equals(loai.getMaLoaiGiayTo()))
+                    .findFirst();
+            if (existing.isPresent()) {
+                // Đã có → update thay vì tạo mới
+                return updateHoSoEntity(existing.get(), req, loai);
+            }
+        }
 
         HoSoDangKiKinhDoanh hs = HoSoDangKiKinhDoanh.builder()
                 .maHoSo(IdGenerator.generate("HS"))
                 .ngayNop(req.ngayNop() != null ? req.ngayNop() : LocalDate.now())
-                .trangThai(req.trangThai() != null ? req.trangThai() : "Chua duyet")
+                .ngayCap(req.ngayCap())
+                .ngayHetHan(req.ngayHetHan())
+                .trangThai(req.trangThai() != null ? req.trangThai() : "Cho duyet")
+                .urlFile(req.urlFile())
                 .coSoKinhDoanh(coSo)
+                .loaiGiayTo(loai)
                 .build();
 
         return HoSoDangKiResponse.from(hoSoRepo.save(hs));
     }
 
-    /** Cập nhật hồ sơ. */
     @Transactional
     public HoSoDangKiResponse updateHoSo(String maHoSo, HoSoDangKiRequest req, Long taiKhoanId) {
         HoSoDangKiKinhDoanh hs = hoSoRepo.findById(maHoSo)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy hồ sơ: " + maHoSo));
 
-        // Đảm bảo CSKD chỉ sửa được hồ sơ thuộc cơ sở của mình
         ensureOwner(hs.getCoSoKinhDoanh(), taiKhoanId);
 
         if (req.maCoSo() != null && !req.maCoSo().equals(hs.getCoSoKinhDoanh().getMaCoSo())) {
             CoSoKinhDoanh newCoSo = findOwnedCoSo(req.maCoSo(), taiKhoanId);
             hs.setCoSoKinhDoanh(newCoSo);
         }
-        if (req.ngayNop() != null) hs.setNgayNop(req.ngayNop());
-        if (req.trangThai() != null) hs.setTrangThai(req.trangThai());
 
+        LoaiGiayTo loai = req.maLoaiGiayTo() != null
+                ? loaiGiayToRepo.findById(req.maLoaiGiayTo()).orElse(hs.getLoaiGiayTo())
+                : hs.getLoaiGiayTo();
+
+        return updateHoSoEntity(hs, req, loai);
+    }
+
+    private HoSoDangKiResponse updateHoSoEntity(HoSoDangKiKinhDoanh hs, HoSoDangKiRequest req, LoaiGiayTo loai) {
+        if (loai != null) hs.setLoaiGiayTo(loai);
+        if (req.ngayNop() != null) hs.setNgayNop(req.ngayNop());
+        if (req.ngayCap() != null) hs.setNgayCap(req.ngayCap());
+        if (req.ngayHetHan() != null) hs.setNgayHetHan(req.ngayHetHan());
+        if (req.trangThai() != null) hs.setTrangThai(req.trangThai());
+        if (req.urlFile() != null) hs.setUrlFile(req.urlFile());
         return HoSoDangKiResponse.from(hoSoRepo.save(hs));
     }
 
-    /** Xoá hồ sơ. */
     @Transactional
     public void deleteHoSo(String maHoSo, Long taiKhoanId) {
         HoSoDangKiKinhDoanh hs = hoSoRepo.findById(maHoSo)

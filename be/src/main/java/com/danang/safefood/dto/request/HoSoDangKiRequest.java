@@ -9,7 +9,11 @@ import java.time.LocalDate;
  */
 public record HoSoDangKiRequest(
         @NotBlank(message = "Mã cơ sở không được để trống") String maCoSo,
+        String maLoaiGiayTo,
         LocalDate ngayNop,
-        String trangThai
+        LocalDate ngayCap,
+        LocalDate ngayHetHan,
+        String trangThai,
+        String urlFile
 ) {
 }

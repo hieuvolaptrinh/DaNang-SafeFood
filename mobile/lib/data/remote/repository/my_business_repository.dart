@@ -15,21 +15,40 @@ class MyBusinessRepository {
 
   Future<HoSoDangKiModel> createHoSo({
     required String maCoSo,
+    String? maLoaiGiayTo,
     DateTime? ngayNop,
+    DateTime? ngayCap,
+    DateTime? ngayHetHan,
     String? trangThai,
-  }) =>
-      remote.createHoSo(maCoSo: maCoSo, ngayNop: ngayNop, trangThai: trangThai);
+    String? urlFile,
+  }) => remote.createHoSo(
+    maCoSo: maCoSo,
+    maLoaiGiayTo: maLoaiGiayTo,
+    ngayNop: ngayNop,
+    ngayCap: ngayCap,
+    ngayHetHan: ngayHetHan,
+    trangThai: trangThai,
+    urlFile: urlFile,
+  );
 
   Future<HoSoDangKiModel> updateHoSo({
     required String maHoSo,
     required String maCoSo,
+    String? maLoaiGiayTo,
     DateTime? ngayNop,
+    DateTime? ngayCap,
+    DateTime? ngayHetHan,
     String? trangThai,
+    String? urlFile,
   }) => remote.updateHoSo(
     maHoSo: maHoSo,
     maCoSo: maCoSo,
+    maLoaiGiayTo: maLoaiGiayTo,
     ngayNop: ngayNop,
+    ngayCap: ngayCap,
+    ngayHetHan: ngayHetHan,
     trangThai: trangThai,
+    urlFile: urlFile,
   );
 
   Future<void> deleteHoSo(String maHoSo) => remote.deleteHoSo(maHoSo);

@@ -50,7 +50,7 @@ public class KhacPhucService {
      */
     @Transactional(readOnly = true)
     public ViPhamResponse getViPhamDetail(String maViPham) {
-        ViPham vp = viPhamRepository.findById(maViPham)
+        ViPham vp = viPhamRepository.findByIdWithDetails(maViPham)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy vi phạm: " + maViPham));
         return ViPhamResponse.from(vp);
     }

@@ -49,10 +49,9 @@ public class ViPhamController {
             return ResponseEntity.ok(ApiResponse.success(List.of()));
         }
 
-        // Lọc tất cả vi phạm thuộc các cơ sở
-        var viPhamList = viPhamRepository.findAll().stream()
-                .filter(v -> v.getCoSoKinhDoanh() != null
-                        && coSoIds.contains(v.getCoSoKinhDoanh().getMaCoSo()))
+        // Lọc tất cả vi phạm thuộc các cơ sở (eager fetch để tránh LazyInit)
+        var viPhamList = viPhamRepository.findByCoSoIdsWithDetails(coSoIds)
+                .stream()
                 .map(ViPhamResponse::from)
                 .toList();
 
@@ -62,7 +61,7 @@ public class ViPhamController {
     @GetMapping("/{maViPham}")
     @Transactional(readOnly = true)
     public ResponseEntity<ApiResponse<ViPhamResponse>> getDetail(@PathVariable String maViPham) {
-        ViPham vp = viPhamRepository.findById(maViPham)
+        ViPham vp = viPhamRepository.findByIdWithDetails(maViPham)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy vi phạm: " + maViPham));
         return ResponseEntity.ok(ApiResponse.success(ViPhamResponse.from(vp)));
     }

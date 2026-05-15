@@ -6,62 +6,15 @@ import 'package:mobile_ui/core/widgets/error_state_view.dart';
 import 'package:mobile_ui/core/widgets/status_badge.dart';
 import 'package:mobile_ui/data/remote/model/my_business_models.dart';
 import 'package:mobile_ui/routes/routes.dart';
-import 'package:mobile_ui/ui/business_management/widgets/ho_so_form_sheet.dart';
 import 'package:mobile_ui/viewmodel/business_management/business_management_cubit.dart';
 import 'package:mobile_ui/viewmodel/business_management/business_management_state.dart';
 
-/// Trang Quản lý kinh doanh dành cho CSKD.
-///
-/// - Hiển thị các cơ sở của tôi (API: GET /api/user/my-business)
-/// - Tab "Hồ sơ": filter theo cơ sở, CRUD (POST/PUT/DELETE /api/user/my-business/ho-so)
-class BusinessManagementPage extends StatefulWidget {
+class BusinessManagementPage extends StatelessWidget {
   const BusinessManagementPage({super.key});
 
   @override
-  State<BusinessManagementPage> createState() => _BusinessManagementPageState();
-}
-
-class _BusinessManagementPageState extends State<BusinessManagementPage>
-    with SingleTickerProviderStateMixin {
-  late TabController _tab;
-
-  @override
-  void initState() {
-    super.initState();
-    _tab = TabController(length: 2, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tab.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return BlocConsumer<BusinessManagementCubit, BusinessMgmtState>(
-      listenWhen: (p, c) =>
-          p.mutateMessage != c.mutateMessage || p.mutateError != c.mutateError,
-      listener: (context, state) {
-        if (state.mutateMessage != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.mutateMessage!),
-              backgroundColor: AppTheme.success,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
-        if (state.mutateError != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.mutateError!),
-              backgroundColor: AppTheme.error,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
-      },
+    return BlocBuilder<BusinessManagementCubit, BusinessMgmtState>(
       builder: (context, state) {
         if (state.status == BusinessMgmtStatus.error &&
             state.businesses.isEmpty) {
@@ -78,33 +31,145 @@ class _BusinessManagementPageState extends State<BusinessManagementPage>
           );
         }
 
-        return SafeArea(
-          child: Column(
-            children: [
-              _Header(businessCount: state.businesses.length),
-              TabBar(
-                controller: _tab,
-                labelColor: AppTheme.primary,
-                unselectedLabelColor: AppTheme.textSecondary,
-                indicatorColor: AppTheme.primary,
-                indicatorSize: TabBarIndicatorSize.label,
-                labelStyle: GoogleFonts.inter(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
+        return RefreshIndicator(
+          onRefresh: () => context.read<BusinessManagementCubit>().refresh(),
+          color: AppTheme.primary,
+          child: CustomScrollView(
+            slivers: [
+              // Header
+              SliverToBoxAdapter(
+                child: SafeArea(
+                  bottom: false,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Quản lý kinh doanh',
+                          style: GoogleFonts.inter(
+                            color: AppTheme.textPrimary,
+                            fontSize: 24,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${state.businesses.length} cơ sở đang quản lý',
+                          style: GoogleFonts.inter(
+                            color: AppTheme.textSecondary,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-                tabs: const [
-                  Tab(text: 'Cơ sở của tôi'),
-                  Tab(text: 'Hồ sơ đăng kí'),
-                ],
               ),
-              Expanded(
-                child: TabBarView(
-                  controller: _tab,
-                  children: [
-                    _BusinessListTab(businesses: state.businesses),
-                    _HoSoTab(state: state),
-                  ],
+
+              // Quick Actions
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                  child: _QuickActions(),
                 ),
+              ),
+
+              // Cơ sở của tôi (tối đa 3)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _SectionTitle(title: 'Cơ sở của tôi'),
+                      if (state.businesses.length > 3)
+                        TextButton(
+                          onPressed: () => Navigator.pushNamed(
+                            context,
+                            Routes.allBusinesses,
+                          ),
+                          child: Text(
+                            'Xem tất cả',
+                            style: GoogleFonts.inter(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.primary,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Business cards (max 3)
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      final b = state.businesses[index];
+                      return _BusinessCard(business: b);
+                    },
+                    childCount: state.businesses.length > 3
+                        ? 3
+                        : state.businesses.length,
+                  ),
+                ),
+              ),
+
+              // Hồ sơ giấy tờ section
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
+                  child: _SectionTitle(title: 'Hồ sơ giấy tờ gần đây'),
+                ),
+              ),
+
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
+                sliver: state.hoSoList.isEmpty
+                    ? SliverToBoxAdapter(
+                        child: Container(
+                          padding: const EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            color: AppTheme.cardColor,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: AppShadow.level1,
+                          ),
+                          child: Column(
+                            children: [
+                              Icon(
+                                Icons.description_outlined,
+                                size: 40,
+                                color: AppTheme.textTertiary.withValues(
+                                  alpha: 0.5,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Chưa có hồ sơ nào',
+                                style: GoogleFonts.inter(
+                                  color: AppTheme.textSecondary,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    : SliverList(
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) {
+                            final hs = state.hoSoList[index];
+                            return _HoSoMiniCard(hoSo: hs);
+                          },
+                          childCount: state.hoSoList.length > 5
+                              ? 5
+                              : state.hoSoList.length,
+                        ),
+                      ),
               ),
             ],
           ),
@@ -114,129 +179,54 @@ class _BusinessManagementPageState extends State<BusinessManagementPage>
   }
 }
 
-class _Header extends StatelessWidget {
-  final int businessCount;
-  const _Header({required this.businessCount});
-
+class _QuickActions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Quản lý kinh doanh',
-                  style: GoogleFonts.inter(
-                    color: AppTheme.textPrimary,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '$businessCount cơ sở đang hoạt động',
-                  style: GoogleFonts.inter(
-                    color: AppTheme.textSecondary,
-                    fontSize: 13,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          IconButton(
-            onPressed: () => context.read<BusinessManagementCubit>().refresh(),
-            icon: const Icon(
-              Icons.refresh_rounded,
-              color: AppTheme.textSecondary,
-            ),
-          ),
-        ],
-      ),
+    return GridView.count(
+      crossAxisCount: 2,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      mainAxisSpacing: 12,
+      crossAxisSpacing: 12,
+      childAspectRatio: 2.2,
+      children: [
+        _ActionCard(
+          icon: Icons.add_business_rounded,
+          label: 'Đăng ký\nkinh doanh',
+          color: AppTheme.primary,
+          onTap: () =>
+              Navigator.pushNamed(context, Routes.businessRegistration),
+        ),
+        _ActionCard(
+          icon: Icons.gavel_rounded,
+          label: 'Vi phạm\n& Xử phạt',
+          color: AppTheme.error,
+          onTap: () => Navigator.pushNamed(context, Routes.violationList),
+        ),
+        _ActionCard(
+          icon: Icons.shield_outlined,
+          label: 'Tình trạng\npháp lý',
+          color: AppTheme.info,
+          onTap: () => Navigator.pushNamed(context, Routes.businessStatus),
+        ),
+        _ActionCard(
+          icon: Icons.feedback_outlined,
+          label: 'Khiếu\nnại',
+          color: AppTheme.accent,
+          onTap: () => Navigator.pushNamed(context, Routes.businessComplaint),
+        ),
+      ],
     );
   }
 }
 
-// ─────────────────────────────────────────────────────────
-// Tab 1: Cơ sở của tôi
-// ─────────────────────────────────────────────────────────
-
-class _BusinessListTab extends StatelessWidget {
-  final List<MyBusinessModel> businesses;
-  const _BusinessListTab({required this.businesses});
-
-  @override
-  Widget build(BuildContext context) {
-    if (businesses.isEmpty) {
-      return _EmptyState(
-        icon: Icons.store_outlined,
-        title: 'Bạn chưa có cơ sở nào',
-        subtitle: 'Đăng ký kinh doanh để bắt đầu',
-        actionLabel: 'Đăng ký kinh doanh',
-        onAction: () =>
-            Navigator.pushNamed(context, Routes.businessRegistration),
-      );
-    }
-
-    return RefreshIndicator(
-      onRefresh: () => context.read<BusinessManagementCubit>().refresh(),
-      color: AppTheme.primary,
-      child: ListView.builder(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 100),
-        itemCount: businesses.length + 1,
-        itemBuilder: (_, i) {
-          if (i == 0) return const _QuickActionsRow();
-          final b = businesses[i - 1];
-          return _BusinessCard(business: b);
-        },
-      ),
-    );
-  }
-}
-
-class _QuickActionsRow extends StatelessWidget {
-  const _QuickActionsRow();
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Row(
-        children: [
-          Expanded(
-            child: _QuickAction(
-              icon: Icons.add_business_rounded,
-              label: 'Đăng ký kinh doanh',
-              color: AppTheme.primary,
-              onTap: () =>
-                  Navigator.pushNamed(context, Routes.businessRegistration),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: _QuickAction(
-              icon: Icons.gavel_rounded,
-              label: 'Vi phạm & xử phạt',
-              color: AppTheme.error,
-              onTap: () => Navigator.pushNamed(context, Routes.violationList),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _QuickAction extends StatelessWidget {
+class _ActionCard extends StatelessWidget {
   final IconData icon;
   final String label;
   final Color color;
   final VoidCallback onTap;
 
-  const _QuickAction({
+  const _ActionCard({
     required this.icon,
     required this.label,
     required this.color,
@@ -251,16 +241,17 @@ class _QuickAction extends StatelessWidget {
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: AppTheme.cardColor,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: color.withValues(alpha: 0.25)),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
+          boxShadow: AppShadow.level1,
         ),
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: color.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, color: color, size: 20),
             ),
@@ -272,6 +263,7 @@ class _QuickAction extends StatelessWidget {
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                   color: AppTheme.textPrimary,
+                  height: 1.3,
                 ),
               ),
             ),
@@ -288,9 +280,20 @@ class _BusinessCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isActive =
-        business.trangThai.toLowerCase().contains('hoat dong') ||
-        business.trangThai.toLowerCase().contains('hoạt động');
+    final isActive = business.trangThaiKinhDoanh == 'DANG_HOAT_DONG';
+    final isBanned = business.trangThaiKinhDoanh == 'BI_CAM';
+    final isWarning = business.trangThaiKinhDoanh == 'CANH_CAO_VI_PHAM';
+
+    final SafetyStatus badge;
+    if (isActive) {
+      badge = SafetyStatus.safe;
+    } else if (isBanned) {
+      badge = SafetyStatus.violated;
+    } else if (isWarning) {
+      badge = SafetyStatus.warning;
+    } else {
+      badge = SafetyStatus.processing;
+    }
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -299,400 +302,169 @@ class _BusinessCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: AppShadow.level1,
       ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () => Navigator.pushNamed(
-          context,
-          Routes.businessDetail,
-          arguments: {'maCoSo': business.maCoSo},
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: AppTheme.primary.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(12),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () => Navigator.pushNamed(
+            context,
+            Routes.bizDetail,
+            arguments: {'name': business.maCoSo},
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                // Avatar / Image
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(14),
+                    color: AppTheme.primary.withValues(alpha: 0.1),
+                    image: business.anhBia != null
+                        ? DecorationImage(
+                            image: NetworkImage(business.anhBia!),
+                            fit: BoxFit.cover,
+                          )
+                        : null,
+                  ),
+                  child: business.anhBia == null
+                      ? const Icon(
+                          Icons.store_rounded,
+                          color: AppTheme.primary,
+                          size: 24,
+                        )
+                      : null,
                 ),
-                child: const Icon(
-                  Icons.store_rounded,
-                  color: AppTheme.primary,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      business.tenCoSo,
-                      style: GoogleFonts.inter(
-                        color: AppTheme.textPrimary,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Mã: ${business.maCoSo} '
-                      '${business.tenPhuongXa != null ? '• ${business.tenPhuongXa}' : ''}',
-                      style: GoogleFonts.inter(
-                        color: AppTheme.textSecondary,
-                        fontSize: 12,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    if (business.soGiayPhep != null) ...[
-                      const SizedBox(height: 4),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
-                        'GP: ${business.soGiayPhep}',
+                        business.tenCoSo,
                         style: GoogleFonts.inter(
-                          color: AppTheme.textTertiary,
-                          fontSize: 11,
+                          color: AppTheme.textPrimary,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.location_on_outlined,
+                            size: 13,
+                            color: AppTheme.textSecondary,
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              business.tenPhuongXa ?? 'Chưa cập nhật',
+                              style: GoogleFonts.inter(
+                                color: AppTheme.textSecondary,
+                                fontSize: 12,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      StatusBadge(
+                        status: badge,
+                        customLabel:
+                            business.trangThaiKinhDoanhLabel ??
+                            business.trangThai,
                       ),
                     ],
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              StatusBadge(
-                status: isActive ? SafetyStatus.safe : SafetyStatus.warning,
-                customLabel: isActive ? 'Hoạt động' : business.trangThai,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────
-// Tab 2: Hồ sơ đăng kí
-// ─────────────────────────────────────────────────────────
-
-class _HoSoTab extends StatelessWidget {
-  final BusinessMgmtState state;
-  const _HoSoTab({required this.state});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        _CoSoFilter(
-          businesses: state.businesses,
-          selectedId: state.selectedCoSoId,
-          onChanged: (id) =>
-              context.read<BusinessManagementCubit>().selectCoSo(id),
-        ),
-        Expanded(
-          child: state.hoSoList.isEmpty
-              ? _EmptyState(
-                  icon: Icons.description_outlined,
-                  title: 'Chưa có hồ sơ',
-                  subtitle: 'Tạo hồ sơ đăng kí kinh doanh mới',
-                  actionLabel: 'Thêm hồ sơ',
-                  onAction: () => _openForm(context, null),
-                )
-              : RefreshIndicator(
-                  onRefresh: () => context
-                      .read<BusinessManagementCubit>()
-                      .selectCoSo(state.selectedCoSoId),
-                  color: AppTheme.primary,
-                  child: ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
-                    itemCount: state.hoSoList.length,
-                    itemBuilder: (_, i) => _HoSoCard(
-                      hoSo: state.hoSoList[i],
-                      onEdit: () => _openForm(context, state.hoSoList[i]),
-                      onDelete: () =>
-                          _confirmDelete(context, state.hoSoList[i]),
-                    ),
                   ),
                 ),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-          child: SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: state.businesses.isEmpty
-                  ? null
-                  : () => _openForm(context, null),
-              icon: const Icon(Icons.add_rounded, size: 20),
-              label: Text(
-                'Thêm hồ sơ mới',
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  color: AppTheme.textTertiary,
+                  size: 22,
                 ),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-              ),
+              ],
             ),
           ),
         ),
-      ],
-    );
-  }
-
-  Future<void> _openForm(BuildContext context, HoSoDangKiModel? hoSo) async {
-    final cubit = context.read<BusinessManagementCubit>();
-    await showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => BlocProvider.value(
-        value: cubit,
-        child: HoSoFormSheet(initial: hoSo),
-      ),
-    );
-  }
-
-  Future<void> _confirmDelete(
-    BuildContext context,
-    HoSoDangKiModel hoSo,
-  ) async {
-    final cubit = context.read<BusinessManagementCubit>();
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        title: Text(
-          'Xoá hồ sơ?',
-          style: GoogleFonts.inter(fontWeight: FontWeight.w600),
-        ),
-        content: Text(
-          'Bạn chắc chắn muốn xoá hồ sơ ${hoSo.maHoSo}?',
-          style: GoogleFonts.inter(fontSize: 13),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Huỷ'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text('Xoá', style: GoogleFonts.inter(color: AppTheme.error)),
-          ),
-        ],
-      ),
-    );
-    if (ok == true) {
-      await cubit.deleteHoSo(hoSo.maHoSo);
-    }
-  }
-}
-
-class _CoSoFilter extends StatelessWidget {
-  final List<MyBusinessModel> businesses;
-  final String? selectedId;
-  final ValueChanged<String?> onChanged;
-
-  const _CoSoFilter({
-    required this.businesses,
-    required this.selectedId,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
-      child: Row(
-        children: [
-          _Chip(
-            label: 'Tất cả',
-            selected: selectedId == null,
-            onTap: () => onChanged(null),
-          ),
-          ...businesses.map(
-            (b) => Padding(
-              padding: const EdgeInsets.only(left: 8),
-              child: _Chip(
-                label: b.tenCoSo,
-                selected: selectedId == b.maCoSo,
-                onTap: () => onChanged(b.maCoSo),
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
 }
 
-class _Chip extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-  const _Chip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: selected
-              ? AppTheme.primary.withValues(alpha: 0.15)
-              : AppTheme.surfaceBg,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: selected ? AppTheme.primary : AppTheme.dividerColor,
-          ),
-        ),
-        child: Text(
-          label,
-          style: GoogleFonts.inter(
-            fontSize: 12,
-            fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-            color: selected ? AppTheme.primary : AppTheme.textSecondary,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _HoSoCard extends StatelessWidget {
+class _HoSoMiniCard extends StatelessWidget {
   final HoSoDangKiModel hoSo;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
-
-  const _HoSoCard({
-    required this.hoSo,
-    required this.onEdit,
-    required this.onDelete,
-  });
+  const _HoSoMiniCard({required this.hoSo});
 
   @override
   Widget build(BuildContext context) {
     final approved =
-        (hoSo.trangThai ?? '').toLowerCase().contains('da duyet') ||
-        (hoSo.trangThai ?? '').toLowerCase().contains('đã duyệt');
-    final rejected =
-        (hoSo.trangThai ?? '').toLowerCase().contains('tu choi') ||
-        (hoSo.trangThai ?? '').toLowerCase().contains('từ chối');
+        (hoSo.trangThai ?? '').contains('duyệt') ||
+        (hoSo.trangThai ?? '').contains('duyet');
+    final expired =
+        (hoSo.trangThai ?? '').toLowerCase().contains('hết hạn') ||
+        (hoSo.trangThai ?? '').toLowerCase().contains('het han');
 
-    final SafetyStatus s;
-    final String label = hoSo.trangThai ?? 'Chưa duyệt';
-    if (approved) {
-      s = SafetyStatus.safe;
-    } else if (rejected) {
-      s = SafetyStatus.violated;
+    final Color dotColor;
+    if (expired) {
+      dotColor = AppTheme.error;
+    } else if (approved) {
+      dotColor = AppTheme.success;
     } else {
-      s = SafetyStatus.processing;
+      dotColor = AppTheme.warning;
     }
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: AppTheme.cardColor,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: AppShadow.level1,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.dividerColor, width: 0.5),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppTheme.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(
-                  Icons.description_rounded,
-                  color: AppTheme.primary,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Hồ sơ ${hoSo.maHoSo}',
-                      style: GoogleFonts.inter(
-                        color: AppTheme.textPrimary,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    if (hoSo.tenCoSo != null)
-                      Text(
-                        hoSo.tenCoSo!,
-                        style: GoogleFonts.inter(
-                          color: AppTheme.textSecondary,
-                          fontSize: 12,
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              StatusBadge(status: s, customLabel: label),
-            ],
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle),
           ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              const Icon(
-                Icons.calendar_today_outlined,
-                size: 14,
-                color: AppTheme.textSecondary,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                'Ngày nộp: ${_formatDate(hoSo.ngayNop)}',
-                style: GoogleFonts.inter(
-                  color: AppTheme.textSecondary,
-                  fontSize: 12,
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  hoSo.tenLoaiGiayTo ?? 'Hồ sơ ${hoSo.maHoSo}',
+                  style: GoogleFonts.inter(
+                    color: AppTheme.textPrimary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-              const Spacer(),
-              IconButton(
-                onPressed: onEdit,
-                icon: const Icon(
-                  Icons.edit_outlined,
-                  size: 20,
-                  color: AppTheme.primary,
+                Text(
+                  hoSo.tenCoSo ?? '',
+                  style: GoogleFonts.inter(
+                    color: AppTheme.textSecondary,
+                    fontSize: 11,
+                  ),
                 ),
-                visualDensity: VisualDensity.compact,
-              ),
-              IconButton(
-                onPressed: onDelete,
-                icon: const Icon(
-                  Icons.delete_outline_rounded,
-                  size: 20,
-                  color: AppTheme.error,
-                ),
-                visualDensity: VisualDensity.compact,
-              ),
-            ],
+              ],
+            ),
+          ),
+          Text(
+            hoSo.trangThai ?? '',
+            style: GoogleFonts.inter(
+              color: dotColor,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),
@@ -700,74 +472,32 @@ class _HoSoCard extends StatelessWidget {
   }
 }
 
-String _formatDate(DateTime? d) {
-  if (d == null) return '--/--/----';
-  final dd = d.day.toString().padLeft(2, '0');
-  final mm = d.month.toString().padLeft(2, '0');
-  return '$dd/$mm/${d.year}';
-}
-
-// ─────────────────────────────────────────────────────────
-
-class _EmptyState extends StatelessWidget {
-  final IconData icon;
+class _SectionTitle extends StatelessWidget {
   final String title;
-  final String subtitle;
-  final String actionLabel;
-  final VoidCallback onAction;
-
-  const _EmptyState({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.actionLabel,
-    required this.onAction,
-  });
+  const _SectionTitle({required this.title});
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(40),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 56,
-              color: AppTheme.textTertiary.withValues(alpha: 0.5),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              title,
-              style: GoogleFonts.inter(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: AppTheme.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              subtitle,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.inter(
-                color: AppTheme.textSecondary,
-                fontSize: 13,
-              ),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed: onAction,
-              icon: const Icon(Icons.add_rounded, size: 18),
-              label: Text(actionLabel),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primary,
-                foregroundColor: Colors.white,
-              ),
-            ),
-          ],
+    return Row(
+      children: [
+        Container(
+          width: 4,
+          height: 18,
+          decoration: BoxDecoration(
+            color: AppTheme.primary,
+            borderRadius: BorderRadius.circular(2),
+          ),
         ),
-      ),
+        const SizedBox(width: 10),
+        Text(
+          title,
+          style: GoogleFonts.inter(
+            color: AppTheme.textPrimary,
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
     );
   }
 }

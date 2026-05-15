@@ -30,6 +30,12 @@ import java.util.List;
 public class MyBusinessController {
 
     private final MyBusinessService service;
+    private final com.danang.safefood.repository.LoaiGiayToRepository loaiGiayToRepo;
+
+    @GetMapping("/loai-giay-to")
+    public ResponseEntity<ApiResponse<List<com.danang.safefood.entity.LoaiGiayTo>>> getLoaiGiayTo() {
+        return ResponseEntity.ok(ApiResponse.success(loaiGiayToRepo.findAll()));
+    }
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<MyBusinessResponse>>> getMyBusinesses(
