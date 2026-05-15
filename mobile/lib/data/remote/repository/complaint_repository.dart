@@ -30,4 +30,9 @@ class ComplaintRepository {
   Future<String> uploadImage(String filePath) {
     return remoteDataSource.uploadImage(filePath);
   }
+
+  /// Upload file (ảnh, video, tài liệu) lên Cloudinary
+  Future<String> uploadFile(String filePath) {
+    return remoteDataSource.uploadFile(filePath);
+  }
 }
