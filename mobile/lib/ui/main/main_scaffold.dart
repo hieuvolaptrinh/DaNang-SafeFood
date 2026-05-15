@@ -221,3 +221,11 @@ class _TabInfo {
 
   const _TabInfo({required this.page, required this.navItem});
 }
+
+class _TabInfo {
+  final Widget page;
+  final BottomNavigationBarItem navItem;
+
+  const _TabInfo({required this.page, required this.navItem});
+}
+
