@@ -9,6 +9,7 @@ import com.danang.safefood.dto.response.ViPhamResponse;
 import com.danang.safefood.entity.*;
 import com.danang.safefood.repository.*;
 import com.danang.safefood.util.IdGenerator;
+import com.danang.safefood.util.TrangThaiViPham;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -58,7 +59,8 @@ public class KiemDinhVienService {
 
         mau.setTrangThai(req.trangThai());
 
-        // Nếu chuyển sang "Đang kiểm nghiệm" hoặc "Đang xét nghiệm", cập nhật ngày kiểm nghiệm
+        // Nếu chuyển sang "Đang kiểm nghiệm" hoặc "Đang xét nghiệm", cập nhật ngày kiểm
+        // nghiệm
         if ("Đang kiểm nghiệm".equals(req.trangThai()) || "Đang xét nghiệm".equals(req.trangThai())) {
             if (mau.getNgayKiemNghiem() == null) {
                 mau.setNgayKiemNghiem(java.time.LocalDate.now());
@@ -135,14 +137,19 @@ public class KiemDinhVienService {
 
         String mucDo = (req.mucDo() != null && !req.mucDo().isBlank()) ? req.mucDo() : "Trung bình";
 
+        CoSoKinhDoanh coSoKinhDoanh = hoSo.getLichThanhTra() != null
+                ? hoSo.getLichThanhTra().getCoSoKinhDoanh()
+                : null;
+
         ViPham viPham = ViPham.builder()
                 .maViPham(IdGenerator.generate("VP"))
                 .moTaThem(req.moTaThem())
                 .khacPhuc(req.khacPhuc())
-                .trangThaiPheDuyet("Chờ duyệt")
+                .trangThaiPheDuyet(TrangThaiViPham.CHO_DUYET)
                 .mucDo(mucDo)
                 .hoSoThanhTra(hoSo)
                 .loaiViPham(loaiViPham)
+                .coSoKinhDoanh(coSoKinhDoanh)
                 .build();
 
         return ViPhamResponse.from(viPhamRepo.save(viPham));
@@ -150,8 +157,12 @@ public class KiemDinhVienService {
 
     @Transactional(readOnly = true)
     public Page<ViPhamResponse> getDanhSachViPham(String trangThaiPheDuyet, Pageable pageable) {
-        Page<ViPham> page = (trangThaiPheDuyet != null && !trangThaiPheDuyet.isBlank())
-                ? viPhamRepo.findByTrangThaiPheDuyetOrderByMaViPhamDesc(trangThaiPheDuyet, pageable)
+        TrangThaiViPham trangThai = null;
+        if (trangThaiPheDuyet != null && !trangThaiPheDuyet.isBlank()) {
+            trangThai = TrangThaiViPham.fromValue(trangThaiPheDuyet);
+        }
+        Page<ViPham> page = (trangThai != null)
+                ? viPhamRepo.findByTrangThaiPheDuyetOrderByMaViPhamDesc(trangThai, pageable)
                 : viPhamRepo.findAllByOrderByMaViPhamDesc(pageable);
         return page.map(ViPhamResponse::from);
     }
@@ -164,36 +175,6 @@ public class KiemDinhVienService {
                 .stream()
                 .map(ViPhamResponse::from)
                 .collect(Collectors.toList());
-    }
-
-    @Transactional
-    public ViPhamResponse capNhatTrangThaiViPham(
-            String maViPham,
-            String trangThai) {
-
-        ViPham viPham = viPhamRepo.findById(maViPham)
-                .orElseThrow(() ->
-                        new RuntimeException("Không tìm thấy vi phạm: " + maViPham));
-
-        List<String> trangThaiHopLe = List.of(
-                "Chờ duyệt",
-                "Đã duyệt",
-                "Từ chối",
-                "Đã ghi nhận"
-        );
-
-        if (!trangThaiHopLe.contains(trangThai)) {
-            throw new RuntimeException("Trạng thái không hợp lệ");
-        }
-
-        // ví dụ rule nghiệp vụ
-        if ("Đã duyệt".equals(viPham.getTrangThaiPheDuyet())) {
-            throw new RuntimeException("Đơn đã được duyệt, không thể cập nhật");
-        }
-
-        viPham.setTrangThaiPheDuyet(trangThai);
-
-        return ViPhamResponse.from(viPhamRepo.save(viPham));
     }
 
     // =========================================================

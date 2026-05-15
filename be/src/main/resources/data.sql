@@ -251,7 +251,7 @@ INSERT INTO mau_chi_tieu (maMau, maChiTieu, ketQua) VALUES
 GO
  
 -- [28] DamNhanKiemNgiem
-INSERT INTO dam_nhan_kiem_ngiem (maNguoiKiemNghiem, maMau) VALUES
+INSERT INTO dam_nhan_kiem_nghiem (maNguoiKiemNghiem, maMau) VALUES
     ('ND003', 'MK001'),
     ('ND003', 'MK002'),
     ('ND002', 'MK003'),

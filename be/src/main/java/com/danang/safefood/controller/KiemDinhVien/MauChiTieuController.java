@@ -17,7 +17,7 @@ import java.util.List;
  * Base path: /api/mau-kiem-nghiem/{maMau}/chi-tieu
  */
 @RestController
-@RequestMapping("/api/v1/mau-kiem-nghiem/{maMau}/chi-tieu")
+@RequestMapping("/api/mau-kiem-nghiem/{maMau}/chi-tieu")
 @RequiredArgsConstructor
 @PreAuthorize("hasAnyRole('CB_KIEM_DINH', 'QUAN_TRI_HE_THONG')")
 public class MauChiTieuController {

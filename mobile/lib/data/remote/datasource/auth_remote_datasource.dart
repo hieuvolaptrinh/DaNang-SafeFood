@@ -72,10 +72,7 @@ class AuthRemoteDataSource {
       );
 
       if (!wrapper.isSuccess) {
-        throw ApiException(
-          statusCode: wrapper.code,
-          message: wrapper.message,
-        );
+        throw ApiException(statusCode: wrapper.code, message: wrapper.message);
       }
 
       return wrapper.message;
@@ -87,10 +84,7 @@ class AuthRemoteDataSource {
           data,
           (json) => json,
         );
-        throw ApiException(
-          statusCode: wrapper.code,
-          message: wrapper.message,
-        );
+        throw ApiException(statusCode: wrapper.code, message: wrapper.message);
       }
       throw ApiException(
         statusCode: response?.statusCode ?? 500,
@@ -116,11 +110,7 @@ class AuthRemoteDataSource {
     try {
       final response = await dio.post(
         '/api/auth/forgot-password/reset',
-        data: {
-          'email': email,
-          'otp': otp,
-          'newPassword': newPassword,
-        },
+        data: {'email': email, 'otp': otp, 'newPassword': newPassword},
       );
 
       final wrapper = ApiResponseWrapper<Object?>.fromJson(
@@ -129,10 +119,7 @@ class AuthRemoteDataSource {
       );
 
       if (!wrapper.isSuccess) {
-        throw ApiException(
-          statusCode: wrapper.code,
-          message: wrapper.message,
-        );
+        throw ApiException(statusCode: wrapper.code, message: wrapper.message);
       }
 
       return wrapper.message;
@@ -144,9 +131,100 @@ class AuthRemoteDataSource {
           data,
           (json) => json,
         );
+        throw ApiException(statusCode: wrapper.code, message: wrapper.message);
+      }
+      throw ApiException(
+        statusCode: response?.statusCode ?? 500,
+        message: 'Không thể kết nối tới máy chủ',
+        details: error.message,
+      );
+    } catch (error) {
+      if (error is ApiException) rethrow;
+      throw ApiException(
+        statusCode: 500,
+        message: 'Có lỗi xảy ra. Vui lòng thử lại',
+        details: error,
+      );
+    }
+  }
+
+  /// Gửi OTP đăng ký
+  Future<String> sendRegisterOtp(String email) async {
+    try {
+      final response = await dio.post(
+        '/api/auth/register/send-otp',
+        data: {'email': email},
+      );
+
+      final wrapper = ApiResponseWrapper<String>.fromJson(
+        response.data as Map<String, dynamic>,
+        (json) => json as String,
+      );
+
+      if (!wrapper.isSuccess) {
+        throw ApiException(statusCode: wrapper.code, message: wrapper.message);
+      }
+
+      return wrapper.message;
+    } on DioException catch (error) {
+      final response = error.response;
+      if (response?.data is Map<String, dynamic>) {
+        final data = response!.data as Map<String, dynamic>;
+        final wrapper = ApiResponseWrapper<Object?>.fromJson(
+          data,
+          (json) => json,
+        );
+        throw ApiException(statusCode: wrapper.code, message: wrapper.message);
+      }
+      throw ApiException(
+        statusCode: response?.statusCode ?? 500,
+        message: 'Không thể kết nối tới máy chủ',
+        details: error.message,
+      );
+    } catch (error) {
+      if (error is ApiException) rethrow;
+      throw ApiException(
+        statusCode: 500,
+        message: 'Có lỗi xảy ra. Vui lòng thử lại',
+        details: error,
+      );
+    }
+  }
+
+  /// Xác thực OTP và tạo tài khoản
+  Future<AuthResponse> verifyRegister(RegisterVerifyRequest request) async {
+    try {
+      final response = await dio.post(
+        '/api/auth/register/verify',
+        data: request.toJson(),
+      );
+
+      final wrapper = ApiResponseWrapper<AuthResponse>.fromJson(
+        response.data as Map<String, dynamic>,
+        (json) => AuthResponse.fromJson(json as Map<String, dynamic>),
+      );
+
+      if (!wrapper.isSuccess || wrapper.data == null) {
         throw ApiException(
           statusCode: wrapper.code,
           message: wrapper.message,
+          details: wrapper.data,
+        );
+      }
+
+      return wrapper.data!;
+    } on DioException catch (error) {
+      final response = error.response;
+      if (response?.data is Map<String, dynamic>) {
+        final data = response!.data as Map<String, dynamic>;
+        final wrapper = ApiResponseWrapper<Object?>.fromJson(
+          data,
+          (json) => json,
+        );
+        throw ApiException(
+          statusCode: wrapper.code,
+          message: wrapper.message,
+          details: wrapper.data,
         );
       }
       throw ApiException(

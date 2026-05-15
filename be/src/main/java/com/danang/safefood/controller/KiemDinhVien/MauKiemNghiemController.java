@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
  * Base path: /api/mau-kiem-nghiem
  */
 @RestController
-@RequestMapping("/api/v1/mau-kiem-nghiem")
+@RequestMapping("/api/mau-kiem-nghiem")
 @RequiredArgsConstructor
 @PreAuthorize("hasAnyRole('CB_KIEM_DINH', 'QUAN_TRI_HE_THONG')")
 public class MauKiemNghiemController {

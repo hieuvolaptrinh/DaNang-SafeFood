@@ -3,7 +3,7 @@ package com.danang.safefood.controller.LanhDaoVSATTP;
 import com.danang.safefood.dto.request.QuyDinhRequest;
 import com.danang.safefood.dto.response.ApiResponse;
 import com.danang.safefood.dto.response.QuyDinhResponse;
-import com.danang.safefood.entity.TrangThaiQuyDinh;
+import com.danang.safefood.util.TrangThaiQuyDinh;
 import com.danang.safefood.service.QuyDinhService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

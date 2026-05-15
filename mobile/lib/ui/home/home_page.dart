@@ -5,9 +5,9 @@ import 'package:mobile_ui/core/theme/app_theme.dart';
 import 'package:mobile_ui/core/widgets/app_card.dart';
 import 'package:mobile_ui/core/widgets/section_header.dart';
 import 'package:mobile_ui/core/widgets/error_state_view.dart';
+import 'package:mobile_ui/data/remote/model/notification_model.dart';
 import 'package:mobile_ui/routes/routes.dart';
 import 'package:mobile_ui/viewmodel/auth/auth_cubit.dart';
-import 'package:mobile_ui/viewmodel/auth/auth_state.dart';
 import 'package:mobile_ui/viewmodel/home/home_cubit.dart';
 import 'package:mobile_ui/viewmodel/home/home_state.dart';
 
@@ -140,7 +140,7 @@ class HomePage extends StatelessWidget {
                       // ── Alert Banner ──
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: _AlertBanner(),
+                        child: _AlertBanner(item: state.banner),
                       ),
                       const SizedBox(height: 24),
 
@@ -148,39 +148,19 @@ class HomePage extends StatelessWidget {
                       SectionHeader(
                         title: 'Tin tức ATTP',
                         actionText: 'Xem tất cả',
-                        onActionTap: () => Navigator.pushNamed(
-                          context,
-                          Routes.notifications,
-                        ),
+                        onActionTap: () =>
+                            Navigator.pushNamed(context, Routes.notifications),
                       ),
                       const SizedBox(height: 8),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Column(
-                          children: const [
-                            _NewsCard(
-                              title:
-                                  'Phát hiện cơ sở sử dụng phẩm màu cấm tại quận Hải Châu',
-                              date: '22/03/2026',
-                              category: 'Khẩn Cấp',
-                              iconColor: Color(0xFFEF5350),
-                            ),
-                            _NewsCard(
-                              title:
-                                  'Chiến dịch kiểm tra ATTP dịp lễ 30/4 tại Đà Nẵng',
-                              date: '21/03/2026',
-                              category: 'Tin Tức',
-                              iconColor: Color(0xFF2E7D32),
-                            ),
-                            _NewsCard(
-                              title:
-                                  'Quy định mới về giấy phép kinh doanh thực phẩm 2026',
-                              date: '20/03/2026',
-                              category: 'Pháp Quy',
-                              iconColor: Color(0xFF1565C0),
-                            ),
-                          ],
-                        ),
+                        child: state.news.isEmpty
+                            ? const _EmptySection(text: 'Chưa có tin tức mới')
+                            : Column(
+                                children: state.news
+                                    .map((item) => _NewsCard(item: item))
+                                    .toList(),
+                              ),
                       ),
                       const SizedBox(height: 24),
 
@@ -193,30 +173,22 @@ class HomePage extends StatelessWidget {
                       const SizedBox(height: 8),
                       SizedBox(
                         height: 150,
-                        child: ListView(
-                          scrollDirection: Axis.horizontal,
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          children: const [
-                            _AlertFoodCard(
-                              name: 'Rau muống nhiễm chì',
-                              location: 'Chợ Hàn, Đà Nẵng',
-                              severity: 'Nguy hiểm',
-                              icon: Icons.eco_outlined,
-                            ),
-                            _AlertFoodCard(
-                              name: 'Thịt heo bơm nước',
-                              location: 'Chợ Cồn, Đà Nẵng',
-                              severity: 'Cảnh báo',
-                              icon: Icons.restaurant_outlined,
-                            ),
-                            _AlertFoodCard(
-                              name: 'Nước giải khát giả',
-                              location: 'Q. Thanh Khê',
-                              severity: 'Nguy hiểm',
-                              icon: Icons.local_drink_outlined,
-                            ),
-                          ],
-                        ),
+                        child: state.alerts.isEmpty
+                            ? const Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 20),
+                                child: _EmptySection(
+                                  text: 'Chưa có cảnh báo mới',
+                                ),
+                              )
+                            : ListView(
+                                scrollDirection: Axis.horizontal,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                ),
+                                children: state.alerts
+                                    .map((item) => _AlertFoodCard(item: item))
+                                    .toList(),
+                              ),
                       ),
                       const SizedBox(height: 100),
                     ],
@@ -245,10 +217,7 @@ class _GradientHeader extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            AppTheme.primary,
-            AppTheme.primary.withValues(alpha: 0.85),
-          ],
+          colors: [AppTheme.primary, AppTheme.primary.withValues(alpha: 0.85)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -475,6 +444,19 @@ class _ActionCard extends StatelessWidget {
 // Alert Banner
 // ═══════════════════════════════════════════════════════════
 class _AlertBanner extends StatelessWidget {
+  final NotificationModel? item;
+
+  const _AlertBanner({this.item});
+
+  String _title() {
+    return item?.loaiThongBao ?? 'Cảnh báo nóng';
+  }
+
+  String _content() {
+    return item?.tieuDe ??
+        'Thu hồi lô hàng thực phẩm chức năng không rõ nguồn gốc tại Đà Nẵng';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -517,7 +499,7 @@ class _AlertBanner extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Cảnh báo nóng',
+                  _title(),
                   style: GoogleFonts.inter(
                     color: const Color(0xFFEF5350),
                     fontSize: 13,
@@ -526,7 +508,7 @@ class _AlertBanner extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Thu hồi lô hàng thực phẩm chức năng không rõ nguồn gốc tại Đà Nẵng',
+                  _content(),
                   style: GoogleFonts.inter(
                     color: AppTheme.textPrimary,
                     fontSize: 13,
@@ -552,17 +534,9 @@ class _AlertBanner extends StatelessWidget {
 // News Card
 // ═══════════════════════════════════════════════════════════
 class _NewsCard extends StatelessWidget {
-  final String title;
-  final String date;
-  final String category;
-  final Color iconColor;
+  final NotificationModel item;
 
-  const _NewsCard({
-    required this.title,
-    required this.date,
-    required this.category,
-    required this.iconColor,
-  });
+  const _NewsCard({required this.item});
 
   @override
   Widget build(BuildContext context) {
@@ -575,12 +549,12 @@ class _NewsCard extends StatelessWidget {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: iconColor.withValues(alpha: 0.10),
+              color: _categoryColor(item.loaiThongBao).withValues(alpha: 0.10),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
-              _categoryIcon(category),
-              color: iconColor,
+              _categoryIcon(item.loaiThongBao ?? ''),
+              color: _categoryColor(item.loaiThongBao),
               size: 22,
             ),
           ),
@@ -590,7 +564,7 @@ class _NewsCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  title,
+                  item.tieuDe,
                   style: GoogleFonts.inter(
                     color: AppTheme.textPrimary,
                     fontSize: 14,
@@ -608,13 +582,15 @@ class _NewsCard extends StatelessWidget {
                         vertical: 3,
                       ),
                       decoration: BoxDecoration(
-                        color: iconColor.withValues(alpha: 0.10),
+                        color: _categoryColor(
+                          item.loaiThongBao,
+                        ).withValues(alpha: 0.10),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
-                        category,
+                        item.loaiThongBao ?? 'Thông báo',
                         style: GoogleFonts.inter(
-                          color: iconColor,
+                          color: _categoryColor(item.loaiThongBao),
                           fontSize: 10,
                           fontWeight: FontWeight.w700,
                         ),
@@ -622,7 +598,7 @@ class _NewsCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      date,
+                      item.shortDate,
                       style: GoogleFonts.inter(
                         color: AppTheme.textSecondary,
                         fontSize: 12,
@@ -650,27 +626,36 @@ class _NewsCard extends StatelessWidget {
         return Icons.article_outlined;
     }
   }
+
+  Color _categoryColor(String? category) {
+    switch ((category ?? '').toLowerCase()) {
+      case 'khẩn cấp':
+      case 'khẩn':
+        return const Color(0xFFEF5350);
+      case 'pháp quy':
+        return const Color(0xFF1565C0);
+      case 'tin tức':
+        return const Color(0xFF2E7D32);
+      default:
+        return AppTheme.primary;
+    }
+  }
 }
 
 // ═══════════════════════════════════════════════════════════
 // Alert Food Card
 // ═══════════════════════════════════════════════════════════
 class _AlertFoodCard extends StatelessWidget {
-  final String name;
-  final String location;
-  final String severity;
-  final IconData icon;
+  final NotificationModel item;
 
-  const _AlertFoodCard({
-    required this.name,
-    required this.location,
-    required this.severity,
-    required this.icon,
-  });
+  const _AlertFoodCard({required this.item});
 
   @override
   Widget build(BuildContext context) {
-    final isHighSeverity = severity == 'Nguy hiểm';
+    final severityText = item.loaiThongBao ?? 'Cảnh báo';
+    final isHighSeverity =
+        severityText.toLowerCase().contains('khẩn') ||
+        severityText.toLowerCase().contains('nguy');
     final color = isHighSeverity ? const Color(0xFFEF5350) : AppTheme.accent;
 
     return Container(
@@ -698,11 +683,11 @@ class _AlertFoodCard extends StatelessWidget {
               color: color.withValues(alpha: 0.10),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(this.icon, color: color, size: 20),
+            child: Icon(Icons.warning_amber_rounded, color: color, size: 20),
           ),
           const SizedBox(height: 10),
           Text(
-            name,
+            item.tieuDe,
             style: GoogleFonts.inter(
               color: AppTheme.textPrimary,
               fontSize: 13,
@@ -713,7 +698,7 @@ class _AlertFoodCard extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            location,
+            item.shortDate,
             style: GoogleFonts.inter(
               color: AppTheme.textSecondary,
               fontSize: 11,
@@ -727,7 +712,7 @@ class _AlertFoodCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(6),
             ),
             child: Text(
-              severity,
+              severityText,
               style: GoogleFonts.inter(
                 color: color,
                 fontSize: 10,
@@ -736,6 +721,27 @@ class _AlertFoodCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _EmptySection extends StatelessWidget {
+  final String text;
+
+  const _EmptySection({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 8, bottom: 8),
+      child: Text(
+        text,
+        style: GoogleFonts.inter(
+          color: AppTheme.textSecondary,
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+        ),
       ),
     );
   }

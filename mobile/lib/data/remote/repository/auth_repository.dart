@@ -41,4 +41,23 @@ class AuthRepository {
       newPassword: newPassword,
     );
   }
+
+  /// Gửi OTP xác nhận đăng ký
+  Future<String> sendRegisterOtp({required String email}) {
+    return remoteDataSource.sendRegisterOtp(email);
+  }
+
+  /// Xác thực OTP và tạo tài khoản, tự lưu token
+  Future<AuthResponse> verifyRegister({
+    required RegisterVerifyRequest request,
+  }) async {
+    final response = await remoteDataSource.verifyRegister(request);
+
+    await tokenStorage.saveTokens(
+      accessToken: response.accessToken,
+      refreshToken: response.refreshToken,
+    );
+
+    return response;
+  }
 }
