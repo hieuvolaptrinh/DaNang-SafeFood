@@ -42,6 +42,9 @@ import 'package:mobile_ui/data/remote/repository/violation_repository.dart';
 import 'package:mobile_ui/data/remote/model/notification_model.dart';
 import 'package:mobile_ui/viewmodel/complaint/complaint_cubit.dart';
 import 'package:mobile_ui/viewmodel/violation/violation_cubit.dart';
+import 'package:mobile_ui/ui/profile/edit_profile_page.dart';
+import 'package:mobile_ui/ui/profile/change_password_page.dart';
+import 'package:mobile_ui/ui/profile/my_complaints_page.dart';
 
 class AppRouter {
   static final _dio = DioClient().dio;
@@ -216,6 +219,21 @@ class AppRouter {
             create: (_) => BusinessStatusCubit()..loadDocuments(),
             child: const BusinessStatusPage(),
           ),
+        );
+
+      case Routes.editProfile:
+        return MaterialPageRoute(
+          builder: (ctx) => const EditProfilePage(),
+        );
+
+      case Routes.changePassword:
+        return MaterialPageRoute(
+          builder: (ctx) => const ChangePasswordPage(),
+        );
+
+      case Routes.myComplaints:
+        return MaterialPageRoute(
+          builder: (ctx) => const MyComplaintsPage(),
         );
 
       default:

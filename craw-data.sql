@@ -151,10 +151,10 @@ INSERT INTO vi_pham (maViPham, maHoSo, maLoaiViPham, maCoSo, moTaThem, khacPhuc,
 
 -- [22] HinhThucKhacPhuc
 INSERT INTO hinh_thuc_khac_phuc (maHinhThucKhacPhuc, soTienKhacPhuc, tinhTrangKhacPhuc, maViPham) VALUES
-    ('HT001', 2000000.00,  'Đã khắc phục', 'VP001'),
-    ('HT002', 5000000.00,  'Đang khắc phục', 'VP002'),
-    ('HT003', 0.00,        'Đã khắc phục', 'VP001'),
-    ('HT004', 10000000.00, 'Chưa khắc phục', 'VP003');
+    ('HT001', 2000000.00,  'DA_KHAC_PHUC', 'VP001'),
+    ('HT002', 5000000.00,  'DANG_KHAC_PHUCc', 'VP002'),
+    ('HT003', 0.00,        'CHUA_KHAC_PHUC', 'VP001'),
+    ('HT004', 10000000.00, 'CHUA_KHAC_PHUC', 'VP003');
 
 -- [23] MinhChungKhacPhuc
 INSERT INTO minh_chung_khac_phuc (maMinhChung, maViPham, thoiGianGui) VALUES

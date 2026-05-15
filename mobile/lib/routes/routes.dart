@@ -22,4 +22,9 @@ class Routes {
 
   // Notification (from home icon)
   static const String notifications = '/notifications';
+
+  // Profile
+  static const String editProfile = '/edit-profile';
+  static const String changePassword = '/change-password';
+  static const String myComplaints = '/my-complaints';
 }

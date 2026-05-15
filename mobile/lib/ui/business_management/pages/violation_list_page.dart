@@ -62,8 +62,10 @@ class _ViolationListPageState extends State<ViolationListPage> {
             switch (_selectedFilter) {
               case 'Đã khắc phục':
                 return v.daKhacPhuc;
+              case 'Đang khắc phục':
+                return v.dangKhacPhuc;
               case 'Chưa khắc phục':
-                return !v.daKhacPhuc;
+                return !v.daKhacPhuc && !v.dangKhacPhuc;
               default:
                 return true;
             }
@@ -107,7 +109,12 @@ class _Filters extends StatelessWidget {
   final ValueChanged<String> onChanged;
   const _Filters({required this.selected, required this.onChanged});
 
-  static const _options = ['Tất cả', 'Chưa khắc phục', 'Đã khắc phục'];
+  static const _options = [
+    'Tất cả',
+    'Chưa khắc phục',
+    'Đang khắc phục',
+    'Đã khắc phục',
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -154,6 +161,25 @@ class _ViolationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final daKhacPhuc = violation.daKhacPhuc;
+    final dangKhacPhuc = violation.dangKhacPhuc;
+
+    final Color iconColor;
+    final IconData iconData;
+    final SafetyStatus badgeStatus;
+    if (daKhacPhuc) {
+      iconColor = AppTheme.success;
+      iconData = Icons.check_circle_rounded;
+      badgeStatus = SafetyStatus.safe;
+    } else if (dangKhacPhuc) {
+      iconColor = AppTheme.info;
+      iconData = Icons.hourglass_top_rounded;
+      badgeStatus = SafetyStatus.processing;
+    } else {
+      iconColor = AppTheme.error;
+      iconData = Icons.gavel_rounded;
+      badgeStatus = SafetyStatus.violated;
+    }
+
     return AppCard(
       onTap: () => Navigator.pushNamed(
         context,
@@ -166,15 +192,10 @@ class _ViolationCard extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: (daKhacPhuc ? AppTheme.success : AppTheme.error)
-                  .withValues(alpha: 0.12),
+              color: iconColor.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(
-              daKhacPhuc ? Icons.check_circle_rounded : Icons.gavel_rounded,
-              color: daKhacPhuc ? AppTheme.success : AppTheme.error,
-              size: 22,
-            ),
+            child: Icon(iconData, color: iconColor, size: 22),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -215,8 +236,8 @@ class _ViolationCard extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           StatusBadge(
-            status: daKhacPhuc ? SafetyStatus.safe : SafetyStatus.violated,
-            customLabel: daKhacPhuc ? 'Đã khắc phục' : 'Chưa khắc phục',
+            status: badgeStatus,
+            customLabel: violation.tinhTrangKhacPhucLabel,
           ),
         ],
       ),

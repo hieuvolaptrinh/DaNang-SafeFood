@@ -11,6 +11,7 @@ import com.danang.safefood.repository.HinhThucKhacPhucRepository;
 import com.danang.safefood.repository.NguoiDungRepository;
 import com.danang.safefood.repository.ViPhamRepository;
 import com.danang.safefood.util.IdGenerator;
+import com.danang.safefood.util.TrangThaiKhacPhuc;
 import com.danang.safefood.util.TrangThaiThanhToan;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
@@ -63,9 +64,9 @@ public class KhacPhucService {
         ViPham vp = viPhamRepository.findById(maViPham)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy vi phạm: " + maViPham));
 
-        // Tổng tiền chưa khắc phục
+        // Tổng tiền chưa khắc phục (tức trạng thái != DA_KHAC_PHUC)
         BigDecimal totalUnpaid = vp.getHinhThucKhacPhucList().stream()
-                .filter(h -> !"Da khac phuc".equalsIgnoreCase(h.getTinhTrangKhacPhuc()))
+                .filter(h -> h.getTinhTrangKhacPhuc() != TrangThaiKhacPhuc.DA_KHAC_PHUC)
                 .map(HinhThucKhacPhuc::getSoTienKhacPhuc)
                 .filter(java.util.Objects::nonNull)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -113,8 +114,10 @@ public class KhacPhucService {
 
         // Tham chiếu ViPham qua mã lưu trong description (để webhook tra cứu lại)
         gd = giaoDichRepo.save(gd);
-        // Liên kết bằng cách gắn vào quan hệ XuPhat? — hệ thống chưa có, nên lưu maViPham
-        // vào moTa (đã làm) và dùng paymentByOrderCode để tra cứu khi webhook về.
+
+        // Đánh dấu các hình thức chưa khắc phục → đang khắc phục
+        markStatus(maViPham, TrangThaiKhacPhuc.CHUA_KHAC_PHUC, TrangThaiKhacPhuc.DANG_KHAC_PHUC);
+
         return PaymentResponse.from(gd);
     }
 
@@ -151,10 +154,12 @@ public class KhacPhucService {
                 case "CANCELLED" -> {
                     gd.setTrangThai(TrangThaiThanhToan.CANCELLED);
                     giaoDichRepo.save(gd);
+                    revertDangKhacPhuc(gd);
                 }
                 case "EXPIRED" -> {
                     gd.setTrangThai(TrangThaiThanhToan.EXPIRED);
                     giaoDichRepo.save(gd);
+                    revertDangKhacPhuc(gd);
                 }
                 default -> { /* keep PENDING */ }
             }
@@ -211,15 +216,41 @@ public class KhacPhucService {
     }
 
     /**
-     * Đánh dấu mọi HinhThucKhacPhuc của ViPham là "Da khac phuc"
+     * Đánh dấu mọi HinhThucKhacPhuc của ViPham là DA_KHAC_PHUC
      */
     private void updateKhacPhucDone(String maViPham) {
         List<HinhThucKhacPhuc> list = hinhThucKhacPhucRepository.findByViPham_MaViPham(maViPham);
         for (HinhThucKhacPhuc h : list) {
-            h.setTinhTrangKhacPhuc("Da khac phuc");
+            h.setTinhTrangKhacPhuc(TrangThaiKhacPhuc.DA_KHAC_PHUC);
         }
         hinhThucKhacPhucRepository.saveAll(list);
         log.info("[KhacPhuc] Đã cập nhật trạng thái Da khac phuc cho VP {}", maViPham);
+    }
+
+    /**
+     * Đổi trạng thái cho các hình thức khắc phục đang ở `from` → `to`.
+     */
+    private void markStatus(String maViPham, TrangThaiKhacPhuc from, TrangThaiKhacPhuc to) {
+        List<HinhThucKhacPhuc> list = hinhThucKhacPhucRepository.findByViPham_MaViPham(maViPham);
+        boolean changed = false;
+        for (HinhThucKhacPhuc h : list) {
+            if (h.getTinhTrangKhacPhuc() == from) {
+                h.setTinhTrangKhacPhuc(to);
+                changed = true;
+            }
+        }
+        if (changed) hinhThucKhacPhucRepository.saveAll(list);
+    }
+
+    /**
+     * Khi giao dịch bị huỷ/hết hạn → revert các hình thức về CHUA_KHAC_PHUC
+     */
+    private void revertDangKhacPhuc(GiaoDichThanhToan gd) {
+        String desc = gd.getMoTa();
+        if (desc != null && desc.startsWith("VP")) {
+            String maVP = desc.substring(2);
+            markStatus(maVP, TrangThaiKhacPhuc.DANG_KHAC_PHUC, TrangThaiKhacPhuc.CHUA_KHAC_PHUC);
+        }
     }
 
     /**

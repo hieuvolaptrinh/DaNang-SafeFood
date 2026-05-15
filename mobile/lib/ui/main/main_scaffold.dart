@@ -19,9 +19,13 @@ import 'package:mobile_ui/data/remote/datasource/home_remote_datasource.dart';
 import 'package:mobile_ui/data/remote/datasource/notification_datasource.dart';
 import 'package:mobile_ui/data/remote/datasource/business_remote_datasource.dart';
 import 'package:mobile_ui/data/remote/datasource/complaint_remote_datasource.dart';
+import 'package:mobile_ui/data/remote/datasource/my_business_remote_datasource.dart';
 import 'package:mobile_ui/data/remote/repository/home_repository.dart';
 import 'package:mobile_ui/data/remote/repository/business_repository.dart';
 import 'package:mobile_ui/data/remote/repository/complaint_repository.dart';
+import 'package:mobile_ui/data/remote/repository/my_business_repository.dart';
+import 'package:mobile_ui/data/remote/datasource/profile_remote_datasource.dart';
+import 'package:mobile_ui/data/remote/repository/profile_repository.dart';
 
 class MainScaffold extends StatefulWidget {
   const MainScaffold({super.key});
@@ -43,6 +47,11 @@ class _MainScaffoldState extends State<MainScaffold> {
   static final ComplaintRepository _complaintRepository = ComplaintRepository(
     remoteDataSource: ComplaintRemoteDataSource(dio: _dio),
   );
+  static final MyBusinessRepository _myBusinessRepository =
+      MyBusinessRepository(remote: MyBusinessRemoteDataSource(dio: _dio));
+  static final ProfileRepository _profileRepository = ProfileRepository(
+    remoteDataSource: ProfileRemoteDataSource(dio: _dio),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -63,13 +72,20 @@ class _MainScaffoldState extends State<MainScaffold> {
         BlocProvider(
           create: (_) => SearchCubit(businessRepository: _businessRepository),
         ),
-        BlocProvider(create: (_) => BusinessManagementCubit()..loadData()),
+        BlocProvider(
+          create: (_) =>
+              BusinessManagementCubit(repository: _myBusinessRepository)
+                ..loadData(),
+        ),
         BlocProvider(
           create: (_) => ComplaintCubit(repository: _complaintRepository)
             ..loadComplaints()
             ..loadTypes(),
         ),
-        BlocProvider(create: (_) => ProfileCubit()..loadProfile()),
+        BlocProvider(create: (_) => ProfileCubit(
+          profileRepository: _profileRepository,
+          complaintRepository: _complaintRepository,
+        )..loadProfile()),
         BlocProvider(create: (_) => BusinessStatusCubit()..loadDocuments()),
       ],
       child: Scaffold(

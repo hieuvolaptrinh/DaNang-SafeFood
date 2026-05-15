@@ -1,5 +1,7 @@
 package com.danang.safefood.entity;
 
+import com.danang.safefood.util.TrangThaiKhacPhuc;
+import com.danang.safefood.util.TrangThaiKhacPhucConverter;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -17,15 +19,15 @@ public class HinhThucKhacPhuc {
     @Column(name = "maHinhThucKhacPhuc", length = 10, nullable = false)
     private String maHinhThucKhacPhuc;
 
-    // CHECK: soTienKhacPhuc >= 0 enforced at DB level
     @Column(name = "soTienKhacPhuc", nullable = false, precision = 18, scale = 2)
     private BigDecimal soTienKhacPhuc;
 
-    @Column(name = "tinhTrangKhacPhuc", length = 50)
-    private String tinhTrangKhacPhuc;
+    @Convert(converter = TrangThaiKhacPhucConverter.class)
+    @Column(name = "tinhTrangKhacPhuc", length = 50, nullable = false)
+    @Builder.Default
+    private TrangThaiKhacPhuc tinhTrangKhacPhuc = TrangThaiKhacPhuc.CHUA_KHAC_PHUC;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "maViPham")
     private ViPham viPham;
-
 }

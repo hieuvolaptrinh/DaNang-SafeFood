@@ -1,25 +1,55 @@
 import 'package:equatable/equatable.dart';
 
+/// Trạng thái khắc phục (khớp enum BE).
+enum KhacPhucStatus { chuaKhacPhuc, dangKhacPhuc, daKhacPhuc }
+
+KhacPhucStatus _khacPhucFrom(String? raw) {
+  switch (raw) {
+    case 'DA_KHAC_PHUC':
+      return KhacPhucStatus.daKhacPhuc;
+    case 'DANG_KHAC_PHUC':
+      return KhacPhucStatus.dangKhacPhuc;
+    default:
+      return KhacPhucStatus.chuaKhacPhuc;
+  }
+}
+
+String khacPhucLabel(KhacPhucStatus s) {
+  switch (s) {
+    case KhacPhucStatus.daKhacPhuc:
+      return 'Đã khắc phục';
+    case KhacPhucStatus.dangKhacPhuc:
+      return 'Đang khắc phục';
+    case KhacPhucStatus.chuaKhacPhuc:
+      return 'Chưa khắc phục';
+  }
+}
+
 /// 1 hình thức khắc phục (xử phạt cụ thể) gắn với vi phạm.
 class HinhThucKhacPhucInfo extends Equatable {
   final String maHinhThucKhacPhuc;
   final double soTienKhacPhuc;
-  final String? tinhTrangKhacPhuc;
+  final KhacPhucStatus tinhTrangKhacPhuc;
+  final String tinhTrangKhacPhucLabel;
 
   const HinhThucKhacPhucInfo({
     required this.maHinhThucKhacPhuc,
     required this.soTienKhacPhuc,
-    this.tinhTrangKhacPhuc,
+    this.tinhTrangKhacPhuc = KhacPhucStatus.chuaKhacPhuc,
+    this.tinhTrangKhacPhucLabel = 'Chưa khắc phục',
   });
 
-  bool get daKhacPhuc =>
-      tinhTrangKhacPhuc?.toLowerCase().contains('da khac phuc') ?? false;
+  bool get daKhacPhuc => tinhTrangKhacPhuc == KhacPhucStatus.daKhacPhuc;
+  bool get dangKhacPhuc => tinhTrangKhacPhuc == KhacPhucStatus.dangKhacPhuc;
 
   factory HinhThucKhacPhucInfo.fromJson(Map<String, dynamic> json) {
+    final st = _khacPhucFrom(json['tinhTrangKhacPhuc'] as String?);
     return HinhThucKhacPhucInfo(
       maHinhThucKhacPhuc: json['maHinhThucKhacPhuc'] as String? ?? '',
       soTienKhacPhuc: (json['soTienKhacPhuc'] as num?)?.toDouble() ?? 0,
-      tinhTrangKhacPhuc: json['tinhTrangKhacPhuc'] as String?,
+      tinhTrangKhacPhuc: st,
+      tinhTrangKhacPhucLabel:
+          json['tinhTrangKhacPhucLabel'] as String? ?? khacPhucLabel(st),
     );
   }
 
@@ -28,6 +58,7 @@ class HinhThucKhacPhucInfo extends Equatable {
     maHinhThucKhacPhuc,
     soTienKhacPhuc,
     tinhTrangKhacPhuc,
+    tinhTrangKhacPhucLabel,
   ];
 }
 
@@ -43,7 +74,8 @@ class ViolationModel extends Equatable {
   final String? maCoSo;
   final String? tenCoSo;
   final double tongTienPhat;
-  final String tinhTrangKhacPhuc;
+  final KhacPhucStatus tinhTrangKhacPhuc;
+  final String tinhTrangKhacPhucLabel;
   final List<HinhThucKhacPhucInfo> danhSachKhacPhuc;
 
   const ViolationModel({
@@ -58,11 +90,12 @@ class ViolationModel extends Equatable {
     this.tenCoSo,
     required this.tongTienPhat,
     required this.tinhTrangKhacPhuc,
+    required this.tinhTrangKhacPhucLabel,
     required this.danhSachKhacPhuc,
   });
 
-  bool get daKhacPhuc =>
-      tinhTrangKhacPhuc.toLowerCase().contains('da khac phuc');
+  bool get daKhacPhuc => tinhTrangKhacPhuc == KhacPhucStatus.daKhacPhuc;
+  bool get dangKhacPhuc => tinhTrangKhacPhuc == KhacPhucStatus.dangKhacPhuc;
 
   factory ViolationModel.fromJson(Map<String, dynamic> json) {
     final ds =
@@ -72,6 +105,8 @@ class ViolationModel extends Equatable {
             )
             .toList() ??
         const <HinhThucKhacPhucInfo>[];
+
+    final st = _khacPhucFrom(json['tinhTrangKhacPhuc'] as String?);
 
     return ViolationModel(
       maViPham: json['maViPham'] as String? ?? '',
@@ -84,8 +119,9 @@ class ViolationModel extends Equatable {
       maCoSo: json['maCoSo'] as String?,
       tenCoSo: json['tenCoSo'] as String?,
       tongTienPhat: (json['tongTienPhat'] as num?)?.toDouble() ?? 0,
-      tinhTrangKhacPhuc:
-          json['tinhTrangKhacPhuc'] as String? ?? 'Chua khac phuc',
+      tinhTrangKhacPhuc: st,
+      tinhTrangKhacPhucLabel:
+          json['tinhTrangKhacPhucLabel'] as String? ?? khacPhucLabel(st),
       danhSachKhacPhuc: ds,
     );
   }
@@ -103,6 +139,7 @@ class ViolationModel extends Equatable {
     tenCoSo,
     tongTienPhat,
     tinhTrangKhacPhuc,
+    tinhTrangKhacPhucLabel,
     danhSachKhacPhuc,
   ];
 }

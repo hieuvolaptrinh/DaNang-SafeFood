@@ -76,9 +76,19 @@ class _Body extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final daKhacPhuc = violation.daKhacPhuc;
+    final dangKhacPhuc = violation.dangKhacPhuc;
     final tienChuaNop = violation.danhSachKhacPhuc
         .where((h) => !h.daKhacPhuc)
         .fold<double>(0, (s, h) => s + h.soTienKhacPhuc);
+
+    SafetyStatus badgeStatus;
+    if (daKhacPhuc) {
+      badgeStatus = SafetyStatus.safe;
+    } else if (dangKhacPhuc) {
+      badgeStatus = SafetyStatus.processing;
+    } else {
+      badgeStatus = SafetyStatus.violated;
+    }
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
@@ -86,10 +96,8 @@ class _Body extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           StatusBadge(
-            status: daKhacPhuc ? SafetyStatus.safe : SafetyStatus.violated,
-            customLabel: daKhacPhuc
-                ? 'Đã khắc phục'
-                : violation.tinhTrangKhacPhuc,
+            status: badgeStatus,
+            customLabel: violation.tinhTrangKhacPhucLabel,
           ),
           const SizedBox(height: 12),
 
@@ -427,35 +435,42 @@ class _KhacPhucItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final done = item.daKhacPhuc;
+    final inProgress = item.dangKhacPhuc;
+
+    final Color color;
+    final Color amountColor;
+    final IconData icon;
+    if (done) {
+      color = AppTheme.success;
+      amountColor = AppTheme.success;
+      icon = Icons.check_circle_rounded;
+    } else if (inProgress) {
+      color = AppTheme.info;
+      amountColor = AppTheme.info;
+      icon = Icons.hourglass_top_rounded;
+    } else {
+      color = AppTheme.warning;
+      amountColor = AppTheme.error;
+      icon = Icons.payments_outlined;
+    }
+
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: done
-            ? AppTheme.success.withValues(alpha: 0.05)
-            : AppTheme.surfaceBg,
+        color: color.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: done
-              ? AppTheme.success.withValues(alpha: 0.3)
-              : AppTheme.dividerColor,
-        ),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: done
-                  ? AppTheme.success.withValues(alpha: 0.12)
-                  : AppTheme.warning.withValues(alpha: 0.12),
+              color: color.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(
-              done ? Icons.check_circle_rounded : Icons.payments_outlined,
-              color: done ? AppTheme.success : AppTheme.warning,
-              size: 18,
-            ),
+            child: Icon(icon, color: color, size: 18),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -467,12 +482,12 @@ class _KhacPhucItem extends StatelessWidget {
                   style: GoogleFonts.inter(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
-                    color: done ? AppTheme.success : AppTheme.error,
+                    color: amountColor,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  done ? 'Đã khắc phục' : 'Chưa khắc phục',
+                  item.tinhTrangKhacPhucLabel,
                   style: GoogleFonts.inter(
                     color: AppTheme.textSecondary,
                     fontSize: 11,
