@@ -22,6 +22,12 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Cho phep ung dung su dung camera de gui phan anh.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Cho phep ung dung truy cap thu vien anh de tai len phan anh.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Cho phep ung dung luu anh vao thu vien neu can thiet.</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

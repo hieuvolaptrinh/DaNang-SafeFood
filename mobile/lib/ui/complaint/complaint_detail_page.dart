@@ -1,12 +1,17 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile_ui/core/theme/app_theme.dart';
 import 'package:mobile_ui/core/widgets/status_badge.dart';
+import 'package:mobile_ui/data/remote/model/complaint_models.dart';
+import 'package:mobile_ui/viewmodel/complaint/complaint_cubit.dart';
+import 'package:mobile_ui/viewmodel/complaint/complaint_state.dart';
 
 class ComplaintDetailPage extends StatelessWidget {
-  final String complaintTitle;
+  final String complaintId;
 
-  const ComplaintDetailPage({super.key, required this.complaintTitle});
+  const ComplaintDetailPage({super.key, required this.complaintId});
 
   @override
   Widget build(BuildContext context) {
@@ -21,121 +26,172 @@ class ComplaintDetailPage extends StatelessWidget {
           style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const StatusBadge(status: SafetyStatus.processing),
-            const SizedBox(height: 12),
-            Text(
-              complaintTitle.isNotEmpty
-                  ? complaintTitle
-                  : 'Quán ăn sử dụng dầu ăn tái chế',
-              style: GoogleFonts.inter(
-                color: AppTheme.textPrimary,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                height: 1.3,
-              ),
-            ),
-            const SizedBox(height: 16),
+      body: BlocBuilder<ComplaintCubit, ComplaintState>(
+        builder: (context, state) {
+          final detail = state.selectedComplaint;
+          if (state.status == ComplaintStatus.loading || detail == null) {
+            return const Center(
+              child: CircularProgressIndicator(color: AppTheme.primary),
+            );
+          }
 
-            _DetailRow(label: 'Ngày gửi', value: '20/03/2026'),
-            _DetailRow(label: 'Loại vi phạm', value: 'Vệ sinh kém'),
-            _DetailRow(label: 'Địa điểm', value: 'Quán ăn ABC, 45 Trần Phú, Hải Châu'),
-            _DetailRow(label: 'Mã phản ánh', value: 'PA-2026-00123'),
-
-            const SizedBox(height: 20),
-            const Divider(color: AppTheme.dividerColor),
-            const SizedBox(height: 20),
-
-            Text(
-              'Mô tả chi tiết',
-              style: GoogleFonts.inter(
-                color: AppTheme.textPrimary,
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Quán ăn tại địa chỉ trên sử dụng dầu ăn tái chế nhiều lần, dầu đã đen và có mùi khét. Phát hiện vào lúc 11h trưa ngày 20/03/2026 khi đến ăn tại quán. Nhân viên phục vụ xác nhận dầu được sử dụng lại từ hôm trước.',
-              style: GoogleFonts.inter(
-                color: AppTheme.textPrimary.withValues(alpha: 0.85),
-                fontSize: 14,
-                height: 1.6,
-              ),
-            ),
-
-            const SizedBox(height: 20),
-            Text(
-              'Hình ảnh đính kèm',
-              style: GoogleFonts.inter(
-                color: AppTheme.textPrimary,
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: List.generate(3, (i) {
-                return Container(
-                  width: 80,
-                  height: 80,
-                  margin: const EdgeInsets.only(right: 10),
-                  decoration: BoxDecoration(
-                    color: AppTheme.surfaceBg,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppTheme.dividerColor),
-                  ),
-                  child: const Icon(Icons.image_outlined, color: AppTheme.textSecondary),
-                );
-              }),
-            ),
-
-            const SizedBox(height: 24),
-            Text(
-              'Tiến trình xử lý',
-              style: GoogleFonts.inter(
-                color: AppTheme.textPrimary,
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 12),
-            _TimelineItem(
-              title: 'Đã tiếp nhận',
-              date: '20/03/2026 - 14:30',
-              description: 'Hệ thống đã tiếp nhận phản ánh của bạn.',
-              isCompleted: true,
-              isFirst: true,
-            ),
-            _TimelineItem(
-              title: 'Đang xác minh',
-              date: '21/03/2026 - 09:00',
-              description: 'Đoàn kiểm tra đang xác minh thông tin.',
-              isCompleted: true,
-            ),
-            _TimelineItem(
-              title: 'Đang xử lý',
-              date: '22/03/2026',
-              description: 'Đang tiến hành xử lý vi phạm.',
-              isCompleted: false,
-            ),
-            _TimelineItem(
-              title: 'Hoàn thành',
-              date: '',
-              description: 'Chưa hoàn thành',
-              isCompleted: false,
-              isLast: true,
-            ),
-            const SizedBox(height: 40),
-          ],
-        ),
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: _ComplaintDetailContent(detail: detail),
+          );
+        },
       ),
     );
   }
+}
+
+class _ComplaintDetailContent extends StatelessWidget {
+  final ComplaintSummary detail;
+
+  const _ComplaintDetailContent({required this.detail});
+
+  @override
+  Widget build(BuildContext context) {
+    final location = detail.location ?? detail.businessName ?? 'Chưa cập nhật';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        StatusBadge(
+          status: _mapStatus(detail.status),
+          customLabel: detail.status,
+        ),
+        const SizedBox(height: 12),
+        Text(
+          detail.title,
+          style: GoogleFonts.inter(
+            color: AppTheme.textPrimary,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            height: 1.3,
+          ),
+        ),
+        const SizedBox(height: 16),
+        _DetailRow(label: 'Ngày gửi', value: _formatDate(detail.submittedAt)),
+        _DetailRow(label: 'Loại vi phạm', value: detail.typeName),
+        _DetailRow(label: 'Địa điểm', value: location),
+        _DetailRow(label: 'Mã phản ánh', value: detail.id),
+        const SizedBox(height: 20),
+        const Divider(color: AppTheme.dividerColor),
+        const SizedBox(height: 20),
+        Text(
+          'Mô tả chi tiết',
+          style: GoogleFonts.inter(
+            color: AppTheme.textPrimary,
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          detail.content,
+          style: GoogleFonts.inter(
+            color: AppTheme.textPrimary.withValues(alpha: 0.85),
+            fontSize: 14,
+            height: 1.6,
+          ),
+        ),
+        const SizedBox(height: 20),
+        Text(
+          'Hình ảnh đính kèm',
+          style: GoogleFonts.inter(
+            color: AppTheme.textPrimary,
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 8),
+        if (detail.fileUrls.isEmpty)
+          Text(
+            'Chưa có tệp đính kèm',
+            style: GoogleFonts.inter(
+              color: AppTheme.textSecondary,
+              fontSize: 13,
+            ),
+          )
+        else
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: detail.fileUrls.map((url) {
+              return ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: CachedNetworkImage(
+                  imageUrl: url,
+                  width: 92,
+                  height: 92,
+                  fit: BoxFit.cover,
+                  placeholder: (context, url) => Container(
+                    width: 92,
+                    height: 92,
+                    color: AppTheme.surfaceBg,
+                  ),
+                  errorWidget: (context, url, error) => Container(
+                    width: 92,
+                    height: 92,
+                    color: AppTheme.surfaceBg,
+                    child: const Icon(
+                      Icons.broken_image_outlined,
+                      color: AppTheme.textSecondary,
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        const SizedBox(height: 24),
+        Text(
+          'Tiến trình xử lý',
+          style: GoogleFonts.inter(
+            color: AppTheme.textPrimary,
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 12),
+        _TimelineItem(
+          title: 'Đã tiếp nhận',
+          date: _formatDate(detail.submittedAt),
+          description: 'Hệ thống đã tiếp nhận phản ánh của bạn.',
+          isCompleted: true,
+          isFirst: true,
+        ),
+        _TimelineItem(
+          title: detail.status,
+          date: '',
+          description: 'Phản ánh đang được xử lý theo quy trình.',
+          isCompleted: _mapStatus(detail.status) != SafetyStatus.warning,
+          isLast: true,
+        ),
+        const SizedBox(height: 40),
+      ],
+    );
+  }
+}
+
+SafetyStatus _mapStatus(String status) {
+  final normalized = status.toLowerCase();
+  if (normalized.contains('đã') || normalized.contains('da')) {
+    return SafetyStatus.safe;
+  }
+  if (normalized.contains('chưa') || normalized.contains('chua')) {
+    return SafetyStatus.warning;
+  }
+  if (normalized.contains('vi phạm') || normalized.contains('vi pham')) {
+    return SafetyStatus.violated;
+  }
+  return SafetyStatus.processing;
+}
+
+String _formatDate(DateTime? date) {
+  if (date == null) return '--/--/----';
+  final day = date.day.toString().padLeft(2, '0');
+  final month = date.month.toString().padLeft(2, '0');
+  return '$day/$month/${date.year}';
 }
 
 class _DetailRow extends StatelessWidget {
@@ -155,7 +211,10 @@ class _DetailRow extends StatelessWidget {
             width: 110,
             child: Text(
               label,
-              style: GoogleFonts.inter(color: AppTheme.textSecondary, fontSize: 13),
+              style: GoogleFonts.inter(
+                color: AppTheme.textSecondary,
+                fontSize: 13,
+              ),
             ),
           ),
           Expanded(
@@ -206,7 +265,9 @@ class _TimelineItem extends StatelessWidget {
                   color: isCompleted ? AppTheme.primary : Colors.grey[300],
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: isCompleted ? AppTheme.primary : AppTheme.textSecondary,
+                    color: isCompleted
+                        ? AppTheme.primary
+                        : AppTheme.textSecondary,
                     width: 2,
                   ),
                 ),
