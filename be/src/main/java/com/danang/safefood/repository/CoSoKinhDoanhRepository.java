@@ -44,4 +44,6 @@ public interface CoSoKinhDoanhRepository extends JpaRepository<CoSoKinhDoanh, St
     );
 
     long countByTrangThai(String trangThai);
+
+    java.util.List<CoSoKinhDoanh> findByChuSoHuu_TaiKhoan_Id(Long taiKhoanId);
 }

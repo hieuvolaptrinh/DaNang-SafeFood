@@ -183,6 +183,15 @@ class ComplaintRemoteDataSource {
 
   /// Upload ảnh lên Cloudinary
   Future<String> uploadImage(String filePath) async {
+    return _uploadFileInternal(filePath);
+  }
+
+  /// Upload file (ảnh, video, tài liệu) lên Cloudinary
+  Future<String> uploadFile(String filePath) async {
+    return _uploadFileInternal(filePath);
+  }
+
+  Future<String> _uploadFileInternal(String filePath) async {
     try {
       final file = File(filePath);
       if (!await file.exists()) {
@@ -193,8 +202,8 @@ class ComplaintRemoteDataSource {
       }
 
       // Xác định content type dựa trên extension
-      String contentType = 'image/jpeg';
       final extension = filePath.toLowerCase().split('.').last;
+      String contentType;
       switch (extension) {
         case 'png':
           contentType = 'image/png';
@@ -208,6 +217,33 @@ class ComplaintRemoteDataSource {
         case 'bmp':
           contentType = 'image/bmp';
           break;
+        case 'mp4':
+          contentType = 'video/mp4';
+          break;
+        case 'mov':
+          contentType = 'video/quicktime';
+          break;
+        case 'avi':
+          contentType = 'video/x-msvideo';
+          break;
+        case 'mkv':
+          contentType = 'video/x-matroska';
+          break;
+        case 'wmv':
+          contentType = 'video/x-ms-wmv';
+          break;
+        case 'pdf':
+          contentType = 'application/pdf';
+          break;
+        case 'doc':
+          contentType = 'application/msword';
+          break;
+        case 'docx':
+          contentType =
+              'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+          break;
+        default:
+          contentType = 'image/jpeg';
       }
 
       final formData = FormData.fromMap({
@@ -252,7 +288,7 @@ class ComplaintRemoteDataSource {
       if (error is ApiException) rethrow;
       throw ApiException(
         statusCode: 500,
-        message: 'Có lỗi xảy ra khi upload ảnh',
+        message: 'Có lỗi xảy ra khi upload tệp',
         details: error,
       );
     }

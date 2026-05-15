@@ -1,27 +1,35 @@
 package com.danang.safefood.dto.response;
 
-import com.danang.safefood.entity.GiayPhep;
+import com.danang.safefood.entity.HoSoDangKiKinhDoanh;
 
 import java.time.LocalDate;
 
+/**
+ * Response cho 1 hồ sơ/giấy tờ kinh doanh.
+ */
 public record GiayPhepResponse(
-        String maGiayPhep,
-        String loaiGiayPhep,
+        String maHoSo,
+        String maLoaiGiayTo,
+        String tenLoaiGiayTo,
         String trangThai,
+        LocalDate ngayNop,
         LocalDate ngayCap,
         LocalDate ngayHetHan,
         String maCoSo,
-        String tenCoSo
-) {
-    public static GiayPhepResponse from(GiayPhep e) {
+        String tenCoSo) {
+
+    public static GiayPhepResponse from(HoSoDangKiKinhDoanh h) {
+        var coSo = h.getCoSoKinhDoanh();
+        var loai = h.getLoaiGiayTo();
         return new GiayPhepResponse(
-                e.getMaGiayPhep(),
-                e.getLoaiGiayPhep(),
-                e.getTrangThai(),
-                e.getNgayCap(),
-                e.getNgayHetHan(),
-                e.getCoSoKinhDoanh() != null ? e.getCoSoKinhDoanh().getMaCoSo() : null,
-                e.getCoSoKinhDoanh() != null ? e.getCoSoKinhDoanh().getTenCoSo() : null
-        );
+                h.getMaHoSo(),
+                loai != null ? loai.getMaLoaiGiayTo() : null,
+                loai != null ? loai.getTenLoaiGiayTo() : null,
+                h.getTrangThai(),
+                h.getNgayNop(),
+                h.getNgayCap(),
+                h.getNgayHetHan(),
+                coSo != null ? coSo.getMaCoSo() : null,
+                coSo != null ? coSo.getTenCoSo() : null);
     }
 }

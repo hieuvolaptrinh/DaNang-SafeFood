@@ -72,7 +72,8 @@ public class CoSoKinhDoanhService {
         List<String> loaiHinh = coSoLoaiHinhRepo.findLoaiHinhByMaCoSo(id);
         List<GiayChungNhanResponse> chungNhan = chungNhanRepo.findByCoSoKinhDoanh_MaCoSo(id)
                 .stream().map(GiayChungNhanResponse::from).toList();
-        List<GiayPhepResponse> giayPhep = giayPhepRepo.findByCoSoKinhDoanh_MaCoSo(id)
+        List<GiayPhepResponse> giayPhep = giayPhepRepo
+                .findByCoSoKinhDoanh_MaCoSoOrderByNgayNopDesc(id)
                 .stream().map(GiayPhepResponse::from).toList();
         
         return new CoSoKinhDoanhDetailResponse(coSoResponse, entity.getAnhBia(), soViPham, loaiHinh, chungNhan, giayPhep);

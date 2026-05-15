@@ -135,7 +135,7 @@ public class PhanAnhService {
         List<FileDinhKem> files = fileUrls.stream()
                 .map(url -> FileDinhKem.builder()
                         .maFile(IdGenerator.generate("FD"))
-                        .loaiFile("image")
+                        .loaiFile(detectFileType(url))
                         .thoiGianGui(LocalDateTime.now())
                         .urlFile(url)
                         .phanAnh(phanAnh)
@@ -144,5 +144,23 @@ public class PhanAnhService {
 
         fileDinhKemRepository.saveAll(files);
         return fileUrls;
+    }
+
+    private String detectFileType(String url) {
+        if (url == null) return "other";
+        String lower = url.toLowerCase();
+        if (lower.contains(".mp4") || lower.contains(".mov") || lower.contains(".avi") || lower.contains(".mkv") || lower.contains(".wmv")) {
+            return "video";
+        }
+        if (lower.contains(".pdf")) {
+            return "pdf";
+        }
+        if (lower.contains(".doc") || lower.contains(".docx")) {
+            return "document";
+        }
+        if (lower.contains(".jpg") || lower.contains(".jpeg") || lower.contains(".png") || lower.contains(".gif") || lower.contains(".webp") || lower.contains(".bmp")) {
+            return "image";
+        }
+        return "other";
     }
 }

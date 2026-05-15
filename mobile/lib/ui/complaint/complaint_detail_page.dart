@@ -252,79 +252,80 @@ class _TimelineItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Column(
-            children: [
-              Container(
-                width: 12,
-                height: 12,
-                decoration: BoxDecoration(
-                  color: isCompleted ? AppTheme.primary : Colors.grey[300],
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: isCompleted
-                        ? AppTheme.primary
-                        : AppTheme.textSecondary,
-                    width: 2,
-                  ),
+    return Stack(
+      children: [
+        if (!isLast)
+          Positioned(
+            left: 5,
+            top: 12,
+            bottom: 0,
+            child: Container(
+              width: 2,
+              color: isCompleted
+                  ? AppTheme.primary.withValues(alpha: 0.4)
+                  : Colors.grey[300],
+            ),
+          ),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 4), // align visually with text
+              width: 12,
+              height: 12,
+              decoration: BoxDecoration(
+                color: isCompleted ? AppTheme.primary : Colors.grey[300],
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color:
+                      isCompleted ? AppTheme.primary : AppTheme.textSecondary,
+                  width: 2,
                 ),
               ),
-              if (!isLast)
-                Expanded(
-                  child: Container(
-                    width: 2,
-                    color: isCompleted
-                        ? AppTheme.primary.withValues(alpha: 0.4)
-                        : Colors.grey[300],
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: GoogleFonts.inter(
-                      color: isCompleted
-                          ? AppTheme.textPrimary
-                          : AppTheme.textSecondary,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  if (date.isNotEmpty) ...[
-                    const SizedBox(height: 2),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
-                      date,
+                      title,
                       style: GoogleFonts.inter(
-                        color: AppTheme.textSecondary,
-                        fontSize: 11,
+                        color: isCompleted
+                            ? AppTheme.textPrimary
+                            : AppTheme.textSecondary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    if (date.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        date,
+                        style: GoogleFonts.inter(
+                          color: AppTheme.textSecondary,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 4),
+                    Text(
+                      description,
+                      style: GoogleFonts.inter(
+                        color: AppTheme.textSecondary.withValues(alpha: 0.8),
+                        fontSize: 12,
+                        height: 1.4,
                       ),
                     ),
                   ],
-                  const SizedBox(height: 4),
-                  Text(
-                    description,
-                    style: GoogleFonts.inter(
-                      color: AppTheme.textSecondary.withValues(alpha: 0.8),
-                      fontSize: 12,
-                      height: 1.4,
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
-          ),
-        ],
-      ),
+          ],
+        ),
+      ],
     );
   }
 }

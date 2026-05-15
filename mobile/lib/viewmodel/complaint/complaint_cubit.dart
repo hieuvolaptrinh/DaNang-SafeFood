@@ -60,7 +60,7 @@ class ComplaintCubit extends Cubit<ComplaintState> {
     try {
       final fileUrls = <String>[];
       for (final path in filePaths) {
-        final url = await repository.uploadImage(path);
+        final url = await repository.uploadFile(path);
         fileUrls.add(url);
       }
 
