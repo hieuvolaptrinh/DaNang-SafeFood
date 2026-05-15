@@ -8,10 +8,10 @@ spring:
       port: ${REDIS_PORT:6379}
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/danang_safe_food
-    username: root
-    password: 123456
-#    mail sender configuration
+    url: ${DB_URL:jdbc:postgresql://ep-cool-bread-ao4jwz0n-pooler.c-2.ap-southeast-1.aws.neon.tech/danang_safefood?sslmode=require&channel_binding=require}
+    username: ${DB_USERNAME:neondb_owner}
+    password: ${DB_PASSWORD:npg_JTXH9DNq3Fwv}
+
   mail:
     host: smtp.gmail.com
     port: 587
@@ -23,6 +23,7 @@ spring:
           auth: true
           starttls:
             enable: true
+
   jpa:
     hibernate:
       ddl-auto: update
@@ -43,6 +44,12 @@ spring:
       encoding: UTF-8
       continue-on-error: false
       separator: ;
+
+cloudinary:
+  cloud-name: ${CLOUDINARY_CLOUD_NAME}
+  api-key: ${CLOUDINARY_API_KEY}
+  api-secret: ${CLOUDINARY_API_SECRET}
+  folder: ${CLOUDINARY_FOLDER:da-nang-safe-food}
 
 server:
   port: 8080

@@ -44,6 +44,31 @@ public class MailService {
         }
     }
 
+    /**
+     * Gửi mail OTP xác nhận đăng ký.
+     *
+     * @param toEmail email người nhận
+     * @param otpCode mã OTP 6 chữ số
+     */
+    public void sendRegisterOtpEmail(String toEmail, String otpCode) {
+        try {
+            String htmlTemplate = loadTemplate();
+            String htmlContent = htmlTemplate.replace("{{OTP_CODE}}", otpCode);
+
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setTo(toEmail);
+            helper.setSubject("✅ Mã OTP xác nhận đăng ký - Đà Nẵng SafeFood");
+            helper.setText(htmlContent, true);
+
+            mailSender.send(message);
+            log.info("Register OTP email sent successfully to {}", toEmail);
+        } catch (MessagingException e) {
+            log.error("Failed to send register OTP email to {}: {}", toEmail, e.getMessage());
+            throw new RuntimeException("Không thể gửi email. Vui lòng thử lại sau.");
+        }
+    }
+
     private String loadTemplate() {
         try {
             ClassPathResource resource = new ClassPathResource("mail.html");

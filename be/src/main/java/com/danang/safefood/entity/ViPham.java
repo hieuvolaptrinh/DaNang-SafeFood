@@ -1,7 +1,12 @@
 package com.danang.safefood.entity;
 
+import com.danang.safefood.util.TrangThaiViPham;
+import com.danang.safefood.util.TrangThaiViPhamConverter;
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "vi_pham")
@@ -21,9 +26,10 @@ public class ViPham {
     @Column(name = "khacPhuc", columnDefinition = "TEXT")
     private String khacPhuc;
 
-    // CHECK: IN ('Chờ duyệt','Đã duyệt','Từ chối','Đã ghi nhận') enforced at DB level
+    @Convert(converter = TrangThaiViPhamConverter.class)
     @Column(name = "trangThaiPheDuyet", length = 30, nullable = false)
-    private String trangThaiPheDuyet;
+    @Builder.Default
+    private TrangThaiViPham trangThaiPheDuyet = TrangThaiViPham.CHO_DUYET;
 
     @Column(name = "mucDo", length = 30, nullable = false)
     @Builder.Default
@@ -36,4 +42,12 @@ public class ViPham {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "maLoaiViPham", nullable = false)
     private LoaiViPham loaiViPham;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "maCoSo")
+    private CoSoKinhDoanh coSoKinhDoanh;
+
+    @OneToMany(mappedBy = "viPham", fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<HinhThucKhacPhuc> hinhThucKhacPhucList = new ArrayList<>();
 }

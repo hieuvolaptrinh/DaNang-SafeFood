@@ -1,7 +1,7 @@
 package com.danang.safefood.repository;
 
 import com.danang.safefood.entity.XuPhat;
-import com.danang.safefood.entity.TrangThaiXuPhat;
+import com.danang.safefood.util.TrangThaiXuPhat;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

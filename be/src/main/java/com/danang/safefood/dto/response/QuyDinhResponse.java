@@ -1,8 +1,8 @@
 package com.danang.safefood.dto.response;
 
-import com.danang.safefood.entity.LoaiQuyDinh;
+import com.danang.safefood.util.LoaiQuyDinh;
 import com.danang.safefood.entity.QuyDinh;
-import com.danang.safefood.entity.TrangThaiQuyDinh;
+import com.danang.safefood.util.TrangThaiQuyDinh;
 
 import java.time.Instant;
 import java.time.LocalDate;

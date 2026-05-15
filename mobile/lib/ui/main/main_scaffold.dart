@@ -16,6 +16,12 @@ import 'package:mobile_ui/viewmodel/business_management/business_management_cubi
 import 'package:mobile_ui/viewmodel/complaint/complaint_cubit.dart';
 import 'package:mobile_ui/viewmodel/profile/profile_cubit.dart';
 import 'package:mobile_ui/viewmodel/business_status/business_status_cubit.dart';
+import 'package:mobile_ui/core/utils/dio_client.dart';
+import 'package:mobile_ui/data/remote/datasource/home_remote_datasource.dart';
+import 'package:mobile_ui/data/remote/datasource/notification_datasource.dart';
+import 'package:mobile_ui/data/remote/datasource/business_remote_datasource.dart';
+import 'package:mobile_ui/data/remote/repository/home_repository.dart';
+import 'package:mobile_ui/data/remote/repository/business_repository.dart';
 
 class MainScaffold extends StatefulWidget {
   const MainScaffold({super.key});
@@ -26,6 +32,14 @@ class MainScaffold extends StatefulWidget {
 
 class _MainScaffoldState extends State<MainScaffold> {
   int _currentIndex = 0;
+  static final _dio = DioClient().dio;
+  static final HomeRepository _homeRepository = HomeRepository(
+    homeRemoteDataSource: HomeRemoteDataSource(dio: _dio),
+    notificationRemoteDataSource: NotificationRemoteDataSource(dio: _dio),
+  );
+  static final BusinessRepository _businessRepository = BusinessRepository(
+    remoteDataSource: BusinessRemoteDataSource(dio: _dio),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -39,8 +53,10 @@ class _MainScaffoldState extends State<MainScaffold> {
 
     return MultiBlocProvider(
       providers: [
-        BlocProvider(create: (_) => HomeCubit()..loadData()),
-        BlocProvider(create: (_) => SearchCubit()),
+        BlocProvider(
+          create: (_) => HomeCubit(homeRepository: _homeRepository)..loadData(),
+        ),
+        BlocProvider(create: (_) => SearchCubit(businessRepository: _businessRepository)),
         BlocProvider(create: (_) => BusinessManagementCubit()..loadData()),
         BlocProvider(create: (_) => ComplaintCubit()..loadComplaints()),
         BlocProvider(create: (_) => ProfileCubit()..loadProfile()),
@@ -124,10 +140,26 @@ class _MainScaffoldState extends State<MainScaffold> {
       ),
     );
 
+    final commonSearch = _TabInfo(
+      page: const SearchPage(),
+      navItem: const BottomNavigationBarItem(
+        icon: Padding(
+          padding: EdgeInsets.only(bottom: 4),
+          child: Icon(Icons.search_outlined, size: 24),
+        ),
+        activeIcon: Padding(
+          padding: EdgeInsets.only(bottom: 4),
+          child: Icon(Icons.search_rounded, size: 26),
+        ),
+        label: 'Tra cứu',
+      ),
+    );
+
     if (authState.isCSKD) {
-      // ── CSKD: Trang chủ | Kinh doanh | Hồ sơ | Cá nhân ──
+      // ── CSKD: Trang chủ | Tra cứu | Kinh doanh | Pháp lý | Cá nhân ──
       return [
         commonHome,
+        commonSearch,
         _TabInfo(
           page: const BusinessManagementPage(),
           navItem: const BottomNavigationBarItem(
@@ -163,20 +195,7 @@ class _MainScaffoldState extends State<MainScaffold> {
     // ── NTD (default): Trang chủ | Tra cứu | Phản ánh | Cá nhân ──
     return [
       commonHome,
-      _TabInfo(
-        page: const SearchPage(),
-        navItem: const BottomNavigationBarItem(
-          icon: Padding(
-            padding: EdgeInsets.only(bottom: 4),
-            child: Icon(Icons.search_outlined, size: 24),
-          ),
-          activeIcon: Padding(
-            padding: EdgeInsets.only(bottom: 4),
-            child: Icon(Icons.search_rounded, size: 26),
-          ),
-          label: 'Tra cứu',
-        ),
-      ),
+      commonSearch,
       _TabInfo(
         page: const ComplaintPage(),
         navItem: const BottomNavigationBarItem(
@@ -202,4 +221,3 @@ class _TabInfo {
 
   const _TabInfo({required this.page, required this.navItem});
 }
-

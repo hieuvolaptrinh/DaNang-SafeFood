@@ -1,6 +1,6 @@
 package com.danang.safefood.dto.response;
 
-import com.danang.safefood.entity.TrangThaiXuPhat;
+import com.danang.safefood.util.TrangThaiXuPhat;
 import com.danang.safefood.entity.XuPhat;
 
 import java.math.BigDecimal;

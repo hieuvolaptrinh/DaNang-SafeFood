@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -45,7 +46,8 @@ public class TaiKhoan {
     // private Role role = Role.NGUOI_TIEU_DUNG;
 
     @OneToMany(mappedBy = "taiKhoan", fetch = FetchType.LAZY)
-    private List<QuyenHanNguoiDung> quyenHanNguoiDungList;
+    @Builder.Default
+    private List<QuyenHanNguoiDung> quyenHanNguoiDungList = new ArrayList<>();
 
     @Column(name = "enabled", nullable = false)
     @Builder.Default

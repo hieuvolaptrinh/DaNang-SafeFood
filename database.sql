@@ -229,6 +229,7 @@ CREATE TABLE ViPham (
     maViPham          VARCHAR(10) NOT NULL,
     maHoSo            VARCHAR(10),
     maLoaiViPham      VARCHAR(10),
+    maCoSo            VARCHAR(10),
     moTaThem          NVARCHAR(MAX),
     khacPhuc          NVARCHAR(MAX),
     trangThaiPheDuyet NVARCHAR(30),
@@ -241,6 +242,7 @@ CREATE TABLE HinhThucKhacPhuc (
     maHinhThucKhacPhuc  VARCHAR(10)    NOT NULL,
     soTienKhacPhuc      DECIMAL(18, 2),
     tinhTrangKhacPhuc   NVARCHAR(50),
+    maViPham            VARCHAR(10),
     CONSTRAINT PK_HinhThucKhacPhuc PRIMARY KEY (maHinhThucKhacPhuc)
 );
 GO
