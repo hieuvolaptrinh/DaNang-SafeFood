@@ -1,4 +1,4 @@
-package com.danang.safefood.config.security.user;
+package com.danang.safefood.security.user;
 
 import com.danang.safefood.repository.TaiKhoanRepository;
 import lombok.RequiredArgsConstructor;

@@ -1,6 +1,6 @@
 package com.danang.safefood.controller.common;
 
-import com.danang.safefood.config.security.jwt.JwtPrincipal;
+import com.danang.safefood.security.jwt.JwtPrincipal;
 import com.danang.safefood.dto.response.ApiResponse;
 import com.danang.safefood.dto.response.ThongBaoResponse;
 import com.danang.safefood.entity.NguoiDung;

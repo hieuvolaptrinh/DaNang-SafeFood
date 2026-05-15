@@ -1,5 +1,6 @@
 package com.danang.safefood.controller.KiemDinhVien;
 
+import com.danang.safefood.dto.request.CapNhatTrangThaiViPhamRequest;
 import com.danang.safefood.dto.request.ViPhamRequest;
 import com.danang.safefood.dto.response.ApiResponse;
 import com.danang.safefood.dto.response.ViPhamResponse;
@@ -21,7 +22,7 @@ import java.util.List;
  * Base path: /api/vi-pham
  */
 @RestController
-@RequestMapping("/api/vi-pham")
+@RequestMapping("/api/v1/vi-pham")
 @RequiredArgsConstructor
 @PreAuthorize("hasAnyRole('CB_KIEM_DINH', 'QUAN_TRI_HE_THONG')")
 public class ViPhamController {
@@ -67,4 +68,5 @@ public class ViPhamController {
                         kiemDinhVienService.taoViPham(req))
         );
     }
+
 }

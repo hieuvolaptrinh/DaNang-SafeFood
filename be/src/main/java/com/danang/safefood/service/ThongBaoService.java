@@ -25,6 +25,7 @@ public class ThongBaoService {
 
     private final ThongBaoRepository thongBaoRepository;
     private final ThongBaoNguoiDungRepository thongBaoNguoiDungRepository;
+    private final FirebaseService firebaseService;
 
     /**
      * Lấy tất cả thông báo cộng đồng (isCongDong = true).
@@ -64,7 +65,16 @@ public class ThongBaoService {
                 .loaiThongBao(loai)
                 .isCongDong(Boolean.TRUE.equals(req.isCongDong()))
                 .build();
-        return ThongBaoResponse.from(thongBaoRepository.save(entity));
+        ThongBao saved = thongBaoRepository.save(entity);
+
+        // 🔥 Gửi realtime cho NTD
+        firebaseService.sendToTopicAsync(
+                "NTD",
+                saved.getTieuDe(),
+                saved.getNoiDung()
+        );
+
+        return ThongBaoResponse.from(saved);
     }
 
     @Transactional(readOnly = true)

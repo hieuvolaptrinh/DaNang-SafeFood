@@ -8,8 +8,8 @@ spring:
       port: ${REDIS_PORT:6379}
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/danang_safe_food
-    username: root
+    url: jdbc:postgresql://localhost:5432/danang_safefood
+    username: postgres
     password: 123456
 #    mail sender configuration
   mail:
@@ -25,7 +25,7 @@ spring:
             enable: true
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: none
       naming:
         physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
     show-sql: true
