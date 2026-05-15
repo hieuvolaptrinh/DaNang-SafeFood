@@ -1,6 +1,7 @@
 package com.danang.safefood.dto.response;
 
 import com.danang.safefood.entity.CoSoKinhDoanh;
+import com.danang.safefood.util.TrangThaiKinhDoanh;
 
 import java.time.LocalDate;
 
@@ -13,16 +14,23 @@ public record MyBusinessResponse(
         String soGiayPhep,
         LocalDate ngayHetHanGiayPhep,
         String trangThai,
+        TrangThaiKinhDoanh trangThaiKinhDoanh,
+        String trangThaiKinhDoanhLabel,
         String tenPhuongXa,
         String anhBia) {
 
     public static MyBusinessResponse from(CoSoKinhDoanh c) {
+        var st = c.getTrangThaiKinhDoanh() != null
+                ? c.getTrangThaiKinhDoanh()
+                : TrangThaiKinhDoanh.DANG_DOI_PHE_DUYET;
         return new MyBusinessResponse(
                 c.getMaCoSo(),
                 c.getTenCoSo(),
                 c.getSoGiayPhep(),
                 c.getNgayHetHanGiayPhep(),
                 c.getTrangThai(),
+                st,
+                st.label(),
                 c.getPhuongXa() != null ? c.getPhuongXa().getTenPhuongXa() : null,
                 c.getAnhBia());
     }

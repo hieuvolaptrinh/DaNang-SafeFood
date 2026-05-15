@@ -34,14 +34,17 @@ import 'package:mobile_ui/data/remote/datasource/notification_datasource.dart';
 import 'package:mobile_ui/data/remote/datasource/business_remote_datasource.dart';
 import 'package:mobile_ui/data/remote/datasource/complaint_remote_datasource.dart';
 import 'package:mobile_ui/data/remote/datasource/violation_remote_datasource.dart';
+import 'package:mobile_ui/data/remote/datasource/profile_remote_datasource.dart';
 import 'package:mobile_ui/data/remote/repository/auth_repository.dart';
 import 'package:mobile_ui/data/remote/repository/notification_repository.dart';
 import 'package:mobile_ui/data/remote/repository/business_repository.dart';
 import 'package:mobile_ui/data/remote/repository/complaint_repository.dart';
 import 'package:mobile_ui/data/remote/repository/violation_repository.dart';
+import 'package:mobile_ui/data/remote/repository/profile_repository.dart';
 import 'package:mobile_ui/data/remote/model/notification_model.dart';
 import 'package:mobile_ui/viewmodel/complaint/complaint_cubit.dart';
 import 'package:mobile_ui/viewmodel/violation/violation_cubit.dart';
+import 'package:mobile_ui/viewmodel/profile/profile_cubit.dart';
 import 'package:mobile_ui/ui/profile/edit_profile_page.dart';
 import 'package:mobile_ui/ui/profile/change_password_page.dart';
 import 'package:mobile_ui/ui/profile/my_complaints_page.dart';
@@ -65,6 +68,10 @@ class AppRouter {
 
   static final ViolationRepository _violationRepository = ViolationRepository(
     remote: ViolationRemoteDataSource(dio: _dio),
+  );
+
+  static final ProfileRepository _profileRepository = ProfileRepository(
+    remoteDataSource: ProfileRemoteDataSource(dio: _dio),
   );
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
@@ -223,17 +230,35 @@ class AppRouter {
 
       case Routes.editProfile:
         return MaterialPageRoute(
-          builder: (ctx) => const EditProfilePage(),
+          builder: (ctx) => BlocProvider(
+            create: (_) => ProfileCubit(
+              profileRepository: _profileRepository,
+              complaintRepository: _complaintRepository,
+            )..loadProfile(),
+            child: const EditProfilePage(),
+          ),
         );
 
       case Routes.changePassword:
         return MaterialPageRoute(
-          builder: (ctx) => const ChangePasswordPage(),
+          builder: (ctx) => BlocProvider(
+            create: (_) => ProfileCubit(
+              profileRepository: _profileRepository,
+              complaintRepository: _complaintRepository,
+            ),
+            child: const ChangePasswordPage(),
+          ),
         );
 
       case Routes.myComplaints:
         return MaterialPageRoute(
-          builder: (ctx) => const MyComplaintsPage(),
+          builder: (ctx) => BlocProvider(
+            create: (_) => ProfileCubit(
+              profileRepository: _profileRepository,
+              complaintRepository: _complaintRepository,
+            )..loadMyComplaints(),
+            child: const MyComplaintsPage(),
+          ),
         );
 
       default:

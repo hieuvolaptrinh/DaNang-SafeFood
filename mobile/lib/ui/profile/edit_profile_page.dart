@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile_ui/core/theme/app_theme.dart';
 import 'package:mobile_ui/core/widgets/app_text_field.dart';
 import 'package:mobile_ui/viewmodel/auth/auth_cubit.dart';
+import 'package:mobile_ui/viewmodel/auth/auth_state.dart';
 import 'package:mobile_ui/viewmodel/profile/profile_cubit.dart';
 import 'package:mobile_ui/viewmodel/profile/profile_state.dart';
 
@@ -217,12 +218,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
               const SizedBox(height: 16),
 
               // Username (read-only)
-              BlocBuilder<AuthCubit, dynamic>(
-                builder: (context, authState) {
+              Builder(
+                builder: (context) {
+                  final authState = context.watch<AuthCubit>().state;
                   return AppTextField(
                     label: 'Tên đăng nhập',
                     controller: TextEditingController(
-                      text: (authState as dynamic).username ?? '',
+                      text: authState.username ?? '',
                     ),
                     readOnly: true,
                     enabled: false,

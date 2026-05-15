@@ -28,7 +28,10 @@ class ProfilePage extends StatelessWidget {
         // Lấy thông tin từ AuthCubit (ưu tiên) rồi fallback về ProfileCubit
         final displayName = authState.fullName ?? state.name;
         final displayEmail = authState.email ?? state.email;
+        final displayPhone = authState.phone ?? state.phone;
         final displayRole = _roleLabel(authState);
+        final complaintCount = state.myComplaints.length;
+
         return SafeArea(
           child: SingleChildScrollView(
             child: Column(
@@ -46,29 +49,63 @@ class ProfilePage extends StatelessWidget {
                   ),
                   child: Column(
                     children: [
-                      // Avatar
-                      Container(
-                        width: 80,
-                        height: 80,
-                        decoration: const BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [AppTheme.primary, AppTheme.primaryLight],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          shape: BoxShape.circle,
+                      // Avatar — tap để chỉnh sửa
+                      GestureDetector(
+                        onTap: () => Navigator.pushNamed(
+                          context,
+                          Routes.editProfile,
                         ),
-                        child: Center(
-                          child: Text(
-                            displayName.isNotEmpty
-                                ? displayName[0].toUpperCase()
-                                : 'U',
-                            style: GoogleFonts.inter(
-                              color: Colors.white,
-                              fontSize: 32,
-                              fontWeight: FontWeight.bold,
+                        child: Stack(
+                          children: [
+                            Container(
+                              width: 80,
+                              height: 80,
+                              decoration: const BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    AppTheme.primary,
+                                    AppTheme.primaryLight,
+                                  ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Center(
+                                child: Text(
+                                  displayName.isNotEmpty
+                                      ? displayName[0].toUpperCase()
+                                      : 'U',
+                                  style: GoogleFonts.inter(
+                                    color: Colors.white,
+                                    fontSize: 32,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
                             ),
-                          ),
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
+                              child: Container(
+                                width: 26,
+                                height: 26,
+                                decoration: BoxDecoration(
+                                  color: AppTheme.primary,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: Colors.white,
+                                    width: 2,
+                                  ),
+                                ),
+                                child: const Icon(
+                                  Icons.edit_rounded,
+                                  color: Colors.white,
+                                  size: 12,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -88,6 +125,16 @@ class ProfilePage extends StatelessWidget {
                           fontSize: 13,
                         ),
                       ),
+                      if (displayPhone.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          displayPhone,
+                          style: GoogleFonts.inter(
+                            color: AppTheme.textTertiary,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 4),
                       Container(
                         padding: const EdgeInsets.symmetric(
@@ -113,19 +160,22 @@ class ProfilePage extends StatelessWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
-                          _StatItem(value: '3', label: 'Phản ánh'),
+                          _StatItem(
+                            value: '$complaintCount',
+                            label: 'Phản ánh',
+                          ),
                           Container(
                             width: 1,
                             height: 30,
                             color: AppTheme.dividerColor,
                           ),
-                          _StatItem(value: '5', label: 'Đã lưu'),
+                          _StatItem(value: '0', label: 'Đã lưu'),
                           Container(
                             width: 1,
                             height: 30,
                             color: AppTheme.dividerColor,
                           ),
-                          _StatItem(value: '12', label: 'Đánh giá'),
+                          _StatItem(value: '0', label: 'Đánh giá'),
                         ],
                       ),
                     ],
@@ -151,10 +201,27 @@ class ProfilePage extends StatelessWidget {
                       const SizedBox(height: 8),
 
                       _MenuItem(
+                        icon: Icons.person_outline_rounded,
+                        title: 'Chỉnh sửa thông tin',
+                        subtitle: displayName,
+                        onTap: () async {
+                          final result = await Navigator.pushNamed(
+                            context,
+                            Routes.editProfile,
+                          );
+                          if (result == true && context.mounted) {
+                            context.read<ProfileCubit>().loadProfile();
+                          }
+                        },
+                      ),
+                      _MenuItem(
                         icon: Icons.feedback_outlined,
-                        title: 'Phản ánh của tôi',
-                        subtitle: '3 phản ánh',
-                        onTap: () {},
+                        title: 'Phản ánh ATVSTP của tôi',
+                        subtitle: '$complaintCount phản ánh',
+                        onTap: () => Navigator.pushNamed(
+                          context,
+                          Routes.myComplaints,
+                        ),
                       ),
                       _MenuItem(
                         icon: Icons.bookmark_border_rounded,
@@ -176,7 +243,10 @@ class ProfilePage extends StatelessWidget {
                       _MenuItem(
                         icon: Icons.lock_outline_rounded,
                         title: 'Đổi mật khẩu',
-                        onTap: () {},
+                        onTap: () => Navigator.pushNamed(
+                          context,
+                          Routes.changePassword,
+                        ),
                       ),
                       _MenuItem(
                         icon: Icons.language_rounded,
@@ -218,7 +288,6 @@ class ProfilePage extends StatelessWidget {
                       // Logout
                       GestureDetector(
                         onTap: () async {
-                          // Logout qua AuthCubit → main.dart rebuild → về Login
                           await context.read<AuthCubit>().logout();
                         },
                         child: Container(

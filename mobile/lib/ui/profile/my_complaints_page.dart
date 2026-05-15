@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart';
 import 'package:mobile_ui/core/theme/app_theme.dart';
 import 'package:mobile_ui/data/remote/model/complaint_models.dart';
 import 'package:mobile_ui/routes/routes.dart';
@@ -70,6 +69,10 @@ class _MyComplaintsPageState extends State<MyComplaintsPage> {
   }
 }
 
+String _formatDate(DateTime dt) {
+  return '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+}
+
 class _ComplaintCard extends StatelessWidget {
   final ComplaintSummary complaint;
   const _ComplaintCard({required this.complaint});
@@ -103,7 +106,7 @@ class _ComplaintCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dateStr = complaint.submittedAt != null ? DateFormat('dd/MM/yyyy HH:mm').format(complaint.submittedAt!) : '';
+    final dateStr = complaint.submittedAt != null ? _formatDate(complaint.submittedAt!) : '';
     return GestureDetector(
       onTap: () => Navigator.pushNamed(context, Routes.complaintDetail, arguments: {'id': complaint.id}),
       child: Container(
