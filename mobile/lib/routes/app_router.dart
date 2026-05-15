@@ -33,12 +33,15 @@ import 'package:mobile_ui/data/remote/datasource/auth_remote_datasource.dart';
 import 'package:mobile_ui/data/remote/datasource/notification_datasource.dart';
 import 'package:mobile_ui/data/remote/datasource/business_remote_datasource.dart';
 import 'package:mobile_ui/data/remote/datasource/complaint_remote_datasource.dart';
+import 'package:mobile_ui/data/remote/datasource/violation_remote_datasource.dart';
 import 'package:mobile_ui/data/remote/repository/auth_repository.dart';
 import 'package:mobile_ui/data/remote/repository/notification_repository.dart';
 import 'package:mobile_ui/data/remote/repository/business_repository.dart';
 import 'package:mobile_ui/data/remote/repository/complaint_repository.dart';
+import 'package:mobile_ui/data/remote/repository/violation_repository.dart';
 import 'package:mobile_ui/data/remote/model/notification_model.dart';
 import 'package:mobile_ui/viewmodel/complaint/complaint_cubit.dart';
+import 'package:mobile_ui/viewmodel/violation/violation_cubit.dart';
 
 class AppRouter {
   static final _dio = DioClient().dio;
@@ -55,6 +58,10 @@ class AppRouter {
 
   static final ComplaintRepository _complaintRepository = ComplaintRepository(
     remoteDataSource: ComplaintRemoteDataSource(dio: _dio),
+  );
+
+  static final ViolationRepository _violationRepository = ViolationRepository(
+    remote: ViolationRemoteDataSource(dio: _dio),
   );
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
@@ -162,13 +169,21 @@ class AppRouter {
         );
 
       case Routes.violationList:
-        return MaterialPageRoute(builder: (_) => const ViolationListPage());
+        return MaterialPageRoute(
+          builder: (_) => BlocProvider(
+            create: (_) => ViolationCubit(repository: _violationRepository),
+            child: const ViolationListPage(),
+          ),
+        );
 
       case Routes.violationDetail:
         final args = settings.arguments as Map<String, dynamic>?;
+        final maViPham = args?['id'] as String? ?? '';
         return MaterialPageRoute(
-          builder: (_) =>
-              ViolationDetailPage(violationTitle: args?['title'] ?? ''),
+          builder: (_) => BlocProvider(
+            create: (_) => ViolationCubit(repository: _violationRepository),
+            child: ViolationDetailPage(maViPham: maViPham),
+          ),
         );
 
       case Routes.businessComplaint:
