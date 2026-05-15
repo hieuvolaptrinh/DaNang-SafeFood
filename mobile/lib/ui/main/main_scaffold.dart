@@ -166,6 +166,7 @@ class _TabInfo {
   const _TabInfo({required this.page, required this.navItem});
 }
 
+<<<<<<< HEAD
 class _NavItem {
   final IconData icon;
   final IconData activeIcon;
