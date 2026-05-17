@@ -1,4 +1,4 @@
-package com.danang.safefood.controller.LanhDaoVSATTP;
+package com.danang.safefood.controller.ThanhTra;
 
 import com.danang.safefood.dto.request.BaoCaoRequest;
 import com.danang.safefood.dto.response.ApiResponse;

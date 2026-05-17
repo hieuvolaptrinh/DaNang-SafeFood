@@ -48,4 +48,29 @@ public class MauKiemNghiem {
     // CHECK: hanHoanThanh >= ngayYeuCau enforced at DB level
     @Column(name = "hanHoanThanh", nullable = false)
     private LocalDate hanHoanThanh;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "maCoSo")
+    private CoSoKinhDoanh coSoKinhDoanh;
+
+    @Column(name = "phongLab", length = 255)
+    private String phongLab;
+
+    @Column(name = "ketQuaKiemNghiem", columnDefinition = "TEXT")
+    private String ketQuaKiemNghiem;
+
+    @Column(name = "lyDoKhongDat", columnDefinition = "TEXT")
+    private String lyDoKhongDat;
+
+    @Column(name = "chiTieuKiemDinh", columnDefinition = "TEXT")
+    private String chiTieuKiemDinh;
+
+    @Column(name = "fileCoDauMoc", length = 500)
+    private String fileCoDauMoc;
+
+    @Column(name = "ngayTao")
+    private LocalDate ngayTao;
+
+    @Column(name = "maNguoiTao", length = 10)
+    private String maNguoiTao;
 }

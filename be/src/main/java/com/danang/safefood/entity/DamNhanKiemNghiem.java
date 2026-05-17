@@ -1,40 +1,41 @@
 package com.danang.safefood.entity;
 
-import jakarta.persistence.*;
-import lombok.*;
-
-import java.io.Serializable;
+import jakarta.persistence.EmbeddedId;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.MapsId;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 @Entity
 @Table(name = "dam_nhan_kiem_nghiem")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@IdClass(DamNhanKiemNghiem.DamNhanKiemNghiemId.class)
+@EqualsAndHashCode(of = "id")
+@ToString(exclude = {"nguoiKiemNghiem", "mauKiemNghiem"})
 public class DamNhanKiemNghiem {
 
-    @Id
-    @Column(name = "maNguoiKiemNghiem", length = 10, nullable = false)
-    private String maNguoiKiemNghiem;
+    @EmbeddedId
+    private DamNhanKiemNghiemId id;
 
-    @Id
-    @Column(name = "maMau", length = 10, nullable = false)
-    private String maMau;
-
+    @MapsId("maNguoiKiemNghiem")
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "maNguoiKiemNghiem", insertable = false, updatable = false)
+    @JoinColumn(name = "maNguoiKiemNghiem", nullable = false)
     private NguoiDung nguoiKiemNghiem;
 
+    @MapsId("maMau")
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "maMau", insertable = false, updatable = false)
+    @JoinColumn(name = "maMau", nullable = false)
     private MauKiemNghiem mauKiemNghiem;
-
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class DamNhanKiemNghiemId implements Serializable {
-        private String maNguoiKiemNghiem;
-        private String maMau;
-    }
 }
