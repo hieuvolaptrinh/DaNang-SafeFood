@@ -1,11 +1,10 @@
 package com.danang.safefood.controller.common;
 
 import com.danang.safefood.dto.request.DeviceTokenRequest;
-import com.danang.safefood.security.user.CustomUserDetails;
+import com.danang.safefood.config.security.user.CustomUserDetails;
 import com.danang.safefood.service.DeviceTokenService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;

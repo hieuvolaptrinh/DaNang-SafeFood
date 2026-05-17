@@ -7,4 +7,6 @@ import java.util.List;
 
 public interface FileDinhKemRepository extends JpaRepository<FileDinhKem, String> {
     List<FileDinhKem> findByPhanAnh_MaPhanAnh(String maPhanAnh);
+
+    List<FileDinhKem> findByKhieuNai_MaKhieuNaiOrderByThoiGianGuiAsc(String maKhieuNai);
 }
