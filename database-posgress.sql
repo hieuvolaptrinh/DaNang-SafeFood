@@ -119,6 +119,9 @@ CREATE TABLE LichThanhTra_NguoiDung (
     maThanhTra       VARCHAR(10) NOT NULL,
     maNguoiThanhTra  VARCHAR(10) NOT NULL,
     thoiGianTT       TIMESTAMP,
+    trangThai        VARCHAR(30),
+    ghiChu           TEXT,
+    lyDoTuChoi       TEXT,
     PRIMARY KEY (maThanhTra, maNguoiThanhTra)
 );
  

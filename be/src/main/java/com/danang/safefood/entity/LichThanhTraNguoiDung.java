@@ -32,6 +32,9 @@ public class LichThanhTraNguoiDung {
     @Column(name = "ghiChu", columnDefinition = "text")
     private String ghiChu;
 
+    @Column(name = "lyDoTuChoi", columnDefinition = "text")
+    private String lyDoTuChoi;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "maThanhTra", insertable = false, updatable = false)
     private LichThanhTra lichThanhTra;

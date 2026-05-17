@@ -61,4 +61,13 @@ public class NhiemVuController {
         nhiemVuService.capNhatTienDo(jwtPrincipal, maThanhTra, request);
         return ResponseEntity.ok().build();
     }
+
+    @PutMapping("/{maThanhTra}/tu-choi")
+    public ResponseEntity<Void> tuChoiNhiemVu(
+            @AuthenticationPrincipal JwtPrincipal jwtPrincipal,
+            @PathVariable String maThanhTra,
+            @RequestBody com.danang.safefood.dto.request.TuChoiNhiemVuRequest request) {
+        nhiemVuService.tuChoiNhiemVu(jwtPrincipal, maThanhTra, request);
+        return ResponseEntity.ok().build();
+    }
 }

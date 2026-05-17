@@ -19,4 +19,6 @@ public interface NhiemVuService {
     void nhanNhiemVu(JwtPrincipal jwtPrincipal, String maThanhTra);
 
     void capNhatTienDo(JwtPrincipal jwtPrincipal, String maThanhTra, CapNhatTienDoRequest request);
+
+    void tuChoiNhiemVu(JwtPrincipal jwtPrincipal, String maThanhTra, com.danang.safefood.dto.request.TuChoiNhiemVuRequest request);
 }

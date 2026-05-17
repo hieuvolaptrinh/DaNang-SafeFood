@@ -156,6 +156,29 @@ public class NhiemVuServiceImpl implements NhiemVuService {
         updateLichThanhTraStatus(maThanhTra);
     }
 
+    @Override
+    @Transactional
+    public void tuChoiNhiemVu(JwtPrincipal jwtPrincipal, String maThanhTra, com.danang.safefood.dto.request.TuChoiNhiemVuRequest request) {
+        NguoiDung nguoiDung = getNguoiDung(jwtPrincipal);
+
+        if (!lichThanhTraNguoiDungRepository.existsByMaThanhTraAndMaNguoiThanhTra(maThanhTra, nguoiDung.getMaNguoiDung())) {
+            throw new RuntimeException("Bạn không được phân công nhiệm vụ này");
+        }
+
+        LichThanhTraNguoiDung assignment = lichThanhTraNguoiDungRepository.findById(new LichThanhTraNguoiDung.LichThanhTraNguoiDungId(maThanhTra, nguoiDung.getMaNguoiDung()))
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy thông tin phân công"));
+
+        if (request.getLyDoTuChoi() != null && !request.getLyDoTuChoi().isBlank()) {
+            assignment.setLyDoTuChoi(request.getLyDoTuChoi());
+        }
+
+        // Mark as not accepted
+        assignment.setTrangThai(NhiemVuStatus.CHUA_NHAN);
+
+        lichThanhTraNguoiDungRepository.save(assignment);
+        updateLichThanhTraStatus(maThanhTra);
+    }
+
     private void updateLichThanhTraStatus(String maThanhTra) {
         List<LichThanhTraNguoiDung> assignments = lichThanhTraNguoiDungRepository.findByMaThanhTra(maThanhTra);
         if (assignments.isEmpty()) {

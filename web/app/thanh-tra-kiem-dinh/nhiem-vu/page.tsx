@@ -22,9 +22,8 @@ const mockAssignedTasks: InspectionTaskRecord[] = [
     inspectionTime: '08:30, 28/03/2026',
     inspectionContent:
       'Kiểm tra điều kiện vệ sinh khu bếp, hồ sơ nguồn gốc nguyên liệu và việc lưu mẫu thức ăn.',
-    assignmentStatus: 'accepted',
-    progressStatus: 'idle',
-    progressNote: '',
+    trangThai: 'Đã nhận',
+    ghiChu: 'Đã kiểm tra phần bếp, cần tiếp tục kiểm tra kho lạnh.',
   },
   {
     id: 'NV-2026-002',
@@ -33,9 +32,8 @@ const mockAssignedTasks: InspectionTaskRecord[] = [
     inspectionTime: '14:00, 29/03/2026',
     inspectionContent:
       'Đánh giá việc bảo quản thực phẩm tươi sống, nhãn mác sản phẩm và chứng từ pháp lý liên quan.',
-    assignmentStatus: 'accepted',
-    progressStatus: 'in-progress',
-    progressNote: 'Đã kiểm tra khu vực bảo quản lạnh, đang đối chiếu chứng từ nhập hàng.',
+    trangThai: 'Đang thực hiện',
+    ghiChu: 'Đã kiểm tra khu vực bảo quản lạnh, đang đối chiếu chứng từ nhập hàng.',
   },
   {
     id: 'NV-2026-003',
@@ -44,9 +42,19 @@ const mockAssignedTasks: InspectionTaskRecord[] = [
     inspectionTime: '09:00, 30/03/2026',
     inspectionContent:
       'Kiểm tra khu vực chế biến, điều kiện nhân sự trực tiếp chế biến và quy trình lưu trữ thực phẩm.',
-    assignmentStatus: 'pending',
-    progressStatus: 'completed',
-    progressNote: 'Đã hoàn thành kiểm tra hồ sơ và khu vực chế biến, chờ tổng hợp biên bản.',
+    trangThai: 'Chưa nhận',
+    ghiChu: '',
+    lyDoTuChoi: '',
+  },
+  {
+    id: 'NV-2026-004',
+    businessName: 'Café Sáng Ngời',
+    address: '56 Lê Lợi, Hải Châu 2, Hải Châu, Đà Nẵng',
+    inspectionTime: '15:30, 31/03/2026',
+    inspectionContent:
+      'Kiểm tra điều kiện cơ sở vật chất, vệ sinh nhân viên và quy trình pha chế.',
+    trangThai: 'Hoàn thành',
+    ghiChu: 'Hoàn thành kiểm tra, cơ sở đạt chuẩn.',
   },
 ];
 
@@ -68,7 +76,13 @@ function mockFetchAssignedTasks(mode: MockFetchMode) {
   });
 }
 
-function mockConfirmAssignment() {
+function mockAcceptTask() {
+  return new Promise<void>((resolve) => {
+    window.setTimeout(() => resolve(), 700);
+  });
+}
+
+function mockRejectTask() {
   return new Promise<void>((resolve) => {
     window.setTimeout(() => resolve(), 700);
   });
@@ -121,6 +135,9 @@ export default function NhiemVuKiemTraPage() {
   const [successMessage, setSuccessMessage] = useState('');
   const [reloadKey, setReloadKey] = useState(0);
   const [isConfirming, setIsConfirming] = useState(false);
+  const [isRejecting, setIsRejecting] = useState(false);
+  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
   const [progressForm, setProgressForm] = useState<InspectionTaskProgressFormValue>({
     status: '',
     note: '',
@@ -185,8 +202,8 @@ export default function NhiemVuKiemTraPage() {
 
   const selectedTask = tasks.find((task) => task.id === selectedTaskId) ?? null;
   const totalTasks = tasks.length;
-  const pendingTasks = tasks.filter((task) => task.assignmentStatus === 'pending').length;
-  const acceptedTasks = tasks.filter((task) => task.assignmentStatus === 'accepted').length;
+  const pendingTasks = tasks.filter((task) => task.trangThai === 'Chưa nhận').length;
+  const acceptedTasks = tasks.filter((task) => task.trangThai !== 'Chưa nhận').length;
 
   useEffect(() => {
     if (!selectedTask) {
@@ -197,8 +214,8 @@ export default function NhiemVuKiemTraPage() {
     }
 
     setProgressForm({
-      status: selectedTask.progressStatus === 'idle' ? '' : selectedTask.progressStatus,
-      note: selectedTask.progressNote,
+      status: selectedTask.trangThai === 'Chưa nhận' ? '' : selectedTask.trangThai,
+      note: selectedTask.ghiChu,
     });
     setUpdateState('idle');
     setUpdateErrorMessage('');
@@ -209,7 +226,7 @@ export default function NhiemVuKiemTraPage() {
   };
 
   const handleConfirmTask = async () => {
-    if (!selectedTask || selectedTask.assignmentStatus === 'accepted' || isConfirming) {
+    if (!selectedTask || selectedTask.trangThai !== 'Chưa nhận' || isConfirming || isRejecting) {
       return;
     }
 
@@ -217,16 +234,46 @@ export default function NhiemVuKiemTraPage() {
     setSuccessMessage('');
 
     try {
-      await mockConfirmAssignment();
+      await mockAcceptTask();
 
       setTasks((current) =>
         current.map((task) =>
-          task.id === selectedTask.id ? { ...task, assignmentStatus: 'accepted' } : task
+          task.id === selectedTask.id ? { ...task, trangThai: 'Đã nhận' } : task
         )
       );
       setSuccessMessage('Đã nhận nhiệm vụ thành công');
     } finally {
       setIsConfirming(false);
+    }
+  };
+
+  const handleRejectTask = async () => {
+    if (!selectedTask || selectedTask.trangThai !== 'Chưa nhận' || isRejecting || isConfirming) {
+      return;
+    }
+    // Open modal to collect rejection reason
+    setRejectReason('');
+    setIsRejectModalOpen(true);
+  };
+
+  const confirmReject = async () => {
+    if (!selectedTask) return;
+    if (!rejectReason.trim()) return;
+
+    setIsRejecting(true);
+    setSuccessMessage('');
+
+    try {
+      await mockRejectTask();
+
+      // For now remove from list (mock). In real flow we'll persist lyDoTuChoi to API.
+      setTasks((current) => current.filter((task) => task.id !== selectedTask.id));
+      setSelectedTaskId(null);
+      setSuccessMessage('Đã từ chối nhiệm vụ thành công');
+    } finally {
+      setIsRejecting(false);
+      setIsRejectModalOpen(false);
+      setRejectReason('');
     }
   };
 
@@ -253,10 +300,8 @@ export default function NhiemVuKiemTraPage() {
           task.id === selectedTask.id
             ? {
                 ...task,
-                assignmentStatus:
-                  task.assignmentStatus === 'pending' ? 'accepted' : task.assignmentStatus,
-                progressStatus: progressForm.status,
-                progressNote: progressForm.note.trim(),
+                trangThai: progressForm.status,
+                ghiChu: progressForm.note.trim(),
               }
             : task
         )
@@ -359,7 +404,9 @@ export default function NhiemVuKiemTraPage() {
           <InspectionTaskDetails
             task={selectedTask}
             isConfirming={isConfirming}
+            isRejecting={isRejecting}
             onConfirm={handleConfirmTask}
+            onReject={handleRejectTask}
             progressForm={progressForm}
             updateState={updateState}
             updateErrorMessage={updateErrorMessage}
@@ -375,6 +422,47 @@ export default function NhiemVuKiemTraPage() {
             }}
             onProgressSubmit={handleProgressSubmit}
           />
+        </div>
+      )}
+
+      {/* Reject modal */}
+      {isRejectModalOpen && selectedTask && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 overflow-hidden">
+            <div className="px-6 py-5 border-b flex items-center justify-between">
+              <h3 className="text-lg font-semibold">Từ chối nhiệm vụ</h3>
+              <button onClick={() => setIsRejectModalOpen(false)} className="text-3xl text-slate-400 hover:text-slate-600">×</button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <p className="text-sm text-slate-500">Cơ sở: <span className="font-semibold text-slate-800">{selectedTask.businessName}</span></p>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Lý do từ chối <span className="text-red-500">*</span></label>
+                <textarea
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                  placeholder="Nhập lý do từ chối..."
+                  className="w-full h-28 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500"
+                />
+              </div>
+            </div>
+
+            <div className="px-6 py-4 border-t bg-slate-50 flex gap-3 justify-end">
+              <button
+                onClick={() => setIsRejectModalOpen(false)}
+                className="px-5 py-2.5 text-slate-600 hover:bg-slate-100 rounded-xl font-medium"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={confirmReject}
+                disabled={!rejectReason.trim() || isRejecting}
+                className="px-6 py-2.5 font-semibold rounded-xl bg-red-600 hover:bg-red-700 text-white disabled:opacity-50"
+              >
+                {isRejecting ? 'Đang từ chối...' : 'Xác nhận từ chối'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
