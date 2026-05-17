@@ -1,14 +1,34 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile_ui/core/theme/app_theme.dart';
-import 'package:mobile_ui/core/widgets/status_badge.dart';
 import 'package:mobile_ui/core/widgets/section_header.dart';
-import 'package:mobile_ui/routes/routes.dart';
+import 'package:mobile_ui/core/widgets/status_badge.dart';
+import 'package:mobile_ui/data/remote/model/violation_models.dart';
+import 'package:mobile_ui/ui/payment/payment_sheet.dart';
+import 'package:mobile_ui/viewmodel/violation/violation_cubit.dart';
+import 'package:mobile_ui/viewmodel/violation/violation_state.dart';
 
-class ViolationDetailPage extends StatelessWidget {
-  final String violationTitle;
+/// Chi tiết 1 vi phạm. Cho phép CSKD nhấn "Thanh toán" → mở bottom sheet
+/// hiển thị mã QR PayOS để chuyển khoản. Khi PayOS xác nhận → trạng thái
+/// được cập nhật thành "Đã khắc phục".
+class ViolationDetailPage extends StatefulWidget {
+  final String maViPham;
 
-  const ViolationDetailPage({super.key, required this.violationTitle});
+  const ViolationDetailPage({super.key, required this.maViPham});
+
+  @override
+  State<ViolationDetailPage> createState() => _ViolationDetailPageState();
+}
+
+class _ViolationDetailPageState extends State<ViolationDetailPage> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<ViolationCubit>().loadDetail(widget.maViPham);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,213 +43,248 @@ class ViolationDetailPage extends StatelessWidget {
           style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const StatusBadge(
-              status: SafetyStatus.violated,
-              customLabel: 'Chưa nộp phạt',
+      body: BlocBuilder<ViolationCubit, ViolationState>(
+        builder: (context, state) {
+          if (state.status == ViolationStatus.loading ||
+              state.selected == null) {
+            return const Center(
+              child: CircularProgressIndicator(color: AppTheme.primary),
+            );
+          }
+          if (state.status == ViolationStatus.error) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Text(
+                  state.errorMessage ?? 'Có lỗi xảy ra',
+                  style: GoogleFonts.inter(color: AppTheme.error),
+                ),
+              ),
+            );
+          }
+          return _Body(violation: state.selected!);
+        },
+      ),
+    );
+  }
+}
+
+class _Body extends StatelessWidget {
+  final ViolationModel violation;
+  const _Body({required this.violation});
+
+  @override
+  Widget build(BuildContext context) {
+    final daKhacPhuc = violation.daKhacPhuc;
+    final dangKhacPhuc = violation.dangKhacPhuc;
+    final tienChuaNop = violation.danhSachKhacPhuc
+        .where((h) => !h.daKhacPhuc)
+        .fold<double>(0, (s, h) => s + h.soTienKhacPhuc);
+
+    SafetyStatus badgeStatus;
+    if (daKhacPhuc) {
+      badgeStatus = SafetyStatus.safe;
+    } else if (dangKhacPhuc) {
+      badgeStatus = SafetyStatus.processing;
+    } else {
+      badgeStatus = SafetyStatus.violated;
+    }
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          StatusBadge(
+            status: badgeStatus,
+            customLabel: violation.tinhTrangKhacPhucLabel,
+          ),
+          const SizedBox(height: 12),
+
+          Text(
+            violation.tenLoaiViPham ?? 'Vi phạm',
+            style: GoogleFonts.inter(
+              color: AppTheme.textPrimary,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              height: 1.3,
             ),
-            const SizedBox(height: 12),
+          ),
+          const SizedBox(height: 16),
+
+          _InfoRow(label: 'Mã vi phạm', value: violation.maViPham),
+          _InfoRow(label: 'Cơ sở', value: violation.tenCoSo ?? '—'),
+          _InfoRow(label: 'Mức độ', value: violation.mucDo),
+          _InfoRow(
+            label: 'Trạng thái duyệt',
+            value: _trangThaiPheDuyetLabel(violation.trangThaiPheDuyet),
+          ),
+          if (violation.maHoSo != null)
+            _InfoRow(label: 'Mã hồ sơ', value: violation.maHoSo!),
+
+          const SizedBox(height: 16),
+
+          // Tổng tiền phạt
+          _AmountCard(
+            tongTien: violation.tongTienPhat,
+            daNop: violation.tongTienPhat - tienChuaNop,
+            chuaNop: tienChuaNop,
+          ),
+
+          const SizedBox(height: 20),
+          const Divider(color: AppTheme.dividerColor),
+          const SizedBox(height: 20),
+
+          if ((violation.moTaThem ?? '').isNotEmpty) ...[
+            const SectionHeader(
+              title: 'Mô tả vi phạm',
+              padding: EdgeInsets.symmetric(vertical: 8),
+            ),
             Text(
-              violationTitle.isNotEmpty
-                  ? violationTitle
-                  : 'Vi phạm vệ sinh khu chế biến',
-              style: GoogleFonts.inter(
-                color: AppTheme.textPrimary,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                height: 1.3,
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Info rows
-            _InfoRow(label: 'Cơ sở', value: 'Nhà hàng Biển Xanh'),
-            _InfoRow(label: 'Địa chỉ', value: '123 Nguyễn Văn Linh, Hải Châu'),
-            _InfoRow(label: 'Ngày vi phạm', value: '18/03/2026'),
-            _InfoRow(label: 'Mã biên bản', value: 'BB-2026-0312'),
-            const SizedBox(height: 16),
-
-            // Fine amount
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFFEF5350).withValues(alpha: 0.06),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                    color: const Color(0xFFEF5350).withValues(alpha: 0.2)),
-              ),
-              child: Column(
-                children: [
-                  Text(
-                    'Số tiền phạt',
-                    style: GoogleFonts.inter(
-                      color: AppTheme.textSecondary,
-                      fontSize: 13,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '5.000.000 VNĐ',
-                    style: GoogleFonts.inter(
-                      color: const Color(0xFFEF5350),
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Hạn nộp: 18/04/2026',
-                    style: GoogleFonts.inter(
-                      color: AppTheme.textSecondary,
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 20),
-            Divider(color: AppTheme.dividerColor),
-            const SizedBox(height: 20),
-
-            // Description
-            SectionHeader(
-              title: 'Nội dung vi phạm',
-              padding: const EdgeInsets.symmetric(vertical: 8),
-            ),
-            Text(
-              'Khu vực chế biến thực phẩm không đảm bảo vệ sinh: sàn bếp có vũng nước đọng, thùng rác không có nắp đậy, bề mặt chế biến có vết bẩn. Vi phạm Điều 7, Khoản 2, Nghị định 115/2024/NĐ-CP.',
+              violation.moTaThem!,
               style: GoogleFonts.inter(
                 color: AppTheme.textPrimary,
                 fontSize: 14,
                 height: 1.6,
               ),
             ),
-
             const SizedBox(height: 20),
-            SectionHeader(
-              title: 'Bằng chứng',
-              padding: const EdgeInsets.symmetric(vertical: 8),
-            ),
-            Row(
-              children: List.generate(3, (i) {
-                return Container(
-                  width: 80,
-                  height: 80,
-                  margin: const EdgeInsets.only(right: 10),
-                  decoration: BoxDecoration(
-                    color: AppTheme.surfaceBg,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppTheme.dividerColor),
-                  ),
-                  child: const Icon(Icons.image_outlined,
-                      color: AppTheme.textSecondary),
-                );
-              }),
-            ),
+          ],
 
+          if ((violation.khacPhuc ?? '').isNotEmpty) ...[
+            const SectionHeader(
+              title: 'Yêu cầu khắc phục',
+              padding: EdgeInsets.symmetric(vertical: 8),
+            ),
+            Text(
+              violation.khacPhuc!,
+              style: GoogleFonts.inter(
+                color: AppTheme.textPrimary,
+                fontSize: 14,
+                height: 1.6,
+              ),
+            ),
             const SizedBox(height: 20),
-            // Document
+          ],
+
+          // Danh sách hình thức khắc phục
+          const SectionHeader(
+            title: 'Hình thức xử phạt',
+            padding: EdgeInsets.symmetric(vertical: 8),
+          ),
+          if (violation.danhSachKhacPhuc.isEmpty)
+            Text(
+              'Chưa có hình thức xử phạt',
+              style: GoogleFonts.inter(
+                color: AppTheme.textSecondary,
+                fontSize: 13,
+              ),
+            )
+          else
+            ...violation.danhSachKhacPhuc.map((h) => _KhacPhucItem(item: h)),
+
+          const SizedBox(height: 32),
+
+          // Action: Thanh toán
+          if (!daKhacPhuc && tienChuaNop > 0)
+            ElevatedButton.icon(
+              onPressed: () => _onPay(context, violation),
+              icon: const Icon(Icons.qr_code_2_rounded, size: 20),
+              label: Text(
+                'Tạo mã QR thanh toán',
+                style: GoogleFonts.inter(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                minimumSize: const Size(double.infinity, 52),
+                backgroundColor: AppTheme.primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+            )
+          else if (daKhacPhuc)
             Container(
-              padding: const EdgeInsets.all(14),
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppTheme.surfaceBg,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppTheme.dividerColor),
+                color: AppTheme.success.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: AppTheme.success.withValues(alpha: 0.3),
+                ),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.attach_file_rounded,
-                      color: AppTheme.primary, size: 20),
+                  const Icon(
+                    Icons.verified_rounded,
+                    color: AppTheme.success,
+                    size: 24,
+                  ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'BienBan-BB-2026-0312.pdf',
-                          style: GoogleFonts.inter(
-                            color: AppTheme.textPrimary,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        Text(
-                          '856 KB',
-                          style: GoogleFonts.inter(
-                            color: AppTheme.textSecondary,
-                            fontSize: 11,
-                          ),
-                        ),
-                      ],
+                    child: Text(
+                      'Vi phạm này đã được khắc phục đầy đủ',
+                      style: GoogleFonts.inter(
+                        color: AppTheme.success,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
                     ),
                   ),
-                  Icon(Icons.download_outlined,
-                      color: AppTheme.primary, size: 20),
                 ],
               ),
             ),
 
-            const SizedBox(height: 32),
-
-            // Actions
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () {},
-                    icon: const Icon(Icons.payment_rounded, size: 18),
-                    label: Text('Nộp phạt',
-                        style:
-                            GoogleFonts.inter(fontWeight: FontWeight.w600)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primary,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14)),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => Navigator.pushNamed(
-                      context,
-                      Routes.businessComplaint,
-                    ),
-                    icon: const Icon(Icons.feedback_outlined, size: 18),
-                    label: Text('Khiếu nại',
-                        style:
-                            GoogleFonts.inter(fontWeight: FontWeight.w600)),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppTheme.accent,
-                      side: BorderSide(color: AppTheme.accent),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14)),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 40),
-          ],
-        ),
+          const SizedBox(height: 40),
+        ],
       ),
     );
+  }
+
+  String _trangThaiPheDuyetLabel(String s) {
+    switch (s) {
+      case 'CHO_DUYET':
+        return 'Chờ duyệt';
+      case 'DA_DUYET':
+        return 'Đã duyệt';
+      case 'TU_CHOI':
+        return 'Từ chối';
+      default:
+        return s;
+    }
+  }
+
+  Future<void> _onPay(BuildContext context, ViolationModel v) async {
+    final cubit = context.read<ViolationCubit>();
+    cubit.resetPayment();
+
+    // Mở sheet ngay với spinner
+    final result = cubit.createPayment(
+      maViPham: v.maViPham,
+      description: 'VP${v.maViPham}',
+    );
+
+    if (!context.mounted) return;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      isDismissible: false,
+      builder: (sheetCtx) =>
+          BlocProvider.value(value: cubit, child: const PaymentSheet()),
+    );
+
+    await result; // chờ tạo xong (sheet sẽ tự update qua bloc)
   }
 }
 
 class _InfoRow extends StatelessWidget {
   final String label;
   final String value;
-
   const _InfoRow({required this.label, required this.value});
 
   @override
@@ -240,10 +295,14 @@ class _InfoRow extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 110,
-            child: Text(label,
-                style: GoogleFonts.inter(
-                    color: AppTheme.textSecondary, fontSize: 13)),
+            width: 130,
+            child: Text(
+              label,
+              style: GoogleFonts.inter(
+                color: AppTheme.textSecondary,
+                fontSize: 13,
+              ),
+            ),
           ),
           Expanded(
             child: Text(
@@ -259,4 +318,198 @@ class _InfoRow extends StatelessWidget {
       ),
     );
   }
+}
+
+class _AmountCard extends StatelessWidget {
+  final double tongTien;
+  final double daNop;
+  final double chuaNop;
+  const _AmountCard({
+    required this.tongTien,
+    required this.daNop,
+    required this.chuaNop,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFFFF1F1), Color(0xFFFFE2E2)],
+        ),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppTheme.error.withValues(alpha: 0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Tổng tiền phạt',
+            style: GoogleFonts.inter(
+              color: AppTheme.textSecondary,
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            _formatVnd(tongTien),
+            style: GoogleFonts.inter(
+              color: AppTheme.error,
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _MiniStat(
+                  label: 'Đã nộp',
+                  value: _formatVnd(daNop),
+                  color: AppTheme.success,
+                ),
+              ),
+              Container(width: 1, height: 32, color: AppTheme.dividerColor),
+              Expanded(
+                child: _MiniStat(
+                  label: 'Còn lại',
+                  value: _formatVnd(chuaNop),
+                  color: AppTheme.warning,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MiniStat extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+  const _MiniStat({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Text(
+            label,
+            style: GoogleFonts.inter(
+              color: AppTheme.textSecondary,
+              fontSize: 11,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            value,
+            style: GoogleFonts.inter(
+              color: color,
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _KhacPhucItem extends StatelessWidget {
+  final HinhThucKhacPhucInfo item;
+  const _KhacPhucItem({required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    final done = item.daKhacPhuc;
+    final inProgress = item.dangKhacPhuc;
+
+    final Color color;
+    final Color amountColor;
+    final IconData icon;
+    if (done) {
+      color = AppTheme.success;
+      amountColor = AppTheme.success;
+      icon = Icons.check_circle_rounded;
+    } else if (inProgress) {
+      color = AppTheme.info;
+      amountColor = AppTheme.info;
+      icon = Icons.hourglass_top_rounded;
+    } else {
+      color = AppTheme.warning;
+      amountColor = AppTheme.error;
+      icon = Icons.payments_outlined;
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: color, size: 18),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _formatVnd(item.soTienKhacPhuc),
+                  style: GoogleFonts.inter(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: amountColor,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  item.tinhTrangKhacPhucLabel,
+                  style: GoogleFonts.inter(
+                    color: AppTheme.textSecondary,
+                    fontSize: 11,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+String _formatVnd(double amount) {
+  final str = amount.toInt().toString();
+  final buf = StringBuffer();
+  int count = 0;
+  for (int i = str.length - 1; i >= 0; i--) {
+    buf.write(str[i]);
+    count++;
+    if (count % 3 == 0 && i != 0) buf.write('.');
+  }
+  return '${buf.toString().split('').reversed.join()} VNĐ';
 }

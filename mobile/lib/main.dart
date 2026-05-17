@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:mobile_ui/core/theme/app_theme.dart';
 import 'package:mobile_ui/core/utils/dio_client.dart';
 import 'package:mobile_ui/data/local/token_storage.dart';
@@ -12,7 +13,9 @@ import 'package:mobile_ui/viewmodel/auth/auth_cubit.dart';
 import 'package:mobile_ui/viewmodel/auth/auth_state.dart';
 import 'package:mobile_ui/viewmodel/login/login_cubit.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
   runApp(const MainApp());
 }
 
@@ -56,8 +59,7 @@ class MainApp extends StatelessWidget {
             home: isLoggedIn
                 ? const MainScaffold()
                 : BlocProvider(
-                    create: (_) =>
-                        LoginCubit(authRepository: authRepository),
+                    create: (_) => LoginCubit(authRepository: authRepository),
                     child: const LoginPage(),
                   ),
           );
