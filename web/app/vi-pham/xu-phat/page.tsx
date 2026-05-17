@@ -1,13 +1,14 @@
-"use client";
+'use client';
 
 import { useState } from 'react';
 import { useRole } from '@/lib/RoleContext';
-import DataTable from "@/components/DataTable";
-import TableCard, {
-  FilterSelect,
-  Pagination,
-  SearchInput,
-} from "@/components/TableCard";;
+import { Eye, FileSpreadsheet, Printer, RefreshCw, Plus } from 'lucide-react';
+import {
+  PageHeader, FilterBar, FilterField, GovInput, GovSelect, GovBtn,
+  SectionCard, GovPagination, StatusBadge, MiniStat, ActionButtons,
+} from '@/components/GovUI';
+import AlertBanner from '@/components/AlertBanner';
+import DataTable, { Column } from '@/components/DataTable';
 
 interface ViolationApproval {
   id: string;
@@ -56,7 +57,7 @@ export default function PheDuyetDonViPhamPage() {
   const [search, setSearch] = useState('');
   const [approvingId, setApprovingId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState('');
-  const [districtFilter, setDistrictFilter] = useState('');
+  const [feedbackMessage, setFeedbackMessage] = useState('');
 
   const pendingViolations = violations.filter(v => v.status === 'pending');
 
@@ -68,20 +69,22 @@ export default function PheDuyetDonViPhamPage() {
   );
 
   const isAuthority = role === 'AUTHORITY';
-  
+
   // === TEXT THEO ROLE ===
-  const pageTitle = isAuthority ? 'Phê duyệt đơn vi phạm' : 'Gửi kết quả kiểm tra vi phạm';
-  const pageSubtitle = isAuthority 
-    ? 'Xem xét và ban hành quyết định xử phạt' 
+  const pageTitle = isAuthority ? 'Phê duyệt đơn vi phạm & Xử phạt' : 'Gửi kết quả kiểm tra vi phạm';
+  const pageSubtitle = isAuthority
+    ? 'Xem xét và ban hành quyết định xử phạt hành chính'
     : 'Xử lý và gửi kết quả vi phạm đến cơ quan thẩm quyền';
 
   const actionText = isAuthority ? 'ban hành quyết định' : 'gửi kết quả';
-  const successMessage = isAuthority 
-    ? 'Đã phê duyệt và ban hành quyết định xử phạt thành công!' 
+  const successMessage = isAuthority
+    ? 'Đã phê duyệt và ban hành quyết định xử phạt thành công!'
     : 'Đã gửi kết quả thành công!';
 
-  const buttonText = isAuthority ? '✅ Phê duyệt & Ban hành' : '📤 Gửi kết quả';
-  const buttonColor = isAuthority ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-blue-600 hover:bg-blue-700';
+  const totalPenalty = pendingViolations.reduce((sum, v) => {
+    const num = parseInt(v.proposedPenalty.replace(/\D/g, ''), 10);
+    return sum + (isNaN(num) ? 0 : num);
+  }, 0);
 
   const handleAction = async (id: string) => {
     const violation = violations.find(v => v.id === id);
@@ -105,237 +108,154 @@ export default function PheDuyetDonViPhamPage() {
       });
 
       setViolations(prev => prev.filter(v => v.id !== id));
-
-      alert(`✅ ${successMessage}`);
-    } catch (error) {
-      alert('❌ Có lỗi xảy ra khi thực hiện');
+      setFeedbackMessage(successMessage);
+    } catch {
+      alert('Có lỗi xảy ra khi thực hiện');
     } finally {
       setApprovingId(null);
     }
   };
 
-  const handleViewDetail = (violation: ViolationApproval) => {
-    alert(`Chi tiết đơn vi phạm:\n\n` +
-      `Mã đơn: ${violation.id}\n` +
-      `Cơ sở: ${violation.businessName}\n` +
-      `Vi phạm: ${violation.violation}\n` +
-      `Biên bản: ${violation.inspectionReport}\n` +
-      `Mức phạt đề xuất: ${violation.proposedPenalty}\n` +
-      `Ngày lập: ${violation.date}`);
-  };
-
-  const districts = ['Hải Châu', 'Thanh Khê', 'Sơn Trà', 'Ngũ Hành Sơn', 'Liên Chiểu', 'Cẩm Lệ'];
-
-  const columns = [
-    { key: 'id', label: 'Mã quyết định', width: '120px' },
-    { key: 'businessName', label: 'Tên cơ sở', width: '200px' },
-    { key: 'proposedPenalty', label: 'Mức phạt', width: '150px' },
-    { key: 'date', label: 'Ngày lập', width: '120px' },
-    { key: 'status', label: 'Trạng thái', width: '120px' },
+  const columns: Column<ViolationApproval>[] = [
+    {
+      key: 'id',
+      header: 'Mã đơn',
+      render: r => <span style={{ fontFamily: 'monospace', fontWeight: 600, color: '#005A9E' }}>{r.id}</span>,
+    },
+    {
+      key: 'businessName',
+      header: 'Tên cơ sở',
+      render: r => <span style={{ fontWeight: 600 }}>{r.businessName}</span>,
+    },
+    {
+      key: 'violation',
+      header: 'Nội dung vi phạm',
+      render: r => <span style={{ fontSize: '12px' }}>{r.violation}</span>,
+    },
+    {
+      key: 'inspectionReport',
+      header: 'Biên bản',
+      render: r => <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>{r.inspectionReport}</span>,
+    },
+    {
+      key: 'proposedPenalty',
+      header: 'Mức phạt đề xuất',
+      render: r => <strong style={{ color: '#CC0000' }}>{r.proposedPenalty}</strong>,
+    },
+    {
+      key: 'date',
+      header: 'Ngày lập',
+      render: r => <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>{r.date}</span>,
+    },
+    {
+      key: 'status',
+      header: 'Trạng thái',
+      render: r => <StatusBadge variant={r.status} label={r.status === 'pending' ? 'Chờ xử lý' : 'Đã xử lý'} />,
+    },
+    {
+      key: 'actions',
+      header: 'Thao tác',
+      render: r => {
+        const isApproving = approvingId === r.id;
+        return (
+          <ActionButtons>
+            <GovBtn variant="secondary" size="sm" onClick={() => {
+              alert(`Chi tiết đơn vi phạm:\n\nMã đơn: ${r.id}\nCơ sở: ${r.businessName}\nVi phạm: ${r.violation}\nBiên bản: ${r.inspectionReport}\nMức phạt đề xuất: ${r.proposedPenalty}\nNgày lập: ${r.date}`);
+            }}>
+              <Eye style={{ width: 12, height: 12 }} />
+            </GovBtn>
+            <GovBtn
+              variant={isAuthority ? 'primary' : 'outline'}
+              size="sm"
+              onClick={() => handleAction(r.id)}
+              disabled={isApproving}
+            >
+              {isApproving ? 'Đang xử lý...' : isAuthority ? 'Phê duyệt' : 'Gửi'}
+            </GovBtn>
+          </ActionButtons>
+        );
+      },
+    },
   ];
 
-  const mockPenalties = violations.filter(v => v.status === 'approved');
-
-  const filtered = mockPenalties.filter(p => {
-    const matchesSearch = !search || 
-      p.id.toLowerCase().includes(search.toLowerCase()) ||
-      p.businessName.toLowerCase().includes(search.toLowerCase());
-    const matchesStatus = !statusFilter || p.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
-
   return (
-    <div className="min-h-screen bg-[#f5f6fa] font-sans">
-      <div className="h-1 w-full bg-gradient-to-r from-violet-600 via-purple-500 to-pink-400" />
-
-      <div className="max-w-[1200px] mx-auto px-6 py-8">
-        {/* Header - Đổi theo role */}
-        <div className="mb-8">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-[11px] font-bold tracking-[0.12em] uppercase text-violet-500">
-              SỞ AN TOÀN THỰC PHẨM • ĐÀ NẴNG
-            </span>
-          </div>
-          <h1 className="text-[28px] font-black text-slate-900 tracking-tight leading-tight">
-            {pageTitle}
-          </h1>
-          <p className="text-[13px] text-slate-400 mt-1 font-medium">
-            {pageSubtitle}
-          </p>
-        </div>
-
-        {/* Stats */}
-        <div className="grid grid-cols-3 gap-4 mb-8">
-          <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-[12px] font-semibold text-slate-400 uppercase tracking-wide mb-2">
-                  Đơn chờ xử lý
-                </p>
-                <p className="text-[30px] font-black text-slate-900">{pendingViolations.length}</p>
-              </div>
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center text-lg shadow-sm">⏳</div>
-            </div>
-          </div>
-          <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-[12px] font-semibold text-slate-400 uppercase tracking-wide mb-2">Tổng mức phạt đề xuất</p>
-                <p className="text-[30px] font-black text-slate-900">
-                  {(pendingViolations.reduce((sum, v) => {
-                    const num = parseInt(v.proposedPenalty.replace(/\D/g, ''), 10);
-                    return sum + (isNaN(num) ? 0 : num);
-                  }, 0) / 1000000).toFixed(0)}M ₫
-                </p>
-              </div>
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-lg shadow-sm">⚖️</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Bảng giữ nguyên cấu trúc */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <h2 className="text-[15px] font-bold text-slate-800">Đơn xử phạt chờ xử lý</h2>
-              <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-700 text-[12px] font-bold">
-                {filteredViolations.length} đơn
-              </span>
-            </div>
-
-            <div className="relative w-80">
-              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <input
-                type="text"
-                placeholder="Tìm theo mã đơn hoặc tên cơ sở..."
-                className="pl-9 pr-4 py-2 w-full rounded-xl border border-slate-200 bg-slate-50 text-[13px] focus:outline-none focus:ring-2 focus:ring-violet-500"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <table className="w-full">
-            <thead>
-              <tr className="bg-slate-50 border-b border-slate-100">
-                {['Mã đơn', 'Tên cơ sở', 'Nội dung vi phạm', 'Biên bản', 'Mức phạt đề xuất', 'Ngày lập', 'Thao tác'].map((header) => (
-                  <th key={header} className="px-5 py-3 text-left text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                    {header}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
-              {filteredViolations.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="px-5 py-16 text-center text-slate-400 text-[13px]">
-                    Không có đơn vi phạm nào chờ xử lý
-                  </td>
-                </tr>
-              ) : (
-                filteredViolations.map((violation) => {
-                  const isApproving = approvingId === violation.id;
-
-                  return (
-                    <tr key={violation.id} className="hover:bg-violet-50/30 transition-colors group">
-                      <td className="px-5 py-4">
-                        <span className="font-mono text-[12px] font-semibold bg-slate-100 px-2.5 py-1 rounded-md text-slate-500">
-                          {violation.id}
-                        </span>
-                      </td>
-                      <td className="px-5 py-4">
-                        <div className="font-semibold text-slate-800">{violation.businessName}</div>
-                      </td>
-                      <td className="px-5 py-4 text-[13px] text-slate-600 max-w-[260px]">
-                        <span className="line-clamp-2">{violation.violation}</span>
-                      </td>
-                      <td className="px-5 py-4 font-mono text-[13px] text-slate-500">
-                        {violation.inspectionReport}
-                      </td>
-                      <td className="px-5 py-4">
-                        <span className="font-bold text-slate-800">{violation.proposedPenalty}</span>
-                      </td>
-                      <td className="px-5 py-4 text-[13px] text-slate-500 font-mono">
-                        {violation.date}
-                      </td>
-                      <td className="px-5 py-4">
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => handleViewDetail(violation)}
-                            className="px-4 py-1.5 text-[13px] font-medium border border-slate-200 hover:bg-slate-50 rounded-xl transition-all"
-                          >
-                            👁 Xem chi tiết
-                          </button>
-
-                          <button
-                            onClick={() => handleAction(violation.id)}
-                            disabled={isApproving}
-                            className={`px-5 py-1.5 text-white text-[13px] font-semibold rounded-xl transition-all flex items-center gap-2 shadow-sm ${buttonColor} disabled:opacity-70`}
-                          >
-                            {isApproving ? (
-                              <>
-                                <span className="animate-spin w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full" />
-                                Đang xử lý...
-                              </>
-                            ) : (
-                              buttonText
-                            )}
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="text-center mt-6 text-[12px] text-slate-400">
-          Chỉ hiển thị các đơn đang chờ xử lý • Hệ thống sẽ tự động lưu lịch sử khi thực hiện
-        </div>
-      </div>
-
-      <TableCard
-        title="Tất cả quyết định xử phạt"
-        controls={
+    <div>
+      <PageHeader
+        title={pageTitle}
+        subtitle={`Chi cục An toàn Thực phẩm TP. Đà Nẵng — ${pageSubtitle}`}
+        actions={
           <>
-            <SearchInput
-              placeholder="Tìm mã quyết định, tên cơ sở..."
-              onChange={setSearch}
-            />
-            <FilterSelect
-              options={[
-                { value: "", label: "Tất cả trạng thái" },
-                { value: "pending", label: "Chưa nộp" },
-                { value: "paid", label: "Đã nộp" },
-                { value: "overdue", label: "Quá hạn" },
-              ]}
-              onChange={setStatusFilter}
-            />
-            <FilterSelect
-              options={[
-                { value: "", label: "Tất cả quận/huyện" },
-                ...districts.map((d) => ({ value: d, label: d })),
-              ]}
-              onChange={setDistrictFilter}
-            />
+            <GovBtn variant="secondary"><RefreshCw style={{ width: 12, height: 12 }} /> Làm mới</GovBtn>
+            <GovBtn variant="secondary"><Printer style={{ width: 12, height: 12 }} /> In báo cáo</GovBtn>
+            <GovBtn variant="secondary"><FileSpreadsheet style={{ width: 12, height: 12 }} /> Xuất Excel</GovBtn>
+            {isAuthority && <GovBtn variant="primary"><Plus style={{ width: 12, height: 12 }} /> Tạo quyết định</GovBtn>}
           </>
         }
-        footer={
-          <Pagination
-            info={`Hiển thị 1–${filtered.length} trong tổng số ${mockPenalties.length} quyết định`}
+      />
+
+      {feedbackMessage && <AlertBanner type="success" title={feedbackMessage} />}
+
+      {pendingViolations.length > 0 && (
+        <AlertBanner
+          type="warning"
+          title={`Có ${pendingViolations.length} đơn vi phạm đang chờ xử lý. Vui lòng xem xét và ban hành quyết định kịp thời.`}
+        />
+      )}
+
+      {/* Stats */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '10px', marginBottom: '12px' }}>
+        <MiniStat label="Đơn chờ xử lý" value={pendingViolations.length} color="orange" />
+        <MiniStat
+          label="Tổng mức phạt đề xuất"
+          value={`${(totalPenalty / 1_000_000).toFixed(0)}M ₫`}
+          color="red"
+        />
+        <MiniStat label="Đã xử lý" value={violations.filter(v => v.status === 'approved').length} color="green" />
+      </div>
+
+      {/* Filter */}
+      <FilterBar>
+        <FilterField label="Tìm kiếm">
+          <GovInput
+            placeholder="Mã đơn, tên cơ sở, nội dung..."
+            value={search}
+            onChange={setSearch}
+            width={240}
           />
-        }
+        </FilterField>
+        <FilterField label="Trạng thái">
+          <GovSelect
+            value={statusFilter}
+            onChange={setStatusFilter}
+            options={[
+              { value: '', label: '-- Tất cả --' },
+              { value: 'pending', label: 'Chờ xử lý' },
+              { value: 'approved', label: 'Đã xử lý' },
+            ]}
+            width={160}
+          />
+        </FilterField>
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px' }}>
+          <GovBtn variant="primary">Tìm kiếm</GovBtn>
+          <GovBtn variant="secondary" onClick={() => { setSearch(''); setStatusFilter(''); }}>Xóa lọc</GovBtn>
+        </div>
+      </FilterBar>
+
+      {/* Table */}
+      <SectionCard
+        title={`Đơn xử phạt chờ xử lý (${filteredViolations.length} đơn)`}
+        footer={<GovPagination info={`Hiển thị ${filteredViolations.length} / ${pendingViolations.length} đơn vi phạm`} />}
       >
         <DataTable
           columns={columns}
-          data={filtered}
-          emptyMessage="Không tìm thấy quyết định xử phạt nào"
+          data={filteredViolations}
+          emptyMessage="Không có đơn vi phạm nào chờ xử lý."
         />
-      </TableCard>
+      </SectionCard>
+
+      <p style={{ fontSize: '12px', color: '#888', textAlign: 'center', marginTop: '8px' }}>
+        Chỉ hiển thị các đơn đang chờ xử lý — Hệ thống sẽ tự động lưu lịch sử khi thực hiện
+      </p>
     </div>
   );
 }

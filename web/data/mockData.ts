@@ -274,7 +274,6 @@ export const roleNavMap: Record<Role, NavItem[]> = {
       label: 'Cơ sở kinh doanh', icon: 'building', children: [
         { label: 'Danh sách cơ sở', href: '/co-so-kinh-doanh' },
         { label: 'Giấy phép', href: '/co-so-kinh-doanh/giay-phep' },
-        { label: 'Tình trạng pháp lý', href: '/co-so-kinh-doanh/phap-ly' },
         { label: 'Phê duyệt chứng nhận', href: '/co-so-kinh-doanh/chung-nhan' },
       ]
     },
@@ -290,7 +289,6 @@ export const roleNavMap: Record<Role, NavItem[]> = {
       label: 'Truyền thông', icon: 'megaphone', children: [
         { label: 'Quy định pháp luật', href: '/truyen-thong/quy-dinh' },
         { label: 'Thông báo', href: '/truyen-thong/thong-bao' },
-        { label: 'Cảnh báo', href: '/truyen-thong/canh-bao' },
       ]
     },
   ],
@@ -359,11 +357,11 @@ export const roleLabels: Record<Role, string> = {
 };
 
 export const roleColors: Record<Role, string> = {
-  ADMIN: 'bg-blue-700 text-white',
-  AUTHORITY: 'bg-emerald-800 text-white',
-  INSPECTOR: 'bg-amber-800 text-white',
-  TESTER: 'bg-violet-700 text-white',
-  BUSINESS: 'bg-cyan-700 text-white',
+  ADMIN: 'bg-[#1B5E20] text-white',
+  AUTHORITY: 'bg-[#2E7D32] text-white',
+  INSPECTOR: 'bg-[#ED6C02] text-white',
+  TESTER: 'bg-[#0288D1] text-white',
+  BUSINESS: 'bg-[#6B7280] text-white',
 };
 
 export type InspectionReportResult = 'pass' | 'fail' | 'scheduled';
