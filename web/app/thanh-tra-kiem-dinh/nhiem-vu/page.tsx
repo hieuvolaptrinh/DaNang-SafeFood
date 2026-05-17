@@ -9,7 +9,8 @@ import type {
   InspectionTaskProgressFormValue,
   InspectionTaskUpdateState,
 } from '@/components/InspectionTaskProgressForm';
-import StatCard from '@/components/StatCard';
+import { PageHeader, GovBtn, MiniStat } from '@/components/GovUI';
+import { RefreshCw } from 'lucide-react';
 
 type LoadState = 'loading' | 'error' | 'empty' | 'data';
 type MockFetchMode = Exclude<LoadState, 'loading'>;
@@ -320,76 +321,57 @@ export default function NhiemVuKiemTraPage() {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between gap-3">
-        <div>
-          <h1 className="font-display text-[22px] font-extrabold text-slate-900">
-            Nhiệm vụ kiểm tra
-          </h1>
-          <p className="mt-0.5 text-[13px] text-slate-500">
-            Theo dõi nhiệm vụ được phân công và xác nhận nhận nhiệm vụ kiểm tra.
-          </p>
-        </div>
-
-        <button
-          type="button"
-          onClick={handleRetry}
-          className="rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-[13px] font-semibold text-slate-600 transition-colors hover:bg-slate-50"
-        >
-          Tải lại danh sách
-        </button>
-      </div>
+      <PageHeader
+        title="Nhiệm vụ kiểm tra"
+        subtitle="Chi cục An toàn Thực phẩm TP. Đà Nẵng — Theo dõi và xác nhận nhiệm vụ kiểm tra được phân công"
+        actions={
+          <GovBtn variant="secondary" onClick={handleRetry}>
+            <RefreshCw style={{ width: 12, height: 12 }} /> Tải lại
+          </GovBtn>
+        }
+      />
 
       {successMessage && <AlertBanner type="success" title={successMessage} />}
 
       {loadState !== 'loading' && (
-        <div className="mb-6 grid gap-4 md:grid-cols-3">
-          <StatCard label="Tổng nhiệm vụ" value={totalTasks} color="blue" />
-          <StatCard label="Chưa nhận" value={pendingTasks} color="orange" />
-          <StatCard label="Đã nhận" value={acceptedTasks} color="green" />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '10px', marginBottom: '12px' }}>
+          <MiniStat label="Tổng nhiệm vụ" value={totalTasks} color="blue" />
+          <MiniStat label="Chưa nhận" value={pendingTasks} color="orange" />
+          <MiniStat label="Đã nhận" value={acceptedTasks} color="green" />
         </div>
       )}
 
       {loadState === 'loading' && <LoadingPanel />}
 
       {loadState === 'error' && (
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div style={{ background: '#fff', border: '1px solid #D6D6D6', borderRadius: '2px', padding: '16px' }}>
           <AlertBanner type="danger" title={errorMessage} className="mb-0" />
-          <div className="mt-5">
-            <button
-              type="button"
-              onClick={handleRetry}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
-            >
-              Thử lại
-            </button>
+          <div style={{ marginTop: '12px' }}>
+            <GovBtn variant="primary" onClick={handleRetry}>Thử lại</GovBtn>
           </div>
         </div>
       )}
 
       {loadState === 'empty' && (
-        <div className="rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center shadow-sm">
-          <p className="text-base font-semibold text-slate-800">
-            Không có nhiệm vụ nào được giao
-          </p>
-          <p className="mt-2 text-sm text-slate-500">
-            Danh sách sẽ hiển thị tại đây khi có nhiệm vụ mới được phân công.
-          </p>
+        <div style={{ background: '#fff', border: '1px dashed #D6D6D6', borderRadius: '2px', padding: '40px', textAlign: 'center' }}>
+          <p style={{ fontSize: '14px', fontWeight: 600, color: '#333' }}>Không có nhiệm vụ nào được giao</p>
+          <p style={{ fontSize: '12px', color: '#888', marginTop: '6px' }}>Danh sách sẽ hiển thị tại đây khi có nhiệm vụ mới được phân công.</p>
         </div>
       )}
 
       {loadState === 'data' && (
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
-          <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="mb-4 flex items-center justify-between gap-3 border-b border-slate-200 pb-4">
+          <section style={{ background: '#fff', border: '1px solid #D6D6D6', borderRadius: '2px', overflow: 'hidden' }}>
+            <div style={{ background: '#EAF7EA', borderBottom: '2px solid #008000', padding: '7px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
               <div>
-                <h2 className="text-sm font-bold text-slate-800">
+                <h2 style={{ fontSize: '12.5px', fontWeight: 700, color: '#006400', textTransform: 'uppercase', letterSpacing: '0.04em', margin: 0 }}>
                   Danh sách nhiệm vụ được giao
                 </h2>
-                <p className="mt-1 text-xs text-slate-500">
+                <p style={{ fontSize: '11px', color: '#555', marginTop: '2px' }}>
                   Chọn một nhiệm vụ để xem chi tiết và xác nhận nhận việc.
                 </p>
               </div>
-              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">
+              <span style={{ background: '#fff', border: '1px solid #C8E6C9', borderRadius: '2px', padding: '1px 8px', fontSize: '11px', fontWeight: 600, color: '#006400' }}>
                 {totalTasks} nhiệm vụ
               </span>
             </div>

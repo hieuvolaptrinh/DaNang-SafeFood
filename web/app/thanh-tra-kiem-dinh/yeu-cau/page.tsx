@@ -115,8 +115,27 @@ export default function YeuCauPage() {
   const canCreateRequest = role === "INSPECTOR";
   const canManageResult = role === "TESTER";
 
-  // Page mode: list | create (inline form)
-  const [mode, setMode] = useState<'list' | 'create'>('list');
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [detailRequest, setDetailRequest] = useState<TestRequest | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailNotFound, setDetailNotFound] = useState(false);
+
+  const openDetail = (request: TestRequest) => {
+    setDetailLoading(true);
+    setIsDetailOpen(true);
+
+    // giả lập loading (sau này thay bằng API)
+    setTimeout(() => {
+      setDetailRequest(request);
+      setDetailNotFound(false);
+      setDetailLoading(false);
+    }, 500);
+  };
+
+  const closeDetail = () => {
+    setIsDetailOpen(false);
+    setDetailRequest(null);
+  };
 
   const filtered = data.filter((r) => {
     const matchSearch =
@@ -166,12 +185,12 @@ export default function YeuCauPage() {
       prev.map((item) =>
         item.id === selectedRequest.id
           ? {
-              ...item,
-              status: modalStatus,
-              result: finalResult,
-              reason: resultStatus === "Không đạt" ? reason.trim() : undefined,
-              stampedFile: stampedFileName || item.stampedFile,
-            }
+            ...item,
+            status: modalStatus,
+            result: finalResult,
+            reason: resultStatus === "Không đạt" ? reason.trim() : undefined,
+            stampedFile: stampedFileName || item.stampedFile,
+          }
           : item
       )
     );
@@ -585,9 +604,9 @@ export default function YeuCauPage() {
               {!detailLoading && detailRequest && (() => {
                 const d = detailRequest;
                 const statusDetail: Record<TestRequest["status"], { label: string; color: string }> = {
-                  pending:    { label: "Đã gửi",       color: "bg-blue-100 text-blue-700 border-blue-200" },
-                  processing: { label: "Đang xử lý",   color: "bg-amber-100 text-amber-700 border-amber-200" },
-                  completed:  { label: "Hoàn thành",   color: "bg-emerald-100 text-emerald-700 border-emerald-200" },
+                  pending: { label: "Đã gửi", color: "bg-blue-100 text-blue-700 border-blue-200" },
+                  processing: { label: "Đang xử lý", color: "bg-amber-100 text-amber-700 border-amber-200" },
+                  completed: { label: "Hoàn thành", color: "bg-emerald-100 text-emerald-700 border-emerald-200" },
                 };
                 const sd = statusDetail[d.status];
                 return (
@@ -682,9 +701,8 @@ export default function YeuCauPage() {
                         {d.result && (
                           <div className="bg-slate-50 rounded-xl px-4 py-3 border border-slate-100">
                             <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide mb-1">Kết quả</p>
-                            <p className={`text-[13px] font-semibold ${
-                              d.result.includes("Không đạt") ? "text-red-600" : "text-emerald-600"
-                            }`}>{d.result}</p>
+                            <p className={`text-[13px] font-semibold ${d.result.includes("Không đạt") ? "text-red-600" : "text-emerald-600"
+                              }`}>{d.result}</p>
                           </div>
                         )}
                       </div>

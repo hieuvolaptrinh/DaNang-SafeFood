@@ -1,14 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { FiEdit, FiEye } from 'react-icons/fi';
-import { mockInspections, type Inspection } from '@/data/mockData';
+import { Eye, Pencil, FileSpreadsheet, Plus, RefreshCw } from 'lucide-react';
+import { mockInspections } from '@/data/mockData';
 import AlertBanner from '@/components/AlertBanner';
-import Badge from '@/components/Badge';
 import CreateInspectionForm, { type InspectionFormResult } from '@/components/CreateInspectionForm';
 import DataTable, { type Column } from '@/components/DataTable';
-import StatCard from '@/components/StatCard';
-import TableCard, { FilterSelect, Pagination, SearchInput } from '@/components/TableCard';
+import { PageHeader, FilterBar, FilterField, GovInput, GovSelect, GovBtn, SectionCard, GovPagination, StatusBadge, MiniStat } from '@/components/GovUI';
 
 type RecordMode = 'list' | 'create' | 'view' | 'edit';
 
@@ -109,14 +107,12 @@ export default function ThanhTraKiemDinhPage() {
     {
       key: 'id',
       header: 'Mã hồ sơ',
-      render: (inspection) => (
-        <span className="font-mono text-[12px] text-slate-500">{inspection.id}</span>
-      ),
+      render: (r) => <span style={{ fontFamily:'monospace', fontWeight:600, color:'#005A9E' }}>{r.id}</span>,
     },
     {
       key: 'business',
       header: 'Cơ sở',
-      render: (inspection) => <strong className="text-slate-800">{inspection.business}</strong>,
+      render: (r) => <span style={{ fontWeight:600 }}>{r.business}</span>,
     },
     { key: 'type', header: 'Loại thanh tra' },
     { key: 'inspector', header: 'Thanh tra viên' },
@@ -124,44 +120,28 @@ export default function ThanhTraKiemDinhPage() {
     {
       key: 'result',
       header: 'Kết quả',
-      render: (inspection) => <Badge variant={inspection.result} />,
+      render: (r) => <StatusBadge variant={r.result} />,
     },
     {
       key: 'score',
       header: 'Điểm',
-      render: (inspection) => (
-        <span
-          className={`font-bold ${
-            inspection.score >= 80
-              ? 'text-emerald-600'
-              : inspection.score >= 60
-                ? 'text-amber-600'
-                : 'text-red-600'
-          }`}
-        >
-          {inspection.score}/100
-        </span>
+      render: (r) => (
+        <strong style={{ color: r.score >= 80 ? '#006400' : r.score >= 60 ? '#CC6600' : '#CC0000' }}>
+          {r.score}/100
+        </strong>
       ),
     },
     {
       key: 'actions',
       header: 'Thao tác',
-      render: (inspection) => (
-        <div className="flex gap-1.5">
-          <button
-            type="button"
-            onClick={() => handleViewInspection(inspection)}
-            className="h-7 w-7 rounded-md border border-slate-200 bg-white text-sm transition-colors hover:bg-slate-50"
-          >
-            <FiEye size={16} className="mx-auto" />
-          </button>
-          <button
-            type="button"
-            onClick={() => handleEditInspection(inspection)}
-            className="h-7 w-7 rounded-md border border-slate-200 bg-white text-sm transition-colors hover:bg-slate-50"
-          >
-            <FiEdit size={16} className="mx-auto" />
-          </button>
+      render: (r) => (
+        <div style={{ display:'flex', gap:'3px' }}>
+          <GovBtn variant="secondary" size="sm" onClick={() => handleViewInspection(r)} title="Xem">
+            <Eye style={{ width:12, height:12 }} />
+          </GovBtn>
+          <GovBtn variant="outline" size="sm" onClick={() => handleEditInspection(r)} title="Sửa">
+            <Pencil style={{ width:12, height:12 }} />
+          </GovBtn>
         </div>
       ),
     },
@@ -210,31 +190,17 @@ export default function ThanhTraKiemDinhPage() {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="font-display text-[22px] font-extrabold text-slate-900">
-            Thanh tra & Kiểm định
-          </h1>
-          <p className="mt-0.5 text-[13px] text-slate-500">
-            Theo dõi tất cả lịch và kết quả thanh tra an toàn thực phẩm
-          </p>
-        </div>
-
-        {mode === 'list' && (
-          <div className="flex gap-2">
-            <button className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-[13px] font-semibold text-slate-600 hover:bg-slate-50">
-              📥 Xuất
-            </button>
-            <button
-              type="button"
-              onClick={handleCreateClick}
-              className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-2 text-[13px] font-semibold text-white hover:bg-blue-700"
-            >
-              + Tạo hồ sơ thanh tra
-            </button>
-          </div>
-        )}
-      </div>
+      <PageHeader
+        title="Hồ sơ thanh tra & kiểm định"
+        subtitle="Chi cục An toàn Thực phẩm TP. Đà Nẵng — Quản lý lịch và kết quả thanh tra"
+        actions={mode === 'list' ? (
+          <>
+            <GovBtn variant="secondary"><RefreshCw style={{ width:12, height:12 }} /> Làm mới</GovBtn>
+            <GovBtn variant="secondary"><FileSpreadsheet style={{ width:12, height:12 }} /> Xuất Excel</GovBtn>
+            <GovBtn variant="primary" onClick={handleCreateClick}><Plus style={{ width:12, height:12 }} /> Tạo hồ sơ</GovBtn>
+          </>
+        ) : undefined}
+      />
 
       {mode === 'create' ? (
         <CreateInspectionForm onCancel={handleCancelForm} onSuccess={handleCreateSuccess} />
@@ -259,49 +225,44 @@ export default function ThanhTraKiemDinhPage() {
 
           <AlertBanner
             type="warning"
-            title="8 cuộc thanh tra đến hạn tuần này"
-            message="Vui lòng xem xét và hoàn thành tất cả các cuộc thanh tra quá hạn trước thứ Sáu, ngày 17/01."
+            title="8 cuộc thanh tra đến hạn tuần này — Vui lòng hoàn thành trước thứ Sáu 17/01."
           />
 
-          <div className="mb-6 grid grid-cols-4 gap-4">
-            <StatCard label="Tổng số" value={total} color="blue" />
-            <StatCard label="Hoàn thành" value={completed} color="green" />
-            <StatCard label="Đã lên lịch" value={56} color="orange" />
-            <StatCard label="Không đạt" value={failed} color="red" />
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:'10px', marginBottom:'12px' }}>
+            <MiniStat label="Tổng số hồ sơ" value={total} color="blue" />
+            <MiniStat label="Hoàn thành" value={completed} color="green" />
+            <MiniStat label="Đã lên lịch" value={56} color="orange" />
+            <MiniStat label="Không đạt" value={failed} color="red" />
           </div>
 
-          <TableCard
-            title="Hồ sơ thanh tra"
-            controls={
-              <>
-                <SearchInput placeholder="Tìm cơ sở..." onChange={setSearch} />
-                <FilterSelect
-                  options={[
-                    { value: '', label: 'Tất cả kết quả' },
-                    { value: 'pass', label: 'Đạt' },
-                    { value: 'fail', label: 'Không đạt' },
-                    { value: 'scheduled', label: 'Đã lên lịch' },
-                  ]}
-                  onChange={setResultFilter}
-                />
-                <FilterSelect
-                  options={[
-                    { value: '', label: 'Tất cả thanh tra viên' },
-                    { value: 'Nguyễn Văn Trần', label: 'Nguyễn Văn Trần' },
-                    { value: 'Lê Thị Mai', label: 'Lê Thị Mai' },
-                    { value: 'Phạm Văn Đức', label: 'Phạm Văn Đức' },
-                  ]}
-                />
-              </>
-            }
-            footer={<Pagination info={`Hiển thị 1–${filtered.length} trong tổng số ${total} hồ sơ`} />}
+          <FilterBar>
+            <FilterField label="Tìm kiếm">
+              <GovInput placeholder="Tên cơ sở, mã hồ sơ..." value={search} onChange={setSearch} width={200} />
+            </FilterField>
+            <FilterField label="Kết quả">
+              <GovSelect value={resultFilter} onChange={setResultFilter} options={[
+                { value:'', label:'-- Tất cả --' },
+                { value:'pass', label:'Đạt' },
+                { value:'fail', label:'Không đạt' },
+                { value:'scheduled', label:'Đã lên lịch' },
+              ]} width={150} />
+            </FilterField>
+            <div style={{ display:'flex', alignItems:'flex-end', gap:'6px' }}>
+              <GovBtn variant="primary">Tìm kiếm</GovBtn>
+              <GovBtn variant="secondary" onClick={() => { setSearch(''); setResultFilter(''); }}>Xóa lọc</GovBtn>
+            </div>
+          </FilterBar>
+
+          <SectionCard
+            title={`Danh sách hồ sơ thanh tra (${filtered.length} bản ghi)`}
+            footer={<GovPagination info={`Hiển thị ${filtered.length} / ${total} hồ sơ`} />}
           >
             <DataTable
               columns={columns}
               data={filtered}
-              emptyMessage="Không tìm thấy hồ sơ nào"
+              emptyMessage="Không tìm thấy hồ sơ nào phù hợp."
             />
-          </TableCard>
+          </SectionCard>
         </>
       )}
     </div>

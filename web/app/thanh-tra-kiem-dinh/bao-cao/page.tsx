@@ -2,17 +2,17 @@
 
 import { useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { FiEdit, FiEye } from 'react-icons/fi';
 import AlertBanner from '@/components/AlertBanner';
-import Badge from '@/components/Badge';
 import CreateInspectionReportForm, {
   type CreateInspectionReportPayload,
 } from '@/components/CreateInspectionReportForm';
 import DataTable, { type Column } from '@/components/DataTable';
-import StatCard from '@/components/StatCard';
-import TableCard, { FilterSelect, Pagination, SearchInput } from '@/components/TableCard';
+import {
+  PageHeader, FilterBar, FilterField, GovInput, GovSelect, GovBtn,
+  SectionCard, GovPagination, StatusBadge, MiniStat,
+} from '@/components/GovUI';
 import { mockInspectionReports, type InspectionReport } from '@/data/mockData';
-import { cn } from '@/lib/utils';
+import { Eye, Pencil, FileSpreadsheet, RefreshCw, Plus } from 'lucide-react';
 
 type PageMode = 'list' | 'create';
 
@@ -22,16 +22,10 @@ const inspectionTypeLabels: Record<CreateInspectionReportPayload['inspectionType
   'Theo phản ánh': 'Thanh tra theo phản ánh',
 };
 
-function getScoreClassName(score: number) {
-  if (score >= 80) {
-    return 'text-emerald-600';
-  }
-
-  if (score >= 50) {
-    return 'text-amber-600';
-  }
-
-  return 'text-red-600';
+function getScoreColor(score: number) {
+  if (score >= 80) return '#006400';
+  if (score >= 50) return '#CC6600';
+  return '#CC0000';
 }
 
 export default function BaoCaoPage() {
@@ -97,55 +91,49 @@ export default function BaoCaoPage() {
     {
       key: 'id',
       header: 'Mã báo cáo',
-      render: (report) => <span className="font-mono text-[12px] text-slate-500">{report.id}</span>,
+      render: (report) => <span style={{ fontFamily: 'monospace', fontSize: '12px', fontWeight: 600, color: '#005A9E' }}>{report.id}</span>,
     },
     {
       key: 'tenCoSo',
       header: 'Cơ sở',
-      render: (report) => <strong className="text-slate-800">{report.tenCoSo}</strong>,
+      render: (report) => <span style={{ fontWeight: 600 }}>{report.tenCoSo}</span>,
     },
     { key: 'loaiThanhTra', header: 'Loại thanh tra' },
     { key: 'thanhTraVien', header: 'Thanh tra viên' },
-    { key: 'ngay', header: 'Ngày kiểm tra' },
+    {
+      key: 'ngay',
+      header: 'Ngày kiểm tra',
+      render: (report) => <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>{report.ngay}</span>,
+    },
     {
       key: 'ketQua',
       header: 'Kết quả',
-      render: (report) => <Badge variant={report.ketQua} />,
+      render: (report) => <StatusBadge variant={report.ketQua} />,
     },
     {
       key: 'diem',
       header: 'Điểm',
-      render: (report) => <span className={cn('font-bold', getScoreClassName(report.diem))}>{report.diem}/100</span>,
+      render: (report) => <strong style={{ color: getScoreColor(report.diem) }}>{report.diem}/100</strong>,
     },
     {
       key: 'actions',
       header: 'Thao tác',
       render: (report) => (
-        <div className="flex gap-1.5">
-          <button
-            type="button"
-            onClick={(event) => {
-              event.stopPropagation();
-              router.push(`/thanh-tra-kiem-dinh/bao-cao/${report.id}`);
-            }}
-            className="rounded-md border border-slate-200 bg-white p-2 text-blue-500 transition hover:bg-gray-100"
-            aria-label={`Xem báo cáo ${report.id}`}
+        <div style={{ display: 'flex', gap: '3px' }}>
+          <GovBtn
+            variant="secondary" size="sm"
+            onClick={() => router.push(`/thanh-tra-kiem-dinh/bao-cao/${report.id}`)}
             title="Xem báo cáo"
           >
-            <FiEye size={18} />
-          </button>
-          <button
-            type="button"
-            onClick={(event) => {
-              event.stopPropagation();
-              router.push(`/thanh-tra-kiem-dinh/bao-cao/${report.id}/edit`);
-            }}
-            className="rounded-md border border-slate-200 bg-white p-2 text-amber-500 transition hover:bg-gray-100"
-            aria-label={`Chỉnh sửa báo cáo ${report.id}`}
+            <Eye style={{ width: 12, height: 12 }} />
+          </GovBtn>
+          <GovBtn
+            variant="outline" size="sm"
+            onClick={() => router.push(`/thanh-tra-kiem-dinh/bao-cao/${report.id}/edit`)}
             title="Chỉnh sửa báo cáo"
           >
-            <FiEdit size={18} />
-          </button>
+            <Pencil style={{ width: 12, height: 12 }} />
+          </GovBtn>
         </div>
       ),
     },
@@ -157,61 +145,57 @@ export default function BaoCaoPage() {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="font-display text-[22px] font-extrabold text-slate-900">Báo cáo Thanh tra</h1>
-          <p className="mt-0.5 text-[13px] text-slate-500">
-            Tổng hợp báo cáo và kết quả thanh tra an toàn thực phẩm
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <button className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-[13px] font-semibold text-slate-600 hover:bg-slate-50">
-            📥 Xuất PDF
-          </button>
-          <button
-            onClick={handleCreateClick}
-            className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-2 text-[13px] font-semibold text-white hover:bg-blue-700"
-          >
-            + Tạo báo cáo mới
-          </button>
-        </div>
-      </div>
-
-      {bannerMessage && <AlertBanner type="success" title={bannerMessage} className="mb-5" />}
-
-      <AlertBanner
-        type="warning"
-        title="3 báo cáo chưa hoàn tất"
-        message="Vui lòng kiểm tra và hoàn thiện báo cáo thanh tra trong tuần này."
-      />
-
-      <div className="mb-6 grid grid-cols-4 gap-4">
-        <StatCard label="Tổng số" value={total} color="blue" />
-        <StatCard label="Hoàn thành" value={completed} color="green" />
-        <StatCard label="Đang xử lý" value={12} color="orange" />
-        <StatCard label="Không đạt" value={failed} color="red" />
-      </div>
-
-      <TableCard
-        title="Báo cáo thanh tra"
-        controls={
+      <PageHeader
+        title="Báo cáo thanh tra an toàn thực phẩm"
+        subtitle="Chi cục An toàn Thực phẩm TP. Đà Nẵng — Tổng hợp báo cáo và kết quả thanh tra"
+        actions={
           <>
-            <SearchInput placeholder="Tìm cơ sở, mã báo cáo..." onChange={setSearch} />
-            <FilterSelect
-              options={[
-                { value: '', label: 'Tất cả kết quả' },
-                { value: 'pass', label: 'Đạt' },
-                { value: 'fail', label: 'Không đạt' },
-                { value: 'scheduled', label: 'Đã lên lịch' },
-              ]}
-              onChange={setResultFilter}
-            />
+            <GovBtn variant="secondary"><RefreshCw style={{ width: 12, height: 12 }} /> Làm mới</GovBtn>
+            <GovBtn variant="secondary"><FileSpreadsheet style={{ width: 12, height: 12 }} /> Xuất Excel</GovBtn>
+            <GovBtn variant="primary" onClick={handleCreateClick}><Plus style={{ width: 12, height: 12 }} /> Tạo báo cáo</GovBtn>
           </>
         }
-        footer={<Pagination info={`Hiển thị 1–${filtered.length} trong tổng số ${reports.length} báo cáo`} />}
+      />
+
+      {bannerMessage && <AlertBanner type="success" title={bannerMessage} />}
+      <AlertBanner type="warning" title="3 báo cáo chưa hoàn tất — Vui lòng kiểm tra và hoàn thiện báo cáo thanh tra trong tuần này." />
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '10px', marginBottom: '12px' }}>
+        <MiniStat label="Tổng số báo cáo" value={total} color="blue" />
+        <MiniStat label="Hoàn thành" value={completed} color="green" />
+        <MiniStat label="Đang xử lý" value={12} color="orange" />
+        <MiniStat label="Không đạt" value={failed} color="red" />
+      </div>
+
+      <FilterBar>
+        <FilterField label="Tìm kiếm">
+          <GovInput placeholder="Tên cơ sở, mã báo cáo..." value={search} onChange={setSearch} width={220} />
+        </FilterField>
+        <FilterField label="Kết quả">
+          <GovSelect
+            value={resultFilter}
+            onChange={setResultFilter}
+            options={[
+              { value: '', label: '-- Tất cả --' },
+              { value: 'pass', label: 'Đạt' },
+              { value: 'fail', label: 'Không đạt' },
+              { value: 'scheduled', label: 'Đã lên lịch' },
+            ]}
+            width={150}
+          />
+        </FilterField>
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px' }}>
+          <GovBtn variant="primary">Tìm kiếm</GovBtn>
+          <GovBtn variant="secondary" onClick={() => { setSearch(''); setResultFilter(''); }}>Xóa lọc</GovBtn>
+        </div>
+      </FilterBar>
+
+      <SectionCard
+        title={`Danh sách báo cáo thanh tra (${filtered.length} báo cáo)`}
+        footer={<GovPagination info={`Hiển thị ${filtered.length} / ${reports.length} báo cáo`} />}
       >
         <DataTable columns={columns} data={filtered} emptyMessage="Không tìm thấy báo cáo nào" />
-      </TableCard>
+      </SectionCard>
     </div>
   );
 }
