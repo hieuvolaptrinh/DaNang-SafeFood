@@ -1,4 +1,4 @@
-package com.danang.safefood.controller;
+package com.danang.safefood.controller.ThanhTra;
 
 import com.danang.safefood.config.security.jwt.JwtPrincipal;
 import com.danang.safefood.dto.request.CapNhatTienDoRequest;
