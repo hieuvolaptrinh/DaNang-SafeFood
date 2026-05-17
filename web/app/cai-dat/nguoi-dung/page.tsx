@@ -1,131 +1,144 @@
 'use client';
 
 import { useState } from 'react';
-import { FiEdit } from 'react-icons/fi';
-import { mockUsers, SystemUser, roleLabels, roleColors, Role } from '@/data/mockData';
+import { Pencil, Lock, UserPlus, RefreshCw } from 'lucide-react';
+import { mockUsers, SystemUser, roleLabels, Role } from '@/data/mockData';
 import DataTable, { Column } from '@/components/DataTable';
-import Badge from '@/components/Badge';
-import TableCard, { SearchInput, FilterSelect, Pagination } from '@/components/TableCard';
-import StatCard from '@/components/StatCard';
+import { PageHeader, FilterBar, FilterField, GovInput, GovSelect, GovBtn, SectionCard, GovPagination, StatusBadge, MiniStat } from '@/components/GovUI';
+
+const roleBadgeStyle: Record<string, { bg: string; color: string; border: string }> = {
+  ADMIN:     { bg: '#F0E8FA', color: '#6200CC', border: '#D4A8F5' },
+  AUTHORITY: { bg: '#E3EFFA', color: '#005A9E', border: '#9FC3E0' },
+  INSPECTOR: { bg: '#EAF7EA', color: '#006400', border: '#94C994' },
+  TESTER:    { bg: '#FFF4E5', color: '#CC6600', border: '#FFCC80' },
+  BUSINESS:  { bg: '#F0F0F0', color: '#555',    border: '#CCC'    },
+};
 
 export default function NguoiDungPage() {
-  const [search, setSearch] = useState('');
+  const [search, setSearch]       = useState('');
   const [roleFilter, setRoleFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
 
   const filtered = mockUsers.filter((u) => {
-    const matchSearch =
-      !search ||
-      u.name.toLowerCase().includes(search.toLowerCase()) ||
-      u.email.toLowerCase().includes(search.toLowerCase());
-    const matchRole = !roleFilter || u.role === roleFilter;
-    return matchSearch && matchRole;
+    const matchSearch = !search || u.name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase());
+    const matchRole   = !roleFilter   || u.role   === roleFilter;
+    const matchStatus = !statusFilter || u.status === statusFilter;
+    return matchSearch && matchRole && matchStatus;
   });
 
   const columns: Column<SystemUser>[] = [
     {
       key: 'name',
-      header: 'Người dùng',
-      render: (r) => (
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-600 to-emerald-500 flex items-center justify-center text-[11px] font-bold text-white flex-shrink-0">
-            {r.name[0]}
-          </div>
-          <strong className="text-slate-800">{r.name}</strong>
-        </div>
-      ),
+      header: 'Họ và tên',
+      render: r => <span style={{ fontWeight: 600 }}>{r.name}</span>,
     },
     {
       key: 'email',
-      header: 'Email',
-      render: (r) => <span className="text-slate-500 text-[12px]">{r.email}</span>,
+      header: 'Email đăng nhập',
+      render: r => <span style={{ fontFamily: 'monospace', fontSize: '12px', color: '#005A9E' }}>{r.email}</span>,
     },
     {
       key: 'role',
       header: 'Vai trò',
-      render: (r) => (
-        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide ${roleColors[r.role as Role]}`}>
-          {roleLabels[r.role as Role]}
-        </span>
-      ),
+      render: r => {
+        const s = roleBadgeStyle[r.role as Role] ?? { bg: '#F0F0F0', color: '#555', border: '#CCC' };
+        return (
+          <span style={{ display: 'inline-block', padding: '1px 7px', borderRadius: '2px', border: `1px solid ${s.border}`, background: s.bg, color: s.color, fontSize: '11px', fontWeight: 600, whiteSpace: 'nowrap' }}>
+            {roleLabels[r.role as Role] ?? r.role}
+          </span>
+        );
+      },
     },
-    { key: 'department', header: 'Phòng ban' },
+    { key: 'department', header: 'Phòng ban / Đơn vị' },
     {
       key: 'lastLogin',
-      header: 'Đăng nhập gần nhất',
-      render: (r) => <span className="text-slate-500 text-[12px]">{r.lastLogin}</span>,
+      header: 'Đăng nhập lần cuối',
+      render: r => <span style={{ fontFamily: 'monospace', fontSize: '12px', color: '#555' }}>{r.lastLogin}</span>,
     },
     {
       key: 'status',
       header: 'Trạng thái',
-      render: (r) => <Badge variant={r.status} />,
+      render: r => <StatusBadge variant={r.status} />,
     },
     {
       key: 'actions',
       header: 'Thao tác',
       render: () => (
-        <div className="flex gap-1.5">
-          <button className="w-7 h-7 rounded-md border border-slate-200 bg-white hover:bg-slate-50 text-sm transition-colors"><FiEdit size={16} className="mx-auto" /></button>
-          <button className="w-7 h-7 rounded-md border border-red-200 bg-red-50 hover:bg-red-100 text-sm transition-colors">🔒</button>
+        <div style={{ display: 'flex', gap: '3px' }}>
+          <GovBtn variant="outline" size="sm" title="Chỉnh sửa"><Pencil style={{ width: 12, height: 12 }} /></GovBtn>
+          <GovBtn variant="danger" size="sm" title="Khóa tài khoản"><Lock style={{ width: 12, height: 12 }} /></GovBtn>
         </div>
       ),
     },
   ];
 
-  const totalActive    = mockUsers.filter((u) => u.status === 'active').length;
-  const totalSuspended = mockUsers.filter((u) => u.status === 'suspended').length;
-  const totalInspector = mockUsers.filter((u) => u.role === 'INSPECTOR').length;
-  const totalBusiness  = mockUsers.filter((u) => u.role === 'BUSINESS').length;
+  const totalUsers     = mockUsers.length;
+  const totalActive    = mockUsers.filter(u => u.status === 'active').length;
+  const totalSuspended = mockUsers.filter(u => u.status === 'suspended').length;
+  const totalInspector = mockUsers.filter(u => u.role === 'INSPECTOR').length;
+  const totalBusiness  = mockUsers.filter(u => u.role === 'BUSINESS').length;
 
   return (
     <div>
-      {/* Page header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-[22px] font-extrabold text-slate-900 font-display">Quản lý Người dùng</h1>
-          <p className="text-[13px] text-slate-500 mt-0.5">Quản lý tài khoản và quyền truy cập hệ thống</p>
-        </div>
-        <button className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-blue-600 text-white text-[13px] font-semibold hover:bg-blue-700 transition-colors">
-          + Thêm người dùng
-        </button>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-5 gap-4 mb-6">
-        <StatCard label="Tổng người dùng"  value={mockUsers.length} color="blue"   />
-        <StatCard label="Đang hoạt động"   value={totalActive}      color="green"  />
-        <StatCard label="Tạm đình chỉ"     value={totalSuspended}   color="red"    />
-        <StatCard label="Thanh tra viên"   value={totalInspector}   color="orange" />
-        <StatCard label="Tài khoản cơ sở" value={totalBusiness}    color="purple" />
-      </div>
-
-      {/* Table */}
-      <TableCard
-        title="Người dùng hệ thống"
-        controls={
+      <PageHeader
+        title="Quản lý tài khoản người dùng hệ thống"
+        subtitle="Chi cục An toàn Thực phẩm TP. Đà Nẵng — Phân quyền và quản lý tài khoản"
+        actions={
           <>
-            <SearchInput placeholder="Tìm người dùng..." onChange={setSearch} />
-            <FilterSelect
-              options={[
-                { value: '',          label: 'Tất cả vai trò' },
-                { value: 'ADMIN',     label: 'Quản trị viên' },
-                { value: 'AUTHORITY', label: 'Cơ quan thẩm quyền' },
-                { value: 'INSPECTOR', label: 'Thanh tra viên' },
-                { value: 'TESTER',    label: 'Kiểm nghiệm viên' },
-                { value: 'BUSINESS',  label: 'Chủ cơ sở' },
-              ]}
-              onChange={setRoleFilter}
-            />
+            <GovBtn variant="secondary"><RefreshCw style={{ width: 12, height: 12 }} /> Làm mới</GovBtn>
+            <GovBtn variant="primary"><UserPlus style={{ width: 12, height: 12 }} /> Thêm người dùng</GovBtn>
           </>
         }
-        footer={<Pagination info={`Hiển thị 1–${filtered.length} trong tổng số ${mockUsers.length} người dùng`} />}
+      />
+
+      {/* Stats */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: '10px', marginBottom: '12px' }}>
+        <MiniStat label="Tổng người dùng" value={totalUsers} color="neutral" />
+        <MiniStat label="Đang hoạt động" value={totalActive} color="green" />
+        <MiniStat label="Tạm đình chỉ" value={totalSuspended} color="red" />
+        <MiniStat label="Thanh tra viên" value={totalInspector} color="blue" />
+        <MiniStat label="Tài khoản cơ sở" value={totalBusiness} color="orange" />
+      </div>
+
+      {/* Filter */}
+      <FilterBar>
+        <FilterField label="Tìm kiếm">
+          <GovInput placeholder="Họ tên, email..." value={search} onChange={setSearch} width={200} />
+        </FilterField>
+        <FilterField label="Vai trò">
+          <GovSelect value={roleFilter} onChange={setRoleFilter} options={[
+            { value: '',          label: '-- Tất cả --' },
+            { value: 'ADMIN',     label: 'Quản trị viên' },
+            { value: 'AUTHORITY', label: 'Cơ quan thẩm quyền' },
+            { value: 'INSPECTOR', label: 'Thanh tra viên' },
+            { value: 'TESTER',    label: 'Kiểm nghiệm viên' },
+            { value: 'BUSINESS',  label: 'Chủ cơ sở' },
+          ]} width={180} />
+        </FilterField>
+        <FilterField label="Trạng thái">
+          <GovSelect value={statusFilter} onChange={setStatusFilter} options={[
+            { value: '',          label: '-- Tất cả --' },
+            { value: 'active',    label: 'Đang hoạt động' },
+            { value: 'suspended', label: 'Tạm đình chỉ' },
+          ]} width={160} />
+        </FilterField>
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px' }}>
+          <GovBtn variant="primary">Tìm kiếm</GovBtn>
+          <GovBtn variant="secondary" onClick={() => { setSearch(''); setRoleFilter(''); setStatusFilter(''); }}>Xóa lọc</GovBtn>
+        </div>
+      </FilterBar>
+
+      {/* Table */}
+      <SectionCard
+        title={`Danh sách người dùng hệ thống (${filtered.length} tài khoản)`}
+        footer={<GovPagination info={`Hiển thị ${filtered.length} / ${totalUsers} người dùng`} />}
       >
         <DataTable
           columns={columns}
-          data={filtered }
-          emptyMessage="Không tìm thấy người dùng nào"
+          data={filtered}
+          emptyMessage="Không tìm thấy người dùng nào phù hợp."
         />
-      </TableCard>
+      </SectionCard>
     </div>
   );
 }
-

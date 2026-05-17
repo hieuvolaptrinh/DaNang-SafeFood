@@ -1,94 +1,178 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import Image from 'next/image';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-
-    // Simulate login
+    setLoading(true);
     setTimeout(() => {
-      setIsLoading(false);
-      router.push("/dashboard");
-    }, 1000);
+      router.push('/dashboard');
+    }, 800);
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50 via-white to-blue-50 p-4">
-      <Card className="w-full max-w-md shadow-lg">
-        <CardHeader className="space-y-2 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-100">
-            <svg
-              className="h-8 w-8 text-blue-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-              />
-            </svg>
+    <div style={{ minHeight:'100vh', background:'#F5F5F5', display:'flex', flexDirection:'column' }}>
+      {/* Top bar */}
+      <div style={{ background:'#006400', padding:'6px 0', borderBottom:'2px solid #004d00' }}>
+        <div style={{ maxWidth:'1200px', margin:'0 auto', padding:'0 20px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+          <span style={{ fontSize:'11px', color:'#fff', opacity:0.8 }}>
+            CỔNG THÔNG TIN ĐIỆN TỬ — CHI CỤC AN TOÀN THỰC PHẨM TP. ĐÀ NẴNG
+          </span>
+          <span style={{ fontSize:'11px', color:'#fff', opacity:0.7 }}>
+            Đường dây hỗ trợ: (0236) 3.819.879
+          </span>
+        </div>
+      </div>
+
+      {/* Header banner */}
+      <div style={{ background:'#006400', padding:'20px 0', borderBottom:'2px solid #004d00' }}>
+        <div style={{ maxWidth:'1200px', margin:'0 auto', padding:'0 20px', display:'flex', alignItems:'center', gap:'16px' }}>
+          <div style={{ width:'70px', height:'70px', borderRadius:'50%', background:'#fff', border:'2px solid rgba(255,255,255,0.5)', display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden', flexShrink:0 }}>
+            <Image src="/logo-attp.png" alt="Logo ATTP" width={60} height={60} style={{ objectFit:'contain' }} />
           </div>
-          <CardTitle className="text-2xl font-bold">Đăng nhập</CardTitle>
-          <CardDescription>
-            Hệ thống Quản lý An toàn Thực phẩm Đà Nẵng
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div className="space-y-2">
-              <label htmlFor="username" className="text-sm font-medium">
-                Tên đăng nhập
-              </label>
-              <Input
-                id="username"
-                type="text"
-                placeholder="Nhập tên đăng nhập"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                required
-                className="h-10"
-              />
+          <div>
+            <p style={{ color:'rgba(255,255,255,0.7)', fontSize:'10.5px', textTransform:'uppercase', letterSpacing:'0.12em', margin:'0 0 2px 0' }}>
+              Cộng Hòa Xã Hội Chủ Nghĩa Việt Nam — Sở Y Tế TP. Đà Nẵng
+            </p>
+            <h1 style={{ color:'#fff', fontSize:'20px', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', margin:0, lineHeight:1.2 }}>
+              Chi Cục An Toàn Thực Phẩm
+            </h1>
+            <p style={{ color:'rgba(255,255,255,0.85)', fontSize:'14px', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.1em', margin:'2px 0 0 0' }}>
+              Thành Phố Đà Nẵng
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Main content */}
+      <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', padding:'32px 20px' }}>
+        <div style={{ display:'flex', gap:'40px', maxWidth:'900px', width:'100%', alignItems:'flex-start' }}>
+          {/* Left: Info */}
+          <div style={{ flex:1 }}>
+            <h2 style={{ fontSize:'16px', fontWeight:700, color:'#006400', textTransform:'uppercase', letterSpacing:'0.04em', marginBottom:'12px', borderBottom:'2px solid #008000', paddingBottom:'6px' }}>
+              Hệ thống Phần mềm Quản lý ATTP
+            </h2>
+            <p style={{ fontSize:'13px', color:'#444', lineHeight:1.7, marginBottom:'16px' }}>
+              Hệ thống quản lý an toàn thực phẩm thành phố Đà Nẵng phục vụ nghiệp vụ cho cán bộ, nhân viên
+              Chi cục An toàn Thực phẩm, Sở Y tế và các cơ sở kinh doanh thực phẩm.
+            </p>
+
+            <div style={{ display:'flex', flexDirection:'column', gap:'8px', marginBottom:'20px' }}>
+              {[
+                { label:'Quản lý cơ sở kinh doanh thực phẩm' },
+                { label:'Thanh tra, kiểm tra và cấp giấy chứng nhận ATTP' },
+                { label:'Tiếp nhận và xử lý phản ánh của người dân' },
+                { label:'Báo cáo thống kê và cảnh báo an toàn thực phẩm' },
+              ].map((item, i) => (
+                <div key={i} style={{ display:'flex', alignItems:'center', gap:'8px', fontSize:'12.5px', color:'#333' }}>
+                  <span style={{ width:'6px', height:'6px', background:'#008000', borderRadius:'1px', flexShrink:0 }} />
+                  {item.label}
+                </div>
+              ))}
             </div>
-            <div className="space-y-2">
-              <label htmlFor="password" className="text-sm font-medium">
-                Mật khẩu
-              </label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Nhập mật khẩu"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="h-10"
-              />
+
+            <div style={{ padding:'10px 12px', background:'#EAF7EA', border:'1px solid #94C994', borderLeft:'4px solid #008000', borderRadius:'2px', fontSize:'12px', color:'#006400' }}>
+              <strong>Hỗ trợ kỹ thuật:</strong> Phòng Công nghệ thông tin — Sở Y tế TP. Đà Nẵng<br />
+              Điện thoại: <strong>(0236) 3.819.879</strong> | Email: <strong>cntt@soytedn.gov.vn</strong>
             </div>
-            <Button type="submit" className="w-full h-10" disabled={isLoading}>
-              {isLoading ? "Đang đăng nhập..." : "Đăng nhập"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+          </div>
+
+          {/* Right: Login form */}
+          <div style={{ width:'340px', flexShrink:0 }}>
+            <div style={{ background:'#fff', border:'1px solid #D6D6D6', borderRadius:'2px' }}>
+              {/* Form header */}
+              <div style={{ background:'#006400', padding:'10px 16px', borderBottom:'2px solid #004d00' }}>
+                <h2 style={{ color:'#fff', fontSize:'13px', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', margin:0 }}>
+                  Đăng nhập hệ thống
+                </h2>
+              </div>
+
+              <form onSubmit={handleLogin} style={{ padding:'20px 16px' }}>
+                <div style={{ marginBottom:'12px' }}>
+                  <label style={{ display:'block', fontSize:'12.5px', fontWeight:600, color:'#333', marginBottom:'4px' }}>
+                    Tên đăng nhập <span style={{ color:'#CC0000' }}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Nhập tên đăng nhập..."
+                    defaultValue="admin@fsms.danang.gov.vn"
+                    className="gov-input"
+                    style={{ height:'32px' }}
+                    required
+                  />
+                </div>
+
+                <div style={{ marginBottom:'12px' }}>
+                  <label style={{ display:'block', fontSize:'12.5px', fontWeight:600, color:'#333', marginBottom:'4px' }}>
+                    Mật khẩu <span style={{ color:'#CC0000' }}>*</span>
+                  </label>
+                  <input
+                    type="password"
+                    placeholder="Nhập mật khẩu..."
+                    defaultValue="password123"
+                    className="gov-input"
+                    style={{ height:'32px' }}
+                    required
+                  />
+                </div>
+
+                <div style={{ marginBottom:'14px', display:'flex', alignItems:'center', gap:'6px' }}>
+                  <input type="checkbox" id="remember" style={{ width:'14px', height:'14px', accentColor:'#008000', cursor:'pointer' }} defaultChecked />
+                  <label htmlFor="remember" style={{ fontSize:'12px', color:'#444', cursor:'pointer' }}>Ghi nhớ đăng nhập</label>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  style={{
+                    width:'100%',
+                    height:'34px',
+                    background: loading ? '#4d8a4d' : '#008000',
+                    color:'#fff',
+                    border:'1px solid #006400',
+                    borderRadius:'2px',
+                    fontSize:'13px',
+                    fontWeight:600,
+                    textTransform:'uppercase',
+                    letterSpacing:'0.04em',
+                    cursor: loading ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  {loading ? 'Đang xác thực...' : 'Đăng nhập'}
+                </button>
+
+                <div style={{ marginTop:'12px', textAlign:'center' }}>
+                  <a href="#" style={{ fontSize:'12px', color:'#008000' }}>Quên mật khẩu?</a>
+                  <span style={{ color:'#CCC', margin:'0 8px' }}>|</span>
+                  <a href="#" style={{ fontSize:'12px', color:'#008000' }}>Hướng dẫn sử dụng</a>
+                </div>
+              </form>
+
+              <div style={{ padding:'8px 16px', background:'#EEEEEE', borderTop:'1px solid #D6D6D6', fontSize:'11px', color:'#777', textAlign:'center' }}>
+                © 2026 Chi cục An toàn Thực phẩm TP. Đà Nẵng — v2.1.0
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div style={{ background:'#006400', borderTop:'2px solid #004d00', padding:'8px 0' }}>
+        <div style={{ maxWidth:'1200px', margin:'0 auto', padding:'0 20px', display:'flex', justifyContent:'space-between' }}>
+          <span style={{ fontSize:'11px', color:'rgba(255,255,255,0.7)' }}>
+            © 2026 Chi cục An toàn Thực phẩm TP. Đà Nẵng — Sở Y tế TP. Đà Nẵng
+          </span>
+          <span style={{ fontSize:'11px', color:'rgba(255,255,255,0.6)' }}>
+            Địa chỉ: 99 Phan Chu Trinh, Hải Châu, Đà Nẵng
+          </span>
+        </div>
+      </div>
     </div>
   );
 }

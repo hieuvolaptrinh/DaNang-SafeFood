@@ -1,63 +1,45 @@
-import { ReactNode } from 'react';
-import { cn } from '@/lib/utils';
+import { LucideIcon } from 'lucide-react';
+import { MiniStat } from '@/components/GovUI';
 
-type CardColor = 'blue' | 'green' | 'orange' | 'red' | 'purple';
+type CardColor = 'green' | 'blue' | 'orange' | 'red' | 'neutral' | 'purple';
 
-const colorMap: Record<CardColor, { bar: string; icon: string; iconBg: string }> = {
-  blue:   { bar: 'bg-blue-600',   icon: 'text-blue-600',   iconBg: 'bg-blue-50' },
-  green:  { bar: 'bg-emerald-500',icon: 'text-emerald-600',iconBg: 'bg-emerald-50' },
-  orange: { bar: 'bg-amber-500',  icon: 'text-amber-600',  iconBg: 'bg-amber-50' },
-  red:    { bar: 'bg-red-500',    icon: 'text-red-600',    iconBg: 'bg-red-50' },
-  purple: { bar: 'bg-violet-600', icon: 'text-violet-600', iconBg: 'bg-violet-50' },
+const colorMap: Record<CardColor, 'green' | 'blue' | 'orange' | 'red' | 'neutral'> = {
+  green: 'green',
+  blue: 'blue',
+  orange: 'orange',
+  red: 'red',
+  neutral: 'neutral',
+  purple: 'blue',
 };
 
 interface StatCardProps {
   label: string;
   value: string | number;
   color?: CardColor;
-  icon?: ReactNode;
+  icon?: LucideIcon;
+  progress?: number;
   trend?: string;
   trendUp?: boolean;
   trendNote?: string;
 }
 
+/** KPI card — API giữ nguyên, style GovUI */
 export default function StatCard({
   label,
   value,
-  color = 'blue',
-  icon,
+  color = 'green',
   trend,
-  trendUp,
   trendNote,
 }: StatCardProps) {
-  const c = colorMap[color];
+  const note = [trend, trendNote].filter(Boolean).join(' · ') || undefined;
   return (
-    <div className="relative bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-      <div className={cn('h-[3px]', c.bar)} />
-      <div className="p-5">
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-            {label}
-          </span>
-          {icon && (
-            <div className={cn('w-9 h-9 rounded-lg flex items-center justify-center', c.iconBg, c.icon)}>
-              {icon}
-            </div>
-          )}
-        </div>
-        <div className="text-3xl font-extrabold text-slate-900 font-mono">{value}</div>
-        {trend && (
-          <div
-            className={cn(
-              'inline-flex items-center gap-1 text-xs font-semibold mt-1',
-              trendUp ? 'text-emerald-600' : 'text-red-500'
-            )}
-          >
-            {trend}
-            {trendNote && <span className="text-slate-400 font-normal ml-1">{trendNote}</span>}
-          </div>
-        )}
-      </div>
-    </div>
+    <MiniStat
+      label={label}
+      value={value}
+      color={colorMap[color] ?? 'green'}
+      note={note}
+    />
   );
 }
+
+export { MiniStat as StatsCard } from '@/components/GovUI';
