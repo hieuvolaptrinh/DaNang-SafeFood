@@ -215,12 +215,28 @@ INSERT INTO minh_chung_khac_phuc (maMinhChung, maViPham, thoiGianGui) VALUES
 GO
  
 -- [24] KhieuNai
-INSERT INTO khieu_nai (maKhieuNai, trangThai, maCoSo, thoiGianKhieuNai, moTaChiTiet) VALUES
-    ('KN001', N'Đang xử lý',  'CS002', '2025-05-28 09:00:00', N'Khiếu nại kết quả thanh tra, cho rằng đoàn thanh tra đánh giá không công bằng'),
-    ('KN002', N'Đã giải quyết','CS001', '2025-04-20 14:00:00', N'Khiếu nại về mức phạt tiền quá cao so với tính chất vi phạm'),
-    ('KN003', N'Chưa xử lý',  'CS003', '2025-06-02 10:00:00', N'Yêu cầu xem xét lại biên bản vi phạm ngày 10/05/2025'),
-    ('KN004', N'Đang xử lý',  'CS004', '2025-06-04 08:30:00', N'Khiếu nại quyết định đình chỉ tạm thời hoạt động chi nhánh'),
-    ('KN005', N'Đã giải quyết','CS005', '2025-05-15 11:00:00', N'Khiếu nại về việc cán bộ thanh tra không thông báo trước 48 giờ');
+INSERT INTO khieu_nai (
+    maKhieuNai, trangThai, tieuDe, maCoSo, thoiGianKhieuNai, moTaChiTiet, tomTatKiemTra, ketQuaXuLy
+) VALUES
+    ('KN001', N'Chưa xử lý', N'Nghi ngờ thực phẩm bảo quản không đúng nhiệt độ', 'CS002', '2026-03-25 09:20:00',
+     N'Người dân phản ánh quầy hải sản tại Chợ Tươi Đà Nẵng để thực phẩm ngoài thùng lạnh quá lâu, có mùi lạ vào cuối buổi chiều và không có nhãn truy xuất nguồn gốc.',
+     NULL, NULL),
+    ('KN002', N'Đang xử lý', N'Phản ánh dầu chiên tái sử dụng nhiều lần', 'CS001', '2026-03-24 14:10:00',
+     N'Người gửi cho biết cơ sở Bánh Mì Hội An sử dụng dầu chiên có màu sẫm, mùi khét, nghi đã tái sử dụng trong nhiều ngày liên tiếp trong giờ cao điểm buổi tối.',
+     N'Đã kiểm tra hiện trường, ghi nhận dầu chiên sẫm màu và yêu cầu cơ sở thay toàn bộ mẻ dầu trong ngày.',
+     N'Đã lập biên bản nhắc nhở và yêu cầu cơ sở thay dầu chiên, lưu mẫu dầu để kiểm nghiệm lại trong đợt tái kiểm.'),
+    ('KN003', N'Đã xử lý', N'Khiếu nại bao bì thực phẩm không có hạn sử dụng', 'CS003', '2026-03-22 08:45:00',
+     N'Người dân phản ánh tại cửa hàng thực phẩm đóng gói có nhiều sản phẩm không in hạn sử dụng rõ ràng, gây khó xác định thời điểm an toàn để dùng.',
+     N'Đã đối chiếu hồ sơ nhập hàng và kiểm tra ngẫu nhiên 12 sản phẩm tại quầy trưng bày.',
+     N'Đã yêu cầu cơ sở thu hồi lô hàng vi phạm, bổ sung nhãn phụ đúng quy định và hoàn tất xác nhận khắc phục trong ngày 23/03/2026.'),
+    ('KN004', N'Đang xử lý', N'Phản ánh khu sơ chế không che chắn côn trùng', 'CS004', '2026-03-21 16:30:00',
+     N'Người gửi phản ánh khu sơ chế thực phẩm có cửa mở thường xuyên, ruồi xuất hiện gần khu vực chế biến và dụng cụ chứa thực phẩm chưa được che chắn đầy đủ.',
+     N'Đã kiểm tra khu sơ chế, ghi nhận cần bổ sung rèm chắn côn trùng và vệ sinh lại mặt bàn thao tác.',
+     NULL),
+    ('KN005', N'Đã xử lý', N'Khiếu nại nhân viên không đeo găng tay khi chia suất ăn', 'CS005', '2026-03-18 10:05:00',
+     N'Người dân phản ánh nhân viên tại quầy chia suất ăn tiếp xúc trực tiếp với thực phẩm chín mà không đeo găng tay bảo hộ trong giờ cao điểm trưa.',
+     N'Đã xem lại camera tại thời điểm phản ánh và kiểm tra thực tế quy trình cấp phát đồ bảo hộ của cơ sở.',
+     N'Đã yêu cầu đào tạo lại quy trình vệ sinh cá nhân, nhắc nhở toàn bộ ca làm việc và bổ sung kiểm soát nội bộ mỗi đầu ca.');
 GO
  
 -- [25] ChiTieuKiemNghiem
