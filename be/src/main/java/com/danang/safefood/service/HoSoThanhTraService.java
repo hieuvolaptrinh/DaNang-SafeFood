@@ -76,7 +76,7 @@ public class HoSoThanhTraService {
         lich.setMaThanhTra(IdGenerator.generate("TT"));
         lich.setCoSoKinhDoanh(coSo);
         lich.setNguoiPhuTrach(currentUser);
-        lich.setTrangThai("Đã hoàn thành");
+        lich.setTrangThai("Hoàn thành");
         lich.setNoiDung("Kiểm tra ATVSTP");
         lich = lichThanhTraRepository.save(lich);
 

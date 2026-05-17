@@ -2,8 +2,17 @@
 
 import { useState } from "react";
 import { FiEye } from "react-icons/fi";
+import { FiAlertCircle } from "react-icons/fi";
+import {
+  LuBuilding2,
+  LuClipboardList,
+  LuFileText,
+  LuSearch,
+  LuTestTube,
+} from "react-icons/lu";
 import { useRole } from "@/lib/RoleContext";
 import Badge from "@/components/Badge";
+import CreateInspectionRequestForm from "@/components/CreateInspectionRequestForm";
 import DataTable, { type Column } from "@/components/DataTable";
 import TableCard, {
   FilterSelect,
@@ -97,6 +106,12 @@ export default function YeuCauPage() {
   const [reason, setReason] = useState("");
   const [stampedFileName, setStampedFileName] = useState("");
 
+  // Detail modal state
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailNotFound, setDetailNotFound] = useState(false);
+  const [detailRequest, setDetailRequest] = useState<TestRequest | null>(null);
+
   const canCreateRequest = role === "INSPECTOR";
   const canManageResult = role === "TESTER";
 
@@ -140,6 +155,20 @@ export default function YeuCauPage() {
     setIsModalOpen(true);
   };
 
+  const openDetail = (request: TestRequest) => {
+    setDetailLoading(false);
+    setDetailNotFound(false);
+    setDetailRequest(request);
+    setIsDetailOpen(true);
+  };
+
+  const closeDetail = () => {
+    setIsDetailOpen(false);
+    setDetailRequest(null);
+    setDetailLoading(false);
+    setDetailNotFound(false);
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -175,6 +204,30 @@ export default function YeuCauPage() {
   const isSaveDisabled =
     !stampedFileName ||
     (resultStatus === "Không đạt" && !reason.trim());
+
+  // Early return for create mode — render full page form
+  if (mode === 'create') {
+    return (
+      <CreateInspectionRequestForm
+        selectedSampleId="SAMPLE-2025-001"
+        onCancel={() => setMode('list')}
+        onSuccess={(req) => {
+          const newReq: TestRequest = {
+            id: req.id,
+            business: req.business,
+            sampleType: req.sampleType,
+            requestDate: req.requestDate,
+            deadline: req.deadline,
+            status: req.status,
+            lab: req.lab,
+            requestContent: '',
+          };
+          setData((prev) => [newReq, ...prev]);
+          setMode('list');
+        }}
+      />
+    );
+  }
 
   const columns: Column<TestRequest>[] = [
     {
@@ -304,7 +357,10 @@ export default function YeuCauPage() {
               📥 Xuất danh sách
             </button>
             {canCreateRequest && (
-              <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-[13px] font-semibold transition-all shadow-sm">
+              <button
+                onClick={() => setMode('create')}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-[13px] font-semibold transition-all shadow-sm"
+              >
                 + Tạo yêu cầu mới
               </button>
             )}

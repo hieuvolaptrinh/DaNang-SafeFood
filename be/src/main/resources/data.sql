@@ -99,11 +99,11 @@ GO
  
 -- [11] LichThanhTra
 INSERT INTO lich_thanh_tra (maThanhTra, maCoSo, maNguoiThanhTra, trangThai, noiDung) VALUES
-    ('LTT001', 'CS001', 'ND002', N'Đã hoàn thành', N'Thanh tra định kỳ quý II/2025 tại nhà hàng Sông Hàn'),
+    ('LTT001', 'CS001', 'ND002', N'Hoàn thành', N'Thanh tra định kỳ quý II/2025 tại nhà hàng Sông Hàn'),
     ('LTT002', 'CS002', 'ND002', N'Đang thực hiện', N'Thanh tra đột xuất theo phản ánh người dân'),
-    ('LTT003', 'CS003', 'ND003', N'Đã hoàn thành', N'Thanh tra định kỳ cơ sở chế biến thủy sản'),
-    ('LTT004', 'CS004', 'ND002', N'Lên kế hoạch',  N'Thanh tra chi nhánh Nhà hàng Sông Hàn'),
-    ('LTT005', 'CS005', 'ND003', N'Lên kế hoạch',  N'Thanh tra định kỳ quý III/2025');
+    ('LTT003', 'CS003', 'ND003', N'Hoàn thành', N'Thanh tra định kỳ cơ sở chế biến thủy sản'),
+    ('LTT004', 'CS004', 'ND002', N'Chưa nhận',  N'Thanh tra chi nhánh Nhà hàng Sông Hàn'),
+    ('LTT005', 'CS005', 'ND003', N'Chưa nhận',  N'Thanh tra định kỳ quý III/2025');
 GO
  
 -- [12] LichThanhTra_NguoiDung

@@ -1,8 +1,7 @@
 import Badge from '@/components/Badge';
 import { cn } from '@/lib/utils';
 
-export type InspectionTaskAssignmentStatus = 'pending' | 'accepted';
-export type InspectionTaskProgressStatus = 'idle' | 'in-progress' | 'completed';
+export type NhiemVuStatus = 'Chưa nhận' | 'Đã nhận' | 'Đang thực hiện' | 'Hoàn thành';
 
 export interface InspectionTaskRecord {
   id: string;
@@ -10,9 +9,9 @@ export interface InspectionTaskRecord {
   address: string;
   inspectionTime: string;
   inspectionContent: string;
-  assignmentStatus: InspectionTaskAssignmentStatus;
-  progressStatus: InspectionTaskProgressStatus;
-  progressNote: string;
+  trangThai: NhiemVuStatus;
+  ghiChu: string;
+  lyDoTuChoi?: string;
 }
 
 interface InspectionTaskListProps {
@@ -22,19 +21,14 @@ interface InspectionTaskListProps {
 }
 
 function getStatusBadge(task: InspectionTaskRecord) {
-  if (task.progressStatus === 'completed') {
-    return { variant: 'active', label: 'Hoàn thành' };
-  }
+  const statusMap: Record<NhiemVuStatus, { variant: 'active' | 'pending' | 'open'; label: string }> = {
+    'Hoàn thành': { variant: 'active', label: 'Hoàn thành' },
+    'Đang thực hiện': { variant: 'pending', label: 'Đang thực hiện' },
+    'Đã nhận': { variant: 'open', label: 'Đã nhận' },
+    'Chưa nhận': { variant: 'pending', label: 'Chưa nhận' },
+  };
 
-  if (task.progressStatus === 'in-progress') {
-    return { variant: 'pending', label: 'Đang kiểm tra' };
-  }
-
-  if (task.assignmentStatus === 'accepted') {
-    return { variant: 'open', label: 'Đã nhận' };
-  }
-
-  return { variant: 'pending', label: 'Chưa nhận' };
+  return statusMap[task.trangThai];
 }
 
 export default function InspectionTaskList({

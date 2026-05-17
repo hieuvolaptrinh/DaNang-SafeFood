@@ -15,6 +15,8 @@ class AppTextField extends StatefulWidget {
   final ValueChanged<String>? onChanged;
   final bool enabled;
   final FocusNode? focusNode;
+  final bool readOnly;
+  final VoidCallback? onTap;
 
   const AppTextField({
     super.key,
@@ -30,6 +32,8 @@ class AppTextField extends StatefulWidget {
     this.onChanged,
     this.enabled = true,
     this.focusNode,
+    this.readOnly = false,
+    this.onTap,
   });
 
   @override
@@ -124,6 +128,8 @@ class _AppTextFieldState extends State<AppTextField> {
             onChanged: widget.onChanged,
             enabled: widget.enabled,
             focusNode: _focusNode,
+            readOnly: widget.readOnly,
+            onTap: widget.onTap,
             style: GoogleFonts.inter(color: AppTheme.textPrimary, fontSize: 15),
             decoration: InputDecoration(
               hintText: widget.hint,

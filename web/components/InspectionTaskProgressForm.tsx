@@ -1,15 +1,15 @@
 import { cn } from '@/lib/utils';
-import type { InspectionTaskProgressStatus } from '@/components/InspectionTaskList';
+import type { NhiemVuStatus } from '@/components/InspectionTaskList';
 
 export type InspectionTaskUpdateState = 'idle' | 'loading' | 'error' | 'success';
 
 export interface InspectionTaskProgressFormValue {
-  status: '' | Exclude<InspectionTaskProgressStatus, 'idle'>;
+  status: '' | NhiemVuStatus;
   note: string;
 }
 
 interface InspectionTaskProgressFormProps {
-  currentStatus: InspectionTaskProgressStatus;
+  currentStatus: NhiemVuStatus;
   formValue: InspectionTaskProgressFormValue;
   updateState: InspectionTaskUpdateState;
   errorMessage: string;
@@ -18,11 +18,27 @@ interface InspectionTaskProgressFormProps {
   onSubmit: () => void;
 }
 
-const statusOptions = [
-  { value: '', label: 'Chọn trạng thái' },
-  { value: 'in-progress', label: 'Đang kiểm tra' },
-  { value: 'completed', label: 'Hoàn thành' },
-] satisfies Array<{ value: InspectionTaskProgressFormValue['status']; label: string }>;
+const allStatuses: NhiemVuStatus[] = ['Chưa nhận', 'Đã nhận', 'Đang thực hiện', 'Hoàn thành'];
+
+function getAvailableStatuses(currentStatus: NhiemVuStatus): NhiemVuStatus[] {
+  const statusPriority: Record<NhiemVuStatus, number> = {
+    'Chưa nhận': 0,
+    'Đã nhận': 1,
+    'Đang thực hiện': 2,
+    'Hoàn thành': 3,
+  };
+
+  const currentPriority = statusPriority[currentStatus];
+  // Cho phép chọn trạng thái từ hiện tại trở đi (chỉ tiến về phía trước)
+  return allStatuses.filter((status) => statusPriority[status] >= currentPriority);
+}
+
+const statusLabels: Record<NhiemVuStatus, string> = {
+  'Chưa nhận': 'Chưa nhận',
+  'Đã nhận': 'Đã nhận',
+  'Đang thực hiện': 'Đang thực hiện',
+  'Hoàn thành': 'Hoàn thành',
+};
 
 export default function InspectionTaskProgressForm({
   currentStatus,
@@ -35,11 +51,10 @@ export default function InspectionTaskProgressForm({
 }: InspectionTaskProgressFormProps) {
   const isSubmitting = updateState === 'loading';
   const hasSelectedStatus = formValue.status !== '';
-  const isSameStatus =
-    formValue.status !== '' &&
-    (currentStatus === formValue.status ||
-      (currentStatus === 'idle' ? false : currentStatus === formValue.status));
+  const isSameStatus = formValue.status !== '' && formValue.status === currentStatus;
   const disableSubmit = !hasSelectedStatus || isSubmitting || isSameStatus;
+  
+  const availableStatuses = getAvailableStatuses(currentStatus);
 
   return (
     <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
@@ -55,9 +70,10 @@ export default function InspectionTaskProgressForm({
             }
             className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition-colors focus:border-blue-500"
           >
-            {statusOptions.map((option) => (
-              <option key={option.value || 'placeholder'} value={option.value}>
-                {option.label}
+            <option value="">Chọn trạng thái</option>
+            {availableStatuses.map((status) => (
+              <option key={status} value={status}>
+                {statusLabels[status]}
               </option>
             ))}
           </select>
@@ -80,12 +96,10 @@ export default function InspectionTaskProgressForm({
           <p className="text-sm font-medium text-red-600">{errorMessage}</p>
         )}
 
-        {currentStatus !== 'idle' && (
+        {currentStatus !== 'Chưa nhận' && (
           <p className="text-xs text-slate-500">
             Trạng thái hiện tại:{' '}
-            <span className="font-semibold text-slate-700">
-              {currentStatus === 'in-progress' ? 'Đang kiểm tra' : 'Hoàn thành'}
-            </span>
+            <span className="font-semibold text-slate-700">{statusLabels[currentStatus]}</span>
           </p>
         )}
 

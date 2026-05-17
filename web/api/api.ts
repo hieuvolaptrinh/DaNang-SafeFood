@@ -97,4 +97,146 @@ export const api = {
   },
 };
 
+/**
+ * YeuCauKiemNghiem API endpoints
+ */
+export interface YeuCauKiemNghiemResponse {
+  maYeuCau: string;
+  tenCoSo: string;
+  loaiMau: string;
+  ngayYeuCau: string;
+  hanHoanThanh: string;
+  trangThai: "pending" | "processing" | "completed";
+  phongLab: string;
+  ketQuaKiemNghiem?: string;
+  lyDoKhongDat?: string;
+  noidungYeuCau: string;
+  chiTieuKiemDinh: string;
+  maMauLienQuan?: string;
+  ngayTao: string;
+  maNguoiTao: string;
+}
+
+export interface CreateYeuCauKiemNghiemRequest {
+  maCoSo: string;
+  loaiMau: string;
+  ngayYeuCau: string;
+  hanHoanThanh: string;
+  phongLab: string;
+  noidungYeuCau: string;
+  chiTieuKiemDinh: string;
+  maMauLienQuan?: string;
+}
+
+export interface UpdateKetQuaKiemNghiemRequest {
+  ketQuaKiemNghiem: string;
+  trangThai: "pending" | "processing" | "completed";
+  lyDoKhongDat?: string;
+  fileCoDauMoc?: string;
+}
+
+export interface YeuCauKiemNghiemStatsResponse {
+  tongYeuCau: number;
+  choDuyet: number;
+  dangXuLy: number;
+  hoanThanh: number;
+}
+
+export const yeuCauKiemNghiemApi = {
+  getStats(): Promise<YeuCauKiemNghiemStatsResponse> {
+    return api.get("/yeu-cau-kiem-nghiem/stats");
+  },
+
+  searchYeuCau(
+    keyword?: string,
+    status?: string,
+    page: number = 0,
+    size: number = 10
+  ): Promise<{ content: YeuCauKiemNghiemResponse[]; totalElements: number; totalPages: number; currentPage: number }> {
+    const params = new URLSearchParams();
+    if (keyword) params.append("keyword", keyword);
+    if (status) params.append("status", status);
+    params.append("page", page.toString());
+    params.append("size", size.toString());
+    return api.get(`/yeu-cau-kiem-nghiem?${params.toString()}`);
+  },
+
+  getById(maYeuCau: string): Promise<YeuCauKiemNghiemResponse> {
+    return api.get(`/yeu-cau-kiem-nghiem/${maYeuCau}`);
+  },
+
+  create(req: CreateYeuCauKiemNghiemRequest): Promise<YeuCauKiemNghiemResponse> {
+    return api.post("/yeu-cau-kiem-nghiem", req);
+  },
+
+  updateKetQua(
+    maYeuCau: string,
+    req: UpdateKetQuaKiemNghiemRequest
+  ): Promise<YeuCauKiemNghiemResponse> {
+    return api.put(`/yeu-cau-kiem-nghiem/${maYeuCau}/ket-qua`, req);
+  },
+};
+
+/**
+ * KetQuaKiemNghiem API endpoints
+ */
+export interface KetQuaKiemNghiemStatsResponse {
+  tongMau: number;
+  datChuan: number;
+  khongDat: number;
+  choKetQua: number;
+}
+
+export interface KetQuaKiemNghiemChiTieuResponse {
+  maChiTieu: string;
+  tenChiTieu: string;
+  giaTriDo?: string | null;
+  gioiHanChoPhep?: string | null;
+  ketLuan: "pass" | "fail" | "pending";
+}
+
+export interface KetQuaKiemNghiemItemResponse {
+  maKetQua: string;
+  maMau: string;
+  tenCoSo: string;
+  tenMau: string;
+  loaiMau: string;
+  ngayKiemNghiem?: string | null;
+  phongLab?: string | null;
+  ketQua: "pass" | "fail" | "pending";
+  chiTieu?: string | null;
+  diem?: number | null;
+  fileKetQua?: string | null;
+}
+
+export interface KetQuaKiemNghiemDetailResponse extends KetQuaKiemNghiemItemResponse {
+  ketQuaKiemNghiem?: string | null;
+  lyDoKhongDat?: string | null;
+  chiTietChiTieu: KetQuaKiemNghiemChiTieuResponse[];
+}
+
+export const ketQuaKiemNghiemApi = {
+  getStats(): Promise<KetQuaKiemNghiemStatsResponse> {
+    return api.get("/ket-qua-kiem-nghiem/stats");
+  },
+
+  search(
+    keyword?: string,
+    result?: "pass" | "fail" | "pending" | "",
+    page: number = 0,
+    size: number = 10
+  ): Promise<{ content: KetQuaKiemNghiemItemResponse[]; totalElements: number; totalPages: number; number: number }> {
+    const params = new URLSearchParams();
+    if (keyword) params.append("keyword", keyword);
+    if (result) params.append("result", result);
+    params.append("page", page.toString());
+    params.append("size", size.toString());
+    return api.get(`/ket-qua-kiem-nghiem?${params.toString()}`);
+  },
+
+  getById(maKetQua: string): Promise<KetQuaKiemNghiemDetailResponse> {
+    return api.get(`/ket-qua-kiem-nghiem/${maKetQua}`);
+  },
+};
+
 export default api;

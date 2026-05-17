@@ -32,10 +32,25 @@ import 'package:mobile_ui/data/local/token_storage.dart';
 import 'package:mobile_ui/data/remote/datasource/auth_remote_datasource.dart';
 import 'package:mobile_ui/data/remote/datasource/notification_datasource.dart';
 import 'package:mobile_ui/data/remote/datasource/business_remote_datasource.dart';
+import 'package:mobile_ui/data/remote/datasource/complaint_remote_datasource.dart';
+import 'package:mobile_ui/data/remote/datasource/violation_remote_datasource.dart';
+import 'package:mobile_ui/data/remote/datasource/profile_remote_datasource.dart';
 import 'package:mobile_ui/data/remote/repository/auth_repository.dart';
 import 'package:mobile_ui/data/remote/repository/notification_repository.dart';
 import 'package:mobile_ui/data/remote/repository/business_repository.dart';
+import 'package:mobile_ui/data/remote/repository/complaint_repository.dart';
+import 'package:mobile_ui/data/remote/repository/violation_repository.dart';
+import 'package:mobile_ui/data/remote/repository/profile_repository.dart';
 import 'package:mobile_ui/data/remote/model/notification_model.dart';
+import 'package:mobile_ui/viewmodel/complaint/complaint_cubit.dart';
+import 'package:mobile_ui/viewmodel/violation/violation_cubit.dart';
+import 'package:mobile_ui/viewmodel/profile/profile_cubit.dart';
+import 'package:mobile_ui/viewmodel/business_management/business_management_cubit.dart';
+import 'package:mobile_ui/data/remote/datasource/my_business_remote_datasource.dart';
+import 'package:mobile_ui/data/remote/repository/my_business_repository.dart';
+import 'package:mobile_ui/ui/profile/edit_profile_page.dart';
+import 'package:mobile_ui/ui/profile/change_password_page.dart';
+import 'package:mobile_ui/ui/profile/my_complaints_page.dart';
 
 class AppRouter {
   static final _dio = DioClient().dio;
@@ -49,6 +64,18 @@ class AppRouter {
       NotificationRepository(
         remoteDataSource: NotificationRemoteDataSource(dio: _dio),
       );
+
+  static final ComplaintRepository _complaintRepository = ComplaintRepository(
+    remoteDataSource: ComplaintRemoteDataSource(dio: _dio),
+  );
+
+  static final ViolationRepository _violationRepository = ViolationRepository(
+    remote: ViolationRemoteDataSource(dio: _dio),
+  );
+
+  static final ProfileRepository _profileRepository = ProfileRepository(
+    remoteDataSource: ProfileRemoteDataSource(dio: _dio),
+  );
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -122,20 +149,38 @@ class AppRouter {
         );
 
       case Routes.complaintForm:
-        return MaterialPageRoute(builder: (_) => const ComplaintFormPage());
+        return MaterialPageRoute(
+          builder: (_) => BlocProvider(
+            create: (_) =>
+                ComplaintCubit(repository: _complaintRepository)..loadTypes(),
+            child: const ComplaintFormPage(),
+          ),
+        );
 
       case Routes.complaintDetail:
         final args = settings.arguments as Map<String, dynamic>?;
+        final complaintId = args?['id'] as String? ?? '';
         return MaterialPageRoute(
-          builder: (_) =>
-              ComplaintDetailPage(complaintTitle: args?['title'] ?? ''),
+          builder: (_) => BlocProvider(
+            create: (_) =>
+                ComplaintCubit(repository: _complaintRepository)
+                  ..loadDetail(complaintId),
+            child: ComplaintDetailPage(complaintId: complaintId),
+          ),
         );
 
       // Business Management routes
       case Routes.bizDetail:
         final args = settings.arguments as Map<String, dynamic>?;
         return MaterialPageRoute(
-          builder: (_) => BizDetailPage(businessName: args?['name'] ?? ''),
+          builder: (_) => BlocProvider(
+            create: (_) => BusinessManagementCubit(
+              repository: MyBusinessRepository(
+                remote: MyBusinessRemoteDataSource(dio: _dio),
+              ),
+            )..loadData(),
+            child: BizDetailPage(businessName: args?['name'] ?? ''),
+          ),
         );
 
       case Routes.businessRegistration:
@@ -144,13 +189,21 @@ class AppRouter {
         );
 
       case Routes.violationList:
-        return MaterialPageRoute(builder: (_) => const ViolationListPage());
+        return MaterialPageRoute(
+          builder: (_) => BlocProvider(
+            create: (_) => ViolationCubit(repository: _violationRepository),
+            child: const ViolationListPage(),
+          ),
+        );
 
       case Routes.violationDetail:
         final args = settings.arguments as Map<String, dynamic>?;
+        final maViPham = args?['id'] as String? ?? '';
         return MaterialPageRoute(
-          builder: (_) =>
-              ViolationDetailPage(violationTitle: args?['title'] ?? ''),
+          builder: (_) => BlocProvider(
+            create: (_) => ViolationCubit(repository: _violationRepository),
+            child: ViolationDetailPage(maViPham: maViPham),
+          ),
         );
 
       case Routes.businessComplaint:
@@ -182,6 +235,39 @@ class AppRouter {
           builder: (_) => BlocProvider(
             create: (_) => BusinessStatusCubit()..loadDocuments(),
             child: const BusinessStatusPage(),
+          ),
+        );
+
+      case Routes.editProfile:
+        return MaterialPageRoute(
+          builder: (ctx) => BlocProvider(
+            create: (_) => ProfileCubit(
+              profileRepository: _profileRepository,
+              complaintRepository: _complaintRepository,
+            )..loadProfile(),
+            child: const EditProfilePage(),
+          ),
+        );
+
+      case Routes.changePassword:
+        return MaterialPageRoute(
+          builder: (ctx) => BlocProvider(
+            create: (_) => ProfileCubit(
+              profileRepository: _profileRepository,
+              complaintRepository: _complaintRepository,
+            ),
+            child: const ChangePasswordPage(),
+          ),
+        );
+
+      case Routes.myComplaints:
+        return MaterialPageRoute(
+          builder: (ctx) => BlocProvider(
+            create: (_) => ProfileCubit(
+              profileRepository: _profileRepository,
+              complaintRepository: _complaintRepository,
+            )..loadMyComplaints(),
+            child: const MyComplaintsPage(),
           ),
         );
 
