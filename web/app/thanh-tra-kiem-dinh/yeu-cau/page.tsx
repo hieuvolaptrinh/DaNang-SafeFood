@@ -94,6 +94,7 @@ const STATUS_CONFIG: Record<
 
 export default function YeuCauPage() {
   const { role } = useRole();
+  const [mode, setMode] = useState<"list" | "create">("list");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [data, setData] = useState<TestRequest[]>(mockTestRequests);
@@ -115,11 +116,6 @@ export default function YeuCauPage() {
   const canCreateRequest = role === "INSPECTOR";
   const canManageResult = role === "TESTER";
 
-  const [isDetailOpen, setIsDetailOpen] = useState(false);
-  const [detailRequest, setDetailRequest] = useState<TestRequest | null>(null);
-  const [detailLoading, setDetailLoading] = useState(false);
-  const [detailNotFound, setDetailNotFound] = useState(false);
-
   const openDetail = (request: TestRequest) => {
     setDetailLoading(true);
     setIsDetailOpen(true);
@@ -130,11 +126,6 @@ export default function YeuCauPage() {
       setDetailNotFound(false);
       setDetailLoading(false);
     }, 500);
-  };
-
-  const closeDetail = () => {
-    setIsDetailOpen(false);
-    setDetailRequest(null);
   };
 
   const filtered = data.filter((r) => {
@@ -153,13 +144,6 @@ export default function YeuCauPage() {
     setReason(request.reason || "");
     setStampedFileName("");
     setIsModalOpen(true);
-  };
-
-  const openDetail = (request: TestRequest) => {
-    setDetailLoading(false);
-    setDetailNotFound(false);
-    setDetailRequest(request);
-    setIsDetailOpen(true);
   };
 
   const closeDetail = () => {
