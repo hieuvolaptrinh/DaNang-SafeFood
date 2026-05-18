@@ -1,8 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
+import { Printer, ArrowLeft, FileSpreadsheet, Pencil } from 'lucide-react';
+import {
+  PageHeader, GovBtn, SectionCard, StatusBadge, ActionButtons, FormSection, FormField,
+} from '@/components/GovUI';
 
 interface Violation {
   id: string;
@@ -12,6 +15,9 @@ interface Violation {
   detectedDate: string;
   status: 'pending' | 'processing' | 'resolved';
   district: string;
+  inspector: string;
+  address: string;
+  description: string;
 }
 
 const mockViolations: Violation[] = [
@@ -23,6 +29,9 @@ const mockViolations: Violation[] = [
     detectedDate: '18/03/2025',
     status: 'processing',
     district: 'Hải Châu',
+    inspector: 'Nguyễn Văn Trần',
+    address: '123 Trần Phú, Hải Châu, Đà Nẵng',
+    description: 'Cơ sở vi phạm quy định vệ sinh an toàn thực phẩm nghiêm trọng. Khu vực bảo quản không đảm bảo nhiệt độ, thực phẩm không có nhãn truy xuất nguồn gốc.',
   },
   {
     id: 'VP-2025002',
@@ -32,6 +41,9 @@ const mockViolations: Violation[] = [
     detectedDate: '15/03/2025',
     status: 'resolved',
     district: 'Thanh Khê',
+    inspector: 'Lê Thị Mai',
+    address: '45 Điện Biên Phủ, Thanh Khê, Đà Nẵng',
+    description: 'Cơ sở không niêm yết bảng giá tại quầy phục vụ theo quy định.',
   },
   {
     id: 'VP-2025003',
@@ -41,6 +53,9 @@ const mockViolations: Violation[] = [
     detectedDate: '22/03/2025',
     status: 'pending',
     district: 'Ngũ Hành Sơn',
+    inspector: 'Phạm Văn Đức',
+    address: '78 Nguyễn Tất Thành, Ngũ Hành Sơn, Đà Nẵng',
+    description: 'Phát hiện cơ sở sử dụng chất phụ gia thực phẩm vượt ngưỡng cho phép theo Thông tư 24/2019/TT-BYT.',
   },
   {
     id: 'VP-2025004',
@@ -50,172 +65,193 @@ const mockViolations: Violation[] = [
     detectedDate: '20/03/2025',
     status: 'processing',
     district: 'Sơn Trà',
+    inspector: 'Nguyễn Văn Trần',
+    address: '22 Hoàng Diệu, Sơn Trà, Đà Nẵng',
+    description: 'Kiểm tra phát hiện 37 sản phẩm hết hạn sử dụng vẫn được bày bán trên kệ siêu thị.',
   },
 ];
 
-const SEVERITY_CONFIG = {
-  'nghiêm trọng': { label: 'Nghiêm trọng', bg: 'bg-red-50',   text: 'text-red-700',   dot: 'bg-red-500',   border: 'border-red-200', icon: '🚨' },
-  'trung bình':   { label: 'Trung bình',   bg: 'bg-amber-50', text: 'text-amber-700', dot: 'bg-amber-400', border: 'border-amber-200', icon: '⚠️' },
-  'nhẹ':          { label: 'Nhẹ',          bg: 'bg-sky-50',   text: 'text-sky-700',   dot: 'bg-sky-400',   border: 'border-sky-200', icon: '⚡' },
+const severityVariant: Record<string, string> = {
+  'nghiêm trọng': 'high',
+  'trung bình': 'medium',
+  'nhẹ': 'low',
 };
 
-const STATUS_CONFIG = {
-  pending:    { label: 'Chưa xử lý', bg: 'bg-slate-50',   text: 'text-slate-600',   icon: '⏸', dot: 'bg-slate-400',   border: 'border-slate-200' },
-  processing: { label: 'Đang xử lý', bg: 'bg-blue-50',    text: 'text-blue-700',    icon: '🔄', dot: 'bg-blue-500',    border: 'border-blue-200' },
-  resolved:   { label: 'Đã xử lý',   bg: 'bg-emerald-50', text: 'text-emerald-700', icon: '✓',  dot: 'bg-emerald-500', border: 'border-emerald-200' },
+const statusVariant: Record<string, string> = {
+  pending: 'pending',
+  processing: 'in-progress',
+  resolved: 'resolved',
 };
 
-export default function DanhSachViPhamDetailPage() {
+const statusLabel: Record<string, string> = {
+  pending: 'Chưa xử lý',
+  processing: 'Đang xử lý',
+  resolved: 'Đã xử lý',
+};
+
+export default function ViPhamDetailPage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
 
   const [violation, setViolation] = useState<Violation | null>(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const found = mockViolations.find(v => v.id === id);
     setViolation(found || null);
-    setLoading(false);
   }, [id]);
-
-  if (loading) {
-    return <div className="min-h-screen bg-[#f5f6fa] flex items-center justify-center">Đang tải...</div>;
-  }
 
   if (!violation) {
     return (
-      <div className="min-h-screen bg-[#f5f6fa] flex flex-col items-center justify-center py-20">
-        <div className="text-7xl mb-6">😕</div>
-        <h2 className="text-2xl font-bold text-slate-900">Không tìm thấy vi phạm</h2>
-        <p className="text-slate-500 mt-2 mb-8">Vi phạm mã <span className="font-mono">{id}</span> không tồn tại.</p>
-        <Link
-          href="/danh-sach-vi-pham"
-          className="px-6 py-3 bg-violet-600 text-white rounded-2xl font-medium hover:bg-violet-700 transition"
-        >
-          Quay về danh sách vi phạm
-        </Link>
+      <div>
+        <PageHeader
+          title="Không tìm thấy vi phạm"
+          subtitle={`Không tìm thấy hồ sơ vi phạm mã: ${id}`}
+          actions={
+            <GovBtn variant="secondary" onClick={() => router.push('/vi-pham')}>
+              <ArrowLeft style={{ width: 12, height: 12 }} /> Quay lại danh sách
+            </GovBtn>
+          }
+        />
       </div>
     );
   }
 
-  const sevCfg = SEVERITY_CONFIG[violation.severity];
-  const statCfg = STATUS_CONFIG[violation.status];
-
   return (
-    <div className="min-h-screen bg-[#f5f6fa] font-sans">
-      <div className="h-1 w-full bg-gradient-to-r from-violet-600 via-purple-500 to-pink-400" />
+    <div>
+      <PageHeader
+        title={`Chi tiết vi phạm — ${violation.id}`}
+        subtitle={`Chi cục An toàn Thực phẩm TP. Đà Nẵng — Hồ sơ vi phạm cơ sở kinh doanh thực phẩm`}
+        actions={
+          <ActionButtons>
+            <GovBtn variant="secondary" onClick={() => router.push('/vi-pham')}>
+              <ArrowLeft style={{ width: 12, height: 12 }} /> Quay lại
+            </GovBtn>
+            <GovBtn variant="secondary">
+              <Printer style={{ width: 12, height: 12 }} /> In biên bản
+            </GovBtn>
+            <GovBtn variant="secondary">
+              <FileSpreadsheet style={{ width: 12, height: 12 }} /> Xuất Excel
+            </GovBtn>
+            <GovBtn variant="outline">
+              <Pencil style={{ width: 12, height: 12 }} /> Cập nhật xử lý
+            </GovBtn>
+          </ActionButtons>
+        }
+      />
 
-      <div className="max-w-[1100px] mx-auto px-6 py-8">
-        {/* Breadcrumb */}
-        <div className="flex items-center gap-3 mb-8">
-          <button
-            onClick={() => router.back()}
-            className="text-slate-500 hover:text-slate-700 flex items-center gap-2 text-sm font-medium"
+      {/* Thông tin tổng quan */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '10px', marginBottom: '12px' }}>
+        {[
+          { label: 'Mã vi phạm', value: violation.id, mono: true },
+          { label: 'Ngày phát hiện', value: violation.detectedDate, mono: true },
+          { label: 'Quận/Huyện', value: violation.district },
+          { label: 'Thanh tra viên', value: violation.inspector },
+        ].map((item) => (
+          <div
+            key={item.label}
+            style={{
+              background: '#fff',
+              border: '1px solid #D6D6D6',
+              borderRadius: '1px',
+              padding: '10px 14px',
+            }}
           >
-            ← Quay lại danh sách
-          </button>
-          <div className="h-4 w-px bg-slate-200 mx-2" />
-          <span className="text-[11px] font-bold tracking-widest uppercase text-violet-500">
-            SỞ AN TOÀN THỰC PHẨM • ĐÀ NẴNG
-          </span>
-        </div>
-
-        <div className="flex flex-col lg:flex-row justify-between items-start gap-6 mb-8">
-          <div>
-            <div className="flex items-center gap-3 mb-3">
-              <span className="font-mono text-sm bg-slate-100 text-slate-500 px-3 py-1 rounded-lg font-semibold">
-                {violation.id}
-              </span>
-              <span className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-2xl text-sm font-semibold border ${statCfg.bg} ${statCfg.text} ${statCfg.border}`}>
-                <span>{statCfg.icon}</span> {statCfg.label}
-              </span>
-            </div>
-            <h1 className="text-3xl font-black tracking-tight text-slate-900">
-              {violation.businessName}
-            </h1>
+            <p style={{ fontSize: '10.5px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#555', marginBottom: '4px' }}>
+              {item.label}
+            </p>
+            <p style={{ fontSize: '14px', fontWeight: 700, color: '#222', fontFamily: item.mono ? 'monospace' : 'inherit' }}>
+              {item.value}
+            </p>
           </div>
-
-          <div className="flex gap-3">
-            <button className="px-5 py-3 border border-slate-300 rounded-2xl text-sm font-medium hover:bg-white transition">
-              📄 In biên bản vi phạm
-            </button>
-            <button className="px-6 py-3 bg-violet-600 hover:bg-violet-700 text-white rounded-2xl text-sm font-semibold transition">
-              Cập nhật xử lý
-            </button>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Main Content */}
-          <div className="lg:col-span-8 space-y-6">
-            <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100">
-              <h2 className="text-lg font-bold text-slate-800 mb-6">Thông tin vi phạm</h2>
-              <div className="space-y-6">
-                <div>
-                  <p className="text-xs uppercase tracking-widest text-slate-400 mb-1">Loại vi phạm</p>
-                  <p className="text-[17px] leading-relaxed text-slate-700">{violation.violationType}</p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <p className="text-xs uppercase tracking-widest text-slate-400 mb-1">Mức độ</p>
-                    <span className={`inline-flex items-center gap-2 px-5 py-3 rounded-2xl text-base font-semibold border ${sevCfg.bg} ${sevCfg.text} ${sevCfg.border}`}>
-                      <span className={`w-3 h-3 rounded-full ${sevCfg.dot}`} />
-                      {sevCfg.label}
-                    </span>
-                  </div>
-                  <div>
-                    <p className="text-xs uppercase tracking-widest text-slate-400 mb-1">Ngày phát hiện</p>
-                    <p className="text-2xl font-semibold text-slate-900">{violation.detectedDate}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs uppercase tracking-widest text-slate-400 mb-1">Quận/Huyện</p>
-                    <span className="inline-flex px-4 py-2 rounded-2xl text-sm font-semibold bg-slate-100 text-slate-700">
-                      {violation.district}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100">
-              <h2 className="text-lg font-bold text-slate-800 mb-5">Mô tả chi tiết</h2>
-              <div className="prose text-[15.5px] text-slate-700 leading-relaxed">
-                Vi phạm được ghi nhận tại cơ sở {violation.businessName} vào ngày {violation.detectedDate}. 
-                Đây là vi phạm thuộc mức độ <span className="font-semibold">{sevCfg.label.toLowerCase()}</span>.
-              </div>
-            </div>
-          </div>
-
-          {/* Sidebar */}
-          <div className="lg:col-span-4 space-y-6">
-            <div className="bg-white rounded-3xl p-7 shadow-sm border border-slate-100">
-              <h3 className="font-bold text-slate-700 mb-5">Trạng thái xử lý</h3>
-              <div className={`p-6 rounded-3xl ${statCfg.bg} ${statCfg.text} border ${statCfg.border}`}>
-                <div className="flex items-center gap-4 text-4xl mb-3">
-                  {statCfg.icon}
-                </div>
-                <p className="text-2xl font-semibold">{statCfg.label}</p>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-3xl p-7 shadow-sm border border-slate-100">
-              <h3 className="font-bold text-slate-700 mb-5">Thông tin cơ sở</h3>
-              <div className="space-y-4 text-sm">
-                <div>
-                  <p className="text-slate-400 text-xs uppercase tracking-widest">Tên cơ sở</p>
-                  <p className="font-medium text-slate-900">{violation.businessName}</p>
-                </div>
-                <div>
-                  <p className="text-slate-400 text-xs uppercase tracking-widest">Địa chỉ</p>
-                  <p className="text-slate-700">123 Nguyễn Thị Minh Khai, {violation.district}, Đà Nẵng</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        ))}
       </div>
+
+      {/* Trạng thái & Mức độ */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
+        <SectionCard title="Trạng thái xử lý">
+          <div style={{ padding: '14px 12px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <StatusBadge variant={statusVariant[violation.status]} label={statusLabel[violation.status]} />
+            <span style={{ fontSize: '12px', color: '#555' }}>
+              {violation.status === 'pending' ? 'Hồ sơ đang chờ xem xét và phân công xử lý.' :
+               violation.status === 'processing' ? 'Đang trong quá trình xử lý vi phạm.' :
+               'Vi phạm đã được xử lý và hoàn tất hồ sơ.'}
+            </span>
+          </div>
+        </SectionCard>
+
+        <SectionCard title="Mức độ vi phạm">
+          <div style={{ padding: '14px 12px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <StatusBadge variant={severityVariant[violation.severity]} label={violation.severity.charAt(0).toUpperCase() + violation.severity.slice(1)} />
+            <span style={{ fontSize: '12px', color: '#555' }}>
+              {violation.severity === 'nghiêm trọng' ? 'Vi phạm cần xử lý khẩn cấp và áp dụng mức phạt cao nhất.' :
+               violation.severity === 'trung bình' ? 'Vi phạm ở mức trung bình, cần khắc phục trong thời gian sớm.' :
+               'Vi phạm nhẹ, yêu cầu cơ sở nhắc nhở và chấn chỉnh.'}
+            </span>
+          </div>
+        </SectionCard>
+      </div>
+
+      {/* Chi tiết vi phạm */}
+      <SectionCard title="Thông tin chi tiết vi phạm">
+        <div style={{ padding: '14px 12px' }}>
+          <FormSection title="Thông tin cơ sở">
+            <FormField label="Tên cơ sở kinh doanh">
+              <div style={{ padding: '6px 8px', background: '#F5F5F5', border: '1px solid #D6D6D6', borderRadius: '2px', fontSize: '13px', fontWeight: 600 }}>
+                {violation.businessName}
+              </div>
+            </FormField>
+            <FormField label="Địa chỉ cơ sở">
+              <div style={{ padding: '6px 8px', background: '#F5F5F5', border: '1px solid #D6D6D6', borderRadius: '2px', fontSize: '13px' }}>
+                {violation.address}
+              </div>
+            </FormField>
+            <FormField label="Quận/Huyện">
+              <div style={{ padding: '6px 8px', background: '#F5F5F5', border: '1px solid #D6D6D6', borderRadius: '2px', fontSize: '13px' }}>
+                {violation.district}
+              </div>
+            </FormField>
+            <FormField label="Thanh tra viên phụ trách">
+              <div style={{ padding: '6px 8px', background: '#F5F5F5', border: '1px solid #D6D6D6', borderRadius: '2px', fontSize: '13px' }}>
+                {violation.inspector}
+              </div>
+            </FormField>
+          </FormSection>
+
+          <FormSection title="Nội dung vi phạm">
+            <FormField label="Loại vi phạm" fullWidth>
+              <div style={{ padding: '6px 8px', background: '#F5F5F5', border: '1px solid #D6D6D6', borderRadius: '2px', fontSize: '13px', fontWeight: 600, color: '#CC0000' }}>
+                {violation.violationType}
+              </div>
+            </FormField>
+            <FormField label="Mô tả chi tiết" fullWidth>
+              <div style={{ padding: '8px', background: '#F5F5F5', border: '1px solid #D6D6D6', borderRadius: '2px', fontSize: '13px', lineHeight: 1.6, minHeight: '80px' }}>
+                {violation.description}
+              </div>
+            </FormField>
+          </FormSection>
+        </div>
+      </SectionCard>
+
+      {/* Căn cứ pháp lý */}
+      <SectionCard title="Căn cứ pháp lý áp dụng">
+        <div style={{ padding: '12px' }}>
+          {[
+            'Luật An toàn thực phẩm số 55/2010/QH12 ngày 17/6/2010',
+            'Nghị định số 115/2018/NĐ-CP quy định xử phạt vi phạm hành chính về an toàn thực phẩm',
+            'Thông tư 24/2019/TT-BYT quy định về quản lý và sử dụng phụ gia thực phẩm',
+          ].map((item, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', padding: '6px 0', borderBottom: i < 2 ? '1px solid #F0F0F0' : 'none' }}>
+              <span style={{ width: '6px', height: '6px', background: '#008000', borderRadius: '1px', flexShrink: 0, marginTop: '5px' }} />
+              <span style={{ fontSize: '12.5px', color: '#333' }}>{item}</span>
+            </div>
+          ))}
+        </div>
+      </SectionCard>
+
+      <p style={{ fontSize: '11.5px', color: '#888', textAlign: 'center', marginTop: '8px' }}>
+        Hồ sơ vi phạm được lưu trữ theo Quy chế lưu trữ hồ sơ ATTP — Chi cục An toàn Thực phẩm TP. Đà Nẵng
+      </p>
     </div>
   );
 }

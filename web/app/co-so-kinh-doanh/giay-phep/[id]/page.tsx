@@ -1,10 +1,14 @@
 'use client';
-
-import { useState } from 'react';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { FiArrowLeft, FiEdit3, FiFileText, FiMapPin, FiPhone, FiPrinter } from 'react-icons/fi';
-import { LuBadgeCheck, LuBuilding2, LuCalendarClock, LuClipboardList, LuFileClock, LuShieldAlert } from 'react-icons/lu';
-import { GovBtn, GovInput, GovSelect, PageHeader, SectionCard } from '@/components/GovUI';
+import { useState, useEffect } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { ArrowLeft, Pencil, Printer, MapPin, Phone } from 'lucide-react';
+import { 
+  PageHeader, 
+  SectionCard, 
+  GovBtn, 
+  StatusBadge 
+} from '@/components/GovUI';
 
 interface License {
   id: string;
@@ -17,583 +21,218 @@ interface License {
 }
 
 const mockLicenses: License[] = [
-  {
-    id: 'GP-2025001',
-    businessName: 'Nhà hàng Hải Sản Biển Xanh',
-    type: 'Giấy phép kinh doanh thực phẩm',
-    issueDate: '10/01/2025',
-    expiryDate: '09/01/2026',
-    status: 'valid',
-    district: 'Hải Châu',
-  },
-  {
-    id: 'GP-2025002',
-    businessName: 'Quán Ăn Gia Đình Việt',
-    type: 'Giấy phép VSATTP',
-    issueDate: '15/02/2025',
-    expiryDate: '14/02/2025',
-    status: 'expired',
-    district: 'Thanh Khê',
-  },
-  {
-    id: 'GP-2025003',
-    businessName: 'Cửa hàng Thực phẩm Sạch Organic',
-    type: 'Giấy phép kinh doanh thực phẩm',
-    issueDate: '20/03/2025',
-    expiryDate: '19/03/2026',
-    status: 'valid',
-    district: 'Ngũ Hành Sơn',
-  },
-  {
-    id: 'GP-2025004',
-    businessName: 'Siêu thị Mini Mart Đà Nẵng',
-    type: 'Giấy phép kinh doanh thực phẩm',
-    issueDate: '05/01/2025',
-    expiryDate: '04/01/2026',
-    status: 'revoked',
-    district: 'Sơn Trà',
-  },
+  { id: 'GP-2025001', businessName: 'Nhà hàng Hải Sản Biển Xanh', type: 'Giấy phép kinh doanh thực phẩm', issueDate: '10/01/2025', expiryDate: '09/01/2026', status: 'valid', district: 'Hải Châu' },
+  { id: 'GP-2025002', businessName: 'Quán Ăn Gia Đình Việt', type: 'Giấy phép VSATTP', issueDate: '15/02/2025', expiryDate: '14/02/2025', status: 'expired', district: 'Thanh Khê' },
+  { id: 'GP-2025003', businessName: 'Cửa hàng Thực phẩm Organic', type: 'Giấy phép kinh doanh thực phẩm', issueDate: '20/03/2025', expiryDate: '19/03/2026', status: 'valid', district: 'Ngũ Hành Sơn' },
+  { id: 'GP-2025004', businessName: 'Siêu thị Mini Mart Đà Nẵng', type: 'Giấy phép kinh doanh thực phẩm', issueDate: '05/01/2025', expiryDate: '04/01/2026', status: 'revoked', district: 'Sơn Trà' },
 ];
 
-const STATUS_CONFIG = {
-  valid: {
-    label: 'Còn hiệu lực',
-    icon: LuBadgeCheck,
-    bg: '#E6F4E6',
-    color: '#006400',
-    border: '#94C994',
-  },
-  expired: {
-    label: 'Hết hạn',
-    icon: LuFileClock,
-    bg: '#FFF4E5',
-    color: '#CC6600',
-    border: '#FFCC80',
-  },
-  revoked: {
-    label: 'Đã thu hồi',
-    icon: LuShieldAlert,
-    bg: '#FDECEA',
-    color: '#CC0000',
-    border: '#F5BCBC',
-  },
-} as const;
-
-function StatusBadge({ status }: { status: License['status'] }) {
-  const config = STATUS_CONFIG[status];
-  const Icon = config.icon;
-
-  return (
-    <span
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: '6px',
-        height: '24px',
-        padding: '0 10px',
-        borderRadius: '2px',
-        border: `1px solid ${config.border}`,
-        background: config.bg,
-        color: config.color,
-        fontSize: '11px',
-        fontWeight: 700,
-        whiteSpace: 'nowrap',
-      }}
-    >
-      <Icon style={{ width: '13px', height: '13px' }} />
-      {config.label}
-    </span>
-  );
-}
-
-function InfoBox({
-  label,
-  value,
-}: {
-  label: string;
-  value: React.ReactNode;
-}) {
-  return (
-    <div
-      style={{
-        border: '1px solid #D6D6D6',
-        background: '#FAFAFA',
-        padding: '10px 12px',
-      }}
-    >
-      <div
-        style={{
-          fontSize: '11px',
-          fontWeight: 700,
-          color: '#666',
-          textTransform: 'uppercase',
-          letterSpacing: '0.04em',
-          marginBottom: '5px',
-        }}
-      >
-        {label}
-      </div>
-      <div style={{ fontSize: '13px', fontWeight: 600, color: '#222', lineHeight: 1.6 }}>
-        {value}
-      </div>
-    </div>
-  );
-}
-
-function SectionTitle({
-  icon,
-  title,
-  description,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-}) {
-  return (
-    <div style={{ marginBottom: '12px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-        <span style={{ color: '#008000', display: 'inline-flex', alignItems: 'center' }}>{icon}</span>
-        <h3 style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: '#006400', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-          {title}
-        </h3>
-      </div>
-      <p style={{ margin: 0, fontSize: '12px', color: '#666' }}>{description}</p>
-    </div>
-  );
-}
+const licenseStatusMap: Record<string, string> = {
+  valid: 'active',
+  expired: 'expired',
+  revoked: 'suspended',
+};
 
 export default function GiayPhepDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const searchParams = useSearchParams();
   const id = params.id as string;
-  const initialLicense = mockLicenses.find((item) => item.id === id) ?? null;
-  const [license, setLicense] = useState<License | null>(initialLicense);
-  const [viewMode, setViewMode] = useState<'detail' | 'edit'>(
-    searchParams.get('mode') === 'edit' ? 'edit' : 'detail'
-  );
-  const [editForm, setEditForm] = useState<License | null>(initialLicense);
 
-  if (!license) {
+  const [license, setLicense] = useState<License | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState<License | null>(null);
+
+  useEffect(() => {
+    const found = mockLicenses.find(l => l.id === id);
+    if (found) {
+      setLicense(found);
+      setFormData({ ...found });
+    }
+    setLoading(false);
+  }, [id]);
+
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center">Đang tải...</div>;
+  }
+
+  if (!license || !formData) {
     return (
-      <div>
-        <PageHeader
-          title="Hồ sơ giấy phép"
-          subtitle="Chi cục An toàn Thực phẩm TP. Đà Nẵng"
-          actions={
-            <GovBtn variant="secondary" onClick={() => router.push('/co-so-kinh-doanh/giay-phep')}>
-              <FiArrowLeft style={{ width: 12, height: 12 }} /> Quay lại
-            </GovBtn>
-          }
-        />
-
-        <SectionCard title="Không tìm thấy hồ sơ">
-          <div style={{ padding: '16px', fontSize: '13px', color: '#444', lineHeight: 1.7 }}>
-            Không tìm thấy giấy phép với mã <span style={{ fontFamily: 'monospace', fontWeight: 700 }}>{id}</span>.
-            Hồ sơ có thể không tồn tại hoặc không còn trong danh sách hiển thị.
-          </div>
-        </SectionCard>
+      <div className="min-h-screen bg-[#f5f6fa] flex flex-col items-center justify-center py-20">
+        <div className="text-7xl mb-6">😕</div>
+        <h2 className="text-2xl font-bold text-slate-900">Không tìm thấy giấy phép</h2>
+        <p className="text-slate-500 mt-2">Mã giấy phép <span className="font-mono">#{id}</span> không tồn tại.</p>
+        <Link href="/giay-phep" className="mt-6">
+          <GovBtn variant="primary">Quay về danh sách</GovBtn>
+        </Link>
       </div>
     );
   }
 
+  const handleSave = () => {
+    setLicense(formData);
+    setIsEditing(false);
+    alert('✅ Đã lưu thay đổi thành công!');
+  };
+
   return (
-    <div>
-      <PageHeader
-        title="Hồ sơ giấy phép kinh doanh thực phẩm"
-        subtitle="Chi cục An toàn Thực phẩm TP. Đà Nẵng — thông tin chi tiết giấy phép của cơ sở"
+    <div className="min-h-screen bg-[#f5f6fa]">
+      <PageHeader 
+        title={license.businessName}
+        subtitle={`Mã giấy phép: ${license.id} • ${license.type}`}
         actions={
           <>
             <GovBtn variant="secondary" onClick={() => router.back()}>
-              <FiArrowLeft style={{ width: 12, height: 12 }} /> Quay lại danh sách
+              <ArrowLeft size={16} /> Quay lại
+            </GovBtn>
+            <GovBtn 
+              variant="secondary" 
+              onClick={() => setIsEditing(!isEditing)}
+            >
+              <Pencil size={16} /> {isEditing ? 'Hủy' : 'Chỉnh sửa'}
             </GovBtn>
             <GovBtn variant="secondary">
-              <FiPrinter style={{ width: 12, height: 12 }} /> In giấy phép
+              <Printer size={16} /> In giấy phép
             </GovBtn>
-            <GovBtn
-              variant="primary"
-              onClick={() => {
-                setEditForm({ ...license });
-                setViewMode('edit');
-              }}
-            >
-              <FiEdit3 style={{ width: 12, height: 12 }} /> Gia hạn / Chỉnh sửa
-            </GovBtn>
+            {isEditing && (
+              <GovBtn variant="primary" onClick={handleSave}>
+                Lưu thay đổi
+              </GovBtn>
+            )}
           </>
         }
       />
 
-      {viewMode === 'detail' ? (
-        <>
-      <SectionCard title="Tổng quan hồ sơ">
-        <div style={{ padding: '14px' }}>
-          <div
-            style={{
-              border: '1px solid #CFE6CF',
-              background: '#F8FBF8',
-              padding: '14px',
-              marginBottom: '12px',
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                gap: '12px',
-                alignItems: 'flex-start',
-                flexWrap: 'wrap',
-              }}
-            >
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', flexWrap: 'wrap' }}>
-                  <span
-                    style={{
-                      fontFamily: 'monospace',
-                      fontSize: '12px',
-                      fontWeight: 700,
-                      color: '#005A9E',
-                      background: '#EAF3FB',
-                      border: '1px solid #C7DDF0',
-                      padding: '4px 8px',
-                    }}
-                  >
-                    {license.id}
-                  </span>
-                  <StatusBadge status={license.status} />
+      <div className="max-w-[1200px] mx-auto px-6 pb-12">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Thông tin chính */}
+          <div className="lg:col-span-8 space-y-6">
+            <SectionCard title="Thông tin giấy phép">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                <div>
+                  <p className="text-xs uppercase tracking-widest text-slate-500 mb-1">Tên cơ sở</p>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      className="w-full border border-slate-300 rounded-xl px-4 py-3 focus:outline-none focus:border-indigo-500"
+                      value={formData.businessName}
+                      onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
+                    />
+                  ) : (
+                    <p className="font-semibold text-xl">{license.businessName}</p>
+                  )}
                 </div>
-                <div style={{ fontSize: '22px', fontWeight: 800, color: '#1F2937', marginBottom: '4px' }}>
-                  {license.businessName}
-                </div>
-                <div style={{ fontSize: '13px', color: '#555' }}>{license.type}</div>
-              </div>
 
-              <div
-                style={{
-                  minWidth: '250px',
-                  border: '1px solid #D6D6D6',
-                  background: '#fff',
-                  padding: '12px',
-                }}
-              >
-                <div style={{ fontSize: '11px', fontWeight: 700, color: '#666', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px' }}>
-                  Đánh giá nhanh
+                <div>
+                  <p className="text-xs uppercase tracking-widest text-slate-500 mb-1">Loại giấy phép</p>
+                  {isEditing ? (
+                    <select
+                      className="w-full border border-slate-300 rounded-xl px-4 py-3"
+                      value={formData.type}
+                      onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                    >
+                      <option value="Giấy phép kinh doanh thực phẩm">Giấy phép kinh doanh thực phẩm</option>
+                      <option value="Giấy phép VSATTP">Giấy phép VSATTP</option>
+                      <option value="Giấy phép chế biến thực phẩm">Giấy phép chế biến thực phẩm</option>
+                    </select>
+                  ) : (
+                    <p className="font-medium">{license.type}</p>
+                  )}
                 </div>
-                <div style={{ fontSize: '13px', color: '#222', lineHeight: 1.7 }}>
-                  <div>Trạng thái hiện tại: <strong>{STATUS_CONFIG[license.status].label}</strong></div>
-                  <div>Ngày cấp: <strong>{license.issueDate}</strong></div>
-                  <div>Ngày hết hạn: <strong>{license.expiryDate}</strong></div>
+
+                <div>
+                  <p className="text-xs uppercase tracking-widest text-slate-500 mb-1">Ngày cấp</p>
+                  {isEditing ? (
+                    <input type="date" className="w-full border border-slate-300 rounded-xl px-4 py-3" value={formData.issueDate} onChange={(e) => setFormData({ ...formData, issueDate: e.target.value })} />
+                  ) : (
+                    <p className="font-mono text-lg">{license.issueDate}</p>
+                  )}
+                </div>
+
+                <div>
+                  <p className="text-xs uppercase tracking-widest text-slate-500 mb-1">Ngày hết hạn</p>
+                  {isEditing ? (
+                    <input type="date" className="w-full border border-slate-300 rounded-xl px-4 py-3" value={formData.expiryDate} onChange={(e) => setFormData({ ...formData, expiryDate: e.target.value })} />
+                  ) : (
+                    <p className={`font-mono text-lg ${license.status === 'expired' ? 'text-red-600 font-bold' : ''}`}>
+                      {license.expiryDate}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <p className="text-xs uppercase tracking-widest text-slate-500 mb-1">Quận/Huyện</p>
+                  {isEditing ? (
+                    <select
+                      className="w-full border border-slate-300 rounded-xl px-4 py-3"
+                      value={formData.district}
+                      onChange={(e) => setFormData({ ...formData, district: e.target.value })}
+                    >
+                      <option value="Hải Châu">Hải Châu</option>
+                      <option value="Thanh Khê">Thanh Khê</option>
+                      <option value="Ngũ Hành Sơn">Ngũ Hành Sơn</option>
+                      <option value="Sơn Trà">Sơn Trà</option>
+                    </select>
+                  ) : (
+                    <div className="inline-flex items-center gap-2 px-5 py-2 bg-blue-50 text-blue-700 rounded-2xl font-medium">
+                      <MapPin size={18} /> {license.district}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <p className="text-xs uppercase tracking-widest text-slate-500 mb-1">Trạng thái</p>
+                  <StatusBadge variant={licenseStatusMap[license.status]} />
                 </div>
               </div>
-            </div>
+            </SectionCard>
+
+            <SectionCard title="Ghi chú / Thông tin bổ sung">
+              <p className="text-slate-600 leading-relaxed">
+                Giấy phép được cấp theo quy định của Luật An toàn thực phẩm 2010 (sửa đổi, bổ sung). 
+                Cơ sở kinh doanh cam kết tuân thủ nghiêm ngặt các quy định về vệ sinh an toàn thực phẩm.
+              </p>
+            </SectionCard>
           </div>
 
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-              gap: '10px',
-            }}
-          >
-            <InfoBox label="Ngày cấp" value={license.issueDate} />
-            <InfoBox label="Ngày hết hạn" value={license.expiryDate} />
-            <InfoBox label="Quận/Huyện" value={license.district} />
+          {/* Sidebar */}
+          <div className="lg:col-span-4 space-y-6">
+            <SectionCard title="Thông tin liên hệ">
+              <div className="space-y-5">
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 rounded-2xl bg-indigo-100 flex items-center justify-center text-indigo-600 mt-0.5">
+                    <Phone size={22} />
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500">Số điện thoại</p>
+                    <p className="font-semibold">0236 123 4567</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 rounded-2xl bg-indigo-100 flex items-center justify-center text-indigo-600 mt-0.5">
+                    <MapPin size={22} />
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500">Địa chỉ</p>
+                    <p className="font-medium">123 Nguyễn Thị Minh Khai, {license.district}, TP. Đà Nẵng</p>
+                  </div>
+                </div>
+              </div>
+            </SectionCard>
+
+            <SectionCard title="Lịch sử giấy phép">
+              <div className="flex gap-4">
+                <div className="w-6 h-6 rounded-full bg-emerald-100 flex-shrink-0 flex items-center justify-center text-emerald-600 text-sm">✓</div>
+                <div>
+                  <p className="font-medium">Cấp lần đầu</p>
+                  <p className="text-sm text-slate-500">{license.issueDate}</p>
+                </div>
+              </div>
+            </SectionCard>
           </div>
-        </div>
-      </SectionCard>
-
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '1.05fr 0.95fr',
-          gap: '12px',
-        }}
-      >
-        <div>
-          <SectionCard title="Thông tin giấy phép">
-            <div style={{ padding: '14px' }}>
-              <SectionTitle
-                icon={<LuFileClock style={{ width: 14, height: 14 }} />}
-                title="Thông tin pháp lý"
-                description="Các trường dữ liệu pháp lý cốt lõi của hồ sơ giấy phép."
-              />
-
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-                  gap: '10px',
-                }}
-              >
-                <InfoBox label="Mã giấy phép" value={<span style={{ fontFamily: 'monospace' }}>{license.id}</span>} />
-                <InfoBox label="Loại giấy phép" value={license.type} />
-                <InfoBox label="Ngày cấp" value={license.issueDate} />
-                <InfoBox label="Ngày hết hạn" value={license.expiryDate} />
-                <InfoBox label="Trạng thái" value={<StatusBadge status={license.status} />} />
-                <InfoBox label="Khu vực quản lý" value={license.district} />
-              </div>
-            </div>
-          </SectionCard>
-
-          <SectionCard title="Ghi chú và cam kết">
-            <div style={{ padding: '14px' }}>
-              <SectionTitle
-                icon={<LuClipboardList style={{ width: 14, height: 14 }} />}
-                title="Nội dung hồ sơ"
-                description="Ghi chú tổng hợp và nghĩa vụ tuân thủ của cơ sở trong thời gian giấy phép còn hiệu lực."
-              />
-
-              <div
-                style={{
-                  border: '1px solid #D6D6D6',
-                  background: '#FAFAFA',
-                  padding: '12px 14px',
-                  fontSize: '13px',
-                  color: '#333',
-                  lineHeight: 1.8,
-                }}
-              >
-                Giấy phép này được cấp theo quy định về an toàn thực phẩm hiện hành. Cơ sở phải duy trì điều
-                kiện vệ sinh, hồ sơ nguồn gốc, khu vực chế biến và nhân sự đáp ứng đúng tiêu chuẩn trong suốt
-                thời gian hiệu lực của giấy phép. Khi gần đến hạn, hồ sơ cần được rà soát để thực hiện gia hạn
-                hoặc cập nhật lại thông tin pháp lý nếu có thay đổi.
-              </div>
-            </div>
-          </SectionCard>
-        </div>
-
-        <div>
-          <SectionCard title="Thông tin cơ sở">
-            <div style={{ padding: '14px' }}>
-              <SectionTitle
-                icon={<LuBuilding2 style={{ width: 14, height: 14 }} />}
-                title="Thông tin liên hệ"
-                description="Dữ liệu nhận diện cơ sở phục vụ đối chiếu hồ sơ và kiểm tra thực địa."
-              />
-
-              <div style={{ display: 'grid', gap: '10px' }}>
-                <InfoBox label="Tên cơ sở" value={license.businessName} />
-                <InfoBox
-                  label="Địa chỉ"
-                  value={
-                    <span style={{ display: 'inline-flex', gap: '6px', alignItems: 'flex-start' }}>
-                      <FiMapPin style={{ width: 14, height: 14, color: '#666', marginTop: '2px' }} />
-                      <span>123 Nguyễn Thị Minh Khai, {license.district}, Đà Nẵng</span>
-                    </span>
-                  }
-                />
-                <InfoBox
-                  label="Điện thoại"
-                  value={
-                    <span style={{ display: 'inline-flex', gap: '6px', alignItems: 'center' }}>
-                      <FiPhone style={{ width: 14, height: 14, color: '#666' }} />
-                      <span>0236 123 4567</span>
-                    </span>
-                  }
-                />
-              </div>
-            </div>
-          </SectionCard>
-
-          <SectionCard title="Lịch sử hồ sơ">
-            <div style={{ padding: '14px' }}>
-              <SectionTitle
-                icon={<FiFileText style={{ width: 14, height: 14 }} />}
-                title="Mốc quản lý"
-                description="Các mốc chính liên quan đến quá trình tạo lập và theo dõi hiệu lực giấy phép."
-              />
-
-              <div style={{ display: 'grid', gap: '10px' }}>
-                <div
-                  style={{
-                    border: '1px solid #D6D6D6',
-                    background: '#FAFAFA',
-                    padding: '12px 14px',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                    <LuBadgeCheck style={{ width: 14, height: 14, color: '#008000' }} />
-                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#222' }}>
-                      Giấy phép được cấp lần đầu
-                    </span>
-                  </div>
-                  <div style={{ fontSize: '12px', color: '#666' }}>{license.issueDate}</div>
-                </div>
-
-                <div
-                  style={{
-                    border: '1px solid #D6D6D6',
-                    background: '#FAFAFA',
-                    padding: '12px 14px',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                    <LuCalendarClock style={{ width: 14, height: 14, color: '#005A9E' }} />
-                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#222' }}>
-                      Mốc rà soát hiệu lực tiếp theo
-                    </span>
-                  </div>
-                  <div style={{ fontSize: '12px', color: '#666' }}>{license.expiryDate}</div>
-                </div>
-              </div>
-            </div>
-          </SectionCard>
         </div>
       </div>
-        </>
-      ) : editForm ? (
-        <SectionCard
-          title={`Chỉnh sửa giấy phép: ${editForm.id}`}
-          actions={
-            <>
-              <GovBtn
-                variant="secondary"
-                onClick={() => {
-                  setEditForm({ ...license });
-                  setViewMode('detail');
-                }}
-              >
-                <FiArrowLeft style={{ width: 12, height: 12 }} /> Hủy chỉnh sửa
-              </GovBtn>
-              <GovBtn
-                variant="primary"
-                onClick={() => {
-                  setLicense({ ...editForm });
-                  setViewMode('detail');
-                }}
-              >
-                <FiEdit3 style={{ width: 12, height: 12 }} /> Lưu cập nhật
-              </GovBtn>
-            </>
-          }
-        >
-          <div style={{ padding: '14px' }}>
-            <div
-              style={{
-                border: '1px solid #D6D6D6',
-                background: '#F8FBF8',
-                padding: '12px 14px',
-                marginBottom: '12px',
-                fontSize: '13px',
-                color: '#444',
-                lineHeight: 1.7,
-              }}
-            >
-              Chỉnh sửa nhanh hồ sơ giấy phép ngay trên trang hiện tại. Khi lưu, phần thông tin chi tiết sẽ
-              cập nhật ngay mà không cần mở popup hay chuyển sang màn khác.
-            </div>
-
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                gap: '12px',
-              }}
-            >
-              <SectionCard title="Thông tin giấy phép">
-                <div style={{ padding: '14px', display: 'grid', gap: '12px' }}>
-                  <div>
-                    <div style={{ fontSize: '11px', fontWeight: 700, color: '#666', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '4px' }}>
-                      Mã giấy phép
-                    </div>
-                    <GovInput value={editForm.id} onChange={() => {}} width="100%" />
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '11px', fontWeight: 700, color: '#666', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '4px' }}>
-                      Loại giấy phép
-                    </div>
-                    <GovInput
-                      value={editForm.type}
-                      onChange={(value) => setEditForm((current) => current ? { ...current, type: value } : current)}
-                      width="100%"
-                    />
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '11px', fontWeight: 700, color: '#666', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '4px' }}>
-                      Ngày cấp
-                    </div>
-                    <GovInput
-                      value={editForm.issueDate}
-                      onChange={(value) => setEditForm((current) => current ? { ...current, issueDate: value } : current)}
-                      width="100%"
-                    />
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '11px', fontWeight: 700, color: '#666', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '4px' }}>
-                      Ngày hết hạn
-                    </div>
-                    <GovInput
-                      value={editForm.expiryDate}
-                      onChange={(value) => setEditForm((current) => current ? { ...current, expiryDate: value } : current)}
-                      width="100%"
-                    />
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '11px', fontWeight: 700, color: '#666', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '4px' }}>
-                      Trạng thái
-                    </div>
-                    <GovSelect
-                      value={editForm.status}
-                      onChange={(value) =>
-                        setEditForm((current) => current ? { ...current, status: value as License['status'] } : current)
-                      }
-                      options={[
-                        { value: 'valid', label: 'Còn hiệu lực' },
-                        { value: 'expired', label: 'Hết hạn' },
-                        { value: 'revoked', label: 'Đã thu hồi' },
-                      ]}
-                      width="100%"
-                    />
-                  </div>
-                </div>
-              </SectionCard>
-
-              <SectionCard title="Thông tin cơ sở">
-                <div style={{ padding: '14px', display: 'grid', gap: '12px' }}>
-                  <div>
-                    <div style={{ fontSize: '11px', fontWeight: 700, color: '#666', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '4px' }}>
-                      Tên cơ sở
-                    </div>
-                    <GovInput
-                      value={editForm.businessName}
-                      onChange={(value) => setEditForm((current) => current ? { ...current, businessName: value } : current)}
-                      width="100%"
-                    />
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '11px', fontWeight: 700, color: '#666', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '4px' }}>
-                      Quận/Huyện
-                    </div>
-                    <GovSelect
-                      value={editForm.district}
-                      onChange={(value) => setEditForm((current) => current ? { ...current, district: value } : current)}
-                      options={[
-                        { value: 'Hải Châu', label: 'Hải Châu' },
-                        { value: 'Thanh Khê', label: 'Thanh Khê' },
-                        { value: 'Ngũ Hành Sơn', label: 'Ngũ Hành Sơn' },
-                        { value: 'Sơn Trà', label: 'Sơn Trà' },
-                      ]}
-                      width="100%"
-                    />
-                  </div>
-                  <div
-                    style={{
-                      border: '1px solid #D6D6D6',
-                      background: '#FAFAFA',
-                      padding: '12px 14px',
-                      fontSize: '13px',
-                      color: '#333',
-                      lineHeight: 1.8,
-                    }}
-                  >
-                    Thao tác này hiện đang chỉnh sửa dữ liệu mock ở frontend để hoàn thiện luồng giao diện.
-                    Nếu bạn muốn, mình có thể nối tiếp form này với backend/API ở bước sau.
-                  </div>
-                </div>
-              </SectionCard>
-            </div>
-          </div>
-        </SectionCard>
-      ) : null}
     </div>
   );
 }

@@ -11,6 +11,9 @@ const roboto = Roboto({
 });
 
 export const metadata: Metadata = {
+  icons: {
+    icon: '/logo-attp.png',
+  },
   title: "Hệ thống Quản lý ATTP — Chi cục An toàn Thực phẩm TP. Đà Nẵng",
   description:
     "Hệ thống phần mềm quản lý an toàn thực phẩm thành phố Đà Nẵng — Chi cục An toàn Thực phẩm, Sở Y tế",

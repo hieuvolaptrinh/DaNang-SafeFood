@@ -7,6 +7,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
+
 public interface CoSoKinhDoanhRepository extends JpaRepository<CoSoKinhDoanh, String> {
     java.util.Optional<CoSoKinhDoanh> findFirstByTenCoSo(String tenCoSo);
 
@@ -25,6 +27,9 @@ public interface CoSoKinhDoanhRepository extends JpaRepository<CoSoKinhDoanh, St
             @Param("maPX") String maPX,
             Pageable pageable
     );
+
+    @Query("SELECT c FROM CoSoKinhDoanh c LEFT JOIN FETCH c.phuongXa LEFT JOIN FETCH c.viPhamList")
+    List<CoSoKinhDoanh> findAllWithPhuongXa();
 
     @Query("""
             SELECT c FROM CoSoKinhDoanh c

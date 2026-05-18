@@ -36,10 +36,10 @@ public interface HoSoThanhTraRepository extends JpaRepository<HoSoThanhTra, Stri
     List<HoSoThanhTra> findByLichThanhTra_MaThanhTra(String maThanhTra);
 
     @Query("""
-            SELECT h FROM HoSoThanhTra h
-            WHERE (:from IS NULL OR h.thoiGianKiemTra >= :from)
-              AND (:to   IS NULL OR h.thoiGianKiemTra <= :to)
-            ORDER BY h.thoiGianKiemTra DESC
+                SELECT h FROM HoSoThanhTra h
+                WHERE (CAST(:from AS timestamp) IS NULL OR h.thoiGianKiemTra >= :from)
+                  AND (CAST(:to   AS timestamp) IS NULL OR h.thoiGianKiemTra <= :to)
+                ORDER BY h.thoiGianKiemTra DESC
             """)
     List<HoSoThanhTra> findByThoiGianRange(
             @Param("from") java.time.LocalDateTime from,
