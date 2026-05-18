@@ -181,7 +181,7 @@ export default function NhiemVuKiemTraPage() {
             return current;
           }
 
-          return nextTasks[0].id;
+          return nextTasks.find((task) => task.trangThai === 'ChÆ°a nháº­n')?.id ?? nextTasks[0].id;
         });
         setLoadState('data');
       })

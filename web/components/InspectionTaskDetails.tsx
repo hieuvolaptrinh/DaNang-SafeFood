@@ -22,15 +22,33 @@ interface InspectionTaskDetailsProps {
   onProgressSubmit: () => void;
 }
 
+type StatusKey = 'pending' | 'received' | 'processing' | 'completed';
+
+function getStatusKey(status: string): StatusKey {
+  if (status.startsWith('Ho')) {
+    return 'completed';
+  }
+
+  if (status.startsWith('Ch')) {
+    return 'pending';
+  }
+
+  if (status.includes('thá') || status.includes('thÃ¡') || status.includes('hiệ') || status.includes('hiá')) {
+    return 'processing';
+  }
+
+  return 'received';
+}
+
 function getStatusBadge(trangThai: string) {
-  const statusMap: Record<string, { variant: 'active' | 'pending' | 'open'; label: string }> = {
-    'HoÃ n thÃ nh': { variant: 'active', label: 'Hoàn thành' },
-    'Äang thá»±c hiá»‡n': { variant: 'pending', label: 'Đang thực hiện' },
-    'ÄÃ£ nháº­n': { variant: 'open', label: 'Đã nhận' },
-    'ChÆ°a nháº­n': { variant: 'pending', label: 'Chưa nhận' },
+  const statusMap: Record<StatusKey, { variant: 'active' | 'pending' | 'open'; label: string }> = {
+    completed: { variant: 'active', label: 'Hoàn thành' },
+    processing: { variant: 'pending', label: 'Đang thực hiện' },
+    received: { variant: 'open', label: 'Đã nhận' },
+    pending: { variant: 'pending', label: 'Chưa nhận' },
   };
 
-  return statusMap[trangThai] || { variant: 'pending', label: trangThai };
+  return statusMap[getStatusKey(trangThai)];
 }
 
 function DetailSection({
@@ -76,10 +94,11 @@ export default function InspectionTaskDetails({
     );
   }
 
+  const statusKey = getStatusKey(task.trangThai);
   const badge = getStatusBadge(task.trangThai);
-  const canAcceptTask = task.trangThai === 'ChÆ°a nháº­n';
-  const canRejectTask = task.trangThai === 'ChÆ°a nháº­n';
-  const canUpdateProgress = task.trangThai !== 'ChÆ°a nháº­n';
+  const canAcceptTask = statusKey === 'pending';
+  const canRejectTask = statusKey === 'pending';
+  const canUpdateProgress = statusKey !== 'pending';
 
   return (
     <div className="border border-slate-300 bg-white shadow-sm">
