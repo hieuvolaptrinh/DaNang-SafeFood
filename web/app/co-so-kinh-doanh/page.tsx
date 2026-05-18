@@ -93,6 +93,28 @@ function EmptyPanel({ message }: { message: string }) {
   );
 }
 
+function ApprovalBadge({ label = 'Đã duyệt' }: { label?: string }) {
+  return (
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        height: '22px',
+        padding: '0 8px',
+        borderRadius: '10px',
+        border: '1px solid #94C994',
+        background: '#E6F4E6',
+        color: '#006400',
+        fontSize: '11px',
+        fontWeight: 700,
+        whiteSpace: 'nowrap',
+      }}
+    >
+      {label}
+    </span>
+  );
+}
+
 export default function CoSoKinhDoanhPage() {
   const [data, setData] = useState<Business[]>(mockBusinesses);
   const [search, setSearch] = useState('');
@@ -543,7 +565,7 @@ export default function CoSoKinhDoanhPage() {
                             <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#B45309', fontSize: '12px' }}>
                               {violation.id}
                             </span>
-                            <StatusBadge variant={violation.status} />
+                            <ApprovalBadge />
                           </div>
                           <div style={{ fontSize: '13px', color: '#222', lineHeight: 1.6 }}>
                             <div>

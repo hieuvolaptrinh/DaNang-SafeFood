@@ -1,8 +1,23 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useParams, useRouter } from 'next/navigation';
+import {
+  FiArrowLeft,
+  FiEdit3,
+  FiFileText,
+  FiMapPin,
+  FiPhone,
+  FiPrinter,
+} from 'react-icons/fi';
+import {
+  LuBadgeCheck,
+  LuBuilding2,
+  LuCalendarClock,
+  LuClipboardList,
+  LuFileClock,
+  LuShieldAlert,
+} from 'react-icons/lu';
 
 interface License {
   id: string;
@@ -54,43 +69,94 @@ const mockLicenses: License[] = [
 ];
 
 const STATUS_CONFIG = {
-  valid: { label: 'Còn hiệu lực', bg: 'bg-emerald-50', text: 'text-emerald-700', dot: 'bg-emerald-500', border: 'border-emerald-200', icon: '✅' },
-  expired: { label: 'Hết hạn', bg: 'bg-slate-100', text: 'text-slate-500', dot: 'bg-slate-400', border: 'border-slate-200', icon: '⌛' },
-  revoked: { label: 'Đã thu hồi', bg: 'bg-red-50', text: 'text-red-700', dot: 'bg-red-500', border: 'border-red-200', icon: '🚫' },
-};
+  valid: {
+    label: 'Còn hiệu lực',
+    badgeClassName: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+    panelClassName: 'border-emerald-200 bg-emerald-50/80',
+    icon: LuBadgeCheck,
+  },
+  expired: {
+    label: 'Hết hạn',
+    badgeClassName: 'border-amber-200 bg-amber-50 text-amber-700',
+    panelClassName: 'border-amber-200 bg-amber-50/80',
+    icon: LuFileClock,
+  },
+  revoked: {
+    label: 'Đã thu hồi',
+    badgeClassName: 'border-rose-200 bg-rose-50 text-rose-700',
+    panelClassName: 'border-rose-200 bg-rose-50/80',
+    icon: LuShieldAlert,
+  },
+} as const;
+
+function InfoField({
+  label,
+  value,
+}: {
+  label: string;
+  value: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+      <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+        {label}
+      </p>
+      <div className="text-[14px] font-semibold text-slate-800">{value}</div>
+    </div>
+  );
+}
+
+function SectionBlock({
+  icon,
+  title,
+  description,
+  children,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="mb-5 flex items-start gap-3">
+        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-100 to-teal-100 text-sky-700">
+          {icon}
+        </div>
+        <div>
+          <h2 className="text-[16px] font-bold text-slate-900">{title}</h2>
+          <p className="mt-1 text-[13px] text-slate-500">{description}</p>
+        </div>
+      </div>
+      {children}
+    </section>
+  );
+}
 
 export default function GiayPhepDetailPage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
-
-  const [license, setLicense] = useState<License | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const found = mockLicenses.find(l => l.id === id);
-    setLicense(found || null);
-    setLoading(false);
-  }, [id]);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#f5f6fa] flex items-center justify-center">
-        Đang tải...
-      </div>
-    );
-  }
+  const license = mockLicenses.find((item) => item.id === id) ?? null;
 
   if (!license) {
     return (
-      <div className="min-h-screen bg-[#f5f6fa] flex flex-col items-center justify-center py-20">
-        <div className="text-7xl mb-6">😕</div>
-        <h2 className="text-2xl font-bold text-slate-900">Không tìm thấy giấy phép</h2>
-        <p className="text-slate-500 mt-2 mb-8">Giấy phép mã <span className="font-mono">#{id}</span> không tồn tại.</p>
+      <div className="flex min-h-screen flex-col items-center justify-center bg-[#f3f7f5] px-6 py-20 text-center">
+        <div className="flex h-20 w-20 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm">
+          <LuFileClock className="text-[32px]" />
+        </div>
+        <h2 className="mt-6 text-2xl font-black tracking-tight text-slate-900">
+          Không tìm thấy giấy phép
+        </h2>
+        <p className="mt-2 max-w-md text-sm leading-6 text-slate-500">
+          Hồ sơ giấy phép mã <span className="font-mono font-semibold text-slate-700">{id}</span>{' '}
+          hiện không tồn tại hoặc đã bị xóa khỏi danh sách hiển thị.
+        </p>
         <Link
-          href="/giay-phep"
-          className="px-6 py-3 bg-indigo-600 text-white rounded-2xl font-medium hover:bg-indigo-700 transition"
+          href="/co-so-kinh-doanh/giay-phep"
+          className="mt-8 inline-flex items-center gap-2 rounded-2xl bg-sky-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-sky-800"
         >
+          <FiArrowLeft className="text-[15px]" />
           Quay về danh sách giấy phép
         </Link>
       </div>
@@ -98,125 +164,187 @@ export default function GiayPhepDetailPage() {
   }
 
   const statusCfg = STATUS_CONFIG[license.status];
+  const StatusIcon = statusCfg.icon;
 
   return (
-    <div className="min-h-screen bg-[#f5f6fa] font-sans">
-      <div className="h-1 w-full bg-gradient-to-r from-indigo-600 via-blue-500 to-teal-400" />
+    <div className="min-h-screen bg-[#f3f7f5]">
+      <div className="h-1 w-full bg-gradient-to-r from-sky-700 via-teal-600 to-emerald-500" />
 
-      <div className="max-w-[1100px] mx-auto px-6 py-8">
-        {/* Breadcrumb */}
-        <div className="flex items-center gap-3 mb-8">
+      <div className="mx-auto max-w-[1180px] px-6 py-8">
+        <div className="mb-7 flex flex-wrap items-center gap-3 text-sm">
           <button
             onClick={() => router.back()}
-            className="text-slate-500 hover:text-slate-700 flex items-center gap-2 text-sm font-medium"
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
           >
-            ← Quay lại danh sách
+            <FiArrowLeft className="text-[14px]" />
+            Quay lại danh sách
           </button>
-          <div className="h-4 w-px bg-slate-200 mx-2" />
-          <span className="text-[11px] font-bold tracking-widest uppercase text-indigo-500">
-            SỞ AN TOÀN THỰC PHẨM • ĐÀ NẴNG
+          <div className="h-4 w-px bg-slate-300" />
+          <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-sky-700">
+            Sở An Toàn Thực Phẩm • Đà Nẵng
           </span>
         </div>
 
-        <div className="flex flex-col lg:flex-row justify-between items-start gap-6 mb-8">
-          <div>
-            <div className="flex items-center gap-3 mb-3">
-              <span className="font-mono text-sm bg-slate-100 text-slate-500 px-3 py-1 rounded-lg font-semibold">
-                {license.id}
-              </span>
-              <span className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-2xl text-sm font-semibold border ${statusCfg.bg} ${statusCfg.text} ${statusCfg.border}`}>
-                <span>{statusCfg.icon}</span> {statusCfg.label}
-              </span>
-            </div>
-            <h1 className="text-3xl font-black tracking-tight text-slate-900">
-              {license.businessName}
-            </h1>
-            <p className="text-slate-500 mt-1">{license.type}</p>
-          </div>
+        <section className="overflow-hidden rounded-[28px] border border-sky-100 bg-gradient-to-br from-sky-50 via-white to-teal-50 shadow-sm">
+          <div className="flex flex-col gap-6 p-7 lg:flex-row lg:items-start lg:justify-between">
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="rounded-full border border-sky-200 bg-white px-3 py-1 font-mono text-[12px] font-semibold text-sky-700">
+                  {license.id}
+                </span>
+                <span
+                  className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[12px] font-semibold ${statusCfg.badgeClassName}`}
+                >
+                  <StatusIcon className="text-[14px]" />
+                  {statusCfg.label}
+                </span>
+              </div>
 
-          <div className="flex gap-3">
-            <button className="px-5 py-3 border border-slate-300 rounded-2xl text-sm font-medium hover:bg-white transition">
-              📄 In giấy phép
-            </button>
-            <button className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-sm font-semibold transition flex items-center gap-2">
-              ✏️ Gia hạn / Chỉnh sửa
-            </button>
-          </div>
-        </div>
+              <div>
+                <h1 className="text-[28px] font-black tracking-tight text-slate-900">
+                  {license.businessName}
+                </h1>
+                <p className="mt-1 text-[14px] text-slate-600">{license.type}</p>
+              </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Main Content */}
-          <div className="lg:col-span-8 space-y-6">
-            <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100">
-              <h2 className="text-lg font-bold text-slate-800 mb-6">Thông tin giấy phép</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
-                <div>
-                  <p className="text-xs uppercase tracking-widest text-slate-400 mb-1">Ngày cấp</p>
-                  <p className="text-2xl font-semibold text-slate-900">{license.issueDate}</p>
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-widest text-slate-400 mb-1">Ngày hết hạn</p>
-                  <p className={`text-2xl font-semibold ${license.status === 'expired' ? 'text-red-600' : 'text-slate-900'}`}>
-                    {license.expiryDate}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-widest text-slate-400 mb-1">Quận/Huyện</p>
-                  <span className={`inline-flex px-4 py-2 rounded-2xl text-sm font-semibold ${license.district === 'Hải Châu' ? 'bg-blue-100 text-blue-700' : license.district === 'Thanh Khê' ? 'bg-violet-100 text-violet-700' : license.district === 'Ngũ Hành Sơn' ? 'bg-teal-100 text-teal-700' : 'bg-orange-100 text-orange-700'}`}>
-                    {license.district}
-                  </span>
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-widest text-slate-400 mb-1">Trạng thái</p>
-                  <span className={`inline-flex items-center gap-2 px-5 py-3 rounded-2xl text-base font-semibold border ${statusCfg.bg} ${statusCfg.text} ${statusCfg.border}`}>
-                    <span className={`w-3 h-3 rounded-full ${statusCfg.dot}`} />
-                    {statusCfg.label}
-                  </span>
-                </div>
+              <div className="grid gap-3 md:grid-cols-3">
+                <InfoField label="Ngày cấp" value={license.issueDate} />
+                <InfoField label="Ngày hết hạn" value={license.expiryDate} />
+                <InfoField label="Quận/Huyện" value={license.district} />
               </div>
             </div>
 
-            <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100">
-              <h2 className="text-lg font-bold text-slate-800 mb-5">Ghi chú / Thông tin bổ sung</h2>
-              <p className="text-slate-600 leading-relaxed">
-                Giấy phép này được cấp theo quy định của Luật An toàn thực phẩm 2010 (sửa đổi, bổ sung). 
-                Cơ sở kinh doanh cam kết tuân thủ nghiêm ngặt các quy định về vệ sinh an toàn thực phẩm.
-              </p>
-            </div>
-          </div>
-
-          {/* Sidebar */}
-          <div className="lg:col-span-4 space-y-6">
-            <div className="bg-white rounded-3xl p-7 shadow-sm border border-slate-100">
-              <h3 className="font-bold text-slate-700 mb-5">Thông tin liên hệ</h3>
-              <div className="space-y-4 text-sm">
-                <div>
-                  <p className="text-slate-400 text-xs uppercase tracking-widest">Tên cơ sở</p>
-                  <p className="font-medium text-slate-900">{license.businessName}</p>
-                </div>
-                <div>
-                  <p className="text-slate-400 text-xs uppercase tracking-widest">Địa chỉ</p>
-                  <p className="text-slate-700">123 Nguyễn Thị Minh Khai, {license.district}, Đà Nẵng</p>
-                </div>
-                <div>
-                  <p className="text-slate-400 text-xs uppercase tracking-widest">Số điện thoại</p>
-                  <p className="font-medium text-slate-800">0236 123 4567</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-3xl p-7 shadow-sm border border-slate-100">
-              <h3 className="font-bold text-slate-700 mb-4">Lịch sử giấy phép</h3>
-              <div className="text-sm space-y-5">
-                <div className="flex gap-4">
-                  <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 text-xs font-bold">✓</div>
+            <div className="grid min-w-[290px] gap-3">
+              <div className={`rounded-3xl border p-4 shadow-sm ${statusCfg.panelClassName}`}>
+                <div className="flex items-start gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/80 text-slate-700">
+                    <StatusIcon className="text-[20px]" />
+                  </div>
                   <div>
-                    <p>Giấy phép được cấp lần đầu</p>
-                    <p className="text-xs text-slate-400 mt-0.5">{license.issueDate}</p>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                      Tình trạng giấy phép
+                    </p>
+                    <p className="mt-1 text-[15px] font-bold text-slate-900">
+                      {statusCfg.label}
+                    </p>
+                    <p className="mt-1 text-[13px] leading-6 text-slate-600">
+                      Hồ sơ hiện đang ở trạng thái pháp lý tương ứng với thời hạn và quyết định quản lý hiện tại.
+                    </p>
                   </div>
                 </div>
               </div>
+
+              <div className="flex flex-wrap gap-3">
+                <button className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50">
+                  <FiPrinter className="text-[15px]" />
+                  In giấy phép
+                </button>
+                <button className="inline-flex items-center gap-2 rounded-2xl bg-sky-700 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-800">
+                  <FiEdit3 className="text-[15px]" />
+                  Gia hạn / Chỉnh sửa
+                </button>
+              </div>
             </div>
+          </div>
+        </section>
+
+        <div className="mt-7 grid grid-cols-1 gap-6 lg:grid-cols-12">
+          <div className="space-y-6 lg:col-span-8">
+            <SectionBlock
+              icon={<LuFileClock className="text-[18px]" />}
+              title="Thông Tin Giấy Phép"
+              description="Các thông tin pháp lý cốt lõi của giấy phép kinh doanh thực phẩm."
+            >
+              <div className="grid gap-4 md:grid-cols-2">
+                <InfoField label="Mã giấy phép" value={<span className="font-mono">{license.id}</span>} />
+                <InfoField label="Loại giấy phép" value={license.type} />
+                <InfoField label="Ngày cấp" value={license.issueDate} />
+                <InfoField
+                  label="Ngày hết hạn"
+                  value={
+                    <span className={license.status === 'expired' ? 'text-rose-600' : 'text-slate-800'}>
+                      {license.expiryDate}
+                    </span>
+                  }
+                />
+                <InfoField label="Trạng thái" value={<span>{statusCfg.label}</span>} />
+                <InfoField label="Khu vực quản lý" value={license.district} />
+              </div>
+            </SectionBlock>
+
+            <SectionBlock
+              icon={<LuClipboardList className="text-[18px]" />}
+              title="Ghi Chú Và Cam Kết"
+              description="Tóm tắt bối cảnh cấp phép và nghĩa vụ tuân thủ của cơ sở."
+            >
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-[14px] leading-7 text-slate-700">
+                Giấy phép này được cấp theo quy định về an toàn thực phẩm hiện hành. Cơ sở phải duy trì điều
+                kiện vệ sinh, hồ sơ nguồn gốc, khu vực chế biến và nhân sự đáp ứng đúng tiêu chuẩn trong suốt
+                thời gian hiệu lực của giấy phép.
+              </div>
+            </SectionBlock>
+          </div>
+
+          <div className="space-y-6 lg:col-span-4">
+            <SectionBlock
+              icon={<LuBuilding2 className="text-[18px]" />}
+              title="Thông Tin Liên Hệ"
+              description="Dữ liệu cơ sở phục vụ đối chiếu hồ sơ và kiểm tra thực địa."
+            >
+              <div className="space-y-3">
+                <InfoField label="Tên cơ sở" value={license.businessName} />
+                <InfoField
+                  label="Địa chỉ"
+                  value={
+                    <span className="inline-flex items-start gap-2">
+                      <FiMapPin className="mt-0.5 text-[14px] text-slate-500" />
+                      <span>123 Nguyễn Thị Minh Khai, {license.district}, Đà Nẵng</span>
+                    </span>
+                  }
+                />
+                <InfoField
+                  label="Điện thoại"
+                  value={
+                    <span className="inline-flex items-center gap-2">
+                      <FiPhone className="text-[14px] text-slate-500" />
+                      0236 123 4567
+                    </span>
+                  }
+                />
+              </div>
+            </SectionBlock>
+
+            <SectionBlock
+              icon={<FiFileText className="text-[18px]" />}
+              title="Lịch Sử Hồ Sơ"
+              description="Các mốc chính liên quan đến quá trình hình thành và quản lý giấy phép."
+            >
+              <div className="space-y-4">
+                <div className="flex gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                  <div className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                    <LuBadgeCheck className="text-[15px]" />
+                  </div>
+                  <div>
+                    <p className="text-[13px] font-semibold text-slate-800">
+                      Giấy phép được cấp lần đầu
+                    </p>
+                    <p className="mt-1 text-[12px] text-slate-500">{license.issueDate}</p>
+                  </div>
+                </div>
+
+                <div className="flex gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                  <div className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-sky-100 text-sky-700">
+                    <LuCalendarClock className="text-[15px]" />
+                  </div>
+                  <div>
+                    <p className="text-[13px] font-semibold text-slate-800">
+                      Mốc rà soát hiệu lực tiếp theo
+                    </p>
+                    <p className="mt-1 text-[12px] text-slate-500">{license.expiryDate}</p>
+                  </div>
+                </div>
+              </div>
+            </SectionBlock>
           </div>
         </div>
       </div>
