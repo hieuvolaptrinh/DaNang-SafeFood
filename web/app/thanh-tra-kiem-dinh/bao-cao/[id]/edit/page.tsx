@@ -99,6 +99,11 @@ export default function BaoCaoChinhSuaPage() {
               <Badge variant={report.ketQua} />
             </div>
           </div>
+
+          <div className="space-y-1 md:col-span-2">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">File bÃ¡o cÃ¡o</p>
+            <p className="font-mono text-sm text-slate-800">{report.tepDinhKem ?? 'ChÆ°a cÃ³ tá»‡p Ä‘Ã­nh kÃ¨m'}</p>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5 p-5">
