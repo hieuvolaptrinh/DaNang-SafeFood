@@ -188,6 +188,27 @@ public class KiemDinhVienService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
+    public ViPhamResponse capNhatTrangThaiViPham(String maViPham, String trangThai) {
+        ViPham viPham = viPhamRepo.findById(maViPham)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy vi phạm: " + maViPham));
+
+        TrangThaiViPham trangThaiMoi;
+        try {
+            trangThaiMoi = TrangThaiViPham.fromValue(trangThai);
+        } catch (IllegalArgumentException ex) {
+            throw new RuntimeException("Trạng thái vi phạm không hợp lệ: " + trangThai, ex);
+        }
+
+        if (viPham.getTrangThaiPheDuyet() == TrangThaiViPham.DA_DUYET) {
+            throw new RuntimeException("Đơn vi phạm đã được duyệt, không thể cập nhật");
+        }
+
+        viPham.setTrangThaiPheDuyet(trangThaiMoi);
+        return ViPhamResponse.from(viPhamRepo.save(viPham));
+    }
+
+
     // =========================================================
     // Private helpers
     // =========================================================
