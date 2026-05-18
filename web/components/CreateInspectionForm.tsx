@@ -256,7 +256,7 @@ export default function CreateInspectionForm({
   const isEditMode = mode === 'edit';
 
   useEffect(() => {
-    setForm((current) => ({ ...createInitialFormState(), ...data }));
+    setForm({ ...createInitialFormState(), ...data });
     setShowValidation(false);
     setSubmitError('');
   }, [data, mode]);
@@ -340,7 +340,7 @@ export default function CreateInspectionForm({
 
       <TableCard title={isViewMode ? 'Xem hồ sơ kiểm tra ATVSTP' : isEditMode ? 'Chỉnh sửa hồ sơ kiểm tra ATVSTP' : 'Tạo hồ sơ kiểm tra ATVSTP'}>
         <form onSubmit={handleSubmit} className="space-y-6 p-5" noValidate>
-          <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-5">
+          <section className="space-y-4 border border-slate-300 bg-white p-5 shadow-sm">
             <div>
               <h2 className="text-base font-bold text-slate-900">1. Thông tin cơ sở</h2>
               <p className="mt-1 text-sm text-slate-500">Tìm kiếm và chọn cơ sở kinh doanh đã được cấp phép.</p>
@@ -382,7 +382,10 @@ export default function CreateInspectionForm({
                       updateField('businessLicense', '');
                     }
                   }}
-                  className={cn(getFieldError('facilityId') ? 'border-red-500 ring-2 ring-red-100' : '')}
+                  className={cn(
+                    'rounded-none border-slate-300 bg-white',
+                    getFieldError('facilityId') ? 'border-red-500 ring-2 ring-red-100' : 'focus:border-sky-600'
+                  )}
                 />
                 <datalist id="facilities">
                   {mockFacilities.map((f) => (
@@ -396,27 +399,27 @@ export default function CreateInspectionForm({
 
               <div className="space-y-2">
                 <FieldLabel htmlFor="businessName">Tên cơ sở</FieldLabel>
-                <Input id="businessName" value={form.businessName} disabled className="bg-slate-50 text-slate-500" />
+                <Input id="businessName" value={form.businessName} disabled className="rounded-none border-slate-300 bg-slate-50 text-slate-500" />
               </div>
 
               <div className="space-y-2">
                 <FieldLabel htmlFor="owner">Chủ cơ sở</FieldLabel>
-                <Input id="owner" value={form.owner} disabled className="bg-slate-50 text-slate-500" />
+                <Input id="owner" value={form.owner} disabled className="rounded-none border-slate-300 bg-slate-50 text-slate-500" />
               </div>
 
               <div className="space-y-2 md:col-span-2">
                 <FieldLabel htmlFor="address">Địa chỉ</FieldLabel>
-                <Input id="address" value={form.address} disabled className="bg-slate-50 text-slate-500" />
+                <Input id="address" value={form.address} disabled className="rounded-none border-slate-300 bg-slate-50 text-slate-500" />
               </div>
 
               <div className="space-y-2">
                 <FieldLabel htmlFor="phone">Số điện thoại</FieldLabel>
-                <Input id="phone" value={form.phone} disabled className="bg-slate-50 text-slate-500" />
+                <Input id="phone" value={form.phone} disabled className="rounded-none border-slate-300 bg-slate-50 text-slate-500" />
               </div>
 
               <div className="space-y-2">
                 <FieldLabel htmlFor="businessType">Loại hình kinh doanh</FieldLabel>
-                <Input id="businessType" value={form.businessType} disabled className="bg-slate-50 text-slate-500" />
+                <Input id="businessType" value={form.businessType} disabled className="rounded-none border-slate-300 bg-slate-50 text-slate-500" />
               </div>
 
               <div className="space-y-2">
@@ -427,6 +430,7 @@ export default function CreateInspectionForm({
                   value={form.inspectionTime}
                   onChange={(event) => updateField('inspectionTime', event.target.value)}
                   aria-invalid={Boolean(getFieldError('inspectionTime'))}
+                  className="rounded-none border-slate-300 bg-white focus:border-sky-600"
                 />
                 {getFieldError('inspectionTime') && (
                   <p className="text-sm text-red-600">{getFieldError('inspectionTime')}</p>
@@ -437,8 +441,8 @@ export default function CreateInspectionForm({
 
           <section
             className={cn(
-              'space-y-4 rounded-xl border bg-white p-5',
-              showValidation && validation.missingChecklistKeys.length > 0 ? 'border-red-200' : 'border-slate-200'
+              'space-y-4 border bg-white p-5 shadow-sm',
+              showValidation && validation.missingChecklistKeys.length > 0 ? 'border-red-300' : 'border-slate-300'
             )}
           >
             <div>
@@ -454,7 +458,7 @@ export default function CreateInspectionForm({
 
             <div className="space-y-4">
               {checklistGroups.map((group) => (
-                <div key={group.title} className="rounded-xl border border-slate-200 bg-slate-50/50 p-4">
+                <div key={group.title} className="border border-slate-300 bg-slate-50 p-4">
                   <h3 className="text-sm font-bold text-slate-800">{group.title}</h3>
                   <div className="mt-3 space-y-3">
                     {group.items.map((item) => {
@@ -464,8 +468,8 @@ export default function CreateInspectionForm({
                         <div
                           key={item.key}
                           className={cn(
-                            'grid gap-3 rounded-lg border px-4 py-3 md:grid-cols-[1fr_auto]',
-                            isMissing ? 'border-red-200 bg-red-50' : 'border-slate-200 bg-white'
+                            'grid gap-3 border px-4 py-3 md:grid-cols-[1fr_auto]',
+                            isMissing ? 'border-red-300 bg-red-50' : 'border-slate-300 bg-white'
                           )}
                         >
                           <span className="text-sm font-medium text-slate-800">{item.label}</span>
@@ -501,7 +505,7 @@ export default function CreateInspectionForm({
           </section>
 
           {isViewMode && (
-            <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-5">
+            <section className="space-y-4 border border-slate-300 bg-white p-5 shadow-sm">
               <div>
                 <h2 className="text-base font-bold text-slate-900">2. Hồ sơ pháp lý</h2>
                 <p className="mt-1 text-sm text-slate-500">Tình trạng giấy tờ pháp lý của cơ sở.</p>
@@ -514,7 +518,7 @@ export default function CreateInspectionForm({
                   { label: 'Giấy khám sức khỏe', value: form.healthCertificate || 'Chưa cập nhật' },
                   { label: 'Giấy tập huấn ATTP', value: form.trainingCertificate || 'Chưa cập nhật' },
                 ].map((item) => (
-                  <div key={item.label} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <div key={item.label} className="border border-slate-300 bg-slate-50 p-4">
                     <p className="text-sm text-slate-600">{item.label}</p>
                     <p className="mt-2 text-sm font-semibold text-slate-900">{item.value}</p>
                   </div>
@@ -523,7 +527,7 @@ export default function CreateInspectionForm({
             </section>
           )}
 
-          <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-5">
+          <section className="space-y-4 border border-slate-300 bg-white p-5 shadow-sm">
             <div>
               <h2 className="text-base font-bold text-slate-900">{isViewMode ? '4. Vi phạm' : '3. Vi phạm'}</h2>
               <p className="mt-1 text-sm text-slate-500">Xác định tình trạng vi phạm và mô tả chi tiết nếu có.</p>
@@ -566,10 +570,10 @@ export default function CreateInspectionForm({
                 onChange={(event) => updateField('violationDescription', event.target.value)}
                 placeholder="Nhập mô tả vi phạm nếu có..."
                 className={cn(
-                  'w-full rounded-xl border bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition',
+                  'w-full border bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition',
                   getFieldError('violationDescription')
                     ? 'border-red-500 ring-2 ring-red-100'
-                    : 'border-slate-200 focus:border-blue-500'
+                    : 'border-slate-300 focus:border-sky-600'
                 )}
               />
               {getFieldError('violationDescription') && (
@@ -578,7 +582,7 @@ export default function CreateInspectionForm({
             </div>
           </section>
 
-          <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-5">
+          <section className="space-y-4 border border-slate-300 bg-white p-5 shadow-sm">
             <div>
               <h2 className="text-base font-bold text-slate-900">{isViewMode ? '5. Kết luận' : '4. Kết luận'}</h2>
               <p className="mt-1 text-sm text-slate-500">Tổng hợp kết quả và nhận xét chung cho biên bản.</p>
@@ -619,10 +623,10 @@ export default function CreateInspectionForm({
                 onChange={(event) => updateField('generalComment', event.target.value)}
                 placeholder="Nhập nhận xét chung về tình trạng ATVS thực phẩm..."
                 className={cn(
-                  'w-full rounded-xl border bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition',
+                  'w-full border bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition',
                   getFieldError('generalComment')
                     ? 'border-red-500 ring-2 ring-red-100'
-                    : 'border-slate-200 focus:border-blue-500'
+                    : 'border-slate-300 focus:border-sky-600'
                 )}
               />
               {getFieldError('generalComment') && (
@@ -631,7 +635,7 @@ export default function CreateInspectionForm({
             </div>
           </section>
 
-          <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-5">
+          <section className="space-y-4 border border-slate-300 bg-white p-5 shadow-sm">
             <div>
               <h2 className="text-base font-bold text-slate-900">{isViewMode ? '6. Kiến nghị' : '5. Kiến nghị'}</h2>
               <p className="mt-1 text-sm text-slate-500">Đề xuất biện pháp xử lý và kiến nghị tiếp theo.</p>
@@ -646,10 +650,10 @@ export default function CreateInspectionForm({
                 onChange={(event) => updateField('actionMeasure', event.target.value)}
                 placeholder="Nhập biện pháp xử lý..."
                 className={cn(
-                  'w-full rounded-xl border bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition',
+                  'w-full border bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition',
                   getFieldError('actionMeasure')
                     ? 'border-red-500 ring-2 ring-red-100'
-                    : 'border-slate-200 focus:border-blue-500'
+                    : 'border-slate-300 focus:border-sky-600'
                 )}
               />
               {getFieldError('actionMeasure') && (
@@ -666,10 +670,10 @@ export default function CreateInspectionForm({
                 onChange={(event) => updateField('recommendation', event.target.value)}
                 placeholder="Nhập kiến nghị..."
                 className={cn(
-                  'w-full rounded-xl border bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition',
+                  'w-full border bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition',
                   getFieldError('recommendation')
                     ? 'border-red-500 ring-2 ring-red-100'
-                    : 'border-slate-200 focus:border-blue-500'
+                    : 'border-slate-300 focus:border-sky-600'
                 )}
               />
               {getFieldError('recommendation') && (
@@ -678,12 +682,12 @@ export default function CreateInspectionForm({
             </div>
           </section>
 
-          <div className="flex items-center justify-end gap-3 border-t border-slate-100 pt-2">
+          <div className="flex items-center justify-end gap-3 border-t border-slate-300 pt-3">
             <button
               type="button"
               onClick={onCancel}
               disabled={isSubmitting}
-              className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+              className="border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isViewMode ? 'Quay lại' : 'Hủy'}
             </button>
@@ -691,7 +695,7 @@ export default function CreateInspectionForm({
               <button
                 type="submit"
                 disabled={shouldDisableSubmit}
-                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                className="border border-sky-700 bg-sky-700 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-sky-800 disabled:cursor-not-allowed disabled:border-slate-300 disabled:bg-slate-300"
               >
                 {isSubmitting
                   ? isEditMode
