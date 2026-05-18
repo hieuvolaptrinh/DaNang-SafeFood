@@ -2,12 +2,12 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { FiEye } from 'react-icons/fi';
-import DataTable, { Column } from '@/components/DataTable';
+import { FiArrowLeft, FiDownload, FiEye, FiRefreshCw } from 'react-icons/fi';
 import Badge from '@/components/Badge';
-import TableCard, { SearchInput, FilterSelect, Pagination } from '@/components/TableCard';
+import DataTable, { Column } from '@/components/DataTable';
+import { GovBtn } from '@/components/GovUI';
 import StatCard from '@/components/StatCard';
-import { Input } from '@/components/ui/input';
+import TableCard, { FilterSelect, Pagination, SearchInput } from '@/components/TableCard';
 
 interface ResultParameter {
   id: string;
@@ -143,8 +143,33 @@ function ReadOnlyField({
   return (
     <div className="space-y-2">
       <FieldLabel htmlFor={id}>{label}</FieldLabel>
-      <Input id={id} value={value} readOnly className="h-10 border-slate-200 bg-slate-50 px-3 text-slate-700" />
+      <div
+        id={id}
+        className="flex min-h-10 items-center border border-slate-300 bg-slate-50 px-3 py-2 text-[13px] font-medium text-slate-700"
+      >
+        {value}
+      </div>
     </div>
+  );
+}
+
+function DetailSection({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="space-y-4 border border-slate-300 bg-white p-5 shadow-sm">
+      <div>
+        <h2 className="text-[13px] font-bold uppercase tracking-[0.04em] text-emerald-800">{title}</h2>
+        <p className="mt-1 text-sm text-slate-600">{description}</p>
+      </div>
+      {children}
+    </section>
   );
 }
 
@@ -165,52 +190,42 @@ function ViewResultDetail({
         title="Chi tiết kết quả kiểm nghiệm"
         actions={
           <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={onRetest}
-              className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-700 transition-colors hover:bg-amber-100"
-            >
+            <GovBtn variant="warning" onClick={onRetest}>
+              <FiRefreshCw size={14} />
               Yêu cầu kiểm nghiệm lại
-            </button>
-            <button
-              type="button"
-              onClick={onBack}
-              className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
-            >
+            </GovBtn>
+            <GovBtn variant="secondary" onClick={onBack}>
+              <FiArrowLeft size={14} />
               Quay lại
-            </button>
+            </GovBtn>
           </div>
         }
       >
         <div className="space-y-6 p-5">
-          <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-5">
-            <div>
-              <h2 className="text-base font-bold text-slate-900">1. Thông tin mẫu</h2>
-              <p className="mt-1 text-sm text-slate-500">Thông tin mẫu và cơ sở được hiển thị ở chế độ chỉ đọc.</p>
-            </div>
-
+          <DetailSection
+            title="1. Thông tin mẫu"
+            description="Thông tin mẫu và cơ sở được hiển thị ở chế độ chỉ đọc."
+          >
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               <ReadOnlyField id="sampleName" label="Tên mẫu" value={data.sampleName} />
               <ReadOnlyField id="sampleType" label="Loại mẫu" value={data.sampleType} />
               <ReadOnlyField id="business" label="Cơ sở" value={data.business} />
               <ReadOnlyField id="testDate" label="Ngày kiểm nghiệm" value={data.testDate} />
             </div>
-          </section>
+          </DetailSection>
 
-          <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-5">
-            <div>
-              <h2 className="text-base font-bold text-slate-900">2. Kết quả kiểm nghiệm</h2>
-              <p className="mt-1 text-sm text-slate-500">Danh sách chỉ tiêu đo lường và kết luận cho từng chỉ tiêu.</p>
-            </div>
-
-            <div className="overflow-hidden rounded-xl border border-slate-200">
-              <div className="grid grid-cols-[1.3fr_1fr_1fr_120px] bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700">
+          <DetailSection
+            title="2. Kết quả kiểm nghiệm"
+            description="Danh sách chỉ tiêu đo lường và kết luận cho từng chỉ tiêu."
+          >
+            <div className="overflow-hidden border border-slate-300">
+              <div className="grid grid-cols-[1.3fr_1fr_1fr_120px] border-b border-slate-300 bg-slate-100 px-4 py-3 text-sm font-semibold text-slate-700">
                 <span>Tên chỉ tiêu</span>
                 <span>Giá trị đo</span>
                 <span>Giới hạn cho phép</span>
                 <span>Kết luận</span>
               </div>
-              <div className="divide-y divide-slate-200">
+              <div className="divide-y divide-slate-300">
                 {data.parameters.map((parameter) => (
                   <div
                     key={parameter.id}
@@ -229,38 +244,34 @@ function ViewResultDetail({
                 ))}
               </div>
             </div>
-          </section>
+          </DetailSection>
 
           <section className="grid gap-6 xl:grid-cols-[1fr_320px]">
-            <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-5">
-              <div>
-                <h2 className="text-base font-bold text-slate-900">3. Kết luận chung</h2>
-                <p className="mt-1 text-sm text-slate-500">Kết luận tổng hợp cho toàn bộ mẫu kiểm nghiệm.</p>
-              </div>
-
+            <DetailSection
+              title="3. Kết luận chung"
+              description="Kết luận tổng hợp cho toàn bộ mẫu kiểm nghiệm."
+            >
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <FieldLabel>Kết luận</FieldLabel>
-                  <div className="flex h-10 items-center rounded-lg border border-slate-200 bg-slate-50 px-3">
+                  <div className="flex h-10 items-center border border-slate-300 bg-slate-50 px-3">
                     <Badge variant={resultConfig.badgeVariant} label={resultConfig.label} />
                   </div>
                 </div>
                 <ReadOnlyField id="lab" label="Phòng lab" value={data.lab} />
               </div>
-            </div>
+            </DetailSection>
 
-            <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-5">
-              <div>
-                <h2 className="text-base font-bold text-slate-900">4. File kết quả</h2>
-                <p className="mt-1 text-sm text-slate-500">Hiển thị tệp PDF hoặc tên file kết quả.</p>
-              </div>
-
+            <DetailSection
+              title="4. File kết quả"
+              description="Hiển thị tệp PDF hoặc tên file kết quả."
+            >
               <ReadOnlyField
                 id="fileName"
                 label="Tên file"
                 value={data.fileName ?? 'Chưa có file kết quả'}
               />
-            </div>
+            </DetailSection>
           </section>
         </div>
       </TableCard>
@@ -363,7 +374,8 @@ export default function KetQuaPage() {
         {mode === 'list' && (
           <div className="flex gap-2">
             <button className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-[13px] font-semibold text-slate-600 hover:bg-slate-50">
-              📥 Xuất Excel
+              <FiDownload size={14} />
+              Xuất Excel
             </button>
           </div>
         )}

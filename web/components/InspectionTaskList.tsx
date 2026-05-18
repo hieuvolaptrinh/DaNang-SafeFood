@@ -49,9 +49,9 @@ export default function InspectionTaskList({
             onClick={() => onSelect(task.id)}
             aria-pressed={isSelected}
             className={cn(
-              'w-full rounded-xl border bg-white p-4 text-left shadow-sm transition-all',
-              'hover:border-blue-300 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500/30',
-              isSelected ? 'border-blue-500 ring-2 ring-blue-100' : 'border-slate-200'
+              'w-full border bg-white p-4 text-left shadow-sm transition-all',
+              'hover:border-sky-400 hover:bg-sky-50/40 focus:outline-none focus:ring-2 focus:ring-sky-200',
+              isSelected ? 'border-sky-600 ring-2 ring-sky-100' : 'border-slate-300'
             )}
           >
             <div className="flex items-start justify-between gap-3">
@@ -64,13 +64,13 @@ export default function InspectionTaskList({
 
             <dl className="mt-4 space-y-2 text-sm text-slate-600">
               <div>
-                <dt className="text-[11px] font-bold uppercase tracking-wide text-slate-400">
+                <dt className="text-[11px] font-bold uppercase tracking-wide text-slate-500">
                   Địa chỉ
                 </dt>
                 <dd className="mt-0.5">{task.address}</dd>
               </div>
               <div>
-                <dt className="text-[11px] font-bold uppercase tracking-wide text-slate-400">
+                <dt className="text-[11px] font-bold uppercase tracking-wide text-slate-500">
                   Thời gian kiểm tra
                 </dt>
                 <dd className="mt-0.5">{task.inspectionTime}</dd>
