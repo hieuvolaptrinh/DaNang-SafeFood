@@ -2,7 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
+import { Printer, ArrowLeft, FileSpreadsheet, Pencil, CreditCard } from 'lucide-react';
+import {
+  PageHeader, GovBtn, SectionCard, StatusBadge, ActionButtons, FormSection, FormField, MiniStat,
+} from '@/components/GovUI';
+import AlertBanner from '@/components/AlertBanner';
 
 interface Penalty {
   id: string;
@@ -10,8 +14,13 @@ interface Penalty {
   violationType: string;
   penaltyAmount: string;
   decisionDate: string;
+  paymentDeadline: string;
   status: 'pending' | 'paid' | 'overdue';
   district: string;
+  address: string;
+  inspector: string;
+  decisionNumber: string;
+  legalBasis: string;
 }
 
 const mockPenalties: Penalty[] = [
@@ -21,8 +30,13 @@ const mockPenalties: Penalty[] = [
     violationType: 'Vi phạm vệ sinh ATTP mức nghiêm trọng',
     penaltyAmount: '45.000.000 ₫',
     decisionDate: '18/03/2025',
+    paymentDeadline: '01/04/2025',
     status: 'paid',
     district: 'Hải Châu',
+    address: '123 Trần Phú, Hải Châu, Đà Nẵng',
+    inspector: 'Nguyễn Văn Trần',
+    decisionNumber: 'QĐ-XP-2025/HC-001',
+    legalBasis: 'Điều 5, Nghị định 115/2018/NĐ-CP',
   },
   {
     id: 'XP-2025002',
@@ -30,8 +44,13 @@ const mockPenalties: Penalty[] = [
     violationType: 'Không niêm yết giá',
     penaltyAmount: '8.000.000 ₫',
     decisionDate: '12/03/2025',
+    paymentDeadline: '26/03/2025',
     status: 'pending',
     district: 'Thanh Khê',
+    address: '45 Điện Biên Phủ, Thanh Khê, Đà Nẵng',
+    inspector: 'Lê Thị Mai',
+    decisionNumber: 'QĐ-XP-2025/HC-002',
+    legalBasis: 'Điều 18, Nghị định 115/2018/NĐ-CP',
   },
   {
     id: 'XP-2025003',
@@ -39,15 +58,25 @@ const mockPenalties: Penalty[] = [
     violationType: 'Sử dụng nguyên liệu không rõ nguồn gốc',
     penaltyAmount: '25.000.000 ₫',
     decisionDate: '25/03/2025',
+    paymentDeadline: '08/04/2025',
     status: 'overdue',
     district: 'Ngũ Hành Sơn',
+    address: '78 Nguyễn Tất Thành, Ngũ Hành Sơn, Đà Nẵng',
+    inspector: 'Phạm Văn Đức',
+    decisionNumber: 'QĐ-XP-2025/HC-003',
+    legalBasis: 'Điều 10, Nghị định 115/2018/NĐ-CP',
   },
 ];
 
-const STATUS_CONFIG = {
-  pending: { label: 'Chưa nộp',  bg: 'bg-amber-50',   text: 'text-amber-700',   icon: '⏳', dot: 'bg-amber-400',  border: 'border-amber-200' },
-  paid:    { label: 'Đã nộp',    bg: 'bg-emerald-50', text: 'text-emerald-700', icon: '✓',  dot: 'bg-emerald-500', border: 'border-emerald-200' },
-  overdue: { label: 'Quá hạn',   bg: 'bg-red-50',     text: 'text-red-700',     icon: '🚨', dot: 'bg-red-500',    border: 'border-red-200' },
+const statusVariant: Record<string, string> = {
+  pending: 'pending',
+  paid: 'resolved',
+  overdue: 'open',
+};
+const statusLabel: Record<string, string> = {
+  pending: 'Chưa nộp phạt',
+  paid: 'Đã nộp phạt',
+  overdue: 'Quá hạn nộp',
 };
 
 export default function XuPhatDetailPage() {
@@ -56,152 +85,164 @@ export default function XuPhatDetailPage() {
   const id = params.id as string;
 
   const [penalty, setPenalty] = useState<Penalty | null>(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const found = mockPenalties.find(p => p.id === id);
     setPenalty(found || null);
-    setLoading(false);
   }, [id]);
-
-  if (loading) {
-    return <div className="min-h-screen bg-[#f5f6fa] flex items-center justify-center">Đang tải...</div>;
-  }
 
   if (!penalty) {
     return (
-      <div className="min-h-screen bg-[#f5f6fa] flex flex-col items-center justify-center py-20">
-        <div className="text-7xl mb-6">😕</div>
-        <h2 className="text-2xl font-bold text-slate-900">Không tìm thấy quyết định xử phạt</h2>
-        <p className="text-slate-500 mt-2 mb-8">Quyết định mã <span className="font-mono">{id}</span> không tồn tại.</p>
-        <Link
-          href="/xu-phat"
-          className="px-6 py-3 bg-violet-600 text-white rounded-2xl font-medium hover:bg-violet-700 transition"
-        >
-          Quay về danh sách xử phạt
-        </Link>
+      <div>
+        <PageHeader
+          title="Không tìm thấy quyết định xử phạt"
+          subtitle={`Không tìm thấy quyết định mã: ${id}`}
+          actions={
+            <GovBtn variant="secondary" onClick={() => router.push('/vi-pham/xu-phat')}>
+              <ArrowLeft style={{ width: 12, height: 12 }} /> Quay lại danh sách
+            </GovBtn>
+          }
+        />
       </div>
     );
   }
 
-  const statusCfg = STATUS_CONFIG[penalty.status];
-
   return (
-    <div className="min-h-screen bg-[#f5f6fa] font-sans">
-      <div className="h-1 w-full bg-gradient-to-r from-violet-600 via-purple-500 to-pink-400" />
+    <div>
+      <PageHeader
+        title={`Quyết định xử phạt — ${penalty.id}`}
+        subtitle={`Chi cục An toàn Thực phẩm TP. Đà Nẵng — ${penalty.decisionNumber}`}
+        actions={
+          <ActionButtons>
+            <GovBtn variant="secondary" onClick={() => router.push('/vi-pham/xu-phat')}>
+              <ArrowLeft style={{ width: 12, height: 12 }} /> Quay lại
+            </GovBtn>
+            <GovBtn variant="secondary">
+              <Printer style={{ width: 12, height: 12 }} /> In quyết định
+            </GovBtn>
+            <GovBtn variant="secondary">
+              <FileSpreadsheet style={{ width: 12, height: 12 }} /> Xuất PDF
+            </GovBtn>
+            <GovBtn variant="outline">
+              <Pencil style={{ width: 12, height: 12 }} /> Chỉnh sửa
+            </GovBtn>
+            {penalty.status !== 'paid' && (
+              <GovBtn variant="primary">
+                <CreditCard style={{ width: 12, height: 12 }} /> Xác nhận đã nộp
+              </GovBtn>
+            )}
+          </ActionButtons>
+        }
+      />
 
-      <div className="max-w-[1100px] mx-auto px-6 py-8">
-        {/* Breadcrumb */}
-        <div className="flex items-center gap-3 mb-8">
-          <button
-            onClick={() => router.back()}
-            className="text-slate-500 hover:text-slate-700 flex items-center gap-2 text-sm font-medium"
-          >
-            ← Quay lại danh sách
-          </button>
-          <div className="h-4 w-px bg-slate-200 mx-2" />
-          <span className="text-[11px] font-bold tracking-widest uppercase text-violet-500">
-            SỞ AN TOÀN THỰC PHẨM • ĐÀ NẴNG
+      {penalty.status === 'overdue' && (
+        <AlertBanner
+          type="danger"
+          title={`Quyết định xử phạt ${penalty.id} đã quá hạn nộp phạt! Cần xử lý khẩn cấp.`}
+        />
+      )}
+
+      {/* Stats */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '10px', marginBottom: '12px' }}>
+        <MiniStat label="Số quyết định" value={penalty.decisionNumber} color="neutral" />
+        <MiniStat label="Mức phạt" value={penalty.penaltyAmount} color="red" />
+        <MiniStat label="Ngày ra quyết định" value={penalty.decisionDate} color="blue" />
+        <MiniStat label="Hạn nộp phạt" value={penalty.paymentDeadline} color={penalty.status === 'overdue' ? 'red' : 'orange'} />
+      </div>
+
+      {/* Trạng thái */}
+      <SectionCard title="Trạng thái thanh toán">
+        <div style={{ padding: '14px 12px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <StatusBadge variant={statusVariant[penalty.status]} label={statusLabel[penalty.status]} />
+          <span style={{ fontSize: '12px', color: '#555' }}>
+            {penalty.status === 'pending' ? `Cơ sở phải nộp phạt trước ngày ${penalty.paymentDeadline}.` :
+             penalty.status === 'paid' ? 'Cơ sở đã hoàn thành nghĩa vụ nộp phạt theo quyết định.' :
+             `Đã quá hạn nộp phạt (${penalty.paymentDeadline}). Cần áp dụng biện pháp cưỡng chế.`}
           </span>
         </div>
+      </SectionCard>
 
-        <div className="flex flex-col lg:flex-row justify-between items-start gap-6 mb-8">
-          <div>
-            <div className="flex items-center gap-3 mb-3">
-              <span className="font-mono text-sm bg-slate-100 text-slate-500 px-3 py-1 rounded-lg font-semibold">
-                {penalty.id}
-              </span>
-              <span className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-2xl text-sm font-semibold border ${statusCfg.bg} ${statusCfg.text} ${statusCfg.border}`}>
-                <span className="text-base">{statusCfg.icon}</span>
-                {statusCfg.label}
-              </span>
-            </div>
-            <h1 className="text-3xl font-black tracking-tight text-slate-900">
-              {penalty.businessName}
-            </h1>
-          </div>
+      {/* Chi tiết quyết định */}
+      <SectionCard title="Thông tin chi tiết quyết định xử phạt">
+        <div style={{ padding: '14px 12px' }}>
+          <FormSection title="Thông tin cơ sở vi phạm">
+            <FormField label="Tên cơ sở kinh doanh">
+              <div style={{ padding: '6px 8px', background: '#F5F5F5', border: '1px solid #D6D6D6', borderRadius: '2px', fontSize: '13px', fontWeight: 600 }}>
+                {penalty.businessName}
+              </div>
+            </FormField>
+            <FormField label="Địa chỉ cơ sở">
+              <div style={{ padding: '6px 8px', background: '#F5F5F5', border: '1px solid #D6D6D6', borderRadius: '2px', fontSize: '13px' }}>
+                {penalty.address}
+              </div>
+            </FormField>
+            <FormField label="Quận/Huyện">
+              <div style={{ padding: '6px 8px', background: '#F5F5F5', border: '1px solid #D6D6D6', borderRadius: '2px', fontSize: '13px' }}>
+                {penalty.district}
+              </div>
+            </FormField>
+            <FormField label="Người ký quyết định">
+              <div style={{ padding: '6px 8px', background: '#F5F5F5', border: '1px solid #D6D6D6', borderRadius: '2px', fontSize: '13px' }}>
+                {penalty.inspector}
+              </div>
+            </FormField>
+          </FormSection>
 
-          <div className="flex gap-3">
-            <button className="px-5 py-3 border border-slate-300 rounded-2xl text-sm font-medium hover:bg-white transition">
-              📄 In quyết định xử phạt
-            </button>
-            <button className="px-6 py-3 bg-violet-600 hover:bg-violet-700 text-white rounded-2xl text-sm font-semibold transition">
-              Cập nhật tình trạng
-            </button>
-          </div>
+          <FormSection title="Nội dung xử phạt">
+            <FormField label="Hành vi vi phạm" fullWidth>
+              <div style={{ padding: '6px 8px', background: '#F5F5F5', border: '1px solid #D6D6D6', borderRadius: '2px', fontSize: '13px', fontWeight: 600 }}>
+                {penalty.violationType}
+              </div>
+            </FormField>
+            <FormField label="Mức phạt tiền">
+              <div style={{ padding: '6px 8px', background: '#FFF0F0', border: '1px solid #F5BCBC', borderRadius: '2px', fontSize: '16px', fontWeight: 700, color: '#CC0000' }}>
+                {penalty.penaltyAmount}
+              </div>
+            </FormField>
+            <FormField label="Căn cứ pháp lý">
+              <div style={{ padding: '6px 8px', background: '#F5F5F5', border: '1px solid #D6D6D6', borderRadius: '2px', fontSize: '13px', fontStyle: 'italic' }}>
+                {penalty.legalBasis}
+              </div>
+            </FormField>
+            <FormField label="Ngày ra quyết định">
+              <div style={{ padding: '6px 8px', background: '#F5F5F5', border: '1px solid #D6D6D6', borderRadius: '2px', fontSize: '13px', fontFamily: 'monospace', fontWeight: 600 }}>
+                {penalty.decisionDate}
+              </div>
+            </FormField>
+            <FormField label="Hạn nộp phạt">
+              <div style={{
+                padding: '6px 8px',
+                background: penalty.status === 'overdue' ? '#FFF0F0' : '#F5F5F5',
+                border: `1px solid ${penalty.status === 'overdue' ? '#F5BCBC' : '#D6D6D6'}`,
+                borderRadius: '2px', fontSize: '13px', fontFamily: 'monospace', fontWeight: 600,
+                color: penalty.status === 'overdue' ? '#CC0000' : '#222',
+              }}>
+                {penalty.paymentDeadline}
+              </div>
+            </FormField>
+          </FormSection>
         </div>
+      </SectionCard>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Main Content */}
-          <div className="lg:col-span-8 space-y-6">
-            <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100">
-              <h2 className="text-lg font-bold text-slate-800 mb-6">Thông tin quyết định xử phạt</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div>
-                  <p className="text-xs uppercase tracking-widest text-slate-400 mb-1">Loại vi phạm</p>
-                  <p className="text-[17px] leading-relaxed text-slate-700">{penalty.violationType}</p>
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-widest text-slate-400 mb-1">Mức phạt</p>
-                  <p className="text-3xl font-bold text-slate-900 tracking-tight">{penalty.penaltyAmount}</p>
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-widest text-slate-400 mb-1">Ngày quyết định</p>
-                  <p className="text-2xl font-semibold text-slate-900">{penalty.decisionDate}</p>
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-widest text-slate-400 mb-1">Quận/Huyện</p>
-                  <span className="inline-flex px-4 py-2 rounded-2xl text-sm font-semibold bg-slate-100 text-slate-700">
-                    {penalty.district}
-                  </span>
-                </div>
-              </div>
+      {/* Căn cứ pháp lý */}
+      <SectionCard title="Căn cứ pháp lý ban hành quyết định">
+        <div style={{ padding: '12px' }}>
+          {[
+            'Luật An toàn thực phẩm số 55/2010/QH12 ngày 17/6/2010',
+            'Nghị định số 115/2018/NĐ-CP quy định xử phạt vi phạm hành chính về an toàn thực phẩm',
+            'Nghị định số 128/2020/NĐ-CP sửa đổi, bổ sung một số điều của Nghị định 115/2018/NĐ-CP',
+          ].map((item, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', padding: '6px 0', borderBottom: i < 2 ? '1px solid #F0F0F0' : 'none' }}>
+              <span style={{ width: '6px', height: '6px', background: '#008000', borderRadius: '1px', flexShrink: 0, marginTop: '5px' }} />
+              <span style={{ fontSize: '12.5px', color: '#333' }}>{item}</span>
             </div>
-
-            <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100">
-              <h2 className="text-lg font-bold text-slate-800 mb-5">Ghi chú</h2>
-              <p className="text-slate-600 leading-relaxed">
-                Quyết định xử phạt hành chính theo Nghị định 128/2020/NĐ-CP. 
-                Cơ sở phải thực hiện nộp phạt trong thời hạn quy định.
-              </p>
-            </div>
-          </div>
-
-          {/* Sidebar */}
-          <div className="lg:col-span-4 space-y-6">
-            <div className="bg-white rounded-3xl p-7 shadow-sm border border-slate-100">
-              <h3 className="font-bold text-slate-700 mb-5">Trạng thái thanh toán</h3>
-              <div className={`p-6 rounded-3xl ${statusCfg.bg} ${statusCfg.text} border ${statusCfg.border}`}>
-                <div className="flex items-center gap-4 text-4xl mb-3">
-                  {statusCfg.icon}
-                </div>
-                <p className="text-2xl font-semibold">{statusCfg.label}</p>
-                {penalty.status === 'paid' && (
-                  <p className="text-sm mt-2">Đã nộp ngày {penalty.decisionDate}</p>
-                )}
-              </div>
-            </div>
-
-            <div className="bg-white rounded-3xl p-7 shadow-sm border border-slate-100">
-              <h3 className="font-bold text-slate-700 mb-5">Thông tin cơ sở</h3>
-              <div className="space-y-4 text-sm">
-                <div>
-                  <p className="text-slate-400 text-xs uppercase tracking-widest">Tên cơ sở</p>
-                  <p className="font-medium text-slate-900">{penalty.businessName}</p>
-                </div>
-                <div>
-                  <p className="text-slate-400 text-xs uppercase tracking-widest">Địa chỉ</p>
-                  <p className="text-slate-700">123 Nguyễn Thị Minh Khai, {penalty.district}, Đà Nẵng</p>
-                </div>
-                <div>
-                  <p className="text-slate-400 text-xs uppercase tracking-widest">Số tiền phải nộp</p>
-                  <p className="text-2xl font-bold text-slate-800">{penalty.penaltyAmount}</p>
-                </div>
-              </div>
-            </div>
-          </div>
+          ))}
         </div>
-      </div>
+      </SectionCard>
+
+      <p style={{ fontSize: '11.5px', color: '#888', textAlign: 'center', marginTop: '8px' }}>
+        Quyết định xử phạt được ban hành theo thẩm quyền của Chi cục trưởng Chi cục An toàn Thực phẩm TP. Đà Nẵng
+      </p>
     </div>
   );
 }

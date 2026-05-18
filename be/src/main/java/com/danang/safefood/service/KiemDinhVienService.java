@@ -16,7 +16,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.text.Normalizer;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 @Service
@@ -102,16 +104,25 @@ public class KiemDinhVienService {
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy chỉ tiêu: " + item.maChiTieu()));
 
             MauChiTieu.MauChiTieuId id = new MauChiTieu.MauChiTieuId(maMau, item.maChiTieu());
+            String ketQua = normalizeKetQuaChiTieu(item.ketQua());
 
             if (mauChiTieuRepo.existsById(id)) {
                 // Cập nhật bản ghi đã có
-                mauChiTieuRepo.updateKetQua(maMau, item.maChiTieu(), item.ketQua());
+                mauChiTieuRepo.updateKetQua(
+                        maMau,
+                        item.maChiTieu(),
+                        item.giaTriDo().trim(),
+                        item.gioiHanChoPhep().trim(),
+                        ketQua
+                );
             } else {
                 // Tạo mới nếu chưa có
                 MauChiTieu mauChiTieu = MauChiTieu.builder()
                         .maMau(maMau)
                         .maChiTieu(item.maChiTieu())
-                        .ketQua(item.ketQua())
+                        .giaTriDo(item.giaTriDo().trim())
+                        .gioiHanChoPhep(item.gioiHanChoPhep().trim())
+                        .ketQua(ketQua)
                         .build();
                 mauChiTieuRepo.save(mauChiTieu);
             }
@@ -222,5 +233,22 @@ public class KiemDinhVienService {
             throw new RuntimeException(
                     String.format("Không thể chuyển trạng thái từ '%s' sang '%s'", hienTai, moi));
         }
+    }
+
+    private String normalizeKetQuaChiTieu(String value) {
+        if (value == null || value.isBlank()) {
+            throw new RuntimeException("Ket qua chi tieu khong duoc de trong");
+        }
+
+        String normalized = Normalizer.normalize(value, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}+", "")
+                .toLowerCase(Locale.ROOT)
+                .trim();
+
+        return switch (normalized) {
+            case "dat", "pass" -> "Đạt";
+            case "khong dat", "fail" -> "Không đạt";
+            default -> throw new RuntimeException("Ket qua chi tieu khong hop le: " + value);
+        };
     }
 }

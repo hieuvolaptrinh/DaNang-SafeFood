@@ -8,26 +8,30 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public interface PhanAnhRepository extends JpaRepository<PhanAnh, String> {
 
-    Page<PhanAnh> findAllByOrderByNgayGuiDesc(Pageable pageable);
+        Page<PhanAnh> findAllByOrderByNgayGuiDesc(Pageable pageable);
 
-    Page<PhanAnh> findByTrangThaiPhanAnhOrderByNgayGuiDesc(String trangThai, Pageable pageable);
+        Page<PhanAnh> findByTrangThaiPhanAnhOrderByNgayGuiDesc(String trangThai, Pageable pageable);
 
-    @Query("""
-            SELECT p FROM PhanAnh p
-            WHERE (:trangThai IS NULL OR p.trangThaiPhanAnh = :trangThai)
-              AND (:from IS NULL OR p.ngayGui >= :from)
-              AND (:to   IS NULL OR p.ngayGui <= :to)
-            ORDER BY p.ngayGui DESC
-            """)
-    Page<PhanAnh> findWithFilter(
-            @Param("trangThai") String trangThai,
-            @Param("from") LocalDateTime from,
-            @Param("to") LocalDateTime to,
-            Pageable pageable
-    );
+        List<PhanAnh> findByNguoiPhanAnh_MaNguoiDungOrderByNgayGuiDesc(String maNguoiDung);
 
-    long countByTrangThaiPhanAnh(String trangThai);
+        java.util.Optional<PhanAnh> findByMaPhanAnhAndNguoiPhanAnh_MaNguoiDung(String maPhanAnh, String maNguoiDung);
+
+        @Query("""
+                        SELECT p FROM PhanAnh p
+                        WHERE (:trangThai IS NULL OR p.trangThaiPhanAnh = :trangThai)
+                          AND (:from IS NULL OR p.ngayGui >= :from)
+                          AND (:to   IS NULL OR p.ngayGui <= :to)
+                        ORDER BY p.ngayGui DESC
+                        """)
+        Page<PhanAnh> findWithFilter(
+                        @Param("trangThai") String trangThai,
+                        @Param("from") LocalDateTime from,
+                        @Param("to") LocalDateTime to,
+                        Pageable pageable);
+
+        long countByTrangThaiPhanAnh(String trangThai);
 }

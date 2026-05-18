@@ -20,8 +20,14 @@ public class PhanAnh {
     @Column(name = "trangThaiPhanAnh", length = 30)
     private String trangThaiPhanAnh;
 
+    @Column(name = "tieuDe", length = 200)
+    private String tieuDe;
+
     @Column(name = "lyDo", columnDefinition = "TEXT")
     private String lyDo;
+
+    @Column(name = "diaDiem", length = 255)
+    private String diaDiem;
 
     @Column(name = "ghiChu", columnDefinition = "TEXT")
     private String ghiChu;

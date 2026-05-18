@@ -5,6 +5,7 @@ import 'package:mobile_ui/core/theme/app_theme.dart';
 import 'package:mobile_ui/routes/routes.dart';
 import 'package:mobile_ui/viewmodel/account/account_cubit.dart';
 import 'package:mobile_ui/viewmodel/account/account_state.dart';
+import 'package:mobile_ui/viewmodel/auth/auth_cubit.dart';
 
 class AccountPage extends StatelessWidget {
   const AccountPage({super.key});
@@ -31,20 +32,27 @@ class AccountPage extends StatelessWidget {
               children: [
                 _SectionTitle(title: 'Thông tin tài khoản'),
                 const SizedBox(height: 8),
-                _InfoTile(
-                  icon: Icons.person_outline_rounded,
-                  title: 'Họ tên',
-                  value: 'Nguyễn Văn A',
-                ),
-                _InfoTile(
-                  icon: Icons.email_outlined,
-                  title: 'Email',
-                  value: 'nguyenvana@email.com',
-                ),
-                _InfoTile(
-                  icon: Icons.phone_outlined,
-                  title: 'Số điện thoại',
-                  value: '0901 234 567',
+                Builder(
+                  builder: (context) {
+                    final auth = context.watch<AuthCubit>().state;
+                    return Column(children: [
+                      _InfoTile(
+                        icon: Icons.person_outline_rounded,
+                        title: 'Họ tên',
+                        value: auth.fullName ?? 'Chưa cập nhật',
+                      ),
+                      _InfoTile(
+                        icon: Icons.email_outlined,
+                        title: 'Email',
+                        value: auth.email ?? 'Chưa cập nhật',
+                      ),
+                      _InfoTile(
+                        icon: Icons.phone_outlined,
+                        title: 'Số điện thoại',
+                        value: auth.phone ?? 'Chưa cập nhật',
+                      ),
+                    ]);
+                  },
                 ),
 
                 const SizedBox(height: 24),
@@ -53,7 +61,7 @@ class AccountPage extends StatelessWidget {
                 _ActionTile(
                   icon: Icons.lock_outline_rounded,
                   title: 'Đổi mật khẩu',
-                  onTap: () {},
+                  onTap: () => Navigator.pushNamed(context, Routes.changePassword),
                 ),
                 _ActionTile(
                   icon: Icons.security_outlined,

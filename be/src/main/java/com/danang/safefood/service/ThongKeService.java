@@ -2,7 +2,7 @@ package com.danang.safefood.service;
 
 import com.danang.safefood.dto.response.*;
 import com.danang.safefood.entity.CoSoKinhDoanh;
-import com.danang.safefood.entity.GiayPhep;
+import com.danang.safefood.entity.HoSoDangKiKinhDoanh;
 import com.danang.safefood.entity.PhuongXa;
 import com.danang.safefood.entity.ViPham;
 import com.danang.safefood.util.TrangThaiQuyDinh;
@@ -197,7 +197,7 @@ public class ThongKeService {
         LocalDate ngayCanhBao = LocalDate.now().plusDays(soNgay);
         LocalDate ngayBatDau  = LocalDate.now().minusDays(180); // quá hạn tối đa 180 ngày
 
-        List<GiayPhep> list = giayPhepRepo.findGiayPhepSapHetHan(ngayCanhBao, ngayBatDau);
+        List<HoSoDangKiKinhDoanh> list = giayPhepRepo.findGiayPhepSapHetHan(ngayCanhBao, ngayBatDau);
 
         return list.stream()
                 .map(GiayPhepSapHetHanResponse::of)

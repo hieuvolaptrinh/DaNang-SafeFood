@@ -5,6 +5,7 @@ import { Eye, Pencil, FileSpreadsheet, Printer, Plus, RefreshCw } from 'lucide-r
 import DataTable, { Column } from '@/components/DataTable';
 import { PageHeader, FilterBar, FilterField, GovInput, GovSelect, GovBtn, SectionCard, GovPagination, StatusBadge, MiniStat } from '@/components/GovUI';
 import AlertBanner from '@/components/AlertBanner';
+import Link from 'next/link';
 
 interface Violation {
   id: string;
@@ -100,8 +101,13 @@ export default function DanhSachViPhamPage() {
           <>
             <GovBtn variant="secondary"><RefreshCw style={{ width: 12, height: 12 }} /> Làm mới</GovBtn>
             <GovBtn variant="secondary"><Printer style={{ width: 12, height: 12 }} /> In báo cáo</GovBtn>
-            <GovBtn variant="secondary"><FileSpreadsheet style={{ width: 12, height: 12 }} /> Xuất Excel</GovBtn>
-            <GovBtn variant="primary"><Plus style={{ width: 12, height: 12 }} /> Thêm mới</GovBtn>
+            <Link href="/vi-pham/add">
+              <GovBtn variant="primary">
+                <Plus style={{ width: 12, height: 12 }} />
+                Thêm mới
+              </GovBtn>
+            </Link>
+
           </>
         }
       />

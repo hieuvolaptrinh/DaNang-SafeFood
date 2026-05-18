@@ -51,6 +51,15 @@ cloudinary:
   api-secret: ${CLOUDINARY_API_SECRET}
   folder: ${CLOUDINARY_FOLDER:da-nang-safe-food}
 
+payos:
+  client-id: ${PAYOS_CLIENT_ID}
+  api-key: ${PAYOS_API_KEY}
+  checksum-key: ${PAYOS_CHECK_SUM_KEY}
+  webhook-url: ${PAYOSS_WEBHOOK:https://safe-food.vndtech.vn/v1/webhook/payos}
+  return-url: ${PAYOS_RETURN_URL:https://safe-food.vndtech.vn/payment/success}
+  cancel-url: ${PAYOS_CANCEL_URL:https://safe-food.vndtech.vn/payment/cancel}
+  api-base-url: https://api-merchant.payos.vn
+
 server:
   port: 8080
 

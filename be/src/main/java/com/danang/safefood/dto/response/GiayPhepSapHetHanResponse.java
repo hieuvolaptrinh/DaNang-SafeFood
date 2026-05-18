@@ -1,6 +1,6 @@
 package com.danang.safefood.dto.response;
 
-import com.danang.safefood.entity.GiayPhep;
+import com.danang.safefood.entity.HoSoDangKiKinhDoanh;
 
 import java.time.LocalDate;
 
@@ -14,7 +14,7 @@ public record GiayPhepSapHetHanResponse(
         int soNgayConLai
 ) {
 
-    public static GiayPhepSapHetHanResponse of(GiayPhep gp) {
+    public static GiayPhepSapHetHanResponse of(HoSoDangKiKinhDoanh gp) {
         LocalDate today = LocalDate.now();
         long days = java.time.temporal.ChronoUnit.DAYS.between(today, gp.getNgayHetHan());
 
@@ -33,9 +33,10 @@ public record GiayPhepSapHetHanResponse(
                 : "Khác";
 
         return new GiayPhepSapHetHanResponse(
-                gp.getMaGiayPhep(),
+
+                gp.getMaHoSo(),
                 gp.getCoSoKinhDoanh() != null ? gp.getCoSoKinhDoanh().getTenCoSo() : "",
-                gp.getLoaiGiayPhep(),           // hoặc soGiayPhep nếu bạn có
+                gp.getLoaiGiayTo().getMaLoaiGiayTo(),           // hoặc soGiayPhep nếu bạn có
                 tenQuan,
                 gp.getNgayHetHan(),
                 tinhTrang,

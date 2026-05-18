@@ -9,7 +9,9 @@ import { cn } from '@/lib/utils';
 interface InspectionTaskDetailsProps {
   task: InspectionTaskRecord | null;
   isConfirming: boolean;
+  isRejecting: boolean;
   onConfirm: () => void;
+  onReject: () => void;
   progressForm: InspectionTaskProgressFormValue;
   updateState: InspectionTaskUpdateState;
   updateErrorMessage: string;
@@ -18,26 +20,23 @@ interface InspectionTaskDetailsProps {
   onProgressSubmit: () => void;
 }
 
-function getStatusBadge(task: InspectionTaskRecord) {
-  if (task.progressStatus === 'completed') {
-    return { variant: 'active', label: 'Hoàn thành' };
-  }
+function getStatusBadge(trangThai: string) {
+  const statusMap: Record<string, { variant: 'active' | 'pending' | 'open'; label: string }> = {
+    'Hoàn thành': { variant: 'active', label: 'Hoàn thành' },
+    'Đang thực hiện': { variant: 'pending', label: 'Đang thực hiện' },
+    'Đã nhận': { variant: 'open', label: 'Đã nhận' },
+    'Chưa nhận': { variant: 'pending', label: 'Chưa nhận' },
+  };
 
-  if (task.progressStatus === 'in-progress') {
-    return { variant: 'pending', label: 'Đang kiểm tra' };
-  }
-
-  if (task.assignmentStatus === 'accepted') {
-    return { variant: 'open', label: 'Đã nhận' };
-  }
-
-  return { variant: 'pending', label: 'Chưa nhận' };
+  return statusMap[trangThai] || { variant: 'pending', label: trangThai };
 }
 
 export default function InspectionTaskDetails({
   task,
   isConfirming,
+  isRejecting,
   onConfirm,
+  onReject,
   progressForm,
   updateState,
   updateErrorMessage,
@@ -53,9 +52,10 @@ export default function InspectionTaskDetails({
     );
   }
 
-  const badge = getStatusBadge(task);
-  const canConfirmAssignment =
-    task.assignmentStatus === 'pending' && task.progressStatus === 'idle';
+  const badge = getStatusBadge(task.trangThai);
+  const canAcceptTask = task.trangThai === 'Chưa nhận';
+  const canRejectTask = task.trangThai === 'Chưa nhận';
+  const canUpdateProgress = task.trangThai !== 'Chưa nhận';
 
   return (
     <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
@@ -98,43 +98,59 @@ export default function InspectionTaskDetails({
           </div>
         </section>
 
-        <section>
-          <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">
-            Cập nhật tiến độ kiểm tra
-          </p>
-          <InspectionTaskProgressForm
-            currentStatus={task.progressStatus}
-            formValue={progressForm}
-            updateState={updateState}
-            errorMessage={updateErrorMessage}
-            onStatusChange={onProgressStatusChange}
-            onNoteChange={onProgressNoteChange}
-            onSubmit={onProgressSubmit}
-          />
-        </section>
+        {canUpdateProgress && (
+          <section>
+            <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">
+              Cập nhật tiến độ kiểm tra
+            </p>
+            <InspectionTaskProgressForm
+              currentStatus={task.trangThai}
+              formValue={progressForm}
+              updateState={updateState}
+              errorMessage={updateErrorMessage}
+              onStatusChange={onProgressStatusChange}
+              onNoteChange={onProgressNoteChange}
+              onSubmit={onProgressSubmit}
+            />
+          </section>
+        )}
 
-        <div className="border-t border-slate-200 pt-5">
-          <button
-            type="button"
-            onClick={onConfirm}
-            disabled={!canConfirmAssignment || isConfirming}
-            className={cn(
-              'inline-flex w-full items-center justify-center rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors',
-              !canConfirmAssignment || isConfirming
-                ? 'cursor-not-allowed bg-slate-200 text-slate-500'
-                : 'bg-blue-600 text-white hover:bg-blue-700'
-            )}
-          >
-            {!canConfirmAssignment
-              ? 'Đã nhận nhiệm vụ'
-              : isConfirming
-                ? 'Đang xác nhận...'
-                : 'Xác nhận nhận nhiệm vụ'}
-          </button>
+        <div className="border-t border-slate-200 pt-5 space-y-3">
+          {canAcceptTask && (
+            <>
+              <button
+                type="button"
+                onClick={onConfirm}
+                disabled={isConfirming || isRejecting}
+                className={cn(
+                  'inline-flex w-full items-center justify-center rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors',
+                  isConfirming || isRejecting
+                    ? 'cursor-not-allowed bg-slate-200 text-slate-500'
+                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                )}
+              >
+                {isConfirming ? 'Đang xác nhận...' : 'Nhận nhiệm vụ'}
+              </button>
 
-          {!canConfirmAssignment && (
-            <p className="mt-3 text-center text-xs text-slate-500">
-              Nhiệm vụ này đã được xác nhận trước đó.
+              <button
+                type="button"
+                onClick={onReject}
+                disabled={isRejecting || isConfirming}
+                className={cn(
+                  'inline-flex w-full items-center justify-center rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors',
+                  isRejecting || isConfirming
+                    ? 'cursor-not-allowed bg-slate-200 text-slate-500'
+                    : 'border border-red-300 bg-white text-red-600 hover:bg-red-50'
+                )}
+              >
+                {isRejecting ? 'Đang từ chối...' : 'Từ chối nhiệm vụ'}
+              </button>
+            </>
+          )}
+
+          {!canAcceptTask && (
+            <p className="text-center text-xs text-slate-500">
+              Nhiệm vụ này đã được xác nhận. Cập nhật tiến độ ở trên.
             </p>
           )}
         </div>

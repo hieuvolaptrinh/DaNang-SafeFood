@@ -22,6 +22,12 @@ public class MauChiTieu {
     @Column(name = "maChiTieu", length = 10, nullable = false)
     private String maChiTieu;
 
+    @Column(name = "giaTriDo", columnDefinition = "TEXT")
+    private String giaTriDo;
+
+    @Column(name = "gioiHanChoPhep", columnDefinition = "TEXT")
+    private String gioiHanChoPhep;
+
     @Column(name = "ketQua", columnDefinition = "TEXT")
     private String ketQua;
 

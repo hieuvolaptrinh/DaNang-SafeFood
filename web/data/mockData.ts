@@ -278,6 +278,11 @@ export const roleNavMap: Record<Role, NavItem[]> = {
       ]
     },
     {
+      label: 'Thanh tra', icon: 'clipboard', children: [
+        { label: 'Tạo lịch thanh tra', href: '/thanh-tra-kiem-dinh/thanh-tra' }
+      ]
+    },
+    {
       label: 'Vi phạm & Phản ánh', icon: 'alert', children: [
         { label: 'Danh sách vi phạm', href: '/vi-pham' },
         { label: 'Phản ánh công dân', href: '/phan-anh-cong-dan' },
@@ -300,28 +305,29 @@ export const roleNavMap: Record<Role, NavItem[]> = {
       ]
     },
     {
-      label: 'Thanh tra & Kiểm định', icon: 'clipboard', children: [
+      label: 'Thanh tra', icon: 'clipboard', children: [
         { label: 'Hồ sơ thanh tra', href: '/thanh-tra-kiem-dinh' },
         { label: 'Nhiệm vụ kiểm tra', href: '/thanh-tra-kiem-dinh/nhiem-vu' },
         { label: 'Báo cáo thanh tra', href: '/thanh-tra-kiem-dinh/bao-cao' },
         { label: 'Yêu cầu kiểm nghiệm', href: '/thanh-tra-kiem-dinh/yeu-cau' },
         { label: 'Kết quả kiểm nghiệm', href: '/thanh-tra-kiem-dinh/ket-qua' },
         { label: 'Khiếu nại', href: '/thanh-tra-kiem-dinh/khieu-nai' },
+        { label: 'Tiêu chí đánh giá', href: '/thanh-tra-kiem-dinh/tieu-chi' }
       ]
-    },
+    }
   ],
   TESTER: [
     {
-      label: 'Thanh tra & Kiểm định', icon: 'clipboard', children: [
-        { label: 'Yêu cầu kiểm nghiệm', href: '/thanh-tra-kiem-dinh/yeu-cau' },
-        { label: 'Kết quả kiểm nghiệm', href: '/thanh-tra-kiem-dinh/ket-qua' },
-        { label: 'Hồ sơ thanh tra', href: '/thanh-tra-kiem-dinh' },
+      label: 'Kiểm nghiệm', icon: 'inspection', children: [
+        { label: 'Tổng quan kiểm nghiệm', href: '/kiem-nghiem' },
+        { label: 'Mẫu kiểm nghiệm', href: '/kiem-nghiem/mau' },
+        { label: 'Kết quả kiểm nghiệm', href: '/kiem-nghiem/ket-qua' }
+        
       ]
     },
     {
       label: 'Vi phạm & Phản ánh', icon: 'alert', children: [
-        { label: 'Danh sách vi phạm', href: '/vi-pham' },
-        { label: 'Xử phạt', href: '/vi-pham/xu-phat' },
+        { label: 'Danh sách vi phạm', href: '/vi-pham' }
       ]
     },
   ],
@@ -432,5 +438,142 @@ export const mockInspectionReports: InspectionReport[] = [
     noiDung: 'Đã tiếp nhận phản ánh và lên lịch kiểm tra thực tế, báo cáo chi tiết sẽ bổ sung sau.',
     nhanXet: 'Chờ hoàn tất biên bản kiểm tra để cập nhật kết quả cuối cùng.',
     tepDinhKem: 'bao-cao-bc-004.pdf',
+  },
+];
+
+export type ThanhTraStatus = 'Dang xu ly' | 'Hoan thanh' | 'Huy';
+ 
+export interface NguoiThanhTra {
+  maNguoiDung: string;
+  hoTen: string;
+  chucVu: string;
+  email: string;
+  soDienThoai: string;
+}
+ 
+export interface CoSoKinhDoanh {
+  maCoSo: string;
+  tenCoSo: string;
+  diaChi: string;
+  loaiHinh: string;
+}
+ 
+export interface LichThanhTra {
+  maThanhTra: string;
+  trangThai: ThanhTraStatus;
+  noiDung: string;
+  ngayTao: string;
+  maCoSo: string;
+  tenCoSo: string;
+  diaChi: string;
+  maNguoiPhuTrach: string | null;
+  tenNguoiPhuTrach: string | null;
+  ketQuaKiemTra?: string;
+}
+ 
+export const mockNguoiThanhTra: NguoiThanhTra[] = [
+  {
+    maNguoiDung: 'ND001',
+    hoTen: 'Nguyễn Văn An',
+    chucVu: 'Cán bộ thanh tra',
+    email: 'an.nguyen@danang.gov.vn',
+    soDienThoai: '0905 123 456',
+  },
+  {
+    maNguoiDung: 'ND002',
+    hoTen: 'Trần Thị Bình',
+    chucVu: 'Trưởng đoàn thanh tra',
+    email: 'binh.tran@danang.gov.vn',
+    soDienThoai: '0905 234 567',
+  },
+  {
+    maNguoiDung: 'ND003',
+    hoTen: 'Lê Quang Cường',
+    chucVu: 'Cán bộ thanh tra',
+    email: 'cuong.le@danang.gov.vn',
+    soDienThoai: '0905 345 678',
+  },
+  {
+    maNguoiDung: 'ND004',
+    hoTen: 'Phạm Thị Dung',
+    chucVu: 'Phó trưởng đoàn',
+    email: 'dung.pham@danang.gov.vn',
+    soDienThoai: '0905 456 789',
+  },
+  {
+    maNguoiDung: 'ND005',
+    hoTen: 'Hoàng Văn Em',
+    chucVu: 'Cán bộ thanh tra',
+    email: 'em.hoang@danang.gov.vn',
+    soDienThoai: '0905 567 890',
+  },
+];
+ 
+export const mockCoSo: CoSoKinhDoanh[] = [
+  {
+    maCoSo: 'CS001',
+    tenCoSo: 'Nhà hàng Hải Sản Biển Xanh',
+    diaChi: '12 Trần Phú, Hải Châu, Đà Nẵng',
+    loaiHinh: 'Nhà hàng',
+  },
+  {
+    maCoSo: 'CS002',
+    tenCoSo: 'Quán Cơm Bà Lan',
+    diaChi: '45 Nguyễn Văn Linh, Thanh Khê, Đà Nẵng',
+    loaiHinh: 'Quán ăn',
+  },
+  {
+    maCoSo: 'CS003',
+    tenCoSo: 'Siêu thị Mini Phúc Lộc',
+    diaChi: '78 Hoàng Diệu, Hải Châu, Đà Nẵng',
+    loaiHinh: 'Siêu thị',
+  },
+];
+ 
+export const mockLichThanhTra: LichThanhTra[] = [
+  {
+    maThanhTra: 'TT-20250101',
+    trangThai: 'Dang xu ly',
+    noiDung: 'Kiểm tra điều kiện vệ sinh an toàn thực phẩm định kỳ quý I/2025.',
+    ngayTao: '2025-01-10',
+    maCoSo: 'CS001',
+    tenCoSo: 'Nhà hàng Hải Sản Biển Xanh',
+    diaChi: '12 Trần Phú, Hải Châu, Đà Nẵng',
+    maNguoiPhuTrach: 'ND002',
+    tenNguoiPhuTrach: 'Trần Thị Bình',
+  },
+  {
+    maThanhTra: 'TT-20250102',
+    trangThai: 'Hoan thanh',
+    noiDung: 'Kiểm tra sau xử lý vi phạm lần trước về điều kiện bảo quản thực phẩm.',
+    ngayTao: '2025-01-15',
+    maCoSo: 'CS002',
+    tenCoSo: 'Quán Cơm Bà Lan',
+    diaChi: '45 Nguyễn Văn Linh, Thanh Khê, Đà Nẵng',
+    maNguoiPhuTrach: 'ND001',
+    tenNguoiPhuTrach: 'Nguyễn Văn An',
+    ketQuaKiemTra: 'Cơ sở đã khắc phục đầy đủ các vi phạm. Đủ điều kiện hoạt động.',
+  },
+  {
+    maThanhTra: 'TT-20250103',
+    trangThai: 'Huy',
+    noiDung: 'Thanh tra đột xuất theo phản ánh của người dân về vệ sinh môi trường.',
+    ngayTao: '2025-01-20',
+    maCoSo: 'CS003',
+    tenCoSo: 'Siêu thị Mini Phúc Lộc',
+    diaChi: '78 Hoàng Diệu, Hải Châu, Đà Nẵng',
+    maNguoiPhuTrach: null,
+    tenNguoiPhuTrach: null,
+  },
+  {
+    maThanhTra: 'TT-20250104',
+    trangThai: 'Dang xu ly',
+    noiDung: 'Kiểm tra định kỳ theo kế hoạch năm 2025 của Chi cục ATVSTP.',
+    ngayTao: '2025-02-05',
+    maCoSo: 'CS001',
+    tenCoSo: 'Nhà hàng Hải Sản Biển Xanh',
+    diaChi: '12 Trần Phú, Hải Châu, Đà Nẵng',
+    maNguoiPhuTrach: 'ND003',
+    tenNguoiPhuTrach: 'Lê Quang Cường',
   },
 ];
