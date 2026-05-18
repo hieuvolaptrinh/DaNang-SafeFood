@@ -80,7 +80,9 @@ export default function GiayPhepPage() {
           <Link href={`/co-so-kinh-doanh/giay-phep/${r.id}`}>
             <GovBtn variant="secondary" size="sm" title="Xem chi tiết"><Eye style={{ width: 12, height: 12 }} /></GovBtn>
           </Link>
-          <GovBtn variant="outline" size="sm" title="Chỉnh sửa"><Pencil style={{ width: 12, height: 12 }} /></GovBtn>
+          <Link href={`/co-so-kinh-doanh/giay-phep/${r.id}?mode=edit`}>
+            <GovBtn variant="outline" size="sm" title="Chỉnh sửa"><Pencil style={{ width: 12, height: 12 }} /></GovBtn>
+          </Link>
         </div>
       ),
     },

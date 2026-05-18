@@ -34,6 +34,7 @@ import TableCard, {
   Pagination,
   SearchInput,
 } from "@/components/TableCard";
+import { GovBtn } from "@/components/GovUI";
 
 export interface TestRequest {
   id: string;
@@ -169,14 +170,14 @@ function DetailSection({
   children: ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-      <div className="mb-4 flex items-start gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-100 to-teal-100 text-sky-700">
+    <section className="border border-slate-300 bg-white p-4 shadow-sm">
+      <div className="mb-3 flex items-start gap-3">
+        <div className="flex h-8 w-8 items-center justify-center border border-emerald-200 bg-emerald-50 text-emerald-700">
           <Icon className="text-[18px]" />
         </div>
         <div>
-          <h2 className="text-[15px] font-bold text-slate-900">{title}</h2>
-          <p className="mt-1 text-[13px] text-slate-500">{description}</p>
+          <h2 className="text-[13px] font-bold uppercase tracking-[0.04em] text-emerald-800">{title}</h2>
+          <p className="mt-1 text-[12px] text-slate-600">{description}</p>
         </div>
       </div>
       {children}
@@ -194,8 +195,8 @@ function DetailField({
   spanClassName?: string;
 }) {
   return (
-    <div className={`rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 ${spanClassName ?? ""}`}>
-      <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+    <div className={`border border-slate-300 bg-slate-50 px-3 py-3 ${spanClassName ?? ""}`}>
+      <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.04em] text-slate-600">
         {label}
       </p>
       <div className="text-[13px] font-semibold leading-6 text-slate-800">
@@ -544,65 +545,61 @@ export default function YeuCauPage() {
           <TableCard
             title="Chi tiết yêu cầu kiểm nghiệm"
             actions={
-              <button
-                type="button"
-                onClick={closeDetail}
-                className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
-              >
+              <GovBtn variant="secondary" onClick={closeDetail}>
                 <FiArrowLeft className="text-[15px]" />
                 Quay lại danh sách
-              </button>
+              </GovBtn>
             }
           >
             {detailLoading ? (
-              <div className="flex min-h-[380px] flex-col items-center justify-center gap-4 p-8">
-                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-sky-100 text-sky-700">
-                  <LuTestTube className="animate-pulse text-[24px]" />
+              <div className="flex min-h-[320px] flex-col items-center justify-center gap-4 p-8">
+                <div className="flex h-12 w-12 items-center justify-center border border-emerald-200 bg-emerald-50 text-emerald-700">
+                  <LuTestTube className="animate-pulse text-[20px]" />
                 </div>
                 <div className="text-center">
-                  <p className="text-[15px] font-semibold text-slate-800">
+                  <p className="text-[14px] font-semibold text-slate-800">
                     Đang tải thông tin chi tiết
                   </p>
-                  <p className="mt-1 text-[13px] text-slate-500">
+                  <p className="mt-1 text-[12px] text-slate-600">
                     Hệ thống đang chuẩn bị hồ sơ kiểm nghiệm để hiển thị.
                   </p>
                 </div>
               </div>
             ) : detailNotFound ? (
-              <div className="flex min-h-[380px] flex-col items-center justify-center gap-4 p-8 text-center">
-                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-slate-500">
-                  <LuSearch className="text-[24px]" />
+              <div className="flex min-h-[320px] flex-col items-center justify-center gap-4 p-8 text-center">
+                <div className="flex h-12 w-12 items-center justify-center border border-slate-300 bg-slate-100 text-slate-500">
+                  <LuSearch className="text-[20px]" />
                 </div>
                 <div>
-                  <p className="text-[15px] font-semibold text-slate-800">
+                  <p className="text-[14px] font-semibold text-slate-800">
                     Không tìm thấy yêu cầu kiểm nghiệm
                   </p>
-                  <p className="mt-1 text-[13px] text-slate-500">
+                  <p className="mt-1 text-[12px] text-slate-600">
                     Yêu cầu này có thể đã bị xóa hoặc chưa còn khả dụng.
                   </p>
                 </div>
               </div>
             ) : detailRequest ? (
-              <div className="space-y-6 p-5">
-                <section className="overflow-hidden rounded-3xl border border-sky-100 bg-gradient-to-br from-sky-50 via-white to-teal-50 shadow-sm">
-                  <div className="flex flex-col gap-5 p-6 lg:flex-row lg:items-start lg:justify-between">
+              <div className="space-y-4 p-4">
+                <section className="border border-emerald-200 bg-[#f8fbf8]">
+                  <div className="flex flex-col gap-4 p-4 lg:flex-row lg:items-start lg:justify-between">
                     <div className="space-y-4">
                       <div className="flex flex-wrap items-center gap-3">
-                        <span className="rounded-full border border-sky-200 bg-white px-3 py-1 font-mono text-[12px] font-semibold text-sky-700">
+                        <span className="border border-sky-200 bg-white px-3 py-1 font-mono text-[12px] font-semibold text-sky-700">
                           {detailRequest.id}
                         </span>
                         <span
-                          className={`inline-flex rounded-full border px-3 py-1 text-[12px] font-semibold ${DETAIL_STATUS_CONFIG[detailRequest.status].className}`}
+                          className={`inline-flex border px-3 py-1 text-[12px] font-semibold ${DETAIL_STATUS_CONFIG[detailRequest.status].className}`}
                         >
                           {DETAIL_STATUS_CONFIG[detailRequest.status].label}
                         </span>
                       </div>
 
                       <div>
-                        <h2 className="text-[24px] font-black tracking-tight text-slate-900">
+                        <h2 className="text-[22px] font-black tracking-tight text-slate-900">
                           {detailRequest.business}
                         </h2>
-                        <p className="mt-1 text-[14px] text-slate-600">
+                        <p className="mt-1 text-[13px] text-slate-600">
                           Yêu cầu kiểm nghiệm cho mẫu{" "}
                           <span className="font-semibold text-slate-800">
                             {detailRequest.sampleType}
@@ -626,13 +623,13 @@ export default function YeuCauPage() {
                       </div>
                     </div>
 
-                    <div className="grid min-w-[280px] gap-3 rounded-3xl border border-white/70 bg-white/90 p-4 shadow-sm">
+                    <div className="grid min-w-[280px] gap-3 border border-slate-300 bg-white p-3">
                       <div className="flex items-start gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
-                          <LuShieldCheck className="text-[18px]" />
+                        <div className="flex h-8 w-8 items-center justify-center border border-emerald-200 bg-emerald-50 text-emerald-700">
+                          <LuShieldCheck className="text-[16px]" />
                         </div>
                         <div>
-                          <p className="text-[12px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-slate-600">
                             Kết quả hiện tại
                           </p>
                           <p
@@ -650,7 +647,7 @@ export default function YeuCauPage() {
                       </div>
 
                       {detailRequest.reason && (
-                        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3">
+                        <div className="border border-rose-200 bg-rose-50 px-3 py-3">
                           <div className="flex items-start gap-2 text-rose-700">
                             <FiAlertCircle className="mt-0.5 flex-shrink-0 text-[14px]" />
                             <p className="text-[13px] font-medium">
@@ -661,7 +658,7 @@ export default function YeuCauPage() {
                       )}
 
                       {detailRequest.stampedFile && (
-                        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+                        <div className="border border-emerald-200 bg-emerald-50 px-3 py-3">
                           <div className="flex items-center gap-2 text-[13px] font-medium text-emerald-700">
                             <FiCheckCircle className="text-[15px]" />
                             {detailRequest.stampedFile}
@@ -703,7 +700,7 @@ export default function YeuCauPage() {
                       {detailRequest.criteria.map((criterion) => (
                         <span
                           key={criterion}
-                          className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-4 py-2 text-[13px] font-semibold text-sky-700"
+                          className="inline-flex items-center gap-2 border border-sky-200 bg-sky-50 px-3 py-1.5 text-[12px] font-semibold text-sky-700"
                         >
                           <FiCheckCircle className="text-[14px]" />
                           {criterion}
@@ -711,7 +708,7 @@ export default function YeuCauPage() {
                       ))}
                     </div>
                   ) : (
-                    <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-5 text-[13px] text-slate-500">
+                    <div className="border border-dashed border-slate-300 bg-slate-50 px-4 py-4 text-[13px] text-slate-500">
                       Chưa có chỉ tiêu kiểm nghiệm.
                     </div>
                   )}
@@ -722,7 +719,7 @@ export default function YeuCauPage() {
                   title="Nội dung yêu cầu"
                   description="Mô tả chi tiết về phạm vi và mục tiêu của đợt kiểm nghiệm."
                 >
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-[14px] leading-7 text-slate-700">
+                  <div className="border border-slate-300 bg-slate-50 px-4 py-4 text-[13px] leading-7 text-slate-700">
                     {detailRequest.requestContent ?? "Không có mô tả."}
                   </div>
                 </DetailSection>
