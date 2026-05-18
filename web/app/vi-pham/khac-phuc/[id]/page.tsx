@@ -2,7 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
+import { Printer, ArrowLeft, FileSpreadsheet, CheckCircle, Upload } from 'lucide-react';
+import {
+  PageHeader, GovBtn, SectionCard, StatusBadge, ActionButtons, FormSection, FormField, MiniStat,
+} from '@/components/GovUI';
 
 interface ViolationFix {
   id: string;
@@ -12,6 +15,10 @@ interface ViolationFix {
   fixStatus: 'pending' | 'in_progress' | 'completed';
   deadline: string;
   updatedDate: string;
+  address: string;
+  inspector: string;
+  penaltyAmount: string;
+  remediation: string;
 }
 
 const mockViolationFixes: ViolationFix[] = [
@@ -23,6 +30,10 @@ const mockViolationFixes: ViolationFix[] = [
     fixStatus: 'in_progress',
     deadline: '15/04/2025',
     updatedDate: '22/03/2025',
+    address: '123 Trần Phú, Hải Châu, Đà Nẵng',
+    inspector: 'Nguyễn Văn Trần',
+    penaltyAmount: '45.000.000 ₫',
+    remediation: 'Cơ sở phải vệ sinh toàn bộ khu vực chế biến, sửa chữa hệ thống làm lạnh, bổ sung nhãn truy xuất nguồn gốc cho tất cả sản phẩm.',
   },
   {
     id: 'VP-2025002',
@@ -32,6 +43,10 @@ const mockViolationFixes: ViolationFix[] = [
     fixStatus: 'completed',
     deadline: '10/03/2025',
     updatedDate: '08/03/2025',
+    address: '45 Điện Biên Phủ, Thanh Khê, Đà Nẵng',
+    inspector: 'Lê Thị Mai',
+    penaltyAmount: '3.000.000 ₫',
+    remediation: 'Cơ sở phải niêm yết bảng giá tại quầy phục vụ đúng quy định.',
   },
   {
     id: 'VP-2025003',
@@ -41,6 +56,10 @@ const mockViolationFixes: ViolationFix[] = [
     fixStatus: 'pending',
     deadline: '30/03/2025',
     updatedDate: '25/03/2025',
+    address: '78 Nguyễn Tất Thành, Ngũ Hành Sơn, Đà Nẵng',
+    inspector: 'Phạm Văn Đức',
+    penaltyAmount: '15.000.000 ₫',
+    remediation: 'Loại bỏ toàn bộ nguyên liệu hết hạn, bổ sung quy trình kiểm soát hạn dùng hàng ngày.',
   },
   {
     id: 'VP-2025004',
@@ -50,19 +69,27 @@ const mockViolationFixes: ViolationFix[] = [
     fixStatus: 'in_progress',
     deadline: '20/04/2025',
     updatedDate: '18/03/2025',
+    address: '22 Hoàng Diệu, Sơn Trà, Đà Nẵng',
+    inspector: 'Nguyễn Văn Trần',
+    penaltyAmount: '30.000.000 ₫',
+    remediation: 'Hoàn thiện hồ sơ đăng ký kinh doanh và nộp đầy đủ các giấy tờ pháp lý theo quy định.',
   },
 ];
 
-const SEVERITY_CONFIG = {
-  'nghiêm trọng': { label: 'Nghiêm trọng', bg: 'bg-red-50', text: 'text-red-700', dot: 'bg-red-500', border: 'border-red-200', icon: '🚨' },
-  'trung bình':   { label: 'Trung bình',   bg: 'bg-amber-50', text: 'text-amber-700', dot: 'bg-amber-400', border: 'border-amber-200', icon: '⚠️' },
-  'nhẹ':          { label: 'Nhẹ',          bg: 'bg-sky-50', text: 'text-sky-700', dot: 'bg-sky-400', border: 'border-sky-200', icon: '⚡' },
+const fixStatusVariant: Record<string, string> = {
+  pending: 'pending',
+  in_progress: 'in-progress',
+  completed: 'resolved',
 };
-
-const FIX_STATUS_CONFIG = {
-  pending:     { label: 'Chờ khắc phục', bg: 'bg-slate-50',   text: 'text-slate-600',   icon: '⏸', dot: 'bg-slate-400',   border: 'border-slate-200' },
-  in_progress: { label: 'Đang khắc phục', bg: 'bg-blue-50',   text: 'text-blue-700',    icon: '🔄', dot: 'bg-blue-500',    border: 'border-blue-200' },
-  completed:   { label: 'Đã hoàn thành', bg: 'bg-emerald-50', text: 'text-emerald-700', icon: '✓',  dot: 'bg-emerald-500', border: 'border-emerald-200' },
+const fixStatusLabel: Record<string, string> = {
+  pending: 'Chờ khắc phục',
+  in_progress: 'Đang khắc phục',
+  completed: 'Đã hoàn thành',
+};
+const severityVariant: Record<string, string> = {
+  'nghiêm trọng': 'high',
+  'trung bình': 'medium',
+  'nhẹ': 'low',
 };
 
 export default function KhacPhucViPhamDetailPage() {
@@ -71,156 +98,151 @@ export default function KhacPhucViPhamDetailPage() {
   const id = params.id as string;
 
   const [record, setRecord] = useState<ViolationFix | null>(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const found = mockViolationFixes.find(v => v.id === id);
     setRecord(found || null);
-    setLoading(false);
   }, [id]);
-
-  if (loading) {
-    return <div className="min-h-screen bg-[#f5f6fa] flex items-center justify-center">Đang tải...</div>;
-  }
 
   if (!record) {
     return (
-      <div className="min-h-screen bg-[#f5f6fa] flex flex-col items-center justify-center py-20">
-        <div className="text-7xl mb-6">😕</div>
-        <h2 className="text-2xl font-bold text-slate-900">Không tìm thấy hồ sơ khắc phục</h2>
-        <p className="text-slate-500 mt-2 mb-8">Hồ sơ mã <span className="font-mono">{id}</span> không tồn tại.</p>
-        <Link
-          href="/khac-phuc-vi-pham"
-          className="px-6 py-3 bg-violet-600 text-white rounded-2xl font-medium hover:bg-violet-700 transition"
-        >
-          Quay về danh sách khắc phục
-        </Link>
+      <div>
+        <PageHeader
+          title="Không tìm thấy hồ sơ"
+          subtitle={`Không tìm thấy hồ sơ khắc phục mã: ${id}`}
+          actions={
+            <GovBtn variant="secondary" onClick={() => router.push('/vi-pham/khac-phuc')}>
+              <ArrowLeft style={{ width: 12, height: 12 }} /> Quay lại danh sách
+            </GovBtn>
+          }
+        />
       </div>
     );
   }
 
-  const sevCfg = SEVERITY_CONFIG[record.severity];
-  const fixCfg = FIX_STATUS_CONFIG[record.fixStatus];
-
   return (
-    <div className="min-h-screen bg-[#f5f6fa] font-sans">
-      <div className="h-1 w-full bg-gradient-to-r from-violet-600 via-purple-500 to-pink-400" />
+    <div>
+      <PageHeader
+        title={`Hồ sơ khắc phục — ${record.id}`}
+        subtitle={`Chi cục An toàn Thực phẩm TP. Đà Nẵng — Theo dõi tiến độ khắc phục vi phạm`}
+        actions={
+          <ActionButtons>
+            <GovBtn variant="secondary" onClick={() => router.push('/vi-pham/khac-phuc')}>
+              <ArrowLeft style={{ width: 12, height: 12 }} /> Quay lại
+            </GovBtn>
+            <GovBtn variant="secondary">
+              <Printer style={{ width: 12, height: 12 }} /> In biên bản
+            </GovBtn>
+            <GovBtn variant="secondary">
+              <FileSpreadsheet style={{ width: 12, height: 12 }} /> Xuất Excel
+            </GovBtn>
+            <GovBtn variant="outline">
+              <Upload style={{ width: 12, height: 12 }} /> Cập nhật tiến độ
+            </GovBtn>
+            {record.fixStatus !== 'completed' && (
+              <GovBtn variant="primary">
+                <CheckCircle style={{ width: 12, height: 12 }} /> Xác nhận hoàn thành
+              </GovBtn>
+            )}
+          </ActionButtons>
+        }
+      />
 
-      <div className="max-w-[1100px] mx-auto px-6 py-8">
-        {/* Breadcrumb */}
-        <div className="flex items-center gap-3 mb-8">
-          <button
-            onClick={() => router.back()}
-            className="text-slate-500 hover:text-slate-700 flex items-center gap-2 text-sm font-medium"
-          >
-            ← Quay lại danh sách
-          </button>
-          <div className="h-4 w-px bg-slate-200 mx-2" />
-          <span className="text-[11px] font-bold tracking-widest uppercase text-violet-500">
-            SỞ AN TOÀN THỰC PHẨM • ĐÀ NẴNG
-          </span>
-        </div>
-
-        <div className="flex flex-col lg:flex-row justify-between items-start gap-6 mb-8">
-          <div>
-            <div className="flex items-center gap-3 mb-3">
-              <span className="font-mono text-sm bg-slate-100 text-slate-500 px-3 py-1 rounded-lg font-semibold">
-                {record.id}
-              </span>
-              <span className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-2xl text-sm font-semibold border ${fixCfg.bg} ${fixCfg.text} ${fixCfg.border || ''}`}>
-                <span>{fixCfg.icon}</span> {fixCfg.label}
-              </span>
-            </div>
-            <h1 className="text-3xl font-black tracking-tight text-slate-900">
-              {record.businessName}
-            </h1>
-          </div>
-
-          <div className="flex gap-3">
-            <button className="px-5 py-3 border border-slate-300 rounded-2xl text-sm font-medium hover:bg-white transition">
-              📄 In biên bản khắc phục
-            </button>
-            <button className="px-6 py-3 bg-violet-600 hover:bg-violet-700 text-white rounded-2xl text-sm font-semibold transition">
-              Cập nhật tiến độ
-            </button>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Main Content */}
-          <div className="lg:col-span-8 space-y-6">
-            <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100">
-              <h2 className="text-lg font-bold text-slate-800 mb-6">Thông tin vi phạm & khắc phục</h2>
-              <div className="space-y-6">
-                <div>
-                  <p className="text-xs uppercase tracking-widest text-slate-400 mb-1">Loại vi phạm</p>
-                  <p className="text-[17px] leading-relaxed text-slate-700">{record.violationType}</p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div>
-                    <p className="text-xs uppercase tracking-widest text-slate-400 mb-1">Mức độ vi phạm</p>
-                    <span className={`inline-flex items-center gap-2 px-5 py-3 rounded-2xl text-base font-semibold border ${sevCfg.bg} ${sevCfg.text} ${sevCfg.border}`}>
-                      <span className={`w-3 h-3 rounded-full ${sevCfg.dot}`} />
-                      {sevCfg.label}
-                    </span>
-                  </div>
-                  <div>
-                    <p className="text-xs uppercase tracking-widest text-slate-400 mb-1">Hạn khắc phục</p>
-                    <p className="text-2xl font-semibold text-slate-900">{record.deadline}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs uppercase tracking-widest text-slate-400 mb-1">Ngày cập nhật</p>
-                    <p className="text-2xl font-semibold text-slate-900">{record.updatedDate}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100">
-              <h2 className="text-lg font-bold text-slate-800 mb-5">Tiến độ khắc phục</h2>
-              <div className="prose text-[15.5px] text-slate-700 leading-relaxed">
-                Cơ sở đang thực hiện khắc phục vi phạm {record.violationType.toLowerCase()}. 
-                Hiện tại đang ở trạng thái <span className="font-semibold">{fixCfg.label.toLowerCase()}</span>.
-              </div>
-            </div>
-          </div>
-
-          {/* Sidebar */}
-          <div className="lg:col-span-4 space-y-6">
-            <div className="bg-white rounded-3xl p-7 shadow-sm border border-slate-100">
-              <h3 className="font-bold text-slate-700 mb-5">Trạng thái khắc phục</h3>
-              <div className={`p-6 rounded-3xl ${fixCfg.bg} ${fixCfg.text} border ${fixCfg.border || ''}`}>
-                <div className="flex items-center gap-4">
-                  <span className="text-4xl">{fixCfg.icon}</span>
-                  <div>
-                    <p className="text-2xl font-semibold">{fixCfg.label}</p>
-                    <p className="text-sm mt-1">Cập nhật: {record.updatedDate}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-3xl p-7 shadow-sm border border-slate-100">
-              <h3 className="font-bold text-slate-700 mb-5">Thông tin cơ sở</h3>
-              <div className="space-y-4 text-sm">
-                <div>
-                  <p className="text-slate-400 text-xs uppercase tracking-widest">Tên cơ sở</p>
-                  <p className="font-medium text-slate-900">{record.businessName}</p>
-                </div>
-                <div>
-                  <p className="text-slate-400 text-xs uppercase tracking-widest">Địa chỉ</p>
-                  <p className="text-slate-700">123 Nguyễn Thị Minh Khai, Hải Châu, Đà Nẵng</p>
-                </div>
-                <div>
-                  <p className="text-slate-400 text-xs uppercase tracking-widest">Hạn chót</p>
-                  <p className="font-medium text-slate-800">{record.deadline}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+      {/* Stats */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '10px', marginBottom: '12px' }}>
+        <MiniStat label="Mã vi phạm" value={record.id} color="neutral" />
+        <MiniStat label="Mức phạt" value={record.penaltyAmount} color="red" />
+        <MiniStat label="Hạn khắc phục" value={record.deadline} color="orange" />
+        <MiniStat label="Cập nhật lần cuối" value={record.updatedDate} color="blue" />
       </div>
+
+      {/* Trạng thái */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
+        <SectionCard title="Trạng thái khắc phục">
+          <div style={{ padding: '14px 12px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <StatusBadge variant={fixStatusVariant[record.fixStatus]} label={fixStatusLabel[record.fixStatus]} />
+            <span style={{ fontSize: '12px', color: '#555' }}>
+              {record.fixStatus === 'pending' ? 'Cơ sở chưa bắt đầu thực hiện khắc phục.' :
+               record.fixStatus === 'in_progress' ? 'Cơ sở đang tiến hành khắc phục vi phạm.' :
+               'Cơ sở đã hoàn tất khắc phục. Chờ xác nhận lần cuối.'}
+            </span>
+          </div>
+        </SectionCard>
+
+        <SectionCard title="Mức độ vi phạm">
+          <div style={{ padding: '14px 12px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <StatusBadge variant={severityVariant[record.severity]} label={record.severity.charAt(0).toUpperCase() + record.severity.slice(1)} />
+            <span style={{ fontSize: '12px', color: '#555' }}>
+              {record.severity === 'nghiêm trọng' ? 'Vi phạm nghiêm trọng — cần giám sát chặt chẽ tiến độ khắc phục.' :
+               record.severity === 'trung bình' ? 'Vi phạm mức trung bình — theo dõi định kỳ.' :
+               'Vi phạm nhẹ — nhắc nhở và kiểm tra lại.'}
+            </span>
+          </div>
+        </SectionCard>
+      </div>
+
+      {/* Chi tiết */}
+      <SectionCard title="Thông tin chi tiết hồ sơ khắc phục">
+        <div style={{ padding: '14px 12px' }}>
+          <FormSection title="Thông tin cơ sở">
+            <FormField label="Tên cơ sở kinh doanh">
+              <div style={{ padding: '6px 8px', background: '#F5F5F5', border: '1px solid #D6D6D6', borderRadius: '2px', fontSize: '13px', fontWeight: 600 }}>
+                {record.businessName}
+              </div>
+            </FormField>
+            <FormField label="Địa chỉ">
+              <div style={{ padding: '6px 8px', background: '#F5F5F5', border: '1px solid #D6D6D6', borderRadius: '2px', fontSize: '13px' }}>
+                {record.address}
+              </div>
+            </FormField>
+            <FormField label="Thanh tra viên phụ trách">
+              <div style={{ padding: '6px 8px', background: '#F5F5F5', border: '1px solid #D6D6D6', borderRadius: '2px', fontSize: '13px' }}>
+                {record.inspector}
+              </div>
+            </FormField>
+            <FormField label="Mức phạt áp dụng">
+              <div style={{ padding: '6px 8px', background: '#F5F5F5', border: '1px solid #D6D6D6', borderRadius: '2px', fontSize: '13px', fontWeight: 700, color: '#CC0000' }}>
+                {record.penaltyAmount}
+              </div>
+            </FormField>
+          </FormSection>
+
+          <FormSection title="Nội dung khắc phục">
+            <FormField label="Loại vi phạm" fullWidth>
+              <div style={{ padding: '6px 8px', background: '#F5F5F5', border: '1px solid #D6D6D6', borderRadius: '2px', fontSize: '13px', fontWeight: 600 }}>
+                {record.violationType}
+              </div>
+            </FormField>
+            <FormField label="Yêu cầu khắc phục" fullWidth>
+              <div style={{ padding: '8px', background: '#F5F5F5', border: '1px solid #D6D6D6', borderRadius: '2px', fontSize: '13px', lineHeight: 1.6, minHeight: '80px' }}>
+                {record.remediation}
+              </div>
+            </FormField>
+          </FormSection>
+        </div>
+      </SectionCard>
+
+      {/* Lịch trình kiểm tra */}
+      <SectionCard title="Lịch sử theo dõi khắc phục">
+        <div style={{ padding: '0' }}>
+          {[
+            { date: record.updatedDate, event: 'Cập nhật tiến độ khắc phục', user: record.inspector, note: `Trạng thái: ${fixStatusLabel[record.fixStatus]}` },
+            { date: record.deadline, event: 'Hạn khắc phục tối đa', user: 'Hệ thống', note: 'Cơ sở phải hoàn thành trước ngày này' },
+          ].map((item, i) => (
+            <div key={i} style={{ display: 'flex', gap: '12px', padding: '10px 12px', borderBottom: i < 1 ? '1px solid #F0F0F0' : 'none' }}>
+              <span style={{ fontSize: '12px', fontFamily: 'monospace', color: '#555', flexShrink: 0, width: '100px' }}>{item.date}</span>
+              <div style={{ flex: 1 }}>
+                <p style={{ fontSize: '13px', fontWeight: 600, color: '#222', marginBottom: '2px' }}>{item.event}</p>
+                <p style={{ fontSize: '12px', color: '#666' }}>{item.note} — <em>{item.user}</em></p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </SectionCard>
+
+      <p style={{ fontSize: '11.5px', color: '#888', textAlign: 'center', marginTop: '8px' }}>
+        Hồ sơ khắc phục được lưu trữ theo Quy chế lưu trữ hồ sơ ATTP — Chi cục An toàn Thực phẩm TP. Đà Nẵng
+      </p>
     </div>
   );
 }

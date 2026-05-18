@@ -1,6 +1,4 @@
-import { APP_CONFIG } from "@/constants/config";
-
-const apiURL = process.env.NEXT_PUBLIC_API_URL || APP_CONFIG.API.BASE_URL;
+const apiURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
 
 import { getAccessToken } from "@/utils/storage";
 
