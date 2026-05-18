@@ -1,10 +1,12 @@
 import Badge from '@/components/Badge';
+import { GovBtn } from '@/components/GovUI';
 import type { InspectionTaskRecord } from '@/components/InspectionTaskList';
 import InspectionTaskProgressForm, {
   type InspectionTaskProgressFormValue,
   type InspectionTaskUpdateState,
 } from '@/components/InspectionTaskProgressForm';
 import { cn } from '@/lib/utils';
+import { FiClock, FiClipboard, FiMapPin } from 'react-icons/fi';
 
 interface InspectionTaskDetailsProps {
   task: InspectionTaskRecord | null;
@@ -22,13 +24,35 @@ interface InspectionTaskDetailsProps {
 
 function getStatusBadge(trangThai: string) {
   const statusMap: Record<string, { variant: 'active' | 'pending' | 'open'; label: string }> = {
-    'Hoàn thành': { variant: 'active', label: 'Hoàn thành' },
-    'Đang thực hiện': { variant: 'pending', label: 'Đang thực hiện' },
-    'Đã nhận': { variant: 'open', label: 'Đã nhận' },
-    'Chưa nhận': { variant: 'pending', label: 'Chưa nhận' },
+    'HoÃ n thÃ nh': { variant: 'active', label: 'Hoàn thành' },
+    'Äang thá»±c hiá»‡n': { variant: 'pending', label: 'Đang thực hiện' },
+    'ÄÃ£ nháº­n': { variant: 'open', label: 'Đã nhận' },
+    'ChÆ°a nháº­n': { variant: 'pending', label: 'Chưa nhận' },
   };
 
   return statusMap[trangThai] || { variant: 'pending', label: trangThai };
+}
+
+function DetailSection({
+  icon: Icon,
+  title,
+  children,
+}: {
+  icon: typeof FiMapPin;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="space-y-3 border border-slate-300 bg-white p-4 shadow-sm">
+      <div className="flex items-start gap-3">
+        <div className="flex h-8 w-8 items-center justify-center border border-emerald-200 bg-emerald-50 text-emerald-700">
+          <Icon className="text-[16px]" />
+        </div>
+        <h3 className="text-[13px] font-bold uppercase tracking-[0.04em] text-emerald-800">{title}</h3>
+      </div>
+      {children}
+    </section>
+  );
 }
 
 export default function InspectionTaskDetails({
@@ -46,20 +70,20 @@ export default function InspectionTaskDetails({
 }: InspectionTaskDetailsProps) {
   if (!task) {
     return (
-      <div className="rounded-xl border border-dashed border-slate-300 bg-white p-6 text-center text-sm text-slate-500 shadow-sm">
+      <div className="border border-dashed border-slate-300 bg-white p-6 text-center text-sm text-slate-500 shadow-sm">
         Chọn một nhiệm vụ từ danh sách để xem chi tiết.
       </div>
     );
   }
 
   const badge = getStatusBadge(task.trangThai);
-  const canAcceptTask = task.trangThai === 'Chưa nhận';
-  const canRejectTask = task.trangThai === 'Chưa nhận';
-  const canUpdateProgress = task.trangThai !== 'Chưa nhận';
+  const canAcceptTask = task.trangThai === 'ChÆ°a nháº­n';
+  const canRejectTask = task.trangThai === 'ChÆ°a nháº­n';
+  const canUpdateProgress = task.trangThai !== 'ChÆ°a nháº­n';
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
-      <div className="border-b border-slate-200 p-5">
+    <div className="border border-slate-300 bg-white shadow-sm">
+      <div className="border-b border-slate-300 p-5">
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-[11px] font-mono text-slate-400">{task.id}</p>
@@ -70,39 +94,27 @@ export default function InspectionTaskDetails({
       </div>
 
       <div className="space-y-5 p-5">
-        <section>
-          <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">
-            Thông tin cơ sở
-          </p>
-          <div className="mt-3 rounded-xl bg-slate-50 p-4">
+        <DetailSection icon={FiMapPin} title="Thông tin cơ sở">
+          <div className="border border-slate-300 bg-slate-50 px-4 py-4">
             <p className="text-sm font-semibold text-slate-900">{task.businessName}</p>
-            <p className="mt-1 text-sm text-slate-600">{task.address}</p>
+            <p className="mt-1 text-sm leading-6 text-slate-700">{task.address}</p>
           </div>
-        </section>
+        </DetailSection>
 
-        <section>
-          <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">
-            Nội dung kiểm tra
-          </p>
-          <div className="mt-3 rounded-xl bg-slate-50 p-4 text-sm leading-6 text-slate-700">
+        <DetailSection icon={FiClipboard} title="Nội dung kiểm tra">
+          <div className="border border-slate-300 bg-slate-50 px-4 py-4 text-sm leading-6 text-slate-700">
             {task.inspectionContent}
           </div>
-        </section>
+        </DetailSection>
 
-        <section>
-          <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">
-            Thời gian
-          </p>
-          <div className="mt-3 rounded-xl bg-slate-50 p-4 text-sm text-slate-700">
+        <DetailSection icon={FiClock} title="Thời gian">
+          <div className="border border-slate-300 bg-slate-50 px-4 py-4 text-sm text-slate-700">
             {task.inspectionTime}
           </div>
-        </section>
+        </DetailSection>
 
         {canUpdateProgress && (
-          <section>
-            <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">
-              Cập nhật tiến độ kiểm tra
-            </p>
+          <DetailSection icon={FiClipboard} title="Cập nhật tiến độ kiểm tra">
             <InspectionTaskProgressForm
               currentStatus={task.trangThai}
               formValue={progressForm}
@@ -112,39 +124,31 @@ export default function InspectionTaskDetails({
               onNoteChange={onProgressNoteChange}
               onSubmit={onProgressSubmit}
             />
-          </section>
+          </DetailSection>
         )}
 
-        <div className="border-t border-slate-200 pt-5 space-y-3">
+        <div className="space-y-3 border-t border-slate-300 pt-5">
           {canAcceptTask && (
             <>
-              <button
-                type="button"
-                onClick={onConfirm}
-                disabled={isConfirming || isRejecting}
-                className={cn(
-                  'inline-flex w-full items-center justify-center rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors',
-                  isConfirming || isRejecting
-                    ? 'cursor-not-allowed bg-slate-200 text-slate-500'
-                    : 'bg-blue-600 text-white hover:bg-blue-700'
-                )}
-              >
+              <GovBtn variant="primary" onClick={onConfirm} disabled={isConfirming || isRejecting}>
                 {isConfirming ? 'Đang xác nhận...' : 'Nhận nhiệm vụ'}
-              </button>
+              </GovBtn>
 
-              <button
-                type="button"
-                onClick={onReject}
-                disabled={isRejecting || isConfirming}
-                className={cn(
-                  'inline-flex w-full items-center justify-center rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors',
-                  isRejecting || isConfirming
-                    ? 'cursor-not-allowed bg-slate-200 text-slate-500'
-                    : 'border border-red-300 bg-white text-red-600 hover:bg-red-50'
-                )}
-              >
-                {isRejecting ? 'Đang từ chối...' : 'Từ chối nhiệm vụ'}
-              </button>
+              {canRejectTask && (
+                <button
+                  type="button"
+                  onClick={onReject}
+                  disabled={isRejecting || isConfirming}
+                  className={cn(
+                    'inline-flex w-full items-center justify-center border px-4 py-2 text-sm font-semibold transition-colors',
+                    isRejecting || isConfirming
+                      ? 'cursor-not-allowed border-slate-300 bg-slate-200 text-slate-500'
+                      : 'border-red-300 bg-white text-red-600 hover:bg-red-50'
+                  )}
+                >
+                  {isRejecting ? 'Đang từ chối...' : 'Từ chối nhiệm vụ'}
+                </button>
+              )}
             </>
           )}
 
