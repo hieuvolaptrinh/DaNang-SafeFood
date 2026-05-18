@@ -25,8 +25,8 @@ export default function ComplaintForm({
   hasComplaintSelected,
 }: ComplaintFormProps) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-      <div className="border-b border-slate-100 pb-4">
+    <div className="border border-slate-300 bg-white p-5 shadow-sm">
+      <div className="border-b border-slate-300 pb-4">
         <h2 className="text-base font-bold text-slate-900">Xử lý khiếu nại</h2>
         <p className="mt-1 text-sm text-slate-500">
           Nhập kết quả xử lý và cập nhật trạng thái để lưu thay đổi.
@@ -49,7 +49,7 @@ export default function ComplaintForm({
             rows={5}
             placeholder="Nhập kết quả xử lý"
             disabled={!hasComplaintSelected}
-            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 outline-none transition-colors placeholder:text-slate-400 focus:border-blue-500 disabled:cursor-not-allowed disabled:bg-slate-100"
+            className="w-full border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 outline-none transition-colors placeholder:text-slate-400 focus:border-sky-600 disabled:cursor-not-allowed disabled:bg-slate-100"
           />
         </label>
 
@@ -68,7 +68,7 @@ export default function ComplaintForm({
               })
             }
             disabled={!hasComplaintSelected}
-            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 outline-none transition-colors focus:border-blue-500 disabled:cursor-not-allowed disabled:bg-slate-100"
+            className="w-full border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 outline-none transition-colors focus:border-sky-600 disabled:cursor-not-allowed disabled:bg-slate-100"
           >
             <option value="processing">Đang xử lý</option>
             <option value="resolved">Đã xử lý</option>
@@ -79,7 +79,7 @@ export default function ComplaintForm({
           type="button"
           onClick={onSubmit}
           disabled={isDisabled}
-          className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2.5 text-[13px] font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+          className="inline-flex items-center border border-sky-700 bg-sky-700 px-4 py-2.5 text-[13px] font-semibold text-white transition-colors hover:bg-sky-800 disabled:cursor-not-allowed disabled:border-slate-300 disabled:bg-slate-300"
         >
           Cập nhật kết quả
         </button>
