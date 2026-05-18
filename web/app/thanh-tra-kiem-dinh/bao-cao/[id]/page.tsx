@@ -4,6 +4,21 @@ import Badge from '@/components/Badge';
 import TableCard from '@/components/TableCard';
 import { mockInspectionReports } from '@/data/mockData';
 
+function InfoField({
+  label,
+  value,
+}: {
+  label: string;
+  value: React.ReactNode;
+}) {
+  return (
+    <div className="border border-slate-300 bg-slate-50 px-4 py-3">
+      <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</p>
+      <div className="text-sm font-medium text-slate-800">{value}</div>
+    </div>
+  );
+}
+
 export default async function BaoCaoChiTietPage({
   params,
 }: {
@@ -18,7 +33,7 @@ export default async function BaoCaoChiTietPage({
         <AlertBanner type="danger" title={`Không tìm thấy báo cáo ${id}`} />
         <Link
           href="/thanh-tra-kiem-dinh/bao-cao"
-          className="inline-flex rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+          className="inline-flex border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
         >
           Quay lại
         </Link>
@@ -38,13 +53,13 @@ export default async function BaoCaoChiTietPage({
         <div className="flex gap-2">
           <Link
             href="/thanh-tra-kiem-dinh/bao-cao"
-            className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+            className="border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
           >
             Quay lại
           </Link>
           <Link
             href={`/thanh-tra-kiem-dinh/bao-cao/${report.id}/edit`}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+            className="border border-sky-700 bg-sky-700 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-sky-800"
           >
             Chỉnh sửa
           </Link>
@@ -53,38 +68,25 @@ export default async function BaoCaoChiTietPage({
 
       <TableCard title="Thông tin báo cáo">
         <div className="grid gap-5 p-5 md:grid-cols-2">
-          <div className="space-y-1">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Mã báo cáo</p>
-            <p className="font-mono text-sm text-slate-800">{report.id}</p>
-          </div>
-
-          <div className="space-y-1">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Tên cơ sở</p>
-            <p className="text-sm text-slate-800">{report.tenCoSo}</p>
-          </div>
-
-          <div className="space-y-1">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Ngày kiểm tra</p>
-            <p className="text-sm text-slate-800">{report.ngay}</p>
-          </div>
-
-          <div className="space-y-1">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Kết quả</p>
-            <div>
-              <Badge variant={report.ketQua} />
-            </div>
-          </div>
+          <InfoField label="Mã báo cáo" value={<span className="font-mono">{report.id}</span>} />
+          <InfoField label="Tên cơ sở" value={report.tenCoSo} />
+          <InfoField label="Ngày kiểm tra" value={report.ngay} />
+          <InfoField label="Kết quả" value={<Badge variant={report.ketQua} />} />
+          <InfoField
+            label="File báo cáo"
+            value={report.tepDinhKem ?? 'Chưa có tệp đính kèm'}
+          />
 
           <div className="space-y-2 md:col-span-2">
             <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Nội dung báo cáo</p>
-            <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-700">
+            <div className="border border-slate-300 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-700">
               {report.noiDung}
             </div>
           </div>
 
           <div className="space-y-2 md:col-span-2">
             <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Nhận xét</p>
-            <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-700">
+            <div className="border border-slate-300 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-700">
               {report.nhanXet}
             </div>
           </div>

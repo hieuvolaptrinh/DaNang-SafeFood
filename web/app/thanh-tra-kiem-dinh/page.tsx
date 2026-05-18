@@ -10,8 +10,6 @@ import { PageHeader, FilterBar, FilterField, GovInput, GovSelect, GovBtn, Sectio
 
 type RecordMode = 'list' | 'create' | 'view' | 'edit';
 
-type ChecklistResult = 'pass' | 'fail' | '';
-
 type DetailedInspection = InspectionFormResult;
 
 const standardChecklist: Record<string, 'pass' | 'fail'> = {
