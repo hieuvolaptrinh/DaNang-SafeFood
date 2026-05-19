@@ -150,7 +150,7 @@ export default function KetQuaKiemNghiemPage() {
             <GovBtn variant="secondary"><RefreshCw style={{ width: 12, height: 12 }} /> Làm mới</GovBtn>
             <GovBtn variant="secondary"><Printer style={{ width: 12, height: 12 }} /> In báo cáo</GovBtn>
             <GovBtn variant="secondary"><FileSpreadsheet style={{ width: 12, height: 12 }} /> Xuất Excel</GovBtn>
-            <GovBtn variant="primary"><Plus style={{ width: 12, height: 12 }} /> Nhập kết quả mới</GovBtn>
+            {/* <GovBtn variant="primary"><Plus style={{ width: 12, height: 12 }} /> Nhập kết quả mới</GovBtn> */}
           </ActionButtons>
         }
       />

@@ -2,17 +2,9 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-
-interface Notification {
-  id: string;
-  title: string;
-  content: string;
-  type: string;
-  target: string;
-  sendDate?: string;
-  status: 'sent' | 'scheduled';
-  recipientCount: number;
-}
+import { ArrowLeft, Save } from 'lucide-react';
+import Link from 'next/link';
+import { PageHeader, SectionCard, GovBtn } from '@/components/GovUI';
 
 export default function CreateNotificationPage() {
   const router = useRouter();
@@ -28,156 +20,132 @@ export default function CreateNotificationPage() {
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async () => {
-    if (!form.title.trim()) {
-      alert('Vui lòng nhập tiêu đề');
-      return;
-    }
-
-    if (!form.content.trim()) {
-      alert('Vui lòng nhập nội dung');
-      return;
-    }
-
-    if (!form.target) {
-      alert('Vui lòng chọn đối tượng');
-      return;
-    }
+    if (!form.title.trim()) return alert('Vui lòng nhập tiêu đề');
+    if (!form.content.trim()) return alert('Vui lòng nhập nội dung');
+    if (!form.target) return alert('Vui lòng chọn đối tượng');
 
     setLoading(true);
 
-    const status = form.sendDate ? 'scheduled' : 'sent';
-
-    const newNotification: Notification = {
-      id: `TB-${Math.floor(1000 + Math.random() * 9000)}`,
-      title: form.title,
-      content: form.content,
-      type: form.type,
-      target: form.target,
-      sendDate: form.sendDate || new Date().toLocaleDateString('vi-VN'),
-      status,
-      recipientCount: Math.floor(100 + Math.random() * 2000),
-    };
-
-    console.log('Notification:', newNotification);
-
-    console.log('Sending push notification...');
-
-    setTimeout(() => {
-      alert('Gửi thông báo thành công');
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      console.log('Gửi thông báo:', form);
+      alert('✅ Gửi thông báo thành công!');
       router.push('/thong-bao');
-    }, 800);
+    } catch (error) {
+      alert('❌ Có lỗi xảy ra');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f6fa]">
-      <div className="max-w-[800px] mx-auto px-6 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 pb-16">
+      <PageHeader
+        title="Tạo thông báo mới"
+        subtitle="Gửi thông báo đến cơ sở kinh doanh"
+        actions={
+          <Link href="/truyen-thong/thong-bao">
+            <GovBtn variant="secondary">
+              <ArrowLeft size={16} /> Quay lại
+            </GovBtn>
+          </Link>
+        }
+      />
 
-        {/* HEADER */}
-        <div className="mb-8">
-          <h1 className="text-[28px] font-black text-slate-900">
-            Thông báo
-          </h1>
-          <p className="text-[13px] text-slate-400 mt-1">
-            Tạo và gửi thông báo đến người dùng
-          </p>
-        </div>
+      <div className="max-w-[900px] mx-auto px-6 pt-8">
+        <SectionCard title="Thông tin thông báo" className="shadow-sm">
+          <div className="p-8 space-y-8">
+            <div>
+              <label className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-1.5 block">
+                Tiêu đề thông báo <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={form.title}
+                onChange={(e) => setForm({ ...form, title: e.target.value })}
+                placeholder="Nhập tiêu đề thông báo..."
+                className="w-full border border-slate-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-2xl px-5 py-3 text-sm"
+              />
+            </div>
 
-        {/* FORM */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 space-y-5">
+            <div>
+              <label className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-1.5 block">
+                Nội dung thông báo <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                rows={6}
+                value={form.content}
+                onChange={(e) => setForm({ ...form, content: e.target.value })}
+                placeholder="Nhập nội dung thông báo..."
+                className="w-full border border-slate-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-2xl px-5 py-4 text-sm resize-y min-h-[160px]"
+              />
+            </div>
 
-          {/* Tiêu đề */}
-          <div>
-            <label className="text-[13px] font-medium text-slate-700 mb-1 block">
-              Tiêu đề
-            </label>
-            <input
-              type="text"
-              value={form.title}
-              onChange={(e) => setForm({ ...form, title: e.target.value })}
-              className="w-full bg-slate-50 p-3 rounded-xl text-[13px] outline-none"
-              placeholder="Nhập tiêu đề thông báo"
-            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-1.5 block">
+                  Loại thông báo
+                </label>
+                <select
+                  value={form.type}
+                  onChange={(e) => setForm({ ...form, type: e.target.value })}
+                  className="w-full border border-slate-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-2xl px-5 py-3 text-sm bg-white"
+                >
+                  <option value="">Chọn loại</option>
+                  <option value="Khẩn cấp">Khẩn cấp</option>
+                  <option value="Thông báo">Thông báo thường</option>
+                  <option value="Mời tham gia">Mời tham gia</option>
+                  <option value="Cảnh báo">Cảnh báo</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-1.5 block">
+                  Đối tượng nhận <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={form.target}
+                  onChange={(e) => setForm({ ...form, target: e.target.value })}
+                  className="w-full border border-slate-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-2xl px-5 py-3 text-sm bg-white"
+                >
+                  <option value="">Chọn đối tượng</option>
+                  <option value="Tất cả cơ sở kinh doanh">Tất cả cơ sở kinh doanh</option>
+                  <option value="Cơ sở kinh doanh thực phẩm">Cơ sở kinh doanh thực phẩm</option>
+                  <option value="Người tiêu dùng">Người tiêu dùng</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-1.5 block">
+                Ngày gửi (tùy chọn)
+              </label>
+              <input
+                type="date"
+                value={form.sendDate}
+                onChange={(e) => setForm({ ...form, sendDate: e.target.value })}
+                className="w-full border border-slate-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-2xl px-5 py-3 text-sm"
+              />
+            </div>
+
+            <div className="flex justify-end gap-4 pt-6 border-t border-slate-100">
+              <GovBtn 
+                variant="secondary" 
+                onClick={() => router.push('/thong-bao')}
+              >
+                Hủy
+              </GovBtn>
+              <GovBtn 
+                variant="primary" 
+                onClick={handleSubmit}
+                disabled={loading}
+              >
+                {loading ? 'Đang gửi...' : 'Gửi thông báo'}
+              </GovBtn>
+            </div>
           </div>
-
-          {/* Nội dung */}
-          <div>
-            <label className="text-[13px] font-medium text-slate-700 mb-1 block">
-              Nội dung cảnh báo
-            </label>
-            <textarea
-              rows={4}
-              value={form.content}
-              onChange={(e) => setForm({ ...form, content: e.target.value })}
-              className="w-full bg-slate-50 p-3 rounded-xl text-[13px] outline-none"
-              placeholder="Nhập nội dung..."
-            />
-          </div>
-
-          {/* Loại thông báo */}
-          <div>
-            <label className="text-[13px] font-medium text-slate-700 mb-1 block">
-              Loại thông báo
-            </label>
-            <select
-              value={form.type}
-              onChange={(e) => setForm({ ...form, type: e.target.value })}
-              className="w-full bg-slate-50 p-3 rounded-xl text-[13px]"
-            >
-              <option value="">Chọn loại</option>
-              <option value="Khẩn cấp">Khẩn cấp</option>
-              <option value="Thông báo">Thông báo</option>
-              <option value="Mời tham gia">Mời tham gia</option>
-            </select>
-          </div>
-
-          {/* Đối tượng */}
-          <div>
-            <label className="text-[13px] font-medium text-slate-700 mb-1 block">
-              Nhóm đối tượng nhận
-            </label>
-            <select
-              value={form.target}
-              onChange={(e) => setForm({ ...form, target: e.target.value })}
-              className="w-full bg-slate-50 p-3 rounded-xl text-[13px]"
-            >
-              <option value="">Chọn đối tượng</option>
-              <option value="Tất cả cơ sở kinh doanh">Tất cả cơ sở kinh doanh</option>
-              <option value="Cơ sở kinh doanh thực phẩm">Cơ sở kinh doanh thực phẩm</option>
-              <option value="Quản lý cơ sở">Quản lý cơ sở</option>
-            </select>
-          </div>
-
-          {/* Ngày gửi */}
-          <div>
-            <label className="text-[13px] font-medium text-slate-700 mb-1 block">
-              Ngày gửi (tùy chọn)
-            </label>
-            <input
-              type="date"
-              value={form.sendDate}
-              onChange={(e) => setForm({ ...form, sendDate: e.target.value })}
-              className="w-full bg-slate-50 p-3 rounded-xl text-[13px]"
-            />
-          </div>
-
-          {/* Buttons */}
-          <div className="flex gap-3 pt-4">
-            <button
-              onClick={handleSubmit}
-              disabled={loading}
-              className="flex-1 bg-violet-600 hover:bg-violet-700 text-white py-3 rounded-xl text-[13px] font-semibold disabled:opacity-60"
-            >
-              {loading ? 'Đang gửi...' : 'Gửi thông báo'}
-            </button>
-
-            <button
-              onClick={() => router.push('/thong-bao')}
-              className="flex-1 border border-slate-200 py-3 rounded-xl text-[13px] font-semibold text-slate-600 hover:bg-slate-50"
-            >
-              Hủy
-            </button>
-          </div>
-        </div>
+        </SectionCard>
       </div>
     </div>
   );

@@ -42,7 +42,7 @@ const mockNotifications: Notification[] = [
     id: 'TB-2025003',
     title: 'Mời tham gia hội thảo an toàn thực phẩm',
     type: 'Mời tham gia',
-    target: 'Quản lý cơ sở',
+    target: 'Người tiêu dùng',
     sendDate: '22/03/2025',
     status: 'scheduled',
     recipientCount: 350,
@@ -134,11 +134,13 @@ export default function ThongBaoPage() {
     {
       key: 'actions',
       header: 'Thao tác',
-      render: () => (
+      render: (r : any) => (
         <ActionButtons>
-          <GovBtn variant="secondary" size="sm" title="Xem">
-            <Eye style={{ width: 12, height: 12 }} />
-          </GovBtn>
+          <Link href={`/truyen-thong/thong-bao/${r.id}`}>
+            <GovBtn variant="secondary" size="sm" title="Xem chi tiết">
+              <Eye size={16} />
+            </GovBtn>
+          </Link>
           <GovBtn variant="outline" size="sm" title="Chỉnh sửa">
             <Pencil style={{ width: 12, height: 12 }} />
           </GovBtn>
@@ -156,7 +158,11 @@ export default function ThongBaoPage() {
           <>
             <GovBtn variant="secondary"><RefreshCw style={{ width: 12, height: 12 }} /> Làm mới</GovBtn>
             <GovBtn variant="secondary"><FileSpreadsheet style={{ width: 12, height: 12 }} /> Xuất Excel</GovBtn>
-            <GovBtn variant="primary"><Plus style={{ width: 12, height: 12 }} /> Tạo thông báo</GovBtn>
+            <Link href="/truyen-thong/thong-bao/new">
+              <GovBtn variant="primary">
+                <Plus size={16} /> Tạo mới thông báo
+              </GovBtn>
+            </Link>
           </>
         }
       />
