@@ -188,7 +188,7 @@ export default function PheDuyetDonViPhamPage() {
             <GovBtn variant="secondary"><RefreshCw style={{ width: 12, height: 12 }} /> Làm mới</GovBtn>
             <GovBtn variant="secondary"><Printer style={{ width: 12, height: 12 }} /> In báo cáo</GovBtn>
             <GovBtn variant="secondary"><FileSpreadsheet style={{ width: 12, height: 12 }} /> Xuất Excel</GovBtn>
-            {isAuthority && <GovBtn variant="primary"><Plus style={{ width: 12, height: 12 }} /> Tạo quyết định</GovBtn>}
+            {/* {isAuthority && <GovBtn variant="primary"><Plus style={{ width: 12, height: 12 }} /> Tạo quyết định</GovBtn>} */}
           </>
         }
       />

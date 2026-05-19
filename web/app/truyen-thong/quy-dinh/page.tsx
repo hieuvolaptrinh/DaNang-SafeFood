@@ -6,6 +6,7 @@ import {
   PageHeader, FilterBar, FilterField, GovInput, GovSelect, GovBtn,
   SectionCard, GovPagination, StatusBadge, MiniStat, ActionButtons,
 } from '@/components/GovUI';
+import Link from 'next/link';
 import DataTable, { Column } from '@/components/DataTable';
 
 interface Regulation {
@@ -133,11 +134,13 @@ export default function QuyDinhPage() {
     {
       key: 'actions',
       header: 'Thao tác',
-      render: () => (
+      render: (r: any) => (
         <ActionButtons>
-          <GovBtn variant="secondary" size="sm" title="Xem">
-            <Eye style={{ width: 12, height: 12 }} />
-          </GovBtn>
+          <Link href={`/truyen-thong/quy-dinh/${r.id}`}>
+            <GovBtn variant="secondary" size="sm" title="Xem chi tiết">
+              <Eye size={16} />
+            </GovBtn>
+          </Link>
           <GovBtn variant="outline" size="sm" title="Chỉnh sửa">
             <Pencil style={{ width: 12, height: 12 }} />
           </GovBtn>
@@ -155,7 +158,11 @@ export default function QuyDinhPage() {
           <>
             <GovBtn variant="secondary"><RefreshCw style={{ width: 12, height: 12 }} /> Làm mới</GovBtn>
             <GovBtn variant="secondary"><FileSpreadsheet style={{ width: 12, height: 12 }} /> Xuất Excel</GovBtn>
-            <GovBtn variant="primary"><Plus style={{ width: 12, height: 12 }} /> Thêm quy định</GovBtn>
+            <Link href="/truyen-thong/quy-dinh/new">
+              <GovBtn variant="primary">
+                <Plus size={16} /> Tạo mới quy định
+              </GovBtn>
+            </Link>
           </>
         }
       />

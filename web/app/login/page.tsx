@@ -38,7 +38,7 @@ export default function LoginPage() {
           </div>
           <div>
             <p style={{ color:'rgba(255,255,255,0.7)', fontSize:'10.5px', textTransform:'uppercase', letterSpacing:'0.12em', margin:'0 0 2px 0' }}>
-              Cộng Hòa Xã Hội Chủ Nghĩa Việt Nam — Sở Y Tế TP. Đà Nẵng
+              Sở Y Tế TP. Đà Nẵng
             </p>
             <h1 style={{ color:'#fff', fontSize:'20px', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', margin:0, lineHeight:1.2 }}>
               Chi Cục An Toàn Thực Phẩm
