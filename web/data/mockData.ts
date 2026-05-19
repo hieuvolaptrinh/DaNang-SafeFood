@@ -286,7 +286,6 @@ export const roleNavMap: Record<Role, NavItem[]> = {
       label: 'Vi phạm & Phản ánh', icon: 'alert', children: [
         { label: 'Danh sách vi phạm', href: '/vi-pham' },
         { label: 'Phản ánh công dân', href: '/phan-anh-cong-dan' },
-        { label: 'Xử phạt', href: '/vi-pham/xu-phat' },
         { label: 'Theo dõi khắc phục', href: '/vi-pham/khac-phuc' },
       ]
     },
