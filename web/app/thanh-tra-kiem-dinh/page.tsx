@@ -2,155 +2,141 @@
 
 import { useState } from 'react';
 import { Eye, Pencil, FileSpreadsheet, Plus, RefreshCw } from 'lucide-react';
-import { mockInspections } from '@/data/mockData';
 import AlertBanner from '@/components/AlertBanner';
 import CreateInspectionForm, { type InspectionFormResult } from '@/components/CreateInspectionForm';
 import DataTable, { type Column } from '@/components/DataTable';
 import { PageHeader, FilterBar, FilterField, GovInput, GovSelect, GovBtn, SectionCard, GovPagination, StatusBadge, MiniStat } from '@/components/GovUI';
 
+// ==================== TYPES ====================
 type RecordMode = 'list' | 'create' | 'view' | 'edit';
 
-type DetailedInspection = InspectionFormResult;
-
-const standardChecklist: Record<string, 'pass' | 'fail'> = {
-  cleanProcessingArea: 'pass',
-  separateRawCookedArea: 'pass',
-  drainageSystem: 'pass',
-  noInsects: 'pass',
-  cleanUtensils: 'pass',
-  storageCabinet: 'pass',
-  coveredFood: 'pass',
-  separateUtensils: 'pass',
-  clearOrigin: 'pass',
-  hasInvoice: 'pass',
-  notExpired: 'pass',
-  hasSampleStorage: 'pass',
-  healthCheck: 'pass',
-  foodSafetyTraining: 'pass',
-  wearProtection: 'pass',
-  noInfectiousDisease: 'pass',
-  properProcessing: 'pass',
-  properStorage: 'pass',
-  noCrossContamination: 'pass',
-  postProcessingCleanup: 'pass',
+type MauKiemNghiem = {
+  maMau: string;
+  tenMau: string;
+  ngayThu: string;           // YYYY-MM-DD
+  ngayKiemNghiem?: string;
+  trangThai: 'CHUA_XU_LY' | 'DANG_XU_LY' | 'HOAN_THANH' | 'QUA_HAN';
+  loaiMau: string;
+  noiDung: string;
+  ngayYeuCau: string;
+  hanHoanThanh: string;
 };
 
-function createChecklistData(isFail: boolean): Record<string, 'pass' | 'fail'> {
-  const allPass: Record<string, 'pass' | 'fail'> = { ...standardChecklist };
+// ==================== MOCK DATA ====================
+const mockMauKiemNghiem: MauKiemNghiem[] = [
+  {
+    maMau: "MKN202605001",
+    tenMau: "Thịt heo tươi",
+    ngayThu: "2025-05-10",
+    ngayKiemNghiem: "2025-05-12",
+    trangThai: "HOAN_THANH",
+    loaiMau: "Thực phẩm tươi",
+    noiDung: "Kiểm nghiệm chỉ tiêu vi sinh và kim loại nặng",
+    ngayYeuCau: "2025-05-08",
+    hanHoanThanh: "2025-05-15",
+  },
+  {
+    maMau: "MKN202605002",
+    tenMau: "Nước mắm",
+    ngayThu: "2025-05-11",
+    ngayKiemNghiem: "",
+    trangThai: "DANG_XU_LY",
+    loaiMau: "Gia vị",
+    noiDung: "Kiểm tra histamine và độ mặn",
+    ngayYeuCau: "2025-05-09",
+    hanHoanThanh: "2025-05-20",
+  },
+  {
+    maMau: "MKN202605003",
+    tenMau: "Rau bina hữu cơ",
+    ngayThu: "2025-05-12",
+    ngayKiemNghiem: "",
+    trangThai: "CHUA_XU_LY",
+    loaiMau: "Rau củ",
+    noiDung: "Kiểm tra dư lượng thuốc bảo vệ thực vật",
+    ngayYeuCau: "2025-05-10",
+    hanHoanThanh: "2025-05-18",
+  },
+  {
+    maMau: "MKN202605004",
+    tenMau: "Sữa tươi",
+    ngayThu: "2025-05-08",
+    ngayKiemNghiem: "2025-05-13",
+    trangThai: "QUA_HAN",
+    loaiMau: "Sản phẩm sữa",
+    noiDung: "Kiểm nghiệm vi sinh và dinh dưỡng",
+    ngayYeuCau: "2025-05-05",
+    hanHoanThanh: "2025-05-12",
+  },
+];
 
-  if (!isFail) {
-    return allPass;
-  }
-
-  return {
-    ...allPass,
-    noInsects: 'fail',
-    notExpired: 'fail',
-    noCrossContamination: 'fail',
-  };
-}
-
-const defaultDetailedInspections: DetailedInspection[] = mockInspections.map((inspection) => {
-  const [day, month, year] = inspection.date.split('/');
-  const isFail = inspection.result === 'fail';
-  return {
-    ...inspection,
-    result: inspection.result === 'pass' ? 'pass' : 'fail',
-    businessName: inspection.business,
-    address: '123 Nguyễn Văn Linh, Hải Châu, Đà Nẵng',
-    phone: '0903 123 456',
-    owner: 'Nguyễn Thị Ánh',
-    businessType: 'Nhà hàng',
-    inspectionTime: `${year}-${month}-${day}T09:30`,
-    businessLicense: 'Hợp lệ',
-    foodSafetyCertificate: 'Hợp lệ',
-    healthCertificate: 'Hợp lệ',
-    trainingCertificate: 'Hợp lệ',
-    checklist: createChecklistData(isFail),
-    violationStatus: isFail ? 'has' : 'none',
-    violationDescription: isFail
-      ? 'Phát hiện một số lỗi trong bảo quản nguyên liệu và hồ sơ không đầy đủ.'
-      : 'Không phát hiện vi phạm.',
-    conclusion: inspection.result === 'pass' ? 'pass' : 'fail',
-    generalComment: inspection.result === 'pass'
-      ? 'Cơ sở đáp ứng yêu cầu an toàn thực phẩm.'
-      : 'Cần khắc phục ngay các lỗi đã xác định.',
-    actionMeasure: inspection.result === 'pass'
-      ? 'Duy trì quy trình hiện tại và kiểm tra định kỳ.'
-      : 'Xử lý khắc phục tại chỗ và cập nhật hồ sơ pháp lý.',
-    recommendation: inspection.result === 'pass'
-      ? 'Tiếp tục giám sát định kỳ.'
-      : 'Đào tạo lại nhân viên và hoàn thiện hồ sơ pháp lý.',
-  };
-});
-
-export default function ThanhTraKiemDinhPage() {
+// ==================== COMPONENT ====================
+export default function YeuCauKiemNghiemPage() {
   const [mode, setMode] = useState<RecordMode>('list');
-  const [inspections, setInspections] = useState<DetailedInspection[]>(defaultDetailedInspections);
-  const [selectedRecord, setSelectedRecord] = useState<DetailedInspection | null>(null);
+  const [samples, setSamples] = useState<MauKiemNghiem[]>(mockMauKiemNghiem);
+  const [selectedRecord, setSelectedRecord] = useState<MauKiemNghiem | null>(null);
   const [search, setSearch] = useState('');
-  const [resultFilter, setResultFilter] = useState('');
-  const [feedbackMessage, setFeedbackMessage] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
 
-  const filtered = inspections.filter((inspection) => {
-    const matchSearch =
-      !search ||
-      inspection.business.toLowerCase().includes(search.toLowerCase()) ||
-      inspection.id.toLowerCase().includes(search.toLowerCase());
-    const matchResult = !resultFilter || inspection.result === resultFilter;
-    return matchSearch && matchResult;
+  const filtered = samples.filter((sample) => {
+    const matchSearch = !search ||
+      sample.maMau.toLowerCase().includes(search.toLowerCase()) ||
+      sample.tenMau.toLowerCase().includes(search.toLowerCase());
+
+    const matchStatus = !statusFilter || sample.trangThai === statusFilter;
+    return matchSearch && matchStatus;
   });
 
-  const columns: Column<DetailedInspection>[] = [
+  const columns: Column<MauKiemNghiem>[] = [
+    { key: 'maMau', header: 'Mã mẫu' },
+    { key: 'tenMau', header: 'Tên mẫu' },
+    { key: 'loaiMau', header: 'Loại mẫu' },
     {
-      key: 'id',
-      header: 'Mã hồ sơ',
-      render: (r) => <span style={{ fontFamily:'monospace', fontWeight:600, color:'#005A9E' }}>{r.id}</span>,
+      key: 'ngayThu',
+      header: 'Ngày thu',
+      render: (r) => new Date(r.ngayThu).toLocaleDateString('vi-VN')
     },
     {
-      key: 'business',
-      header: 'Cơ sở',
-      render: (r) => <span style={{ fontWeight:600 }}>{r.business}</span>,
-    },
-    { key: 'type', header: 'Loại thanh tra' },
-    { key: 'inspector', header: 'Thanh tra viên' },
-    { key: 'date', header: 'Ngày' },
-    {
-      key: 'result',
-      header: 'Kết quả',
-      render: (r) => <StatusBadge variant={r.result} />,
+      key: 'hanHoanThanh',
+      header: 'Hạn hoàn thành',
+      render: (r) => new Date(r.hanHoanThanh).toLocaleDateString('vi-VN')
     },
     {
-      key: 'score',
-      header: 'Điểm',
-      render: (r) => (
-        <strong style={{ color: r.score >= 80 ? '#006400' : r.score >= 60 ? '#CC6600' : '#CC0000' }}>
-          {r.score}/100
-        </strong>
-      ),
+      key: 'trangThai',
+      header: 'Trạng thái',
+      render: (r) => <StatusBadge variant={getStatusVariant(r.trangThai)} />,
     },
     {
       key: 'actions',
       header: 'Thao tác',
       render: (r) => (
-        <div style={{ display:'flex', gap:'3px' }}>
-          <GovBtn variant="secondary" size="sm" onClick={() => handleViewInspection(r)} title="Xem">
-            <Eye style={{ width:12, height:12 }} />
+        <div style={{ display: 'flex', gap: '3px' }}>
+          <GovBtn variant="secondary" size="sm" onClick={() => handleView(r)} title="Xem">
+            <Eye style={{ width: 12, height: 12 }} />
           </GovBtn>
-          <GovBtn variant="outline" size="sm" onClick={() => handleEditInspection(r)} title="Sửa">
-            <Pencil style={{ width:12, height:12 }} />
+          <GovBtn variant="outline" size="sm" onClick={() => handleEdit(r)} title="Sửa">
+            <Pencil style={{ width: 12, height: 12 }} />
           </GovBtn>
         </div>
       ),
     },
   ];
 
-  const total = inspections.length;
-  const completed = inspections.filter((inspection) => inspection.result === 'pass' || inspection.result === 'fail').length;
-  const failed = inspections.filter((inspection) => inspection.result === 'fail').length;
+  // Stats
+  const total = samples.length;
+  const completed = samples.filter(s => s.trangThai === 'HOAN_THANH').length;
+  const overdue = samples.filter(s => s.trangThai === 'QUA_HAN').length;
+
+  const getStatusVariant = (status: string) => {
+    switch (status) {
+      case 'HOAN_THANH': return 'success';
+      case 'DANG_XU_LY': return 'warning';
+      case 'QUA_HAN': return 'danger';
+      default: return 'default';
+    }
+  };
 
   const handleCreateClick = () => {
-    setFeedbackMessage('');
     setSelectedRecord(null);
     setMode('create');
   };
@@ -160,42 +146,39 @@ export default function ThanhTraKiemDinhPage() {
     setMode('list');
   };
 
-  const handleCreateSuccess = (record: DetailedInspection) => {
-    setInspections((current) => [record, ...current]);
-    setSelectedRecord(null);
+  const handleCreateSuccess = (record: MauKiemNghiem) => {
+    setSamples(prev => [record, ...prev]);
     setMode('list');
-    setFeedbackMessage('Lưu biên bản thành công. Hồ sơ kiểm tra mới đã được thêm vào danh sách.');
+    // setFeedbackMessage...
   };
 
-  const handleUpdateSuccess = (record: DetailedInspection) => {
-    setInspections((current) => current.map((item) => (item.id === record.id ? record : item)));
-    setSelectedRecord(null);
+  const handleUpdateSuccess = (record: MauKiemNghiem) => {
+    setSamples(prev => prev.map(item => item.maMau === record.maMau ? record : item));
     setMode('list');
-    setFeedbackMessage('Cập nhật thành công');
   };
 
-  const handleViewInspection = (inspection: DetailedInspection) => {
-    setFeedbackMessage('');
-    setSelectedRecord(inspection);
+  const handleView = (record: MauKiemNghiem) => {
+    setSelectedRecord(record);
     setMode('view');
   };
 
-  const handleEditInspection = (inspection: DetailedInspection) => {
-    setFeedbackMessage('');
-    setSelectedRecord(inspection);
+  const handleEdit = (record: MauKiemNghiem) => {
+    setSelectedRecord(record);
     setMode('edit');
   };
 
   return (
     <div>
       <PageHeader
-        title="Hồ sơ thanh tra & kiểm định"
-        subtitle="Chi cục An toàn Thực phẩm TP. Đà Nẵng — Quản lý lịch và kết quả thanh tra"
+        title="Yêu cầu kiểm nghiệm mẫu"
+        subtitle="Quản lý mẫu kiểm nghiệm — Chi cục An toàn Thực phẩm TP. Đà Nẵng"
         actions={mode === 'list' ? (
           <>
-            <GovBtn variant="secondary"><RefreshCw style={{ width:12, height:12 }} /> Làm mới</GovBtn>
-            <GovBtn variant="secondary"><FileSpreadsheet style={{ width:12, height:12 }} /> Xuất Excel</GovBtn>
-            <GovBtn variant="primary" onClick={handleCreateClick}><Plus style={{ width:12, height:12 }} /> Tạo hồ sơ</GovBtn>
+            <GovBtn variant="secondary"><RefreshCw style={{ width: 12, height: 12 }} /> Làm mới</GovBtn>
+            <GovBtn variant="secondary"><FileSpreadsheet style={{ width: 12, height: 12 }} /> Xuất Excel</GovBtn>
+            <GovBtn variant="primary" onClick={handleCreateClick}>
+              <Plus style={{ width: 12, height: 12 }} /> Tạo yêu cầu
+            </GovBtn>
           </>
         ) : undefined}
       />
@@ -205,60 +188,83 @@ export default function ThanhTraKiemDinhPage() {
       ) : mode === 'edit' ? (
         <CreateInspectionForm
           mode="edit"
-          data={selectedRecord ?? undefined}
-          recordId={selectedRecord?.id}
+          data={selectedRecord ? {
+            tenMau: selectedRecord.tenMau,
+            loaiMau: selectedRecord.loaiMau,
+            noiDung: selectedRecord.noiDung,
+            ngayThu: selectedRecord.ngayThu,
+            hanHoanThanh: selectedRecord.hanHoanThanh,
+          } : undefined}
+          recordId={selectedRecord?.maMau}
           onCancel={handleCancelForm}
           onSuccess={handleUpdateSuccess}
         />
       ) : mode === 'view' ? (
         <CreateInspectionForm
           mode="view"
-          data={selectedRecord ?? undefined}
+          data={selectedRecord ? {
+            tenMau: selectedRecord.tenMau,
+            loaiMau: selectedRecord.loaiMau,
+            noiDung: selectedRecord.noiDung,
+            ngayThu: selectedRecord.ngayThu,
+            hanHoanThanh: selectedRecord.hanHoanThanh,
+          } : undefined}
           onCancel={handleCancelForm}
           onSuccess={() => {}}
         />
       ) : (
         <>
-          {feedbackMessage && <AlertBanner type="success" title={feedbackMessage} />}
-
           <AlertBanner
             type="warning"
-            title="8 cuộc thanh tra đến hạn tuần này — Vui lòng hoàn thành trước thứ Sáu 17/01."
+            title="Có 3 mẫu kiểm nghiệm sắp đến hạn — Vui lòng theo dõi tiến độ."
           />
 
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:'10px', marginBottom:'12px' }}>
-            <MiniStat label="Tổng số hồ sơ" value={total} color="blue" />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '10px', marginBottom: '12px' }}>
+            <MiniStat label="Tổng số mẫu" value={total} color="blue" />
             <MiniStat label="Hoàn thành" value={completed} color="green" />
-            <MiniStat label="Đã lên lịch" value={56} color="orange" />
-            <MiniStat label="Không đạt" value={failed} color="red" />
+            <MiniStat label="Đang xử lý" value={samples.filter(s => s.trangThai === 'DANG_XU_LY').length} color="orange" />
+            <MiniStat label="Quá hạn" value={overdue} color="red" />
           </div>
 
           <FilterBar>
             <FilterField label="Tìm kiếm">
-              <GovInput placeholder="Tên cơ sở, mã hồ sơ..." value={search} onChange={setSearch} width={200} />
+              <GovInput
+                placeholder="Mã mẫu, tên mẫu..."
+                value={search}
+                onChange={setSearch}
+                width={220}
+              />
             </FilterField>
-            <FilterField label="Kết quả">
-              <GovSelect value={resultFilter} onChange={setResultFilter} options={[
-                { value:'', label:'-- Tất cả --' },
-                { value:'pass', label:'Đạt' },
-                { value:'fail', label:'Không đạt' },
-                { value:'scheduled', label:'Đã lên lịch' },
-              ]} width={150} />
+            <FilterField label="Trạng thái">
+              <GovSelect
+                value={statusFilter}
+                onChange={setStatusFilter}
+                options={[
+                  { value: '', label: '-- Tất cả --' },
+                  { value: 'CHUA_XU_LY', label: 'Chưa xử lý' },
+                  { value: 'DANG_XU_LY', label: 'Đang xử lý' },
+                  { value: 'HOAN_THANH', label: 'Hoàn thành' },
+                  { value: 'QUA_HAN', label: 'Quá hạn' },
+                ]}
+                width={160}
+              />
             </FilterField>
-            <div style={{ display:'flex', alignItems:'flex-end', gap:'6px' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px' }}>
               <GovBtn variant="primary">Tìm kiếm</GovBtn>
-              <GovBtn variant="secondary" onClick={() => { setSearch(''); setResultFilter(''); }}>Xóa lọc</GovBtn>
+              <GovBtn variant="secondary" onClick={() => { setSearch(''); setStatusFilter(''); }}>
+                Xóa lọc
+              </GovBtn>
             </div>
           </FilterBar>
 
           <SectionCard
-            title={`Danh sách hồ sơ thanh tra (${filtered.length} bản ghi)`}
-            footer={<GovPagination info={`Hiển thị ${filtered.length} / ${total} hồ sơ`} />}
+            title={`Danh sách mẫu kiểm nghiệm (${filtered.length} mẫu)`}
+            footer={<GovPagination info={`Hiển thị ${filtered.length} / ${total} mẫu`} />}
           >
             <DataTable
               columns={columns}
               data={filtered}
-              emptyMessage="Không tìm thấy hồ sơ nào phù hợp."
+              emptyMessage="Không tìm thấy mẫu kiểm nghiệm nào."
             />
           </SectionCard>
         </>

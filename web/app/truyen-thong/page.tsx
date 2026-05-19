@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { PageHeader, SectionCard } from '@/components/GovUI';
+import { PageHeader, SectionCard, GovBtn } from '@/components/GovUI';
 import { FileText, Bell, AlertTriangle } from 'lucide-react';
 
 export default function TruyenThongPage() {

@@ -1,40 +1,14 @@
-"use client";
+'use client';
 
+import { useState } from 'react';
+import { Plus, Eye, RefreshCw, FileSpreadsheet, Printer, Upload } from 'lucide-react';
+import { useRole } from '@/lib/RoleContext';
 import {
-  type ChangeEvent,
-  type ElementType,
-  type ReactNode,
-  useState,
-} from "react";
-import {
-  FiAlertCircle,
-  FiArrowLeft,
-  FiCheckCircle,
-  FiClipboard,
-  FiClock,
-  FiDownload,
-  FiEdit3,
-  FiEye,
-  FiFileText,
-  FiPlus,
-} from "react-icons/fi";
-import {
-  LuBuilding2,
-  LuClipboardList,
-  LuSearch,
-  LuShieldCheck,
-  LuTestTube,
-} from "react-icons/lu";
-import { useRole } from "@/lib/RoleContext";
-import Badge from "@/components/Badge";
-import CreateInspectionRequestForm from "@/components/CreateInspectionRequestForm";
-import DataTable, { type Column } from "@/components/DataTable";
-import TableCard, {
-  FilterSelect,
-  Pagination,
-  SearchInput,
-} from "@/components/TableCard";
-import { GovBtn } from "@/components/GovUI";
+  PageHeader, FilterBar, FilterField, GovInput, GovSelect, GovBtn,
+  SectionCard, GovPagination, StatusBadge, MiniStat, ActionButtons,
+  FormLayout, FormSection, FormField,
+} from '@/components/GovUI';
+import DataTable, { type Column } from '@/components/DataTable';
 
 export interface TestRequest {
   id: string;
@@ -42,7 +16,7 @@ export interface TestRequest {
   sampleType: string;
   requestDate: string;
   deadline: string;
-  status: "pending" | "processing" | "completed";
+  status: 'pending' | 'processing' | 'completed';
   lab: string;
   result?: string;
   reason?: string;
@@ -55,817 +29,380 @@ export interface TestRequest {
 
 const mockTestRequests: TestRequest[] = [
   {
-    id: "YC-2025001",
-    business: "Nhà hàng Hải Sản Biển Xanh",
-    sampleType: "Mẫu thực phẩm tươi",
-    requestDate: "23/03/2025",
-    deadline: "30/03/2025",
-    status: "processing",
-    lab: "Trung tâm Kiểm nghiệm Đà Nẵng",
-    result: "Đạt tiêu chuẩn",
-    sampleId: "M-2025-001",
-    collectedDate: "22/03/2025",
-    criteria: ["Vi sinh", "Hóa học"],
-    requestContent:
-      "Kiểm nghiệm mẫu hải sản tươi sống, đảm bảo không nhiễm vi khuẩn E.coli và Salmonella theo QCVN 8-3:2012/BYT.",
+    id: 'YC-2025001',
+    business: 'Nhà hàng Hải Sản Biển Xanh',
+    sampleType: 'Mẫu thực phẩm tươi',
+    requestDate: '23/03/2025',
+    deadline: '30/03/2025',
+    status: 'processing',
+    lab: 'Trung tâm Kiểm nghiệm Đà Nẵng',
+    result: 'Đạt tiêu chuẩn',
+    sampleId: 'M-2025-001',
+    collectedDate: '22/03/2025',
+    criteria: ['Vi sinh', 'Hóa học'],
+    requestContent: 'Kiểm nghiệm mẫu hải sản tươi sống, đảm bảo không nhiễm vi khuẩn E.coli và Salmonella theo QCVN 8-3:2012/BYT.',
   },
   {
-    id: "YC-2025002",
-    business: "Cửa hàng Thực phẩm Sạch Organic",
-    sampleType: "Mẫu rau hữu cơ",
-    requestDate: "24/03/2025",
-    deadline: "02/04/2025",
-    status: "pending",
-    lab: "Lab Việt Nam",
-    sampleId: "M-2025-002",
-    collectedDate: "23/03/2025",
-    criteria: ["Kim loại nặng", "Hóa học", "Cảm quan"],
-    requestContent:
-      "Kiểm tra dư lượng thuốc bảo vệ thực vật và kim loại nặng trong rau hữu cơ theo tiêu chuẩn hữu cơ Việt Nam.",
+    id: 'YC-2025002',
+    business: 'Cửa hàng Thực phẩm Sạch Organic',
+    sampleType: 'Mẫu rau hữu cơ',
+    requestDate: '24/03/2025',
+    deadline: '02/04/2025',
+    status: 'pending',
+    lab: 'Lab Việt Nam',
+    sampleId: 'M-2025-002',
+    collectedDate: '23/03/2025',
+    criteria: ['Kim loại nặng', 'Hóa học', 'Cảm quan'],
+    requestContent: 'Kiểm tra dư lượng thuốc bảo vệ thực vật và kim loại nặng trong rau hữu cơ.',
   },
   {
-    id: "YC-2025003",
-    business: "Siêu thị Mini Mart Đà Nẵng",
-    sampleType: "Mẫu nước đá",
-    requestDate: "20/03/2025",
-    deadline: "28/03/2025",
-    status: "completed",
-    lab: "Trung tâm Kiểm nghiệm Đà Nẵng",
-    result: "Không đạt",
-    reason: "Vi phạm giới hạn vi sinh vật",
-    sampleId: "M-2025-003",
-    collectedDate: "19/03/2025",
-    criteria: ["Vi sinh", "Cảm quan"],
-    requestContent:
-      "Kiểm tra chỉ tiêu vi sinh và cảm quan của mẫu nước đá dùng cho thực phẩm tại siêu thị.",
+    id: 'YC-2025003',
+    business: 'Siêu thị Mini Mart Đà Nẵng',
+    sampleType: 'Mẫu nước đá',
+    requestDate: '20/03/2025',
+    deadline: '28/03/2025',
+    status: 'completed',
+    lab: 'Trung tâm Kiểm nghiệm Đà Nẵng',
+    result: 'Không đạt',
+    reason: 'Vi phạm giới hạn vi sinh vật',
+    sampleId: 'M-2025-003',
+    collectedDate: '19/03/2025',
+    criteria: ['Vi sinh', 'Cảm quan'],
+    requestContent: 'Kiểm tra chỉ tiêu vi sinh và cảm quan của mẫu nước đá tại siêu thị.',
   },
 ];
 
-const STATUS_CONFIG: Record<
-  TestRequest["status"],
-  { label: string; variant: "pending" | "in-progress" | "resolved" }
-> = {
-  pending: { label: "Chờ xử lý", variant: "pending" },
-  processing: { label: "Đang thực hiện", variant: "in-progress" },
-  completed: { label: "Hoàn thành", variant: "resolved" },
+const STATUS_VARIANT: Record<string, string> = {
+  pending: 'pending',
+  processing: 'in-progress',
+  completed: 'resolved',
 };
-
-const DETAIL_STATUS_CONFIG: Record<
-  TestRequest["status"],
-  { label: string; className: string }
-> = {
-  pending: {
-    label: "Chờ xử lý",
-    className: "border-amber-200 bg-amber-50 text-amber-700",
-  },
-  processing: {
-    label: "Đang thực hiện",
-    className: "border-sky-200 bg-sky-50 text-sky-700",
-  },
-  completed: {
-    label: "Hoàn thành",
-    className: "border-emerald-200 bg-emerald-50 text-emerald-700",
-  },
+const STATUS_LABEL: Record<string, string> = {
+  pending: 'Chờ xử lý',
+  processing: 'Đang thực hiện',
+  completed: 'Hoàn thành',
 };
-
-function StatCard({
-  label,
-  value,
-  icon: Icon,
-  iconClassName,
-}: {
-  label: string;
-  value: number;
-  icon: ElementType;
-  iconClassName: string;
-}) {
-  return (
-    <div className="border border-slate-300 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="mb-2 text-[12px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-            {label}
-          </p>
-          <p className="text-[30px] font-black leading-none text-slate-900">
-            {value}
-          </p>
-        </div>
-        <div className={`flex h-11 w-11 items-center justify-center border border-slate-200 ${iconClassName}`}>
-          <Icon className="text-[20px]" />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function DetailSection({
-  icon: Icon,
-  title,
-  description,
-  children,
-}: {
-  icon: ElementType;
-  title: string;
-  description: string;
-  children: ReactNode;
-}) {
-  return (
-    <section className="border border-slate-300 bg-white p-4 shadow-sm">
-      <div className="mb-3 flex items-start gap-3">
-        <div className="flex h-8 w-8 items-center justify-center border border-emerald-200 bg-emerald-50 text-emerald-700">
-          <Icon className="text-[18px]" />
-        </div>
-        <div>
-          <h2 className="text-[13px] font-bold uppercase tracking-[0.04em] text-emerald-800">{title}</h2>
-          <p className="mt-1 text-[12px] text-slate-600">{description}</p>
-        </div>
-      </div>
-      {children}
-    </section>
-  );
-}
-
-function DetailField({
-  label,
-  value,
-  spanClassName,
-}: {
-  label: string;
-  value: ReactNode;
-  spanClassName?: string;
-}) {
-  return (
-    <div className={`border border-slate-300 bg-slate-50 px-3 py-3 ${spanClassName ?? ""}`}>
-      <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.04em] text-slate-600">
-        {label}
-      </p>
-      <div className="text-[13px] font-semibold leading-6 text-slate-800">
-        {value}
-      </div>
-    </div>
-  );
-}
 
 export default function YeuCauPage() {
   const { role } = useRole();
-  const [mode, setMode] = useState<"list" | "create">("list");
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
   const [data, setData] = useState<TestRequest[]>(mockTestRequests);
+
+  // Result modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<TestRequest | null>(null);
-  const [modalStatus, setModalStatus] = useState<TestRequest["status"]>("pending");
-  const [resultStatus, setResultStatus] = useState<"Đạt" | "Không đạt">("Đạt");
-  const [reason, setReason] = useState("");
-  const [stampedFileName, setStampedFileName] = useState("");
-  const [detailLoading, setDetailLoading] = useState(false);
-  const [detailNotFound, setDetailNotFound] = useState(false);
+  const [modalStatus, setModalStatus] = useState<TestRequest['status']>('pending');
+  const [resultStatus, setResultStatus] = useState<'Đạt' | 'Không đạt'>('Đạt');
+  const [reason, setReason] = useState('');
+  const [stampedFileName, setStampedFileName] = useState('');
+
+  // Detail modal state
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [detailRequest, setDetailRequest] = useState<TestRequest | null>(null);
 
-  const canCreateRequest = role === "INSPECTOR";
-  const canManageResult = role === "TESTER";
-  const isDetailView = detailLoading || detailNotFound || detailRequest !== null;
+  const canCreateRequest = role === 'INSPECTOR';
+  const canManageResult = role === 'TESTER';
 
   const openDetail = (request: TestRequest) => {
-    setDetailLoading(true);
-    setDetailNotFound(false);
-    setDetailRequest(null);
-
-    window.setTimeout(() => {
-      setDetailRequest(request);
-      setDetailNotFound(false);
-      setDetailLoading(false);
-    }, 300);
+    setDetailRequest(request);
+    setIsDetailOpen(true);
   };
 
   const closeDetail = () => {
-    setDetailLoading(false);
-    setDetailNotFound(false);
+    setIsDetailOpen(false);
     setDetailRequest(null);
   };
-
-  const filtered = data.filter((request) => {
-    const matchSearch =
-      !search ||
-      request.business.toLowerCase().includes(search.toLowerCase()) ||
-      request.id.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = !statusFilter || request.status === statusFilter;
-    return matchSearch && matchStatus;
-  });
 
   const openResultModal = (request: TestRequest) => {
     setSelectedRequest(request);
     setModalStatus(request.status);
-    setResultStatus(request.result?.includes("Không đạt") ? "Không đạt" : "Đạt");
-    setReason(request.reason || "");
-    setStampedFileName("");
+    setResultStatus(request.result?.includes('Không đạt') ? 'Không đạt' : 'Đạt');
+    setReason(request.reason || '');
+    setStampedFileName('');
     setIsModalOpen(true);
   };
 
-  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setStampedFileName(file.name);
-    }
-  };
-
   const saveResult = () => {
-    if (!selectedRequest) {
-      return;
-    }
-
-    const finalResult =
-      resultStatus === "Đạt" ? "Đạt tiêu chuẩn" : "Không đạt";
-    let nextDetailRequest = detailRequest;
-
-    setData((previous) =>
-      previous.map((item) => {
-        if (item.id !== selectedRequest.id) {
-          return item;
-        }
-
-        const updatedItem: TestRequest = {
-          ...item,
-          status: modalStatus,
-          result: finalResult,
-          reason: resultStatus === "Không đạt" ? reason.trim() : undefined,
-          stampedFile: stampedFileName || item.stampedFile,
-        };
-
-        if (detailRequest?.id === item.id) {
-          nextDetailRequest = updatedItem;
-        }
-
-        return updatedItem;
-      })
-    );
-
-    if (nextDetailRequest) {
-      setDetailRequest(nextDetailRequest);
-    }
-
+    if (!selectedRequest) return;
+    const finalResult = resultStatus === 'Đạt' ? 'Đạt tiêu chuẩn' : 'Không đạt';
+    setData(prev => prev.map(item =>
+      item.id === selectedRequest.id
+        ? { ...item, status: modalStatus, result: finalResult, reason: resultStatus === 'Không đạt' ? reason.trim() : undefined, stampedFile: stampedFileName || item.stampedFile }
+        : item
+    ));
     setIsModalOpen(false);
     setSelectedRequest(null);
-    setReason("");
-    setStampedFileName("");
+    setReason('');
+    setStampedFileName('');
   };
 
-  const isSaveDisabled =
-    !stampedFileName || (resultStatus === "Không đạt" && !reason.trim());
+  const isSaveDisabled = !stampedFileName || (resultStatus === 'Không đạt' && !reason.trim());
 
-  if (mode === "create") {
-    return (
-      <CreateInspectionRequestForm
-        selectedSampleId="SAMPLE-2025-001"
-        onCancel={() => setMode("list")}
-        onSuccess={(request) => {
-          const newRequest: TestRequest = {
-            id: request.id,
-            business: request.business,
-            sampleType: request.sampleType,
-            requestDate: request.requestDate,
-            deadline: request.deadline,
-            status: request.status,
-            lab: request.lab,
-            requestContent: "",
-          };
-          setData((previous) => [newRequest, ...previous]);
-          setMode("list");
-        }}
-      />
-    );
-  }
+  const filtered = data.filter(r => {
+    const matchSearch = !search || r.business.toLowerCase().includes(search.toLowerCase()) || r.id.toLowerCase().includes(search.toLowerCase());
+    const matchStatus = !statusFilter || r.status === statusFilter;
+    return matchSearch && matchStatus;
+  });
 
   const columns: Column<TestRequest>[] = [
     {
-      key: "id",
-      header: "Mã yêu cầu",
-      render: (request) => (
-        <span className="rounded-md bg-slate-100 px-2 py-0.5 font-mono text-[12px] font-semibold text-slate-600">
-          {request.id}
+      key: 'id',
+      header: 'Mã yêu cầu',
+      render: r => <span style={{ fontFamily: 'monospace', fontWeight: 600, color: '#005A9E' }}>{r.id}</span>,
+    },
+    {
+      key: 'business',
+      header: 'Cơ sở',
+      render: r => (
+        <div>
+          <p style={{ fontWeight: 600, fontSize: '13px', color: '#222' }}>{r.business}</p>
+          {r.sampleId && <p style={{ fontSize: '11px', color: '#888' }}>Mẫu: {r.sampleId}</p>}
+        </div>
+      ),
+    },
+    {
+      key: 'sampleType',
+      header: 'Loại mẫu',
+      render: r => <span style={{ fontSize: '12px', color: '#333' }}>{r.sampleType}</span>,
+    },
+    {
+      key: 'requestDate',
+      header: 'Ngày yêu cầu',
+      render: r => <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>{r.requestDate}</span>,
+    },
+    {
+      key: 'deadline',
+      header: 'Hạn hoàn thành',
+      render: r => <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>{r.deadline}</span>,
+    },
+    {
+      key: 'status',
+      header: 'Trạng thái',
+      render: r => <StatusBadge variant={STATUS_VARIANT[r.status]} label={STATUS_LABEL[r.status]} />,
+    },
+    {
+      key: 'result',
+      header: 'Kết quả',
+      render: r => r.result ? (
+        <span style={{ fontSize: '12px', fontWeight: 600, color: r.result.includes('Không đạt') ? '#CC0000' : '#006400' }}>
+          {r.result}
         </span>
-      ),
+      ) : <span style={{ fontSize: '11px', color: '#888' }}>—</span>,
     },
     {
-      key: "business",
-      header: "Cơ sở",
-      render: (request) => (
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-100 to-teal-100 text-sm font-black text-sky-700">
-            {request.business.charAt(0)}
-          </div>
-          <span className="text-[13px] font-semibold text-slate-800">
-            {request.business}
-          </span>
-        </div>
-      ),
-    },
-    {
-      key: "sampleType",
-      header: "Loại mẫu",
-      render: (request) => (
-        <span className="text-[13px] text-slate-600">{request.sampleType}</span>
-      ),
-    },
-    { key: "requestDate", header: "Ngày yêu cầu" },
-    { key: "deadline", header: "Hạn hoàn thành" },
-    {
-      key: "status",
-      header: "Trạng thái",
-      render: (request) => {
-        const config = STATUS_CONFIG[request.status];
-        return <Badge variant={config.variant} label={config.label} />;
-      },
-    },
-    {
-      key: "lab",
-      header: "Phòng lab",
-      render: (request) => (
-        <span className="text-[13px] text-slate-600">{request.lab}</span>
-      ),
-    },
-    {
-      key: "result",
-      header: "Kết quả kiểm nghiệm",
-      render: (request) => {
-        if (!request.result) {
-          return <span className="text-slate-400">-</span>;
-        }
-
-        return (
-          <div className="text-[13px]">
-            <div
-              className={
-                request.result.includes("Không đạt")
-                  ? "font-medium text-rose-600"
-                  : "font-medium text-emerald-600"
-              }
-            >
-              {request.result}
-            </div>
-            {request.reason && (
-              <div className="mt-0.5 line-clamp-1 text-[12px] text-rose-500">
-                {request.reason}
-              </div>
-            )}
-            {request.stampedFile && (
-              <div className="mt-1 flex items-center gap-1 text-[11px] text-emerald-600">
-                <FiCheckCircle className="text-[12px]" />
-                Có file có dấu mộc
-              </div>
-            )}
-          </div>
-        );
-      },
-    },
-    {
-      key: "actions",
-      header: "Thao tác",
-      render: (request) => (
-        <div className="flex gap-2">
+      key: 'actions',
+      header: 'Thao tác',
+      render: r => (
+        <ActionButtons>
+          <GovBtn variant="secondary" size="sm" title="Xem chi tiết" onClick={() => openDetail(r)}>
+            <Eye style={{ width: 12, height: 12 }} />
+          </GovBtn>
           {canManageResult && (
-            <button
-              onClick={() => openResultModal(request)}
-              className="flex h-9 w-9 items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 transition-all hover:border-emerald-300 hover:bg-emerald-100"
-              title="Nhập kết quả kiểm nghiệm"
-            >
-              <FiEdit3 size={16} />
-            </button>
+            <GovBtn variant="outline" size="sm" title="Nhập kết quả" onClick={() => openResultModal(r)}>
+              <Upload style={{ width: 12, height: 12 }} />
+            </GovBtn>
           )}
-          <button
-            onClick={() => openDetail(request)}
-            disabled={detailLoading}
-            className="flex h-9 w-9 items-center justify-center rounded-xl border border-sky-200 bg-sky-50 text-sky-700 transition-all hover:border-sky-300 hover:bg-sky-100 disabled:cursor-not-allowed disabled:opacity-60"
-            title="Xem chi tiết"
-          >
-            <FiEye size={16} />
-          </button>
-        </div>
+        </ActionButtons>
       ),
     },
   ];
 
   return (
-    <div className="min-h-screen bg-[#f2f7f7] font-sans">
-      <div className="h-1 w-full bg-gradient-to-r from-sky-600 via-teal-500 to-emerald-500" />
+    <div>
+      <PageHeader
+        title="Yêu cầu kiểm nghiệm"
+        subtitle="Chi cục An toàn Thực phẩm TP. Đà Nẵng — Quản lý các yêu cầu kiểm nghiệm mẫu thực phẩm"
+        actions={
+          <ActionButtons>
+            <GovBtn variant="secondary"><RefreshCw style={{ width: 12, height: 12 }} /> Làm mới</GovBtn>
+            <GovBtn variant="secondary"><Printer style={{ width: 12, height: 12 }} /> In danh sách</GovBtn>
+            <GovBtn variant="secondary"><FileSpreadsheet style={{ width: 12, height: 12 }} /> Xuất Excel</GovBtn>
+            {canCreateRequest && <GovBtn variant="primary"><Plus style={{ width: 12, height: 12 }} /> Tạo yêu cầu mới</GovBtn>}
+          </ActionButtons>
+        }
+      />
 
-      <div className="mx-auto max-w-[1200px] px-6 py-8">
-        <div className="mb-8 flex items-start justify-between gap-4">
-          <div>
-            <div className="mb-1 flex items-center gap-2">
-              <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-sky-600">
-                SỞ AN TOÀN THỰC PHẨM • ĐÀ NẴNG
-              </span>
-            </div>
-            <h1 className="text-[28px] font-black leading-tight tracking-tight text-slate-900">
-              Yêu cầu Kiểm nghiệm
-            </h1>
-            <p className="mt-1 text-[13px] font-medium text-slate-500">
-              Quản lý các yêu cầu kiểm nghiệm mẫu từ cơ sở kinh doanh
-            </p>
-          </div>
-
-          <div className="flex gap-3 pt-1">
-            <button className="flex items-center gap-2 border border-slate-300 bg-white px-4 py-2.5 text-[13px] font-semibold text-slate-700 shadow-sm transition-all hover:border-slate-400 hover:bg-slate-50">
-              <FiDownload className="text-[15px]" />
-              Xuất danh sách
-            </button>
-            {canCreateRequest && (
-              <button
-                onClick={() => setMode("create")}
-                className="flex items-center gap-2 border border-sky-700 bg-gradient-to-r from-sky-600 to-teal-600 px-4 py-2.5 text-[13px] font-semibold text-white shadow-sm transition-all hover:from-sky-700 hover:to-teal-700"
-              >
-                <FiPlus className="text-[15px]" />
-                Tạo yêu cầu mới
-              </button>
-            )}
-          </div>
-        </div>
-
-        <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <StatCard
-            label="Tổng yêu cầu"
-            value={data.length}
-            icon={FiClipboard}
-            iconClassName="bg-sky-100 text-sky-700"
-          />
-          <StatCard
-            label="Chờ xử lý"
-            value={data.filter((request) => request.status === "pending").length}
-            icon={FiClock}
-            iconClassName="bg-amber-100 text-amber-700"
-          />
-          <StatCard
-            label="Đang thực hiện"
-            value={data.filter((request) => request.status === "processing").length}
-            icon={LuTestTube}
-            iconClassName="bg-cyan-100 text-cyan-700"
-          />
-          <StatCard
-            label="Hoàn thành"
-            value={data.filter((request) => request.status === "completed").length}
-            icon={FiCheckCircle}
-            iconClassName="bg-emerald-100 text-emerald-700"
-          />
-        </div>
-
-        {!isDetailView ? (
-          <TableCard
-            title="Danh sách yêu cầu kiểm nghiệm"
-            controls={
-              <>
-                <SearchInput
-                  placeholder="Tìm mã yêu cầu, tên cơ sở..."
-                  onChange={setSearch}
-                />
-                <FilterSelect
-                  options={[
-                    { value: "", label: "Tất cả trạng thái" },
-                    { value: "pending", label: "Chờ xử lý" },
-                    { value: "processing", label: "Đang thực hiện" },
-                    { value: "completed", label: "Hoàn thành" },
-                  ]}
-                  onChange={setStatusFilter}
-                />
-              </>
-            }
-            footer={
-              <Pagination
-                info={`Hiển thị ${filtered.length} trong tổng số ${data.length} yêu cầu`}
-              />
-            }
-          >
-            <DataTable
-              columns={columns}
-              data={filtered}
-              emptyMessage="Không tìm thấy yêu cầu kiểm nghiệm nào"
-            />
-          </TableCard>
-        ) : (
-          <TableCard
-            title="Chi tiết yêu cầu kiểm nghiệm"
-            actions={
-              <GovBtn variant="secondary" onClick={closeDetail}>
-                <FiArrowLeft className="text-[15px]" />
-                Quay lại danh sách
-              </GovBtn>
-            }
-          >
-            {detailLoading ? (
-              <div className="flex min-h-[320px] flex-col items-center justify-center gap-4 p-8">
-                <div className="flex h-12 w-12 items-center justify-center border border-emerald-200 bg-emerald-50 text-emerald-700">
-                  <LuTestTube className="animate-pulse text-[20px]" />
-                </div>
-                <div className="text-center">
-                  <p className="text-[14px] font-semibold text-slate-800">
-                    Đang tải thông tin chi tiết
-                  </p>
-                  <p className="mt-1 text-[12px] text-slate-600">
-                    Hệ thống đang chuẩn bị hồ sơ kiểm nghiệm để hiển thị.
-                  </p>
-                </div>
-              </div>
-            ) : detailNotFound ? (
-              <div className="flex min-h-[320px] flex-col items-center justify-center gap-4 p-8 text-center">
-                <div className="flex h-12 w-12 items-center justify-center border border-slate-300 bg-slate-100 text-slate-500">
-                  <LuSearch className="text-[20px]" />
-                </div>
-                <div>
-                  <p className="text-[14px] font-semibold text-slate-800">
-                    Không tìm thấy yêu cầu kiểm nghiệm
-                  </p>
-                  <p className="mt-1 text-[12px] text-slate-600">
-                    Yêu cầu này có thể đã bị xóa hoặc chưa còn khả dụng.
-                  </p>
-                </div>
-              </div>
-            ) : detailRequest ? (
-              <div className="space-y-4 p-4">
-                <section className="border border-emerald-200 bg-[#f8fbf8]">
-                  <div className="flex flex-col gap-4 p-4 lg:flex-row lg:items-start lg:justify-between">
-                    <div className="space-y-4">
-                      <div className="flex flex-wrap items-center gap-3">
-                        <span className="border border-sky-200 bg-white px-3 py-1 font-mono text-[12px] font-semibold text-sky-700">
-                          {detailRequest.id}
-                        </span>
-                        <span
-                          className={`inline-flex border px-3 py-1 text-[12px] font-semibold ${DETAIL_STATUS_CONFIG[detailRequest.status].className}`}
-                        >
-                          {DETAIL_STATUS_CONFIG[detailRequest.status].label}
-                        </span>
-                      </div>
-
-                      <div>
-                        <h2 className="text-[22px] font-black tracking-tight text-slate-900">
-                          {detailRequest.business}
-                        </h2>
-                        <p className="mt-1 text-[13px] text-slate-600">
-                          Yêu cầu kiểm nghiệm cho mẫu{" "}
-                          <span className="font-semibold text-slate-800">
-                            {detailRequest.sampleType}
-                          </span>
-                        </p>
-                      </div>
-
-                      <div className="grid gap-3 md:grid-cols-3">
-                        <DetailField
-                          label="Ngày yêu cầu"
-                          value={detailRequest.requestDate}
-                        />
-                        <DetailField
-                          label="Hạn hoàn thành"
-                          value={detailRequest.deadline}
-                        />
-                        <DetailField
-                          label="Phòng lab"
-                          value={detailRequest.lab}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid min-w-[280px] gap-3 border border-slate-300 bg-white p-3">
-                      <div className="flex items-start gap-3">
-                        <div className="flex h-8 w-8 items-center justify-center border border-emerald-200 bg-emerald-50 text-emerald-700">
-                          <LuShieldCheck className="text-[16px]" />
-                        </div>
-                        <div>
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-slate-600">
-                            Kết quả hiện tại
-                          </p>
-                          <p
-                            className={`mt-1 text-[14px] font-semibold ${
-                              detailRequest.result?.includes("Không đạt")
-                                ? "text-rose-600"
-                                : detailRequest.result
-                                  ? "text-emerald-600"
-                                  : "text-slate-500"
-                            }`}
-                          >
-                            {detailRequest.result ?? "Chưa có kết quả"}
-                          </p>
-                        </div>
-                      </div>
-
-                      {detailRequest.reason && (
-                        <div className="border border-rose-200 bg-rose-50 px-3 py-3">
-                          <div className="flex items-start gap-2 text-rose-700">
-                            <FiAlertCircle className="mt-0.5 flex-shrink-0 text-[14px]" />
-                            <p className="text-[13px] font-medium">
-                              {detailRequest.reason}
-                            </p>
-                          </div>
-                        </div>
-                      )}
-
-                      {detailRequest.stampedFile && (
-                        <div className="border border-emerald-200 bg-emerald-50 px-3 py-3">
-                          <div className="flex items-center gap-2 text-[13px] font-medium text-emerald-700">
-                            <FiCheckCircle className="text-[15px]" />
-                            {detailRequest.stampedFile}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </section>
-
-                <DetailSection
-                  icon={LuTestTube}
-                  title="Thông tin mẫu"
-                  description="Các thông tin định danh của mẫu thực phẩm được gửi kiểm nghiệm."
-                >
-                  <div className="grid gap-4 md:grid-cols-3">
-                    <DetailField
-                      label="Mã mẫu"
-                      value={detailRequest.sampleId ?? "Chưa cập nhật"}
-                    />
-                    <DetailField
-                      label="Tên mẫu"
-                      value={detailRequest.sampleType}
-                    />
-                    <DetailField
-                      label="Ngày lấy mẫu"
-                      value={detailRequest.collectedDate ?? "Chưa cập nhật"}
-                    />
-                  </div>
-                </DetailSection>
-
-                <DetailSection
-                  icon={LuClipboardList}
-                  title="Chỉ tiêu kiểm nghiệm"
-                  description="Danh sách các hạng mục cần được phòng lab đánh giá."
-                >
-                  {detailRequest.criteria && detailRequest.criteria.length > 0 ? (
-                    <div className="flex flex-wrap gap-3">
-                      {detailRequest.criteria.map((criterion) => (
-                        <span
-                          key={criterion}
-                          className="inline-flex items-center gap-2 border border-sky-200 bg-sky-50 px-3 py-1.5 text-[12px] font-semibold text-sky-700"
-                        >
-                          <FiCheckCircle className="text-[14px]" />
-                          {criterion}
-                        </span>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="border border-dashed border-slate-300 bg-slate-50 px-4 py-4 text-[13px] text-slate-500">
-                      Chưa có chỉ tiêu kiểm nghiệm.
-                    </div>
-                  )}
-                </DetailSection>
-
-                <DetailSection
-                  icon={FiFileText}
-                  title="Nội dung yêu cầu"
-                  description="Mô tả chi tiết về phạm vi và mục tiêu của đợt kiểm nghiệm."
-                >
-                  <div className="border border-slate-300 bg-slate-50 px-4 py-4 text-[13px] leading-7 text-slate-700">
-                    {detailRequest.requestContent ?? "Không có mô tả."}
-                  </div>
-                </DetailSection>
-
-                <DetailSection
-                  icon={LuBuilding2}
-                  title="Thông tin xử lý"
-                  description="Tóm tắt đơn vị tiếp nhận, lịch xử lý và các tệp kết quả liên quan."
-                >
-                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                    <DetailField label="Phòng lab" value={detailRequest.lab} />
-                    <DetailField
-                      label="Ngày tạo đơn"
-                      value={detailRequest.requestDate}
-                    />
-                    <DetailField
-                      label="Trạng thái"
-                      value={
-                        <span
-                          className={`inline-flex rounded-full border px-3 py-1 text-[12px] font-semibold ${DETAIL_STATUS_CONFIG[detailRequest.status].className}`}
-                        >
-                          {DETAIL_STATUS_CONFIG[detailRequest.status].label}
-                        </span>
-                      }
-                    />
-                    <DetailField
-                      label="Tệp đính kèm"
-                      value={detailRequest.stampedFile ?? "Chưa có tệp"}
-                    />
-                  </div>
-                </DetailSection>
-              </div>
-            ) : null}
-          </TableCard>
-        )}
+      {/* Stats */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '10px', marginBottom: '12px' }}>
+        <MiniStat label="Tổng yêu cầu" value={data.length} color="neutral" />
+        <MiniStat label="Chờ xử lý" value={data.filter(r => r.status === 'pending').length} color="orange" />
+        <MiniStat label="Đang thực hiện" value={data.filter(r => r.status === 'processing').length} color="blue" />
+        <MiniStat label="Hoàn thành" value={data.filter(r => r.status === 'completed').length} color="green" />
       </div>
 
+      {/* Filter */}
+      <FilterBar>
+        <FilterField label="Tìm kiếm">
+          <GovInput placeholder="Mã yêu cầu, tên cơ sở..." value={search} onChange={setSearch} width={240} />
+        </FilterField>
+        <FilterField label="Trạng thái">
+          <GovSelect value={statusFilter} onChange={setStatusFilter} options={[
+            { value: '', label: '-- Tất cả --' },
+            { value: 'pending', label: 'Chờ xử lý' },
+            { value: 'processing', label: 'Đang thực hiện' },
+            { value: 'completed', label: 'Hoàn thành' },
+          ]} width={180} />
+        </FilterField>
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px' }}>
+          <GovBtn variant="primary">Tìm kiếm</GovBtn>
+          <GovBtn variant="secondary" onClick={() => { setSearch(''); setStatusFilter(''); }}>Xóa lọc</GovBtn>
+        </div>
+      </FilterBar>
+
+      {/* Table */}
+      <SectionCard
+        title={`Danh sách yêu cầu kiểm nghiệm (${filtered.length} yêu cầu)`}
+        footer={<GovPagination info={`Hiển thị ${filtered.length} / ${data.length} yêu cầu kiểm nghiệm`} />}
+      >
+        <DataTable
+          columns={columns}
+          data={filtered}
+          emptyMessage="Không tìm thấy yêu cầu kiểm nghiệm nào phù hợp."
+        />
+      </SectionCard>
+
+      {/* Modal Chi tiết */}
+      {isDetailOpen && detailRequest && (
+        <div
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: '16px' }}
+          onClick={e => { if (e.target === e.currentTarget) closeDetail(); }}
+        >
+          <div style={{ background: '#fff', border: '1px solid #D6D6D6', borderRadius: '2px', width: '100%', maxWidth: '640px', maxHeight: '85vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ background: '#006400', padding: '10px 16px', borderBottom: '2px solid #004d00', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h2 style={{ color: '#fff', fontSize: '13px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', margin: 0 }}>
+                Chi tiết yêu cầu — {detailRequest.id}
+              </h2>
+              <button onClick={closeDetail} style={{ color: 'rgba(255,255,255,0.8)', background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', lineHeight: 1 }}>×</button>
+            </div>
+
+            <div style={{ overflowY: 'auto', flex: 1, padding: '14px' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '12px' }}>
+                <tbody>
+                  {[
+                    { label: 'Mã yêu cầu', value: detailRequest.id, mono: true },
+                    { label: 'Cơ sở', value: detailRequest.business },
+                    { label: 'Loại mẫu', value: detailRequest.sampleType },
+                    { label: 'Mã mẫu', value: detailRequest.sampleId || '—', mono: true },
+                    { label: 'Ngày lấy mẫu', value: detailRequest.collectedDate || '—', mono: true },
+                    { label: 'Ngày yêu cầu', value: detailRequest.requestDate, mono: true },
+                    { label: 'Hạn hoàn thành', value: detailRequest.deadline, mono: true },
+                    { label: 'Đơn vị kiểm nghiệm', value: detailRequest.lab },
+                  ].map((row, i) => (
+                    <tr key={i} style={{ borderBottom: '1px solid #F0F0F0' }}>
+                      <td style={{ padding: '7px 10px', fontSize: '12px', fontWeight: 600, color: '#555', width: '160px', background: '#FAFAFA', whiteSpace: 'nowrap' }}>{row.label}</td>
+                      <td style={{ padding: '7px 10px', fontSize: '13px', color: '#222', fontFamily: row.mono ? 'monospace' : 'inherit' }}>{row.value}</td>
+                    </tr>
+                  ))}
+                  {detailRequest.criteria && (
+                    <tr style={{ borderBottom: '1px solid #F0F0F0' }}>
+                      <td style={{ padding: '7px 10px', fontSize: '12px', fontWeight: 600, color: '#555', background: '#FAFAFA' }}>Chỉ tiêu KN</td>
+                      <td style={{ padding: '7px 10px' }}>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                          {detailRequest.criteria.map(c => (
+                            <span key={c} style={{ padding: '1px 7px', borderRadius: '2px', border: '1px solid #94C994', background: '#EAF7EA', color: '#006400', fontSize: '11px', fontWeight: 500 }}>
+                              {c}
+                            </span>
+                          ))}
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                  <tr style={{ borderBottom: '1px solid #F0F0F0' }}>
+                    <td style={{ padding: '7px 10px', fontSize: '12px', fontWeight: 600, color: '#555', background: '#FAFAFA' }}>Trạng thái</td>
+                    <td style={{ padding: '7px 10px' }}>
+                      <StatusBadge variant={STATUS_VARIANT[detailRequest.status]} label={STATUS_LABEL[detailRequest.status]} />
+                    </td>
+                  </tr>
+                  {detailRequest.result && (
+                    <tr style={{ borderBottom: '1px solid #F0F0F0' }}>
+                      <td style={{ padding: '7px 10px', fontSize: '12px', fontWeight: 600, color: '#555', background: '#FAFAFA' }}>Kết quả</td>
+                      <td style={{ padding: '7px 10px', fontSize: '13px', fontWeight: 600, color: detailRequest.result.includes('Không đạt') ? '#CC0000' : '#006400' }}>
+                        {detailRequest.result}
+                        {detailRequest.reason && <p style={{ fontSize: '12px', color: '#CC0000', fontWeight: 400, marginTop: '2px' }}>{detailRequest.reason}</p>}
+                      </td>
+                    </tr>
+                  )}
+                  {detailRequest.requestContent && (
+                    <tr>
+                      <td style={{ padding: '7px 10px', fontSize: '12px', fontWeight: 600, color: '#555', background: '#FAFAFA', verticalAlign: 'top' }}>Nội dung</td>
+                      <td style={{ padding: '7px 10px', fontSize: '13px', color: '#333', lineHeight: 1.6 }}>{detailRequest.requestContent}</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            <div style={{ padding: '10px 14px', borderTop: '1px solid #D6D6D6', display: 'flex', justifyContent: 'flex-end', background: '#FAFAFA' }}>
+              <GovBtn variant="secondary" onClick={closeDetail}>Đóng</GovBtn>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Nhập Kết Quả (TESTER only) */}
       {isModalOpen && selectedRequest && canManageResult && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b bg-slate-50 px-6 py-5">
-              <h3 className="text-lg font-semibold text-slate-900">
-                Nhập kết quả kiểm nghiệm
-              </h3>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="text-3xl leading-none text-slate-400 hover:text-slate-600"
-              >
-                ×
-              </button>
+        <div
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: '16px' }}
+        >
+          <div style={{ background: '#fff', border: '1px solid #D6D6D6', borderRadius: '2px', width: '100%', maxWidth: '520px', overflow: 'hidden' }}>
+            <div style={{ background: '#006400', padding: '10px 16px', borderBottom: '2px solid #004d00', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h2 style={{ color: '#fff', fontSize: '13px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', margin: 0 }}>
+                Nhập kết quả kiểm nghiệm — {selectedRequest.id}
+              </h2>
+              <button onClick={() => setIsModalOpen(false)} style={{ color: 'rgba(255,255,255,0.8)', background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', lineHeight: 1 }}>×</button>
             </div>
 
-            <div className="space-y-5 p-6">
-              <div>
-                <p className="text-sm text-slate-500">Mã yêu cầu</p>
-                <p className="mt-1 font-mono font-semibold text-slate-800">
-                  {selectedRequest.id}
-                </p>
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">
-                  Trạng thái
-                </label>
-                <select
-                  value={modalStatus}
-                  onChange={(event) =>
-                    setModalStatus(event.target.value as TestRequest["status"])
-                  }
-                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                >
-                  <option value="pending">Chờ xử lý</option>
-                  <option value="processing">Đang thực hiện</option>
-                  <option value="completed">Hoàn thành</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">
-                  Kết luận cuối cùng
-                </label>
-                <select
-                  value={resultStatus}
-                  onChange={(event) =>
-                    setResultStatus(event.target.value as "Đạt" | "Không đạt")
-                  }
-                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                >
-                  <option value="Đạt">Đạt tiêu chuẩn</option>
-                  <option value="Không đạt">Không đạt</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="mb-3 block text-sm font-medium text-slate-700">
-                  Tải lên tệp kết quả có dấu mộc{" "}
-                  <span className="text-red-500">*</span>
-                </label>
-                <label className="flex cursor-pointer flex-col items-center rounded-2xl border-2 border-dashed border-slate-300 p-8 transition-colors hover:border-sky-400">
-                  <input
-                    type="file"
-                    onChange={handleFileChange}
-                    className="hidden"
-                    accept=".pdf,.jpg,.png"
-                  />
-                  <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-100 text-sky-700">
-                    <FiFileText className="text-[20px]" />
-                  </div>
-                  <p className="font-medium text-slate-700">
-                    {stampedFileName || "Chọn file PDF hoặc ảnh có dấu mộc"}
-                  </p>
-                  <p className="mt-1 text-xs text-slate-400">
-                    Định dạng: PDF, JPG, PNG
-                  </p>
-                </label>
-              </div>
-
-              {resultStatus === "Không đạt" && (
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-700">
-                    Lý do không đạt <span className="text-red-500">*</span>
-                  </label>
-                  <textarea
-                    value={reason}
-                    onChange={(event) => setReason(event.target.value)}
-                    placeholder="Nhập lý do chi tiết không đạt..."
-                    className="min-h-[120px] w-full resize-y rounded-xl border border-slate-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                  />
-                </div>
-              )}
+            <div style={{ padding: '14px' }}>
+              <FormLayout>
+                <FormSection title="Cập nhật kết quả">
+                  <FormField label="Trạng thái">
+                    <select
+                      value={modalStatus}
+                      onChange={e => setModalStatus(e.target.value as TestRequest['status'])}
+                      style={{ height: '30px', border: '1px solid #D6D6D6', borderRadius: '2px', padding: '0 8px', fontSize: '13px', fontFamily: 'inherit', width: '100%' }}
+                    >
+                      <option value="pending">Chờ xử lý</option>
+                      <option value="processing">Đang thực hiện</option>
+                      <option value="completed">Hoàn thành</option>
+                    </select>
+                  </FormField>
+                  <FormField label="Kết luận">
+                    <select
+                      value={resultStatus}
+                      onChange={e => setResultStatus(e.target.value as 'Đạt' | 'Không đạt')}
+                      style={{ height: '30px', border: '1px solid #D6D6D6', borderRadius: '2px', padding: '0 8px', fontSize: '13px', fontFamily: 'inherit', width: '100%' }}
+                    >
+                      <option value="Đạt">Đạt tiêu chuẩn</option>
+                      <option value="Không đạt">Không đạt</option>
+                    </select>
+                  </FormField>
+                  <FormField label="Tệp kết quả có dấu mộc *" fullWidth>
+                    <div style={{ border: '1px dashed #D6D6D6', borderRadius: '2px', padding: '12px', textAlign: 'center', background: '#FAFAFA' }}>
+                      <input type="file" id="stamped-file" accept=".pdf,.jpg,.png" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) setStampedFileName(f.name); }} />
+                      <label htmlFor="stamped-file" style={{ cursor: 'pointer', fontSize: '13px', color: '#005A9E' }}>
+                        {stampedFileName || '📎 Chọn tệp PDF/ảnh có dấu mộc'}
+                      </label>
+                    </div>
+                  </FormField>
+                  {resultStatus === 'Không đạt' && (
+                    <FormField label="Lý do không đạt *" fullWidth>
+                      <textarea
+                        value={reason}
+                        onChange={e => setReason(e.target.value)}
+                        placeholder="Nhập lý do chi tiết..."
+                        rows={4}
+                        style={{ width: '100%', border: '1px solid #D6D6D6', borderRadius: '2px', padding: '8px', fontSize: '13px', fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box' }}
+                      />
+                    </FormField>
+                  )}
+                </FormSection>
+              </FormLayout>
             </div>
 
-            <div className="flex justify-end gap-3 border-t bg-slate-50 px-6 py-5">
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="rounded-xl px-6 py-2.5 font-medium text-slate-600 transition-colors hover:bg-slate-100"
-              >
-                Hủy
-              </button>
-              <button
-                onClick={saveResult}
-                disabled={isSaveDisabled}
-                className="rounded-xl bg-sky-600 px-6 py-2.5 font-semibold text-white transition-colors hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-slate-300"
-              >
-                Lưu kết quả
-              </button>
+            <div style={{ padding: '10px 14px', borderTop: '1px solid #D6D6D6', display: 'flex', justifyContent: 'flex-end', gap: '6px', background: '#FAFAFA' }}>
+              <GovBtn variant="secondary" onClick={() => setIsModalOpen(false)}>Hủy</GovBtn>
+              <GovBtn variant="primary" onClick={saveResult} disabled={isSaveDisabled}>Lưu kết quả</GovBtn>
             </div>
           </div>
         </div>
