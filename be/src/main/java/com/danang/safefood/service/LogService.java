@@ -44,8 +44,13 @@ public class LogService {
         }
 
         LocalDateTime now = LocalDateTime.now();
+        log.info("Login attempt: maNguoiDung={}, ip={}, location={}, device={}",
+                nguoiDung.getMaNguoiDung(), ip, location, device);
+
         boolean abnormal = aiLogClient.isAbnormal(
                 nguoiDung.getMaNguoiDung(), ip, now, location, device);
+
+        log.info("AI verdict for {}: abnormal={}", nguoiDung.getMaNguoiDung(), abnormal);
 
         Log logEntry = Log.builder()
                 .maLog(IdGenerator.generate("LG"))

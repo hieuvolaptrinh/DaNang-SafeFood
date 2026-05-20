@@ -50,6 +50,8 @@ public class AiLogClient {
                     .retrieve()
                     .body(JsonNode.class);
 
+            log.info("AI /predict response for {}: {}", maNguoiDung, response);
+
             if (response == null) {
                 return false;
             }

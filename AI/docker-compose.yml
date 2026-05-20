@@ -10,5 +10,6 @@ services:
       - "8000:8000"
     environment:
       # Ngưỡng tin cậy: probability >= threshold => phiên đăng nhập an toàn.
-      PREDICT_THRESHOLD: "0.6"
+      # Càng cao càng dễ bị flag là "đăng nhập lạ".
+      PREDICT_THRESHOLD: "0.85"
       MODEL_PATH: "mode_log.joblib"
