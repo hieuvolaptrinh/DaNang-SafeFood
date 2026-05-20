@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:mobile_ui/core/utils/app_exception.dart';
 import 'package:mobile_ui/data/remote/model/auth_models.dart';
 import 'package:mobile_ui/data/remote/repository/auth_repository.dart';
@@ -51,9 +54,13 @@ class LoginCubit extends Cubit<LoginState> {
     emit(state.copyWith(status: LoginStatus.loading, errorMessage: null));
 
     try {
+      final device = _resolveDeviceLabel();
+      final location = await _resolveLocation();
       final response = await authRepository.login(
         identifier: state.email.trim(),
         password: state.password,
+        location: location,
+        device: device,
       );
       emit(state.copyWith(status: LoginStatus.success));
       return response;
@@ -72,5 +79,40 @@ class LoginCubit extends Cubit<LoginState> {
       return null;
     }
   }
-}
 
+  String _resolveDeviceLabel() {
+    try {
+      final os = Platform.operatingSystem;
+      final version = Platform.operatingSystemVersion;
+      return '$os $version'.trim();
+    } catch (_) {
+      return 'unknown';
+    }
+  }
+
+  Future<String?> _resolveLocation() async {
+    try {
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) return null;
+
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        return null;
+      }
+
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.low,
+      );
+
+      return '${position.latitude.toStringAsFixed(6)},'
+          '${position.longitude.toStringAsFixed(6)}';
+    } catch (_) {
+      return null;
+    }
+  }
+}

@@ -28,13 +28,14 @@ public class AuthenticationService {
     private final TaiKhoanRepository taiKhoanRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final JwtService jwtService;
+    private final LogService logService;
 
     /**
      * Login bằng username (dành cho Web).
      */
     @Transactional
-    public AuthResponse login(String username, String password) {
-        return authenticate(username, password);
+    public AuthResponse login(String username, String password, String ip, String location, String device) {
+        return authenticate(username, password, ip, location, device);
     }
 
     /**
@@ -42,12 +43,12 @@ public class AuthenticationService {
      * Tìm user bằng email/phone trước, sau đó authenticate bằng username thực tế.
      */
     @Transactional
-    public AuthResponse loginMobile(String identifier, String password) {
+    public AuthResponse loginMobile(String identifier, String password, String ip, String location, String device) {
         TaiKhoan user = taiKhoanRepository.findByEmailOrPhone(identifier)
                 .orElseThrow(() -> new UsernameNotFoundException(
                         "Không tìm thấy tài khoản với email hoặc số điện thoại: " + identifier));
 
-        return authenticate(user.getUsername(), password);
+        return authenticate(user.getUsername(), password, ip, location, device);
     }
 
     @Transactional
@@ -97,10 +98,9 @@ public class AuthenticationService {
 
     // ── Private helper ──────────────────────────────────────────────────
 
-    private AuthResponse authenticate(String username, String password) {
+    private AuthResponse authenticate(String username, String password, String ip, String location, String device) {
         Authentication auth = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(username, password)
-        );
+                new UsernamePasswordAuthenticationToken(username, password));
 
         UserDetails userDetails = (UserDetails) auth.getPrincipal();
         String accessToken = jwtService.generateAccessToken(userDetails);
@@ -108,6 +108,8 @@ public class AuthenticationService {
 
         var user = taiKhoanRepository.findByUsername(username)
                 .orElseThrow(() -> new IllegalStateException("User not found after authentication"));
+
+        logService.logLogin(user, ip, location, device);
 
         RefreshToken refreshToken = RefreshToken.builder()
                 .token(refreshTokenJwt)
@@ -120,5 +122,3 @@ public class AuthenticationService {
         return new AuthResponse(accessToken, refreshTokenJwt, UserInfoDto.fromEntity(user));
     }
 }
-
-

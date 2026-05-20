@@ -12,8 +12,10 @@ import com.danang.safefood.dto.response.ApiResponse;
 import com.danang.safefood.service.AuthenticationService;
 import com.danang.safefood.service.ForgotPasswordService;
 import com.danang.safefood.service.RegisterService;
+import com.danang.safefood.util.RequestUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -30,15 +32,33 @@ public class AuthController {
     private final RegisterService registerService;
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody AuthRequest request) {
+    public ResponseEntity<ApiResponse<AuthResponse>> login(
+            @Valid @RequestBody AuthRequest request,
+            HttpServletRequest httpRequest) {
+        String ip = RequestUtils.getClientIp(httpRequest);
+        String device = RequestUtils.resolveDevice(null, httpRequest);
         return ResponseEntity
-                .ok(ApiResponse.success(authenticationService.login(request.username(), request.password())));
+                .ok(ApiResponse.success(authenticationService.login(
+                        request.username(),
+                        request.password(),
+                        ip,
+                        null,
+                        device)));
     }
 
     @PostMapping("/login-mobile")
-    public ResponseEntity<ApiResponse<AuthResponse>> loginMobile(@Valid @RequestBody MobileAuthRequest request) {
+    public ResponseEntity<ApiResponse<AuthResponse>> loginMobile(
+            @Valid @RequestBody MobileAuthRequest request,
+            HttpServletRequest httpRequest) {
+        String ip = RequestUtils.getClientIp(httpRequest);
+        String device = RequestUtils.resolveDevice(request.device(), httpRequest);
         return ResponseEntity
-                .ok(ApiResponse.success(authenticationService.loginMobile(request.identifier(), request.password())));
+                .ok(ApiResponse.success(authenticationService.loginMobile(
+                        request.identifier(),
+                        request.password(),
+                        ip,
+                        request.location(),
+                        device)));
     }
 
     @PostMapping("/refresh-token")

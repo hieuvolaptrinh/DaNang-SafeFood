@@ -1,11 +1,23 @@
 class AuthRequest {
   final String identifier;
   final String password;
+  final String? location;
+  final String? device;
 
-  const AuthRequest({required this.identifier, required this.password});
+  const AuthRequest({
+    required this.identifier,
+    required this.password,
+    this.location,
+    this.device,
+  });
 
   Map<String, dynamic> toJson() {
-    return {'identifier': identifier, 'password': password};
+    return {
+      'identifier': identifier,
+      'password': password,
+      if (location != null && location!.isNotEmpty) 'location': location,
+      if (device != null && device!.isNotEmpty) 'device': device,
+    };
   }
 }
 
