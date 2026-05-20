@@ -1,5 +1,6 @@
 package com.danang.safefood.security.jwt;
 
+import com.danang.safefood.config.security.jwt.JwtPrincipal;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
