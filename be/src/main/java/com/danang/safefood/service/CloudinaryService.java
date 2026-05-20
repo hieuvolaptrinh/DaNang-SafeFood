@@ -54,6 +54,25 @@ public class CloudinaryService {
         return uploadResult.get("secure_url").toString();
     }
 
+    /**
+     * Upload tài liệu (ảnh hoặc PDF/Word) — dùng resource_type=auto để Cloudinary
+     * tự nhận diện. Áp dụng cho hồ sơ giấy tờ kinh doanh.
+     */
+    public String uploadDocument(MultipartFile file) throws IOException {
+        validateDocumentFile(file);
+
+        Map<String, Object> uploadParams = ObjectUtils.asMap(
+                "resource_type", "auto",
+                "folder", folder,
+                "use_filename", true,
+                "unique_filename", true,
+                "overwrite", false
+        );
+
+        Map<?, ?> uploadResult = cloudinary.uploader().upload(file.getBytes(), uploadParams);
+        return uploadResult.get("secure_url").toString();
+    }
+
     public String deleteImageByUrl(String imageUrl) throws IOException {
         String publicId = extractPublicIdFromUrl(imageUrl);
         return deleteImage(publicId);
@@ -119,6 +138,29 @@ public class CloudinaryService {
         long maxSizeInBytes = 10 * 1024 * 1024;
         if (file.getSize() > maxSizeInBytes) {
             throw new IllegalArgumentException("Kích thước file không được vượt quá 10MB");
+        }
+    }
+
+    private void validateDocumentFile(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("File không được để trống");
+        }
+
+        String contentType = file.getContentType();
+        List<String> allowed = Arrays.asList(
+                "image/jpeg", "image/png", "image/gif", "image/webp", "image/bmp",
+                "application/pdf",
+                "application/msword",
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+
+        if (contentType == null || !allowed.contains(contentType)) {
+            throw new IllegalArgumentException(
+                    "Chỉ chấp nhận file ảnh hoặc tài liệu PDF/Word");
+        }
+
+        long maxSizeInBytes = 20L * 1024 * 1024;
+        if (file.getSize() > maxSizeInBytes) {
+            throw new IllegalArgumentException("Kích thước file không được vượt quá 20MB");
         }
     }
 }
