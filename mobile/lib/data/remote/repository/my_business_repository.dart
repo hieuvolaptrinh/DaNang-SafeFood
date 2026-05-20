@@ -6,7 +6,25 @@ class MyBusinessRepository {
 
   MyBusinessRepository({required this.remote});
 
+  Future<String> uploadFile(String filePath) => remote.uploadFile(filePath);
+
   Future<List<MyBusinessModel>> getMyBusinesses() => remote.getMyBusinesses();
+
+  Future<List<PhuongXaModel>> getPhuongXaList() => remote.getPhuongXaList();
+
+  Future<MyBusinessModel> createBusiness({
+    required String tenCoSo,
+    String? soGiayPhep,
+    DateTime? ngayHetHanGiayPhep,
+    String? maPX,
+    String? anhBia,
+  }) => remote.createBusiness(
+    tenCoSo: tenCoSo,
+    soGiayPhep: soGiayPhep,
+    ngayHetHanGiayPhep: ngayHetHanGiayPhep,
+    maPX: maPX,
+    anhBia: anhBia,
+  );
 
   Future<List<HoSoDangKiModel>> getMyHoSoList() => remote.getMyHoSoList();
 

@@ -88,11 +88,14 @@ class BizDetailPage extends StatelessWidget {
                     const SizedBox(width: 10),
                     Expanded(
                       child: _ActionChip(
-                        icon: Icons.shield_outlined,
-                        label: 'Pháp lý',
+                        icon: Icons.upload_file_rounded,
+                        label: 'Giấy tờ',
                         color: AppTheme.info,
-                        onTap: () =>
-                            Navigator.pushNamed(context, Routes.businessStatus),
+                        onTap: () => Navigator.pushNamed(
+                          context,
+                          Routes.documentUpload,
+                          arguments: {'maCoSo': biz.maCoSo},
+                        ),
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -133,6 +136,7 @@ class BizDetailPage extends StatelessWidget {
                   final isExpired =
                       doc?.trangThai?.toLowerCase().contains('hết hạn') ??
                       false;
+                  final canSubmit = !hasDoc || isExpired;
 
                   return _DocumentStatusCard(
                     label: docLabels[docType] ?? docType,
@@ -140,6 +144,16 @@ class BizDetailPage extends StatelessWidget {
                     isExpired: isExpired,
                     trangThai: doc?.trangThai,
                     ngayHetHan: doc?.ngayHetHan,
+                    onTap: canSubmit
+                        ? () => Navigator.pushNamed(
+                            context,
+                            Routes.documentUpload,
+                            arguments: {
+                              'maCoSo': biz.maCoSo,
+                              'maLoaiGiayTo': docType,
+                            },
+                          )
+                        : null,
                   );
                 }),
 
@@ -286,6 +300,7 @@ class _DocumentStatusCard extends StatelessWidget {
   final bool isExpired;
   final String? trangThai;
   final DateTime? ngayHetHan;
+  final VoidCallback? onTap;
 
   const _DocumentStatusCard({
     required this.label,
@@ -293,6 +308,7 @@ class _DocumentStatusCard extends StatelessWidget {
     required this.isExpired,
     this.trangThai,
     this.ngayHetHan,
+    this.onTap,
   });
 
   @override
@@ -304,7 +320,7 @@ class _DocumentStatusCard extends StatelessWidget {
     if (!hasDoc) {
       color = AppTheme.textTertiary;
       icon = Icons.remove_circle_outline;
-      statusText = 'Chưa nộp';
+      statusText = 'Bổ sung sau';
     } else if (isExpired) {
       color = AppTheme.error;
       icon = Icons.warning_amber_rounded;
@@ -317,35 +333,52 @@ class _DocumentStatusCard extends StatelessWidget {
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: color.withValues(alpha: 0.25)),
       ),
-      child: Row(
-        children: [
-          Icon(icon, color: color, size: 20),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              label,
-              style: GoogleFonts.inter(
-                color: AppTheme.textPrimary,
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-              ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(
+              children: [
+                Icon(icon, color: color, size: 20),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: GoogleFonts.inter(
+                      color: AppTheme.textPrimary,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                Text(
+                  statusText,
+                  style: GoogleFonts.inter(
+                    color: color,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                if (onTap != null) ...[
+                  const SizedBox(width: 6),
+                  Icon(
+                    Icons.add_circle_outline_rounded,
+                    color: color,
+                    size: 18,
+                  ),
+                ],
+              ],
             ),
           ),
-          Text(
-            statusText,
-            style: GoogleFonts.inter(
-              color: color,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

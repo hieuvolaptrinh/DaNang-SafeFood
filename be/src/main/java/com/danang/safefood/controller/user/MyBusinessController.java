@@ -43,6 +43,15 @@ public class MyBusinessController {
         return ResponseEntity.ok(ApiResponse.success(service.getMyBusinesses(requireUser(jwt))));
     }
 
+    @PostMapping
+    public ResponseEntity<ApiResponse<MyBusinessResponse>> createBusiness(
+            @AuthenticationPrincipal JwtPrincipal jwt,
+            @Valid @RequestBody com.danang.safefood.dto.request.CoSoKinhDoanhCreateRequest req) {
+        return ResponseEntity.ok(ApiResponse.success(
+                "Tạo cơ sở kinh doanh thành công",
+                service.createBusiness(req, requireUser(jwt))));
+    }
+
     @GetMapping("/ho-so")
     public ResponseEntity<ApiResponse<List<HoSoDangKiResponse>>> getMyHoSo(
             @AuthenticationPrincipal JwtPrincipal jwt) {

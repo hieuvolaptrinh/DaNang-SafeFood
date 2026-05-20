@@ -1,15 +1,21 @@
 package com.danang.safefood.service;
 
+import com.danang.safefood.dto.request.CoSoKinhDoanhCreateRequest;
 import com.danang.safefood.dto.request.HoSoDangKiRequest;
 import com.danang.safefood.dto.response.HoSoDangKiResponse;
 import com.danang.safefood.dto.response.MyBusinessResponse;
 import com.danang.safefood.entity.CoSoKinhDoanh;
 import com.danang.safefood.entity.HoSoDangKiKinhDoanh;
 import com.danang.safefood.entity.LoaiGiayTo;
+import com.danang.safefood.entity.NguoiDung;
+import com.danang.safefood.entity.PhuongXa;
 import com.danang.safefood.repository.CoSoKinhDoanhRepository;
 import com.danang.safefood.repository.HoSoDangKiKinhDoanhRepository;
 import com.danang.safefood.repository.LoaiGiayToRepository;
+import com.danang.safefood.repository.NguoiDungRepository;
+import com.danang.safefood.repository.PhuongXaRepository;
 import com.danang.safefood.util.IdGenerator;
+import com.danang.safefood.util.TrangThaiKinhDoanh;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +30,8 @@ public class MyBusinessService {
     private final CoSoKinhDoanhRepository coSoRepo;
     private final HoSoDangKiKinhDoanhRepository hoSoRepo;
     private final LoaiGiayToRepository loaiGiayToRepo;
+    private final NguoiDungRepository nguoiDungRepo;
+    private final PhuongXaRepository phuongXaRepo;
 
     @Transactional(readOnly = true)
     public List<MyBusinessResponse> getMyBusinesses(Long taiKhoanId) {
@@ -31,6 +39,36 @@ public class MyBusinessService {
                 .stream()
                 .map(MyBusinessResponse::from)
                 .toList();
+    }
+
+    /**
+     * Tạo mới cơ sở kinh doanh thuộc sở hữu của người dùng đang đăng nhập.
+     * Trạng thái mặc định: DANG_DOI_PHE_DUYET — chờ duyệt sau khi nộp đủ giấy tờ.
+     */
+    @Transactional
+    public MyBusinessResponse createBusiness(CoSoKinhDoanhCreateRequest req, Long taiKhoanId) {
+        NguoiDung nguoiDung = nguoiDungRepo.findByTaiKhoan_Id(taiKhoanId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy thông tin người dùng"));
+
+        PhuongXa phuongXa = null;
+        if (req.maPX() != null && !req.maPX().isBlank()) {
+            phuongXa = phuongXaRepo.findById(req.maPX())
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy phường xã: " + req.maPX()));
+        }
+
+        CoSoKinhDoanh coSo = CoSoKinhDoanh.builder()
+                .maCoSo(IdGenerator.generate("CS"))
+                .tenCoSo(req.tenCoSo())
+                .soGiayPhep(req.soGiayPhep())
+                .ngayHetHanGiayPhep(req.ngayHetHanGiayPhep())
+                .anhBia(req.anhBia())
+                .phuongXa(phuongXa)
+                .chuSoHuu(nguoiDung)
+                .trangThai("Cho duyet")
+                .trangThaiKinhDoanh(TrangThaiKinhDoanh.DANG_DOI_PHE_DUYET)
+                .build();
+
+        return MyBusinessResponse.from(coSoRepo.save(coSo));
     }
 
     @Transactional(readOnly = true)
