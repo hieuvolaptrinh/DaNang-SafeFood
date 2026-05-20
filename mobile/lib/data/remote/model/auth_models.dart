@@ -1,3 +1,5 @@
+import 'package:mobile_ui/data/remote/model/log_models.dart';
+
 class AuthRequest {
   final String identifier;
   final String password;
@@ -57,11 +59,13 @@ class AuthResponse {
   final String accessToken;
   final String refreshToken;
   final UserInfo user;
+  final LoginLog? loginLog;
 
   const AuthResponse({
     required this.accessToken,
     required this.refreshToken,
     required this.user,
+    this.loginLog,
   });
 
   factory AuthResponse.fromJson(Map<String, dynamic> json) {
@@ -69,6 +73,9 @@ class AuthResponse {
       accessToken: json['accessToken'] as String? ?? '',
       refreshToken: json['refreshToken'] as String? ?? '',
       user: UserInfo.fromJson(json['user'] as Map<String, dynamic>? ?? {}),
+      loginLog: json['loginLog'] is Map<String, dynamic>
+          ? LoginLog.fromJson(json['loginLog'] as Map<String, dynamic>)
+          : null,
     );
   }
 }

@@ -16,6 +16,6 @@ class AppConfig {
 
   static String get baseUrl {
     // ip lấy qua wifi
-    return 'http://10.46.80.97:8080';
+    return 'http://192.168.1.13:8080';
   }
 }

@@ -29,4 +29,5 @@ class Routes {
   static const String editProfile = '/edit-profile';
   static const String changePassword = '/change-password';
   static const String myComplaints = '/my-complaints';
+  static const String loginHistory = '/login-history';
 }

@@ -2,6 +2,8 @@ package com.danang.safefood.service;
 
 import com.danang.safefood.dto.auth.AuthResponse;
 import com.danang.safefood.dto.auth.UserInfoDto;
+import com.danang.safefood.dto.response.LogResponse;
+import com.danang.safefood.entity.Log;
 import com.danang.safefood.entity.RefreshToken;
 import com.danang.safefood.entity.TaiKhoan;
 import com.danang.safefood.repository.RefreshTokenRepository;
@@ -109,7 +111,7 @@ public class AuthenticationService {
         var user = taiKhoanRepository.findByUsername(username)
                 .orElseThrow(() -> new IllegalStateException("User not found after authentication"));
 
-        logService.logLogin(user, ip, location, device);
+        Log loginLog = logService.logLogin(user, ip, location, device);
 
         RefreshToken refreshToken = RefreshToken.builder()
                 .token(refreshTokenJwt)
@@ -119,6 +121,10 @@ public class AuthenticationService {
                 .build();
         refreshTokenRepository.save(refreshToken);
 
-        return new AuthResponse(accessToken, refreshTokenJwt, UserInfoDto.fromEntity(user));
+        return new AuthResponse(
+                accessToken,
+                refreshTokenJwt,
+                UserInfoDto.fromEntity(user),
+                LogResponse.fromEntity(loginLog));
     }
 }
