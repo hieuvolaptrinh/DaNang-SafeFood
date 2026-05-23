@@ -1,9 +1,6 @@
 package com.danang.safefood.service;
 
-import com.danang.safefood.dto.response.KetQuaKiemNghiemChiTieuResponse;
-import com.danang.safefood.dto.response.KetQuaKiemNghiemDetailResponse;
-import com.danang.safefood.dto.response.KetQuaKiemNghiemItemResponse;
-import com.danang.safefood.dto.response.KetQuaKiemNghiemStatsResponse;
+import com.danang.safefood.dto.response.*;
 import com.danang.safefood.entity.CoSoKinhDoanh;
 import com.danang.safefood.entity.MauChiTieu;
 import com.danang.safefood.entity.MauKiemNghiem;
@@ -25,9 +22,9 @@ import java.util.Locale;
 @RequiredArgsConstructor
 public class KetQuaKiemNghiemService {
 
-    private static final String RESULT_PASS = "pass";
-    private static final String RESULT_FAIL = "fail";
-    private static final String RESULT_PENDING = "pending";
+    private static final String RESULT_PASS = "Đạt";
+    private static final String RESULT_FAIL = "Không Đạt";
+    private static final String RESULT_PENDING = "Đang kiểm nghiệm";
 
     private final MauKiemNghiemRepository mauKiemNghiemRepository;
     private final MauChiTieuRepository mauChiTieuRepository;
@@ -168,7 +165,7 @@ public class KetQuaKiemNghiemService {
         };
     }
 
-    private String resolveOverallResult(List<KetQuaKiemNghiemChiTieuResponse> chiTietChiTieu) {
+    private String  resolveOverallResult(List<KetQuaKiemNghiemChiTieuResponse> chiTietChiTieu) {
         if (chiTietChiTieu.isEmpty()) {
             return RESULT_PENDING;
         }
@@ -192,10 +189,10 @@ public class KetQuaKiemNghiemService {
         }
 
         String normalized = normalizeText(ketQua);
-        if (normalized.contains("khong dat") || normalized.contains("fail")) {
+        if (normalized.contains("khong đat") || normalized.contains("fail")) {
             return RESULT_FAIL;
         }
-        if (normalized.contains("dat") || normalized.contains("pass")) {
+        if (normalized.contains("đat") || normalized.contains("pass")) {
             return RESULT_PASS;
         }
         return RESULT_PENDING;
@@ -290,4 +287,7 @@ public class KetQuaKiemNghiemService {
     private boolean isBlank(String value) {
         return value == null || value.isBlank();
     }
+
+
+
 }

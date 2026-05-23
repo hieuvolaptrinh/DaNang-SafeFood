@@ -1,5 +1,6 @@
 package com.danang.safefood.security.user;
 
+import com.danang.safefood.config.security.user.CustomUserDetails;
 import com.danang.safefood.repository.TaiKhoanRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;

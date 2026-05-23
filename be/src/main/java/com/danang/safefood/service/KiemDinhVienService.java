@@ -3,9 +3,7 @@ package com.danang.safefood.service;
 import com.danang.safefood.dto.request.CapNhatKetQuaChiTieuRequest;
 import com.danang.safefood.dto.request.CapNhatTrangThaiMauRequest;
 import com.danang.safefood.dto.request.ViPhamRequest;
-import com.danang.safefood.dto.response.MauChiTieuResponse;
-import com.danang.safefood.dto.response.MauKiemNghiemResponse;
-import com.danang.safefood.dto.response.ViPhamResponse;
+import com.danang.safefood.dto.response.*;
 import com.danang.safefood.entity.*;
 import com.danang.safefood.repository.*;
 import com.danang.safefood.util.IdGenerator;
@@ -140,17 +138,15 @@ public class KiemDinhVienService {
 
     @Transactional
     public ViPhamResponse taoViPham(ViPhamRequest req) {
-        HoSoThanhTra hoSo = hoSoThanhTraRepo.findById(req.maHoSo())
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy hồ sơ thanh tra: " + req.maHoSo()));
+        MauKiemNghiem mauKiemNghiem = mauKiemNghiemRepo.findById(req.maMau())
+                .orElseThrow(()-> new RuntimeException("không tìm thấy mã mẫu"));
 
         LoaiViPham loaiViPham = loaiViPhamRepo.findById(req.maLoaiViPham())
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy loại vi phạm: " + req.maLoaiViPham()));
 
         String mucDo = (req.mucDo() != null && !req.mucDo().isBlank()) ? req.mucDo() : "Trung bình";
 
-        CoSoKinhDoanh coSoKinhDoanh = hoSo.getLichThanhTra() != null
-                ? hoSo.getLichThanhTra().getCoSoKinhDoanh()
-                : null;
+        CoSoKinhDoanh coSoKinhDoanh = mauKiemNghiem.getCoSoKinhDoanh();
 
         ViPham viPham = ViPham.builder()
                 .maViPham(IdGenerator.generate("VP"))
@@ -158,7 +154,8 @@ public class KiemDinhVienService {
                 .khacPhuc(req.khacPhuc())
                 .trangThaiPheDuyet(TrangThaiViPham.CHO_DUYET)
                 .mucDo(mucDo)
-                .hoSoThanhTra(hoSo)
+                .soTienPhat(req.soTienPhat())
+                .mauKiemNghiem(mauKiemNghiem)
                 .loaiViPham(loaiViPham)
                 .coSoKinhDoanh(coSoKinhDoanh)
                 .build();
@@ -208,10 +205,19 @@ public class KiemDinhVienService {
         return ViPhamResponse.from(viPhamRepo.save(viPham));
     }
 
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
+    @Transactional
+    public List<ChiTieuResponse> getAllMauChiTieu(){
+        return chiTieuRepo.findAll()
+                .stream().map(x -> new ChiTieuResponse(
+                        x.getMaChiTieu(),
+                        x.getTenChiTieu()
+                )).collect(Collectors.toList());
+    }
+
+    public List<MauSelectResponse> getMauSelect(){
+        return mauKiemNghiemRepo.findMauKhongDat();
+    }
     // =========================================================
     // Private helpers
     // =========================================================
