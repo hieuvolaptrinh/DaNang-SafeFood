@@ -63,4 +63,15 @@ public class CSKDController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Tạo lịch kiểm tra thành công", null));
     }
+
+    @GetMapping("/dropdown")
+    @PreAuthorize("hasAnyRole('LD_ATVSTP','CAN_BO_THANH_TRA','CAN_BO_KIEM_DINH','QUAN_TRI_HE_THONG')")
+    public ResponseEntity<ApiResponse<List<CoSoKinhDoanhResponse>>> getDropdown(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String trangThai) {
+
+        List<CoSoKinhDoanhResponse> list = coSoService.getDropdown(keyword, trangThai);
+        return ResponseEntity.ok(ApiResponse.success(list));
+    }
+
 }
