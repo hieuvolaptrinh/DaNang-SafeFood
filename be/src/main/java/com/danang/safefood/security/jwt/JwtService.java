@@ -1,6 +1,5 @@
 package com.danang.safefood.security.jwt;
 
-
 import com.danang.safefood.config.security.user.CustomUserDetails;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;

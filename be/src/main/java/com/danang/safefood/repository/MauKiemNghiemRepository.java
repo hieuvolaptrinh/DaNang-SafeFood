@@ -1,11 +1,14 @@
 package com.danang.safefood.repository;
 
+import com.danang.safefood.dto.response.MauSelectResponse;
 import com.danang.safefood.entity.MauKiemNghiem;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
+import java.util.List;
 
 public interface MauKiemNghiemRepository extends JpaRepository<MauKiemNghiem, String> {
 
@@ -118,4 +121,21 @@ public interface MauKiemNghiemRepository extends JpaRepository<MauKiemNghiem, St
               AND (m.lyDoKhongDat IS NULL OR TRIM(m.lyDoKhongDat) = '')
             """)
     long countKetQuaPassed();
+
+
+    @Query("""
+    SELECT DISTINCT new com.danang.safefood.dto.response.MauSelectResponse(
+        m.maMau,
+        m.tenMau,
+        m.loaiMau,
+        cs.tenCoSo
+    )
+    FROM MauKiemNghiem m
+    JOIN MauChiTieu ct
+        ON m.maMau = ct.maMau
+    LEFT JOIN m.coSoKinhDoanh cs
+    WHERE LOWER(ct.ketQua) = 'không đạt'
+      AND m.trangThai = 'Có kết quả'
+""")
+    List<MauSelectResponse> findMauKhongDat();
 }
