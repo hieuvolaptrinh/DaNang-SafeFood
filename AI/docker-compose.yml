@@ -1,0 +1,15 @@
+services:
+  ai-log:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: safefood-ai-log:latest
+    container_name: safefood-ai-log
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      # Ngưỡng tin cậy: probability >= threshold => phiên đăng nhập an toàn.
+      # Càng cao càng dễ bị flag là "đăng nhập lạ".
+      PREDICT_THRESHOLD: "0.85"
+      MODEL_PATH: "mode_log.joblib"

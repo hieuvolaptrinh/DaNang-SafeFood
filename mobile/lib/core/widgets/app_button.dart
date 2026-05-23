@@ -76,7 +76,7 @@ class _AppButtonState extends State<AppButton> {
           foregroundColor: fgColor,
           elevation: 0,
           shape: shape,
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 28),
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 14),
         ),
         child: _buildChild(fgColor),
       );

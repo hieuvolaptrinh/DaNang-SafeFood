@@ -64,6 +64,25 @@ public class CloudinaryController {
     }
 
     /**
+     * Upload tài liệu (ảnh hoặc PDF/Word) — dùng cho hồ sơ giấy tờ kinh doanh.
+     */
+    @PostMapping("/upload-document")
+    public ResponseEntity<ApiResponse<String>> uploadDocument(@RequestParam("file") MultipartFile file) {
+        try {
+            String url = cloudinaryService.uploadDocument(file);
+            return ResponseEntity.ok(ApiResponse.success("Upload tài liệu thành công", url));
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid document file: {}", e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error(400, "Lỗi: " + e.getMessage()));
+        } catch (IOException e) {
+            log.error("Error uploading document: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error(500, "Lỗi khi upload tài liệu: " + e.getMessage()));
+        }
+    }
+
+    /**
      * Xóa ảnh từ URL.
      *
      * @param imageUrl URL của ảnh trên Cloudinary

@@ -111,8 +111,7 @@ public class KiemDinhVienService {
                         item.maChiTieu(),
                         item.giaTriDo().trim(),
                         item.gioiHanChoPhep().trim(),
-                        ketQua
-                );
+                        ketQua);
             } else {
                 // Tạo mới nếu chưa có
                 MauChiTieu mauChiTieu = MauChiTieu.builder()

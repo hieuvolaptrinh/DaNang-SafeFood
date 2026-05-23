@@ -14,6 +14,7 @@ class Routes {
   static const String bizDetail = '/biz-detail';
   static const String allBusinesses = '/all-businesses';
   static const String businessRegistration = '/business-registration';
+  static const String documentUpload = '/document-upload';
   static const String violationList = '/violation-list';
   static const String violationDetail = '/violation-detail';
   static const String inspectionDetail = '/inspection-detail';
@@ -28,4 +29,5 @@ class Routes {
   static const String editProfile = '/edit-profile';
   static const String changePassword = '/change-password';
   static const String myComplaints = '/my-complaints';
+  static const String loginHistory = '/login-history';
 }
