@@ -1,7 +1,7 @@
 // ─────────────────────────────────────────────
 // TYPES
 // ─────────────────────────────────────────────
-export type Role = 'ADMIN' | 'AUTHORITY' | 'INSPECTOR' | 'TESTER' | 'BUSINESS';
+export type Role = 'ADMIN' | 'LD_ATVSTP' | 'INSPECTOR' | 'TESTER';
 
 export type BusinessStatus = 'active' | 'suspended' | 'pending' | 'expired';
 export type InspectionResult = 'pass' | 'fail' | 'scheduled';
@@ -268,7 +268,8 @@ export const roleNavMap: Record<Role, NavItem[]> = {
       ]
     },
   ],
-  AUTHORITY: [
+
+  LD_ATVSTP: [
     { label: 'Tổng quan', href: '/dashboard', icon: 'grid' },
     {
       label: 'Cơ sở kinh doanh', icon: 'building', children: [
@@ -278,15 +279,16 @@ export const roleNavMap: Record<Role, NavItem[]> = {
       ]
     },
     {
-      label: 'Thanh tra', icon: 'clipboard', children: [
-        { label: 'Tạo lịch thanh tra', href: '/thanh-tra-kiem-dinh/thanh-tra' }
+      label: 'Thanh tra & Kiểm định', icon: 'clipboard', children: [
+        { label: 'Hồ sơ thanh tra', href: '/thanh-tra-kiem-dinh' },
+        { label: 'Báo cáo thanh tra', href: '/thanh-tra-kiem-dinh/bao-cao' },
+        { label: 'Kết quả kiểm nghiệm', href: '/thanh-tra-kiem-dinh/ket-qua' },
       ]
     },
     {
       label: 'Vi phạm & Phản ánh', icon: 'alert', children: [
         { label: 'Danh sách vi phạm', href: '/vi-pham' },
         { label: 'Phản ánh công dân', href: '/phan-anh-cong-dan' },
-        { label: 'Theo dõi khắc phục', href: '/vi-pham/khac-phuc' },
       ]
     },
     {
@@ -330,43 +332,20 @@ export const roleNavMap: Record<Role, NavItem[]> = {
       ]
     },
   ],
-  BUSINESS: [
-    {
-      label: 'Cơ sở của tôi', icon: 'building', children: [
-        { label: 'Hồ sơ cơ sở', href: '/co-so-kinh-doanh/ho-so' },
-        { label: 'Giấy phép của tôi', href: '/co-so-kinh-doanh/giay-phep' },
-        { label: 'Chứng nhận', href: '/co-so-kinh-doanh/chung-nhan' },
-      ]
-    },
-    {
-      label: 'Thanh tra & Kiểm định', icon: 'clipboard', children: [
-        { label: 'Lịch sử thanh tra', href: '/thanh-tra-kiem-dinh' },
-        { label: 'Kết quả kiểm nghiệm', href: '/thanh-tra-kiem-dinh/ket-qua' },
-      ]
-    },
-    {
-      label: 'Vi phạm', icon: 'alert', children: [
-        { label: 'Vi phạm của tôi', href: '/vi-pham' },
-        { label: 'Theo dõi khắc phục', href: '/vi-pham/khac-phuc' },
-      ]
-    },
-  ],
 };
 
 export const roleLabels: Record<Role, string> = {
-  ADMIN: 'Quản trị viên',
-  AUTHORITY: 'Cơ quan thẩm quyền',
-  INSPECTOR: 'Thanh tra viên',
-  TESTER: 'Kiểm nghiệm viên',
-  BUSINESS: 'Chủ cơ sở',
+  ADMIN:     'Quản trị hệ thống',     // QTH
+  LD_ATVSTP: 'Lãnh đạo ATVSTP',
+  INSPECTOR: 'Cán bộ Thanh tra',      // CB_THANH_TRA
+  TESTER:    'Cán bộ Kiểm định',      // CB_KIEM_DINH
 };
 
 export const roleColors: Record<Role, string> = {
-  ADMIN: 'bg-[#1B5E20] text-white',
-  AUTHORITY: 'bg-[#2E7D32] text-white',
+  ADMIN:     'bg-[#1B5E20] text-white',
+  LD_ATVSTP: 'bg-[#1565C0] text-white',
   INSPECTOR: 'bg-[#ED6C02] text-white',
-  TESTER: 'bg-[#0288D1] text-white',
-  BUSINESS: 'bg-[#6B7280] text-white',
+  TESTER:    'bg-[#0288D1] text-white',
 };
 
 export type InspectionReportResult = 'pass' | 'fail' | 'scheduled';

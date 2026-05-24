@@ -121,4 +121,12 @@ public class CoSoKinhDoanhService {
 
         lichThanhTraRepo.save(lich);
     }
+
+    @Transactional(readOnly = true)
+    public List<CoSoKinhDoanhResponse> getDropdown(String keyword, String trangThai) {
+        List<CoSoKinhDoanh> list = coSoRepo.findForDropdown(keyword, trangThai);
+        return list.stream()
+                .map(CoSoKinhDoanhResponse::from)
+                .toList();
+    }
 }

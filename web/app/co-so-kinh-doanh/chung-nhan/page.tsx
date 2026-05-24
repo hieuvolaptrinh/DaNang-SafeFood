@@ -57,7 +57,7 @@ export default function PheDuyetChungNhanPage() {
 
   const handleApproveReject = () => {
     if (!selectedCert || !actionType) return;
-    const currentUser = role === 'AUTHORITY' ? 'Trần Thị Thẩm Quyền' : 'Nguyễn Văn Trần';
+    const currentUser = role === 'LD_ATVSTP' ? 'Trần Thị Thẩm Quyền' : 'Nguyễn Văn Trần';
     setData(prev => prev.map(item =>
       item.id === selectedCert.id ? { ...item, status: actionType, approver: currentUser } : item
     ));
