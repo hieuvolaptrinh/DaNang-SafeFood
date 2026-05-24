@@ -110,4 +110,51 @@ class BusinessRemoteDataSource {
       );
     }
   }
+
+  /// Lấy toàn bộ cơ sở kinh doanh (size lớn) để AI phân tích.
+  Future<List<BusinessSearchModel>> fetchAllBusinessesForAI() async {
+    try {
+      final response = await dio.get(
+        '/api/user/co-so-kinh-doanh/search',
+        queryParameters: {'page': 0, 'size': 500},
+      );
+
+      final wrapper =
+          ApiResponseWrapper<PagedResponse<BusinessSearchModel>>.fromJson(
+            response.data as Map<String, dynamic>,
+            (json) => PagedResponse.fromJson(
+              json as Map<String, dynamic>,
+              (item) => BusinessSearchModel.fromJson(item),
+            ),
+          );
+
+      if (!wrapper.isSuccess || wrapper.data == null) {
+        throw ApiException(statusCode: wrapper.code, message: wrapper.message);
+      }
+
+      return wrapper.data!.content;
+    } on DioException catch (error) {
+      final response = error.response;
+      if (response?.data is Map<String, dynamic>) {
+        final data = response!.data as Map<String, dynamic>;
+        final wrapper = ApiResponseWrapper<Object?>.fromJson(
+          data,
+          (json) => json,
+        );
+        throw ApiException(statusCode: wrapper.code, message: wrapper.message);
+      }
+      throw ApiException(
+        statusCode: response?.statusCode ?? 500,
+        message: 'Không thể kết nối tới máy chủ',
+        details: error.message,
+      );
+    } catch (error) {
+      if (error is ApiException) rethrow;
+      throw ApiException(
+        statusCode: 500,
+        message: 'Có lỗi xảy ra khi tải dữ liệu cho AI',
+        details: error,
+      );
+    }
+  }
 }

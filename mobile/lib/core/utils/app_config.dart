@@ -18,4 +18,12 @@ class AppConfig {
     // ip lấy qua wifi
     return 'http://192.168.1.13:8080';
   }
+
+  // ── AI API Config ──
+  static String get aiApiKey =>
+      dotenv.env['AI_API_KEY'] ?? '';
+
+  static String get aiApiUrl =>
+      dotenv.env['AI_API_URL'] ??
+      'https://api.chatanywhere.tech/v1/chat/completions';
 }
