@@ -307,19 +307,17 @@ export default function DashboardPage() {
   const { role } = useRole();
 
   const pageTitle: Record<string, string> = {
-    ADMIN: 'Bảng điều hành hệ thống',
-    AUTHORITY: 'Tổng quan quản lý an toàn thực phẩm',
-    INSPECTOR: 'Bảng điều hành thanh tra viên',
-    TESTER: 'Bảng điều hành kiểm nghiệm viên',
-    BUSINESS: 'Thông tin tuân thủ cơ sở kinh doanh',
+    ADMIN:     'Bảng điều hành hệ thống',
+    LD_ATVSTP: 'Tổng quan quản lý an toàn thực phẩm',
+    INSPECTOR: 'Bảng điều hành cán bộ thanh tra',
+    TESTER:    'Bảng điều hành cán bộ kiểm định',
   };
 
   const pageSubtitle: Record<string, string> = {
-    ADMIN: 'Giám sát hạ tầng và vận hành hệ thống thông tin',
-    AUTHORITY: 'Chi cục An toàn Thực phẩm TP. Đà Nẵng — Cập nhật 15/05/2026',
+    ADMIN:     'Giám sát hạ tầng và vận hành hệ thống thông tin',
+    LD_ATVSTP: 'Chi cục An toàn Thực phẩm TP. Đà Nẵng — Cập nhật 15/05/2026',
     INSPECTOR: 'Lịch và hồ sơ thanh tra được phân công đến tôi',
-    TESTER: 'Yêu cầu và kết quả kiểm nghiệm mẫu thực phẩm',
-    BUSINESS: 'Trạng thái tuân thủ và hồ sơ pháp lý cơ sở',
+    TESTER:    'Yêu cầu và kết quả kiểm định mẫu thực phẩm',
   };
 
   return (
@@ -354,7 +352,7 @@ export default function DashboardPage() {
             {pageSubtitle[role]}
           </p>
         </div>
-        {role === 'AUTHORITY' && (
+        {role === 'LD_ATVSTP' && (
           <div style={{ display: 'flex', gap: '6px' }}>
             <button className="gov-btn gov-btn-secondary" style={{ height: '28px', fontSize: '12px' }}>
               <RefreshCw style={{ width: '13px', height: '13px' }} />
@@ -373,10 +371,9 @@ export default function DashboardPage() {
       </div>
 
       {role === 'ADMIN' && <AdminDashboard />}
-      {role === 'AUTHORITY' && <AuthorityDashboard />}
+      {role === 'LD_ATVSTP' && <AuthorityDashboard />}
       {role === 'INSPECTOR' && <InspectorDashboard />}
       {role === 'TESTER' && <TesterDashboard />}
-      {role === 'BUSINESS' && <BusinessDashboard />}
     </div>
   );
 }

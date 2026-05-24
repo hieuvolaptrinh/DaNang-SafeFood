@@ -39,6 +39,15 @@ INSERT INTO nguoi_dung (maNguoiDung, hoTen, gioiTinh, CCCD, taiKhoanId) VALUES
 ('ND005', 'Nguyễn Văn A',      'Nam', '012345678905', 5),
 ('ND006', 'Nguyễn Văn B',      'Nam', '012345678906', 6);
 
+-- [3.1] Log đăng nhập (nguoi_dung: ND006)
+INSERT INTO log (maLog, ip, time, location, device, maNguoiDung) VALUES
+('LG00000001', '113.160.12.34', '2026-05-18 08:15:10', '16.054407,108.202167', 'android 14', 'ND006'),
+('LG00000002', '113.160.12.34', '2026-05-19 09:42:33', '16.054512,108.203001', 'android 14', 'ND006'),
+('LG00000003', '14.191.7.88',   '2026-05-20 20:05:48', '16.046880,108.214220', 'ios 17.5',  'ND006');
+
+INSERT INTO log (maLog, ip, time, location, device, maNguoiDung) VALUES
+('LG00000004', '113.160.12.35', '2026-05-20 09:05:22', '16.054210,108.202090', 'android 13', 'ND005');
+
 -- [4] Phân quyền
 INSERT INTO quyen_han_nguoi_dung (maQuyenHan, taiKhoanId) VALUES
 ('QTH', 1), ('LD_ATVSTP', 2), ('CB_THANH_TRA', 3),

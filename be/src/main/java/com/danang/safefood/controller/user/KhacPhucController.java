@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.*;
  *  - GET   /api/user/khac-phuc/payment/{orderCode}       — xem chi tiết giao dịch
  *  - POST  /api/user/khac-phuc/payment/{orderCode}/sync  — đồng bộ trạng thái với PayOS
  */
-@RestController
+@RestController("userKhacPhucController")
 @RequestMapping("/api/user/khac-phuc")
 @RequiredArgsConstructor
 public class KhacPhucController {

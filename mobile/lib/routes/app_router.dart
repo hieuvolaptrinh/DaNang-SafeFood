@@ -12,7 +12,11 @@ import 'package:mobile_ui/ui/notification/notification_page.dart';
 import 'package:mobile_ui/ui/complaint/complaint_form_page.dart';
 import 'package:mobile_ui/ui/complaint/complaint_detail_page.dart';
 import 'package:mobile_ui/ui/business_management/pages/biz_detail_page.dart';
-import 'package:mobile_ui/ui/business_management/pages/business_registration_page.dart';
+import 'package:mobile_ui/ui/business_management/pages/all_businesses_page.dart';
+import 'package:mobile_ui/ui/business_registration/business_registration_page.dart';
+import 'package:mobile_ui/ui/document_upload/document_upload_page.dart';
+import 'package:mobile_ui/viewmodel/business_registration/business_registration_cubit.dart';
+import 'package:mobile_ui/viewmodel/document_upload/document_upload_cubit.dart';
 import 'package:mobile_ui/ui/business_management/pages/violation_list_page.dart';
 import 'package:mobile_ui/ui/business_management/pages/violation_detail_page.dart';
 import 'package:mobile_ui/ui/business_management/pages/inspection_detail_page.dart';
@@ -51,6 +55,10 @@ import 'package:mobile_ui/data/remote/repository/my_business_repository.dart';
 import 'package:mobile_ui/ui/profile/edit_profile_page.dart';
 import 'package:mobile_ui/ui/profile/change_password_page.dart';
 import 'package:mobile_ui/ui/profile/my_complaints_page.dart';
+import 'package:mobile_ui/ui/(user)/log/log_page.dart';
+import 'package:mobile_ui/data/remote/datasource/log_remote_datasource.dart';
+import 'package:mobile_ui/data/remote/repository/log_repository.dart';
+import 'package:mobile_ui/viewmodel/log/log_cubit.dart';
 
 class AppRouter {
   static final _dio = DioClient().dio;
@@ -75,6 +83,10 @@ class AppRouter {
 
   static final ProfileRepository _profileRepository = ProfileRepository(
     remoteDataSource: ProfileRemoteDataSource(dio: _dio),
+  );
+
+  static final LogRepository _logRepository = LogRepository(
+    remoteDataSource: LogRemoteDataSource(dio: _dio),
   );
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
@@ -183,9 +195,46 @@ class AppRouter {
           ),
         );
 
+      case Routes.allBusinesses:
+        return MaterialPageRoute(
+          builder: (_) => BlocProvider(
+            create: (_) => BusinessManagementCubit(
+              repository: MyBusinessRepository(
+                remote: MyBusinessRemoteDataSource(dio: _dio),
+              ),
+            )..loadData(),
+            child: const AllBusinessesPage(),
+          ),
+        );
+
       case Routes.businessRegistration:
         return MaterialPageRoute(
-          builder: (_) => const BusinessRegistrationPage(),
+          builder: (_) => BlocProvider(
+            create: (_) => BusinessRegistrationCubit(
+              repository: MyBusinessRepository(
+                remote: MyBusinessRemoteDataSource(dio: _dio),
+              ),
+            )..loadInitial(),
+            child: const BusinessRegistrationPage(),
+          ),
+        );
+
+      case Routes.documentUpload:
+        final args = settings.arguments as Map<String, dynamic>?;
+        final preMaCoSo = args?['maCoSo'] as String?;
+        final focusLoai = args?['maLoaiGiayTo'] as String?;
+        return MaterialPageRoute(
+          builder: (_) => BlocProvider(
+            create: (_) => DocumentUploadCubit(
+              repository: MyBusinessRepository(
+                remote: MyBusinessRemoteDataSource(dio: _dio),
+              ),
+            )..loadInitial(preSelectMaCoSo: preMaCoSo),
+            child: DocumentUploadPage(
+              preSelectMaCoSo: preMaCoSo,
+              focusLoaiGiayTo: focusLoai,
+            ),
+          ),
         );
 
       case Routes.violationList:
@@ -271,11 +320,45 @@ class AppRouter {
           ),
         );
 
-      default:
+      case Routes.loginHistory:
         return MaterialPageRoute(
           builder: (_) => BlocProvider(
-            create: (_) => LoginCubit(authRepository: _authRepository),
-            child: const LoginPage(),
+            create: (_) => LogCubit(repository: _logRepository)..loadLogs(),
+            child: const LogPage(),
+          ),
+        );
+
+      default:
+        // Route không tồn tại — quay về MainScaffold thay vì đẩy ra LoginPage
+        // (tránh trường hợp user đang đăng nhập bị "đá" về login mà không vào lại được).
+        return MaterialPageRoute(
+          builder: (_) => Scaffold(
+            appBar: AppBar(title: const Text('Không tìm thấy trang')),
+            body: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
+                      size: 56,
+                      color: Colors.grey,
+                    ),
+                    const SizedBox(height: 12),
+                    Text('Đường dẫn ${settings.name ?? ''} chưa được hỗ trợ'),
+                    const SizedBox(height: 16),
+                    Builder(
+                      builder: (ctx) => FilledButton(
+                        onPressed: () =>
+                            Navigator.popUntil(ctx, (r) => r.isFirst),
+                        child: const Text('Quay lại trang chính'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         );
     }

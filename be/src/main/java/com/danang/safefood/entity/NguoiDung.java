@@ -41,4 +41,5 @@ public class NguoiDung {
     @OneToOne
     @JoinColumn(name = "taiKhoanId", nullable = false)
     private TaiKhoan taiKhoan;
+
 }

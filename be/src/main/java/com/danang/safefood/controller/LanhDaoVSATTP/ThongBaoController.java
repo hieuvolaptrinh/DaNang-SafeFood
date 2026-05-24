@@ -35,4 +35,13 @@ public class ThongBaoController {
             @PageableDefault(size = 20) Pageable pageable) {
         return ResponseEntity.ok(ApiResponse.success(thongBaoService.getAll(loai, isCongDong, pageable)));
     }
+
+    // ThongBaoController.java - thêm endpoint
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<ThongBaoResponse>> update(
+            @PathVariable String id,
+            @Valid @RequestBody ThongBaoRequest req) {
+        return ResponseEntity.ok(ApiResponse.success("Cập nhật thông báo thành công",
+                thongBaoService.update(id, req)));
+    }
 }

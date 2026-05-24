@@ -117,10 +117,24 @@ BEGIN
 END $$;
 
 -- ---------------------------------------------------------------------------
--- 4) ho_so_dang_ki_kinh_doanh: thêm ngayHetHan
+-- 4) ho_so_dang_ki_kinh_doanh: thêm ngayHetHan, ngayCap, urlFile, maLoaiGiayTo
 -- ---------------------------------------------------------------------------
 ALTER TABLE ho_so_dang_ki_kinh_doanh
-    ADD COLUMN IF NOT EXISTS ngayHetHan DATE;
+    ADD COLUMN IF NOT EXISTS ngayHetHan   DATE,
+    ADD COLUMN IF NOT EXISTS ngayCap      DATE,
+    ADD COLUMN IF NOT EXISTS urlFile      VARCHAR(500),
+    ADD COLUMN IF NOT EXISTS maLoaiGiayTo VARCHAR(30);
+
+-- FK đến loai_giay_to (nếu chưa có)
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints
+                   WHERE constraint_name = 'fk_hsdk_loai_giay_to') THEN
+        EXECUTE 'ALTER TABLE ho_so_dang_ki_kinh_doanh
+                 ADD CONSTRAINT fk_hsdk_loai_giay_to
+                 FOREIGN KEY (maLoaiGiayTo) REFERENCES loai_giay_to(maLoaiGiayTo)';
+    END IF;
+END $$;
 
 -- ---------------------------------------------------------------------------
 -- 5) hinh_thuc_khac_phuc: nếu data cũ có chuỗi tiếng Việt, chuẩn hoá về enum

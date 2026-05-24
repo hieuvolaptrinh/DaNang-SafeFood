@@ -54,6 +54,24 @@ class MyBusinessModel extends Equatable {
   ];
 }
 
+/// Phường xã (danh mục)
+class PhuongXaModel extends Equatable {
+  final String maPX;
+  final String tenPhuongXa;
+
+  const PhuongXaModel({required this.maPX, required this.tenPhuongXa});
+
+  factory PhuongXaModel.fromJson(Map<String, dynamic> json) {
+    return PhuongXaModel(
+      maPX: json['maPX'] as String? ?? '',
+      tenPhuongXa: json['tenPhuongXa'] as String? ?? '',
+    );
+  }
+
+  @override
+  List<Object?> get props => [maPX, tenPhuongXa];
+}
+
 /// Hồ sơ đăng kí kinh doanh
 class HoSoDangKiModel extends Equatable {
   final String maHoSo;

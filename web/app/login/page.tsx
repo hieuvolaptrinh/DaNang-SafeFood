@@ -3,17 +3,46 @@
 import Image from 'next/image';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/lib/AuthContext';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
+  const { login } = useAuth();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     setLoading(true);
-    setTimeout(() => {
+
+    try {
+      const res = await fetch(`${API_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+
+      const body = await res.json();
+
+      if (!res.ok || body.code !== 200) {
+        setError(body.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.');
+        return;
+      }
+
+      const { accessToken, refreshToken, user } = body.data;
+      login({ accessToken, refreshToken }, user);
       router.push('/dashboard');
-    }, 800);
+    } catch {
+      setError('Không thể kết nối đến máy chủ. Vui lòng thử lại sau.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -94,17 +123,26 @@ export default function LoginPage() {
               </div>
 
               <form onSubmit={handleLogin} style={{ padding:'20px 16px' }}>
+                {error && (
+                  <div style={{ marginBottom:'12px', padding:'8px 10px', background:'#FFF3F3', border:'1px solid #F5C6CB', borderLeft:'4px solid #CC0000', borderRadius:'2px', fontSize:'12px', color:'#CC0000' }}>
+                    {error}
+                  </div>
+                )}
+
                 <div style={{ marginBottom:'12px' }}>
                   <label style={{ display:'block', fontSize:'12.5px', fontWeight:600, color:'#333', marginBottom:'4px' }}>
                     Tên đăng nhập <span style={{ color:'#CC0000' }}>*</span>
                   </label>
                   <input
+                    id="login-username"
                     type="text"
                     placeholder="Nhập tên đăng nhập..."
-                    defaultValue="admin@fsms.danang.gov.vn"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
                     className="gov-input"
                     style={{ height:'32px' }}
                     required
+                    autoComplete="username"
                   />
                 </div>
 
@@ -113,12 +151,15 @@ export default function LoginPage() {
                     Mật khẩu <span style={{ color:'#CC0000' }}>*</span>
                   </label>
                   <input
+                    id="login-password"
                     type="password"
                     placeholder="Nhập mật khẩu..."
-                    defaultValue="password123"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     className="gov-input"
                     style={{ height:'32px' }}
                     required
+                    autoComplete="current-password"
                   />
                 </div>
 
@@ -128,6 +169,7 @@ export default function LoginPage() {
                 </div>
 
                 <button
+                  id="login-submit"
                   type="submit"
                   disabled={loading}
                   style={{

@@ -1,5 +1,7 @@
 package com.danang.safefood.controller.LanhDaoVSATTP;
 
+import com.danang.safefood.config.security.jwt.JwtPrincipal;
+import com.danang.safefood.config.security.user.CustomUserDetails;
 import com.danang.safefood.dto.request.QuyDinhRequest;
 import com.danang.safefood.dto.response.ApiResponse;
 import com.danang.safefood.dto.response.QuyDinhResponse;
@@ -28,10 +30,10 @@ public class QuyDinhController {
     @PostMapping
     public ResponseEntity<ApiResponse<QuyDinhResponse>> create(
             @Valid @RequestBody QuyDinhRequest req,
-            @AuthenticationPrincipal UserDetails principal) {
+            @AuthenticationPrincipal JwtPrincipal principal) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Quy định đã được ban hành",
-                        quyDinhService.create(req, principal.getUsername())));
+                        quyDinhService.create(req, principal.username())));
     }
 
     @PutMapping("/{id}")

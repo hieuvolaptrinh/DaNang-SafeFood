@@ -1,6 +1,7 @@
 package com.danang.safefood.service;
 
 import com.danang.safefood.dto.request.ThanhTraRequest;
+import com.danang.safefood.dto.response.NguoiDungResponse;
 import com.danang.safefood.dto.response.ThanhTraResponse;
 import com.danang.safefood.entity.CoSoKinhDoanh;
 import com.danang.safefood.entity.LichThanhTra;
@@ -14,6 +15,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -51,5 +54,13 @@ public class ThanhTraService {
                 ? lichThanhTraRepo.findByTrangThaiOrderByMaThanhTraDesc(trangThai, pageable)
                 : lichThanhTraRepo.findAllByOrderByMaThanhTraDesc(pageable);
         return page.map(ThanhTraResponse::from);
+    }
+
+    @Transactional(readOnly = true)
+    public List<NguoiDungResponse> getNguoiDungByQuyen(String maQuyenHan) {
+        List<NguoiDung> list = nguoiDungRepo.findByQuyenHan(maQuyenHan);
+        return list.stream()
+                .map(NguoiDungResponse::from)   // hoặc tạo mapper phù hợp
+                .toList();
     }
 }

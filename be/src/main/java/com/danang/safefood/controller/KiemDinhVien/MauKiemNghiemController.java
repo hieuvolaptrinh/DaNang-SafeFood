@@ -3,6 +3,7 @@ package com.danang.safefood.controller.KiemDinhVien;
 import com.danang.safefood.dto.request.CapNhatTrangThaiMauRequest;
 import com.danang.safefood.dto.response.ApiResponse;
 import com.danang.safefood.dto.response.MauKiemNghiemResponse;
+import com.danang.safefood.dto.response.MauSelectResponse;
 import com.danang.safefood.service.KiemDinhVienService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +13,8 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * Controller quản lý mẫu kiểm định.
@@ -62,6 +65,16 @@ public class MauKiemNghiemController {
         return ResponseEntity.ok(
                 ApiResponse.success("Cập nhật trạng thái mẫu thành công",
                         kiemDinhVienService.capNhatTrangThaiMau(maMau, req))
+        );
+    }
+
+    @GetMapping("/select")
+    public ResponseEntity<ApiResponse<List<MauSelectResponse>>> getSelectData() {
+
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        kiemDinhVienService.getMauSelect()
+                )
         );
     }
 }

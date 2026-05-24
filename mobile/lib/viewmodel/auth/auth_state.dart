@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:mobile_ui/data/remote/model/log_models.dart';
 
 /// Vai trò người dùng trong hệ thống
 enum AppRole {
@@ -27,6 +28,10 @@ class AuthState extends Equatable {
   final String? phone;
   final List<String> roles;
 
+  /// Thông tin phiên đăng nhập gần nhất (nếu có) — được backend trả về
+  /// kèm AuthResponse, dùng để hiển thị banner thông báo trên trang chủ.
+  final LoginLog? lastLogin;
+
   const AuthState({
     this.status = AuthStatus.unknown,
     this.accessToken,
@@ -36,6 +41,7 @@ class AuthState extends Equatable {
     this.email,
     this.phone,
     this.roles = const [],
+    this.lastLogin,
   });
 
   /// Kiểm tra user có phải Cơ sở kinh doanh không
@@ -66,6 +72,8 @@ class AuthState extends Equatable {
     String? email,
     String? phone,
     List<String>? roles,
+    LoginLog? lastLogin,
+    bool clearLastLogin = false,
   }) {
     return AuthState(
       status: status ?? this.status,
@@ -76,18 +84,20 @@ class AuthState extends Equatable {
       email: email ?? this.email,
       phone: phone ?? this.phone,
       roles: roles ?? this.roles,
+      lastLogin: clearLastLogin ? null : (lastLogin ?? this.lastLogin),
     );
   }
 
   @override
   List<Object?> get props => [
-        status,
-        accessToken,
-        username,
-        userId,
-        fullName,
-        email,
-        phone,
-        roles,
-      ];
+    status,
+    accessToken,
+    username,
+    userId,
+    fullName,
+    email,
+    phone,
+    roles,
+    lastLogin,
+  ];
 }

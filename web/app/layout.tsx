@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Roboto } from "next/font/google";
 import "./globals.css";
+import { AuthProvider } from "@/lib/AuthContext";
 import { RoleProvider } from "@/lib/RoleContext";
 import AppShell from "@/components/AppShell";
 
@@ -31,10 +32,13 @@ export default function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </head>
       <body style={{ fontFamily: "'Roboto', Arial, Helvetica, sans-serif" }}>
-        <RoleProvider>
-          <AppShell>{children}</AppShell>
-        </RoleProvider>
+        <AuthProvider>
+          <RoleProvider>
+            <AppShell>{children}</AppShell>
+          </RoleProvider>
+        </AuthProvider>
       </body>
     </html>
   );
 }
+

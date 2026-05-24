@@ -1,13 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Bell, ChevronDown } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
+import { Bell, LogOut } from 'lucide-react';
 import { useRole } from '@/lib/RoleContext';
-import { Role, roleLabels } from '@/data/mockData';
+import { useAuth } from '@/lib/AuthContext';
+import { roleLabels } from '@/data/mockData';
 import { cn } from '@/lib/utils';
-
-const ALL_ROLES: Role[] = ['ADMIN', 'AUTHORITY', 'INSPECTOR', 'TESTER', 'BUSINESS'];
 
 const breadcrumbMap: Record<string, string[]> = {
   '/dashboard': ['Tổng quan'],
@@ -34,14 +33,6 @@ const breadcrumbMap: Record<string, string[]> = {
   '/cai-dat/may-chu': ['Cài đặt hệ thống', 'Giám sát máy chủ'],
 };
 
-const roleAvatar: Record<Role, string> = {
-  ADMIN:     'A',
-  AUTHORITY: 'T',
-  INSPECTOR: 'T',
-  TESTER:    'H',
-  BUSINESS:  'P',
-};
-
 function formatDateTime() {
   return new Intl.DateTimeFormat('vi-VN', {
     weekday: 'short',
@@ -55,8 +46,20 @@ function formatDateTime() {
 
 export default function Header() {
   const pathname = usePathname();
-  const { role, setRole } = useRole();
+  const router = useRouter();
+  const { role } = useRole();
+  const { user, logout } = useAuth();
   const crumbs = breadcrumbMap[pathname] ?? ['Hệ thống'];
+
+  // Avatar initials: last 2 words of fullName
+  const avatarInitials = user?.fullName
+    ? user.fullName.split(' ').slice(-2).map((w) => w[0]).join('').toUpperCase()
+    : '?';
+
+  const handleLogout = () => {
+    logout();
+    router.push('/login');
+  };
 
   return (
     <header className="h-11 bg-white border-b border-[#D6D6D6] flex items-center px-4 gap-4 shrink-0 z-30">
@@ -101,31 +104,28 @@ export default function Header() {
         </span>
       </button>
 
-      {/* User profile + role switcher (giữ logic demo hiện có) */}
+      {/* User info + Logout */}
       <div className="flex items-center gap-2 pl-3 border-l border-[#D6D6D6] shrink-0">
         <div className="w-7 h-7 rounded-sm bg-[#006400] flex items-center justify-center text-[11px] font-semibold text-white">
-          {roleAvatar[role]}
+          {avatarInitials}
         </div>
         <div className="hidden sm:block min-w-0">
-          <p className="text-[11.5px] font-semibold text-[#222] leading-tight truncate max-w-[120px]">
+          <p className="text-[11.5px] font-semibold text-[#222] leading-tight truncate max-w-[140px]">
+            {user?.fullName ?? roleLabels[role]}
+          </p>
+          <p className="text-[10.5px] text-[#666] leading-tight truncate max-w-[140px]">
             {roleLabels[role]}
           </p>
-          <div className="relative mt-0.5">
-            <select
-              value={role}
-              onChange={(e) => setRole(e.target.value as Role)}
-              className="h-5 appearance-none bg-transparent text-[10.5px] text-[#555] pr-4 outline-none cursor-pointer max-w-[130px]"
-              aria-label="Chọn vai trò"
-            >
-              {ALL_ROLES.map((r) => (
-                <option key={r} value={r}>
-                  {roleLabels[r]}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 text-[#888] pointer-events-none" />
-          </div>
         </div>
+        <button
+          type="button"
+          onClick={handleLogout}
+          title="Đăng xuất"
+          className="w-7 h-7 flex items-center justify-center border border-[#D6D6D6] rounded-sm text-[#555] hover:bg-red-50 hover:text-[#CC0000] hover:border-[#CC0000] transition-colors ml-1"
+          aria-label="Đăng xuất"
+        >
+          <LogOut className="w-3.5 h-3.5" strokeWidth={1.75} />
+        </button>
       </div>
     </header>
   );

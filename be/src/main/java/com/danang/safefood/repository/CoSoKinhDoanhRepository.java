@@ -51,4 +51,18 @@ public interface CoSoKinhDoanhRepository extends JpaRepository<CoSoKinhDoanh, St
     long countByTrangThai(String trangThai);
 
     java.util.List<CoSoKinhDoanh> findByChuSoHuu_TaiKhoan_Id(Long taiKhoanId);
+
+
+    @Query(value = """
+    SELECT * FROM co_so_kinh_doanh c 
+    WHERE (:keyword IS NULL 
+           OR LOWER(COALESCE(CAST(c.tencoso AS text), '')) LIKE LOWER(CONCAT('%', COALESCE(:keyword, ''), '%')) 
+           OR LOWER(COALESCE(CAST(c.macoso AS text), '')) LIKE LOWER(CONCAT('%', COALESCE(:keyword, ''), '%')))
+      AND (:trangThai IS NULL OR c.trangthai = :trangThai)
+    ORDER BY c.tencoso ASC
+    """, nativeQuery = true)
+    List<CoSoKinhDoanh> findForDropdown(
+            @Param("keyword") String keyword,
+            @Param("trangThai") String trangThai
+    );
 }
