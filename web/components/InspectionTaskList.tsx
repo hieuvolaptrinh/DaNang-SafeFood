@@ -1,7 +1,9 @@
 import Badge from '@/components/Badge';
+import {
+  getInspectionTaskStatusBadge,
+  type NhiemVuStatus,
+} from '@/components/inspectionTaskStatus';
 import { cn } from '@/lib/utils';
-
-export type NhiemVuStatus = 'Chưa nhận' | 'Đã nhận' | 'Đang thực hiện' | 'Hoàn thành';
 
 export interface InspectionTaskRecord {
   id: string;
@@ -20,17 +22,6 @@ interface InspectionTaskListProps {
   onSelect: (taskId: string) => void;
 }
 
-function getStatusBadge(task: InspectionTaskRecord) {
-  const statusMap: Record<NhiemVuStatus, { variant: 'active' | 'pending' | 'open'; label: string }> = {
-    'Hoàn thành': { variant: 'active', label: 'Hoàn thành' },
-    'Đang thực hiện': { variant: 'pending', label: 'Đang thực hiện' },
-    'Đã nhận': { variant: 'open', label: 'Đã nhận' },
-    'Chưa nhận': { variant: 'pending', label: 'Chưa nhận' },
-  };
-
-  return statusMap[task.trangThai];
-}
-
 export default function InspectionTaskList({
   tasks,
   selectedTaskId,
@@ -40,7 +31,7 @@ export default function InspectionTaskList({
     <div className="space-y-3">
       {tasks.map((task) => {
         const isSelected = task.id === selectedTaskId;
-        const badge = getStatusBadge(task);
+        const badge = getInspectionTaskStatusBadge(task.trangThai);
 
         return (
           <button

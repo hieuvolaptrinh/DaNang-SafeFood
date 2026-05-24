@@ -1,6 +1,10 @@
 import Badge from '@/components/Badge';
 import { GovBtn } from '@/components/GovUI';
 import type { InspectionTaskRecord } from '@/components/InspectionTaskList';
+import {
+  getInspectionTaskStatusBadge,
+  getInspectionTaskStatusKey,
+} from '@/components/inspectionTaskStatus';
 import InspectionTaskProgressForm, {
   type InspectionTaskProgressFormValue,
   type InspectionTaskUpdateState,
@@ -22,35 +26,6 @@ interface InspectionTaskDetailsProps {
   onProgressSubmit: () => void;
 }
 
-type StatusKey = 'pending' | 'received' | 'processing' | 'completed';
-
-function getStatusKey(status: string): StatusKey {
-  if (status.startsWith('Ho')) {
-    return 'completed';
-  }
-
-  if (status.startsWith('Ch')) {
-    return 'pending';
-  }
-
-  if (status.includes('thá') || status.includes('thÃ¡') || status.includes('hiệ') || status.includes('hiá')) {
-    return 'processing';
-  }
-
-  return 'received';
-}
-
-function getStatusBadge(trangThai: string) {
-  const statusMap: Record<StatusKey, { variant: 'active' | 'pending' | 'open'; label: string }> = {
-    completed: { variant: 'active', label: 'Hoàn thành' },
-    processing: { variant: 'pending', label: 'Đang thực hiện' },
-    received: { variant: 'open', label: 'Đã nhận' },
-    pending: { variant: 'pending', label: 'Chưa nhận' },
-  };
-
-  return statusMap[getStatusKey(trangThai)];
-}
-
 function DetailSection({
   icon: Icon,
   title,
@@ -66,7 +41,9 @@ function DetailSection({
         <div className="flex h-8 w-8 items-center justify-center border border-emerald-200 bg-emerald-50 text-emerald-700">
           <Icon className="text-[16px]" />
         </div>
-        <h3 className="text-[13px] font-bold uppercase tracking-[0.04em] text-emerald-800">{title}</h3>
+        <h3 className="text-[13px] font-bold uppercase tracking-[0.04em] text-emerald-800">
+          {title}
+        </h3>
       </div>
       {children}
     </section>
@@ -94,8 +71,8 @@ export default function InspectionTaskDetails({
     );
   }
 
-  const statusKey = getStatusKey(task.trangThai);
-  const badge = getStatusBadge(task.trangThai);
+  const statusKey = getInspectionTaskStatusKey(task.trangThai);
+  const badge = getInspectionTaskStatusBadge(task.trangThai);
   const canAcceptTask = statusKey === 'pending';
   const canRejectTask = statusKey === 'pending';
   const canUpdateProgress = statusKey !== 'pending';

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Plus, Eye, RefreshCw, FileSpreadsheet, Printer, Upload } from 'lucide-react';
+import CreateInspectionRequestForm, { type FoodInspectionRequestRecord } from '@/components/CreateInspectionRequestForm';
 import { useRole } from '@/lib/RoleContext';
 import {
   PageHeader, FilterBar, FilterField, GovInput, GovSelect, GovBtn,
@@ -83,11 +84,15 @@ const STATUS_LABEL: Record<string, string> = {
   completed: 'Hoàn thành',
 };
 
+type ViewMode = 'list' | 'create';
+
 export default function YeuCauPage() {
   const { role } = useRole();
+  const [view, setView] = useState<ViewMode>('list');
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [data, setData] = useState<TestRequest[]>(mockTestRequests);
+  const [selectedSampleId, setSelectedSampleId] = useState('SAMPLE-2025-001');
 
   // Result modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -103,6 +108,21 @@ export default function YeuCauPage() {
 
   const canCreateRequest = role === 'INSPECTOR';
   const canManageResult = role === 'TESTER';
+
+  const openCreateForm = () => {
+    setSelectedSampleId('SAMPLE-2025-001');
+    setView('create');
+  };
+
+  const closeCreateForm = () => {
+    setView('list');
+  };
+
+  const handleCreateSuccess = (request: FoodInspectionRequestRecord) => {
+    setData(prev => [request, ...prev]);
+    setSelectedSampleId('SAMPLE-2025-001');
+    setView('list');
+  };
 
   const openDetail = (request: TestRequest) => {
     setDetailRequest(request);
@@ -211,56 +231,80 @@ export default function YeuCauPage() {
   return (
     <div>
       <PageHeader
-        title="Yêu cầu kiểm nghiệm"
-        subtitle="Chi cục An toàn Thực phẩm TP. Đà Nẵng — Quản lý các yêu cầu kiểm nghiệm mẫu thực phẩm"
+        title={view === 'create' ? 'Tạo yêu cầu kiểm nghiệm' : 'Yêu cầu kiểm nghiệm'}
+        subtitle={
+          view === 'create'
+            ? 'Chi cục An toàn Thực phẩm TP. Đà Nẵng — Lập yêu cầu kiểm nghiệm mẫu thực phẩm'
+            : 'Chi cục An toàn Thực phẩm TP. Đà Nẵng — Quản lý các yêu cầu kiểm nghiệm mẫu thực phẩm'
+        }
         actions={
           <ActionButtons>
-            <GovBtn variant="secondary"><RefreshCw style={{ width: 12, height: 12 }} /> Làm mới</GovBtn>
-            <GovBtn variant="secondary"><Printer style={{ width: 12, height: 12 }} /> In danh sách</GovBtn>
-            <GovBtn variant="secondary"><FileSpreadsheet style={{ width: 12, height: 12 }} /> Xuất Excel</GovBtn>
-            {canCreateRequest && <GovBtn variant="primary"><Plus style={{ width: 12, height: 12 }} /> Tạo yêu cầu mới</GovBtn>}
+            {view === 'list' ? (
+              <>
+                <GovBtn variant="secondary"><RefreshCw style={{ width: 12, height: 12 }} /> Làm mới</GovBtn>
+                <GovBtn variant="secondary"><Printer style={{ width: 12, height: 12 }} /> In danh sách</GovBtn>
+                <GovBtn variant="secondary"><FileSpreadsheet style={{ width: 12, height: 12 }} /> Xuất Excel</GovBtn>
+                {canCreateRequest && (
+                  <GovBtn variant="primary" onClick={openCreateForm}>
+                    <Plus style={{ width: 12, height: 12 }} /> Tạo yêu cầu mới
+                  </GovBtn>
+                )}
+              </>
+            ) : (
+              <GovBtn variant="secondary" onClick={closeCreateForm}>Quay lại danh sách</GovBtn>
+            )}
           </ActionButtons>
         }
       />
 
-      {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '10px', marginBottom: '12px' }}>
-        <MiniStat label="Tổng yêu cầu" value={data.length} color="neutral" />
-        <MiniStat label="Chờ xử lý" value={data.filter(r => r.status === 'pending').length} color="orange" />
-        <MiniStat label="Đang thực hiện" value={data.filter(r => r.status === 'processing').length} color="blue" />
-        <MiniStat label="Hoàn thành" value={data.filter(r => r.status === 'completed').length} color="green" />
-      </div>
-
-      {/* Filter */}
-      <FilterBar>
-        <FilterField label="Tìm kiếm">
-          <GovInput placeholder="Mã yêu cầu, tên cơ sở..." value={search} onChange={setSearch} width={240} />
-        </FilterField>
-        <FilterField label="Trạng thái">
-          <GovSelect value={statusFilter} onChange={setStatusFilter} options={[
-            { value: '', label: '-- Tất cả --' },
-            { value: 'pending', label: 'Chờ xử lý' },
-            { value: 'processing', label: 'Đang thực hiện' },
-            { value: 'completed', label: 'Hoàn thành' },
-          ]} width={180} />
-        </FilterField>
-        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px' }}>
-          <GovBtn variant="primary">Tìm kiếm</GovBtn>
-          <GovBtn variant="secondary" onClick={() => { setSearch(''); setStatusFilter(''); }}>Xóa lọc</GovBtn>
-        </div>
-      </FilterBar>
-
-      {/* Table */}
-      <SectionCard
-        title={`Danh sách yêu cầu kiểm nghiệm (${filtered.length} yêu cầu)`}
-        footer={<GovPagination info={`Hiển thị ${filtered.length} / ${data.length} yêu cầu kiểm nghiệm`} />}
-      >
-        <DataTable
-          columns={columns}
-          data={filtered}
-          emptyMessage="Không tìm thấy yêu cầu kiểm nghiệm nào phù hợp."
+      {view === 'create' ? (
+        <CreateInspectionRequestForm
+          selectedSampleId={selectedSampleId}
+          onCancel={closeCreateForm}
+          onSuccess={handleCreateSuccess}
         />
-      </SectionCard>
+      ) : (
+        <>
+          {/* Stats */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '10px', marginBottom: '12px' }}>
+            <MiniStat label="Tổng yêu cầu" value={data.length} color="neutral" />
+            <MiniStat label="Chờ xử lý" value={data.filter(r => r.status === 'pending').length} color="orange" />
+            <MiniStat label="Đang thực hiện" value={data.filter(r => r.status === 'processing').length} color="blue" />
+            <MiniStat label="Hoàn thành" value={data.filter(r => r.status === 'completed').length} color="green" />
+          </div>
+
+          {/* Filter */}
+          <FilterBar>
+            <FilterField label="Tìm kiếm">
+              <GovInput placeholder="Mã yêu cầu, tên cơ sở..." value={search} onChange={setSearch} width={240} />
+            </FilterField>
+            <FilterField label="Trạng thái">
+              <GovSelect value={statusFilter} onChange={setStatusFilter} options={[
+                { value: '', label: '-- Tất cả --' },
+                { value: 'pending', label: 'Chờ xử lý' },
+                { value: 'processing', label: 'Đang thực hiện' },
+                { value: 'completed', label: 'Hoàn thành' },
+              ]} width={180} />
+            </FilterField>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px' }}>
+              <GovBtn variant="primary">Tìm kiếm</GovBtn>
+              <GovBtn variant="secondary" onClick={() => { setSearch(''); setStatusFilter(''); }}>Xóa lọc</GovBtn>
+            </div>
+          </FilterBar>
+
+          {/* Table */}
+          <SectionCard
+            title={`Danh sách yêu cầu kiểm nghiệm (${filtered.length} yêu cầu)`}
+            footer={<GovPagination info={`Hiển thị ${filtered.length} / ${data.length} yêu cầu kiểm nghiệm`} />}
+          >
+            <DataTable
+              columns={columns}
+              data={filtered}
+              emptyMessage="Không tìm thấy yêu cầu kiểm nghiệm nào phù hợp."
+            />
+          </SectionCard>
+        </>
+      )}
 
       {/* Modal Chi tiết */}
       {isDetailOpen && detailRequest && (
