@@ -40,14 +40,15 @@ async function fetchApi<T>(
       credentials: "include", // Include cookies for refresh token
     });
 
-    const data = await response.json();
+    const rawBody = await response.text();
+    const data = rawBody ? JSON.parse(rawBody) : undefined;
 
     if (!response.ok) {
-      throw new Error(data.message || data.error || "Request failed");
+      throw new Error(data?.message || data?.error || "Request failed");
     }
 
     // Return data directly from response.data if exists, otherwise return data
-    return data.data !== undefined ? data.data : data;
+    return data?.data !== undefined ? data.data : (data as T);
   } catch (error: unknown) {
     if (error instanceof Error && error.name === "TypeError" && error.message === "Failed to fetch") {
       throw new Error(
