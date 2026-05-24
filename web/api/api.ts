@@ -158,6 +158,13 @@ export interface NguoiDungOptionResponse {
   cccd?: string;
 }
 
+export interface TieuChiDanhGiaResponse {
+  maTieuChi: string;
+  tenTieuChi: string;
+  nhom: string | null;
+  thuTu: number | null;
+}
+
 export const yeuCauKiemNghiemApi = {
   getStats(): Promise<YeuCauKiemNghiemStatsResponse> {
     return api.get("/v1/yeu-cau-kiem-nghiem/stats");
@@ -260,6 +267,33 @@ export const ketQuaKiemNghiemApi = {
 
   getById(maKetQua: string): Promise<KetQuaKiemNghiemDetailResponse> {
     return api.get(`/v1/ket-qua-kiem-nghiem/${maKetQua}`);
+  },
+};
+
+/**
+ * TieuChiDanhGia API endpoints
+ */
+export const tieuChiDanhGiaApi = {
+  getAll(
+    keyword?: string,
+    nhom?: string,
+    page: number = 0,
+    size: number = 20
+  ): Promise<{ content: TieuChiDanhGiaResponse[]; totalElements: number; totalPages: number; number: number }> {
+    const params = new URLSearchParams();
+    if (keyword) params.append("keyword", keyword);
+    if (nhom) params.append("nhom", nhom);
+    params.append("page", page.toString());
+    params.append("size", size.toString());
+    return api.get(`/v1/thanhtra/tieu-chi?${params.toString()}`);
+  },
+
+  getById(maTieuChi: string): Promise<TieuChiDanhGiaResponse> {
+    return api.get(`/v1/thanhtra/tieu-chi/${maTieuChi}`);
+  },
+  
+  create(req: { maTieuChi: string; tenTieuChi: string; nhom?: string; thuTu?: number }): Promise<TieuChiDanhGiaResponse> {
+    return api.post(`/v1/thanhtra/tieu-chi`, req);
   },
 };
 

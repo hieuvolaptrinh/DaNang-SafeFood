@@ -1,6 +1,7 @@
-'use client';
+"use client";
 
 import { useState } from 'react';
+import { tieuChiDanhGiaApi } from '@/api/api';
 import { Plus, Eye, Pencil, RefreshCw, FileSpreadsheet } from 'lucide-react';
 import {
   PageHeader, FilterBar, FilterField, GovInput, GovSelect, GovBtn,
@@ -166,6 +167,21 @@ export default function TieuChiDanhGiaPage() {
     setViewMode('edit');
   };
 
+  const openCreate = () => {
+    setEditForm({
+      id: '',
+      name: '',
+      category: '',
+      maxScore: 0,
+      weight: '',
+      status: 'draft',
+      issuedDate: '',
+      issuedBy: '',
+      description: '',
+    });
+    setViewMode('create');
+  };
+
   const closeView = () => {
     setSelectedId(null);
     setEditForm(null);
@@ -180,6 +196,45 @@ export default function TieuChiDanhGiaPage() {
     setData((current) => current.map((item) => (item.id === editForm.id ? editForm : item)));
     setSelectedId(editForm.id);
     setViewMode('detail');
+  };
+
+  const saveCreate = async () => {
+    if (!editForm) return;
+
+    try {
+      const req = {
+        maTieuChi: editForm.id,
+        tenTieuChi: editForm.name,
+        nhom: editForm.category,
+        thuTu: editForm.maxScore ?? 0,
+      };
+
+      const created = await tieuChiDanhGiaApi.create(req);
+
+      // Append to local data for immediate feedback
+      setData((current) => [
+        {
+          id: created.maTieuChi,
+          name: created.tenTieuChi,
+          category: created.nhom ?? '',
+          maxScore: created.thuTu ?? 0,
+          weight: '',
+          status: 'active',
+          issuedDate: '',
+          issuedBy: '',
+          description: '',
+        },
+        ...current,
+      ]);
+
+      setViewMode('list');
+    } catch (err) {
+      // Basic error handling — show console for now
+      // In production, surface to user via toast
+      // eslint-disable-next-line no-console
+      console.error('Failed to create tiêu chí', err);
+      alert((err as Error)?.message || 'Tạo tiêu chí thất bại');
+    }
   };
 
   const columns: Column<TieuChi>[] = [
@@ -295,18 +350,19 @@ export default function TieuChiDanhGiaPage() {
     );
   }
 
-  if (viewMode === 'edit' && editForm) {
+  if ((viewMode === 'edit' || viewMode === 'create') && editForm) {
+    const isCreate = viewMode === 'create';
     return (
       <div>
         <PageHeader
-          title="Chỉnh sửa tiêu chí đánh giá"
-          subtitle="Cập nhật thông tin ngay trong cùng màn hình, không mở popup."
+          title={isCreate ? 'Ban hành tiêu chí mới' : 'Chỉnh sửa tiêu chí đánh giá'}
+          subtitle={isCreate ? 'Tạo tiêu chí mới và lưu vào hệ thống.' : 'Cập nhật thông tin ngay trong cùng màn hình, không mở popup.'}
           actions={
             <ActionButtons>
-              <GovBtn variant="secondary" onClick={() => (selectedTieuChi ? setViewMode('detail') : closeView())}>
-                Hủy chỉnh sửa
+              <GovBtn variant="secondary" onClick={() => (isCreate ? closeView() : (selectedTieuChi ? setViewMode('detail') : closeView()))}>
+                Hủy
               </GovBtn>
-              <GovBtn variant="primary" onClick={saveEdit}>Lưu cập nhật</GovBtn>
+              <GovBtn variant="primary" onClick={isCreate ? saveCreate : saveEdit}>{isCreate ? 'Ban hành tiêu chí' : 'Lưu cập nhật'}</GovBtn>
             </ActionButtons>
           }
         />
@@ -391,7 +447,7 @@ export default function TieuChiDanhGiaPage() {
           <ActionButtons>
             <GovBtn variant="secondary"><RefreshCw style={{ width: 12, height: 12 }} /> Làm mới</GovBtn>
             <GovBtn variant="secondary"><FileSpreadsheet style={{ width: 12, height: 12 }} /> Xuất Excel</GovBtn>
-            <GovBtn variant="primary"><Plus style={{ width: 12, height: 12 }} /> Ban hành tiêu chí mới</GovBtn>
+            <GovBtn variant="primary" onClick={openCreate}><Plus style={{ width: 12, height: 12 }} /> Ban hành tiêu chí mới</GovBtn>
           </ActionButtons>
         }
       />
