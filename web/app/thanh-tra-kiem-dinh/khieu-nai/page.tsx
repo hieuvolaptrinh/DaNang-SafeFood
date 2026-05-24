@@ -68,6 +68,7 @@ function mapDetailToComplaint(detail: KhieuNaiDetailResponse): ComplaintRecord {
       label: item.label,
       kind: item.kind,
       note: item.note,
+      url: item.url,
     })),
     handlingResult: detail.handlingResult || '',
     inspectionSummary: detail.inspectionSummary || '',

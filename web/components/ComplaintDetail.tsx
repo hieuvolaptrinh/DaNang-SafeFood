@@ -125,6 +125,16 @@ export default function ComplaintDetail({
                 </div>
                 <p className="text-sm font-semibold text-slate-800">{item.label}</p>
                 <p className="mt-1 text-[13px] text-slate-500">{item.note}</p>
+                {item.url && (
+                  <a
+                    href={item.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-3 inline-flex text-[12px] font-semibold text-sky-700 hover:underline"
+                  >
+                    Mở minh chứng
+                  </a>
+                )}
               </div>
             ))}
           </div>
