@@ -1,6 +1,7 @@
 package com.danang.safefood.dto.response;
 
 import com.danang.safefood.entity.HoSoThanhTra;
+import com.danang.safefood.service.HoSoThanhTraService;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
@@ -51,6 +52,8 @@ public record HoSoThanhTraResponse(
         String facilityId = coSo != null ? coSo.getMaCoSo() : "";
         String owner = (coSo != null && coSo.getChuSoHuu() != null) ? coSo.getChuSoHuu().getHoTen() : "";
         String phone = (coSo != null && coSo.getChuSoHuu() != null && coSo.getChuSoHuu().getTaiKhoan() != null) ? coSo.getChuSoHuu().getTaiKhoan().getPhone() : "";
+        String generalComment = HoSoThanhTraService.stripChecklistMarker(hs.getNhanXetChung());
+        Map<String, String> checklist = HoSoThanhTraService.extractChecklist(hs.getNhanXetChung());
 
         return new HoSoThanhTraResponse(
                 hs.getMaHoSo(),
@@ -65,11 +68,11 @@ public record HoSoThanhTraResponse(
                 address, phone, owner, "",
                 inspectionTime,
                 "Hợp lệ", "Hợp lệ", "Hợp lệ", "Hợp lệ",
-                Map.of(),
+                                checklist,
                 (hs.getTinhTrangViPham() != null && !hs.getTinhTrangViPham().isEmpty()) ? "has" : "none",
                 hs.getTinhTrangViPham(),
                 result,
-                hs.getNhanXetChung(),
+                                generalComment,
                 hs.getBienPhapXuLy(),
                 hs.getKienNghi());
     }
