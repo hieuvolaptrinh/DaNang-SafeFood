@@ -1,6 +1,10 @@
 import Badge from '@/components/Badge';
 import { GovBtn } from '@/components/GovUI';
 import type { InspectionTaskRecord } from '@/components/InspectionTaskList';
+import {
+  getInspectionTaskStatusBadge,
+  getInspectionTaskStatusKey,
+} from '@/components/inspectionTaskStatus';
 import InspectionTaskProgressForm, {
   type InspectionTaskProgressFormValue,
   type InspectionTaskUpdateState,
@@ -22,17 +26,6 @@ interface InspectionTaskDetailsProps {
   onProgressSubmit: () => void;
 }
 
-function getStatusBadge(trangThai: string) {
-  const statusMap: Record<string, { variant: 'active' | 'pending' | 'open'; label: string }> = {
-    'HoÃ n thÃ nh': { variant: 'active', label: 'Hoàn thành' },
-    'Äang thá»±c hiá»‡n': { variant: 'pending', label: 'Đang thực hiện' },
-    'ÄÃ£ nháº­n': { variant: 'open', label: 'Đã nhận' },
-    'ChÆ°a nháº­n': { variant: 'pending', label: 'Chưa nhận' },
-  };
-
-  return statusMap[trangThai] || { variant: 'pending', label: trangThai };
-}
-
 function DetailSection({
   icon: Icon,
   title,
@@ -48,7 +41,9 @@ function DetailSection({
         <div className="flex h-8 w-8 items-center justify-center border border-emerald-200 bg-emerald-50 text-emerald-700">
           <Icon className="text-[16px]" />
         </div>
-        <h3 className="text-[13px] font-bold uppercase tracking-[0.04em] text-emerald-800">{title}</h3>
+        <h3 className="text-[13px] font-bold uppercase tracking-[0.04em] text-emerald-800">
+          {title}
+        </h3>
       </div>
       {children}
     </section>
@@ -76,10 +71,11 @@ export default function InspectionTaskDetails({
     );
   }
 
-  const badge = getStatusBadge(task.trangThai);
-  const canAcceptTask = task.trangThai === 'ChÆ°a nháº­n';
-  const canRejectTask = task.trangThai === 'ChÆ°a nháº­n';
-  const canUpdateProgress = task.trangThai !== 'ChÆ°a nháº­n';
+  const statusKey = getInspectionTaskStatusKey(task.trangThai);
+  const badge = getInspectionTaskStatusBadge(task.trangThai);
+  const canAcceptTask = statusKey === 'pending';
+  const canRejectTask = statusKey === 'pending';
+  const canUpdateProgress = statusKey !== 'pending';
 
   return (
     <div className="border border-slate-300 bg-white shadow-sm">

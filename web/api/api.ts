@@ -2,7 +2,7 @@ const apiURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
 
 import { getAccessToken } from "@/utils/storage";
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   data: T;
   message?: string;
@@ -40,16 +40,17 @@ async function fetchApi<T>(
       credentials: "include", // Include cookies for refresh token
     });
 
-    const data = await response.json();
+    const rawBody = await response.text();
+    const data = rawBody ? JSON.parse(rawBody) : undefined;
 
     if (!response.ok) {
-      throw new Error(data.message || data.error || "Request failed");
+      throw new Error(data?.message || data?.error || "Request failed");
     }
 
     // Return data directly from response.data if exists, otherwise return data
-    return data.data !== undefined ? data.data : data;
-  } catch (error: any) {
-    if (error.name === "TypeError" && error.message === "Failed to fetch") {
+    return data?.data !== undefined ? data.data : (data as T);
+  } catch (error: unknown) {
+    if (error instanceof Error && error.name === "TypeError" && error.message === "Failed to fetch") {
       throw new Error(
         "Không thể kết nối đến server. Vui lòng kiểm tra kết nối.",
       );
@@ -66,7 +67,7 @@ export const api = {
     return fetchApi<T>(endpoint, { ...options, method: "GET" });
   },
 
-  post<T>(endpoint: string, body?: any, options?: FetchOptions): Promise<T> {
+  post<T>(endpoint: string, body?: unknown, options?: FetchOptions): Promise<T> {
     return fetchApi<T>(endpoint, {
       ...options,
       method: "POST",
@@ -74,7 +75,7 @@ export const api = {
     });
   },
 
-  put<T>(endpoint: string, body?: any, options?: FetchOptions): Promise<T> {
+  put<T>(endpoint: string, body?: unknown, options?: FetchOptions): Promise<T> {
     return fetchApi<T>(endpoint, {
       ...options,
       method: "PUT",
@@ -82,7 +83,7 @@ export const api = {
     });
   },
 
-  patch<T>(endpoint: string, body?: any, options?: FetchOptions): Promise<T> {
+  patch<T>(endpoint: string, body?: unknown, options?: FetchOptions): Promise<T> {
     return fetchApi<T>(endpoint, {
       ...options,
       method: "PATCH",
@@ -124,6 +125,7 @@ export interface CreateYeuCauKiemNghiemRequest {
   noidungYeuCau: string;
   chiTieuKiemDinh: string;
   maMauLienQuan?: string;
+  maNguoiKiemNghiem?: string;
 }
 
 export interface UpdateKetQuaKiemNghiemRequest {
@@ -140,9 +142,40 @@ export interface YeuCauKiemNghiemStatsResponse {
   hoanThanh: number;
 }
 
+export interface YeuCauKiemNghiemMauOptionResponse {
+  maMau: string;
+  maCoSo: string;
+  tenMau: string;
+  loaiMau: string;
+  tenCoSo: string;
+  ngayThu: string;
+}
+
+export interface NguoiDungOptionResponse {
+  maNguoiDung: string;
+  hoTen: string;
+  gioiTinh?: string;
+  cccd?: string;
+}
+
+export interface TieuChiDanhGiaResponse {
+  maTieuChi: string;
+  tenTieuChi: string;
+  nhom: string | null;
+  thuTu: number | null;
+}
+
 export const yeuCauKiemNghiemApi = {
   getStats(): Promise<YeuCauKiemNghiemStatsResponse> {
-    return api.get("/yeu-cau-kiem-nghiem/stats");
+    return api.get("/v1/yeu-cau-kiem-nghiem/stats");
+  },
+
+  getMauOptions(): Promise<YeuCauKiemNghiemMauOptionResponse[]> {
+    return api.get("/v1/yeu-cau-kiem-nghiem/mau-options");
+  },
+
+  getKiemNghiemVienOptions(): Promise<NguoiDungOptionResponse[]> {
+    return api.get("/v1/yeu-cau-kiem-nghiem/kiem-nghiem-vien-options");
   },
 
   searchYeuCau(
@@ -156,22 +189,22 @@ export const yeuCauKiemNghiemApi = {
     if (status) params.append("status", status);
     params.append("page", page.toString());
     params.append("size", size.toString());
-    return api.get(`/yeu-cau-kiem-nghiem?${params.toString()}`);
+    return api.get(`/v1/yeu-cau-kiem-nghiem?${params.toString()}`);
   },
 
   getById(maYeuCau: string): Promise<YeuCauKiemNghiemResponse> {
-    return api.get(`/yeu-cau-kiem-nghiem/${maYeuCau}`);
+    return api.get(`/v1/yeu-cau-kiem-nghiem/${maYeuCau}`);
   },
 
   create(req: CreateYeuCauKiemNghiemRequest): Promise<YeuCauKiemNghiemResponse> {
-    return api.post("/yeu-cau-kiem-nghiem", req);
+    return api.post("/v1/yeu-cau-kiem-nghiem", req);
   },
 
   updateKetQua(
     maYeuCau: string,
     req: UpdateKetQuaKiemNghiemRequest
   ): Promise<YeuCauKiemNghiemResponse> {
-    return api.put(`/yeu-cau-kiem-nghiem/${maYeuCau}/ket-qua`, req);
+    return api.put(`/v1/yeu-cau-kiem-nghiem/${maYeuCau}/ket-qua`, req);
   },
 };
 
@@ -190,7 +223,7 @@ export interface KetQuaKiemNghiemChiTieuResponse {
   tenChiTieu: string;
   giaTriDo?: string | null;
   gioiHanChoPhep?: string | null;
-  ketLuan: "pass" | "fail" | "pending";
+  ketLuan: string;
 }
 
 export interface KetQuaKiemNghiemItemResponse {
@@ -201,7 +234,7 @@ export interface KetQuaKiemNghiemItemResponse {
   loaiMau: string;
   ngayKiemNghiem?: string | null;
   phongLab?: string | null;
-  ketQua: "pass" | "fail" | "pending";
+  ketQua: string;
   chiTieu?: string | null;
   diem?: number | null;
   fileKetQua?: string | null;
@@ -215,7 +248,7 @@ export interface KetQuaKiemNghiemDetailResponse extends KetQuaKiemNghiemItemResp
 
 export const ketQuaKiemNghiemApi = {
   getStats(): Promise<KetQuaKiemNghiemStatsResponse> {
-    return api.get("/ket-qua-kiem-nghiem/stats");
+    return api.get("/v1/ket-qua-kiem-nghiem/stats");
   },
 
   search(
@@ -229,11 +262,384 @@ export const ketQuaKiemNghiemApi = {
     if (result) params.append("result", result);
     params.append("page", page.toString());
     params.append("size", size.toString());
-    return api.get(`/ket-qua-kiem-nghiem?${params.toString()}`);
+    return api.get(`/v1/ket-qua-kiem-nghiem?${params.toString()}`);
   },
 
   getById(maKetQua: string): Promise<KetQuaKiemNghiemDetailResponse> {
-    return api.get(`/ket-qua-kiem-nghiem/${maKetQua}`);
+    return api.get(`/v1/ket-qua-kiem-nghiem/${maKetQua}`);
+  },
+};
+
+/**
+ * TieuChiDanhGia API endpoints
+ */
+export const tieuChiDanhGiaApi = {
+  getAll(
+    keyword?: string,
+    nhom?: string,
+    page: number = 0,
+    size: number = 20
+  ): Promise<{ content: TieuChiDanhGiaResponse[]; totalElements: number; totalPages: number; number: number }> {
+    const params = new URLSearchParams();
+    if (keyword) params.append("keyword", keyword);
+    if (nhom) params.append("nhom", nhom);
+    params.append("page", page.toString());
+    params.append("size", size.toString());
+    return api.get(`/v1/thanhtra/tieu-chi?${params.toString()}`);
+  },
+
+  getById(maTieuChi: string): Promise<TieuChiDanhGiaResponse> {
+    return api.get(`/v1/thanhtra/tieu-chi/${maTieuChi}`);
+  },
+  
+  create(req: { maTieuChi: string; tenTieuChi: string; nhom?: string; thuTu?: number }): Promise<TieuChiDanhGiaResponse> {
+    return api.post(`/v1/thanhtra/tieu-chi`, req);
+  },
+};
+
+/**
+ * NhiemVu API endpoints
+ */
+export interface NhiemVuStatsResponse {
+  tongSo: number;
+  chuaNhan: number;
+  daNhan: number;
+}
+
+export interface NhiemVuListItemResponse {
+  maThanhTra: string;
+  tenCoSo: string;
+  trangThai: string;
+  ghiChu: string;
+  thoiGianTT: string;
+  nguoiPhuTrach: string;
+}
+
+export interface NhiemVuDetailResponse {
+  maThanhTra: string;
+  trangThai: string;
+  ghiChu: string;
+  noiDung: string;
+  thoiGianTT: string;
+  maCoSo: string;
+  tenCoSo: string;
+  diaChiCoSo: string;
+  maNguoiPhuTrach: string;
+  tenNguoiPhuTrach: string;
+}
+
+export interface CapNhatTienDoRequest {
+  trangThai: string;
+  ghiChu: string;
+}
+
+export interface TuChoiNhiemVuRequest {
+  lyDoTuChoi: string;
+}
+
+export const nhiemVuApi = {
+  getStats(): Promise<NhiemVuStatsResponse> {
+    return api.get("/v1/nhiem-vu/thong-ke");
+  },
+
+  search(
+    keyword?: string,
+    trangThai?: string,
+    page: number = 0,
+    size: number = 10
+  ): Promise<{ content: NhiemVuListItemResponse[]; totalElements: number; totalPages: number; number: number }> {
+    const params = new URLSearchParams();
+    if (keyword) params.append("keyword", keyword);
+    if (trangThai) params.append("trangThai", trangThai);
+    params.append("page", page.toString());
+    params.append("size", size.toString());
+    return api.get(`/v1/nhiem-vu?${params.toString()}`);
+  },
+
+  getById(maThanhTra: string): Promise<NhiemVuDetailResponse> {
+    return api.get(`/v1/nhiem-vu/${maThanhTra}`);
+  },
+
+  accept(maThanhTra: string): Promise<void> {
+    return api.put(`/v1/nhiem-vu/${maThanhTra}/nhan`);
+  },
+
+  updateProgress(maThanhTra: string, req: CapNhatTienDoRequest): Promise<void> {
+    return api.put(`/v1/nhiem-vu/${maThanhTra}/trang-thai`, req);
+  },
+
+  reject(maThanhTra: string, req: TuChoiNhiemVuRequest): Promise<void> {
+    return api.put(`/v1/nhiem-vu/${maThanhTra}/tu-choi`, req);
+  },
+};
+
+/**
+ * KhieuNai API endpoints
+ */
+export interface KhieuNaiSubmitterResponse {
+  fullName: string;
+  phone: string;
+  email: string;
+  address: string;
+}
+
+export interface KhieuNaiEvidenceResponse {
+  id: string;
+  label: string;
+  kind: "image" | "file";
+  note: string;
+  url: string;
+}
+
+export interface KhieuNaiSummaryResponse {
+  id: string;
+  title: string;
+  submitter: string;
+  submitterPhone: string;
+  submittedAt: string;
+  status: "pending" | "processing" | "resolved";
+  statusLabel: string;
+  facilityId: string;
+  facilityName: string;
+}
+
+export interface KhieuNaiDetailResponse {
+  id: string;
+  title: string;
+  content: string;
+  status: "pending" | "processing" | "resolved";
+  statusLabel: string;
+  submittedAt: string;
+  facilityId: string;
+  facilityName: string;
+  submitterInfo: KhieuNaiSubmitterResponse;
+  evidence: KhieuNaiEvidenceResponse[];
+  inspectionSummary: string;
+  inspectionCompleted: boolean;
+  handlingResult: string;
+}
+
+export interface KhieuNaiKiemTraRequest {
+  tomTatKiemTra: string;
+}
+
+export interface KhieuNaiXuLyRequest {
+  ketQuaXuLy: string;
+  trangThai: "pending" | "processing" | "resolved";
+}
+
+export const khieuNaiApi = {
+  search(
+    keyword?: string,
+    status?: string,
+    page: number = 0,
+    size: number = 20
+  ): Promise<{ content: KhieuNaiSummaryResponse[]; totalElements: number; totalPages: number; number: number }> {
+    const params = new URLSearchParams();
+    if (keyword) params.append("keyword", keyword);
+    if (status) params.append("status", status);
+    params.append("page", page.toString());
+    params.append("size", size.toString());
+    return api.get(`/v1/khieu-nai?${params.toString()}`);
+  },
+
+  getById(id: string): Promise<KhieuNaiDetailResponse> {
+    return api.get(`/v1/khieu-nai/${id}`);
+  },
+
+  updateInspection(id: string, req: KhieuNaiKiemTraRequest): Promise<KhieuNaiDetailResponse> {
+    return api.put(`/v1/khieu-nai/${id}/kiem-tra-thuc-dia`, req);
+  },
+
+  updateHandling(id: string, req: KhieuNaiXuLyRequest): Promise<KhieuNaiDetailResponse> {
+    return api.put(`/v1/khieu-nai/${id}/xu-ly`, req);
+  },
+};
+
+/**
+ * HoSoThanhTra API endpoints
+ */
+export interface HoSoThanhTraResponse {
+  id: string;
+  facilityId: string;
+  business: string;
+  type: string;
+  inspector: string;
+  date: string;
+  result: string;
+  score: number;
+  businessName: string;
+  address: string;
+  phone: string;
+  owner: string;
+  businessType: string;
+  inspectionTime: string;
+  businessLicense: string;
+  foodSafetyCertificate: string;
+  healthCertificate: string;
+  trainingCertificate: string;
+  checklist: Record<string, string>;
+  violationStatus: string;
+  violationDescription: string;
+  conclusion: string;
+  generalComment: string;
+  actionMeasure: string;
+  recommendation: string;
+}
+
+export interface HoSoThanhTraStatsResponse {
+  total: number;
+  completed: number;
+  scheduled: number;
+  failed: number;
+}
+
+export interface HoSoThanhTraRequest {
+  facilityId: string;
+  inspectionTime: string;
+  businessLicense: string;
+  foodSafetyCertificate: string;
+  healthCertificate: string;
+  trainingCertificate: string;
+  checklist: Record<string, string>;
+  violationStatus: string;
+  violationDescription: string;
+  conclusion: string;
+  generalComment: string;
+  actionMeasure: string;
+  recommendation: string;
+}
+
+export const hoSoThanhTraApi = {
+  getStats(): Promise<HoSoThanhTraStatsResponse> {
+    return api.get("/v1/ho-so-thanh-tra/thong-ke");
+  },
+
+  search(
+    keyword?: string,
+    resultFilter?: string,
+    inspectorFilter?: string,
+    page: number = 0,
+    size: number = 20
+  ): Promise<{ content: HoSoThanhTraResponse[]; totalElements: number; totalPages: number; number: number }> {
+    const params = new URLSearchParams();
+    if (keyword) params.append("keyword", keyword);
+    if (resultFilter) params.append("resultFilter", resultFilter);
+    if (inspectorFilter) params.append("inspectorFilter", inspectorFilter);
+    params.append("page", page.toString());
+    params.append("size", size.toString());
+    return api.get(`/v1/ho-so-thanh-tra?${params.toString()}`);
+  },
+
+  getById(id: string): Promise<HoSoThanhTraResponse> {
+    return api.get(`/v1/ho-so-thanh-tra/${id}`);
+  },
+
+  create(req: HoSoThanhTraRequest): Promise<HoSoThanhTraResponse> {
+    return api.post("/v1/ho-so-thanh-tra", req);
+  },
+
+  update(id: string, req: HoSoThanhTraRequest): Promise<HoSoThanhTraResponse> {
+    return api.put(`/v1/ho-so-thanh-tra/${id}`, req);
+  },
+};
+
+/**
+ * BaoCao API endpoints
+ */
+export interface BaoCaoResponse {
+  id: string;
+  facilityId?: string;
+  tenCoSo: string;
+  loaiThanhTra: string;
+  thanhTraVien: string;
+  ngay: string;
+  ketQua: "pass" | "fail" | "scheduled" | string;
+  diem: number;
+  quanHuyen: string;
+  noiDung: string;
+  nhanXet: string;
+  tepDinhKem: string;
+}
+
+export interface BaoCaoStatsResponse {
+  total: number;
+  completed: number;
+  processing: number;
+  failed: number;
+}
+
+export interface BaoCaoRequest {
+  facilityId: string;
+  inspectionDate: string;
+  inspectionType: string;
+  content: string;
+  comment: string;
+  result: string;
+  score: number;
+  fileName?: string;
+  hasInspectionRecord?: boolean;
+}
+
+export const baoCaoApi = {
+  getStats(): Promise<BaoCaoStatsResponse> {
+    return api.get("/v1/bao-cao/thong-ke");
+  },
+
+  search(
+    keyword?: string,
+    resultFilter?: string,
+    page: number = 0,
+    size: number = 20
+  ): Promise<{ content: BaoCaoResponse[]; totalElements: number; totalPages: number; number: number }> {
+    const params = new URLSearchParams();
+    if (keyword) params.append("keyword", keyword);
+    if (resultFilter) params.append("resultFilter", resultFilter);
+    params.append("page", page.toString());
+    params.append("size", size.toString());
+    return api.get(`/v1/bao-cao?${params.toString()}`);
+  },
+
+  getById(id: string): Promise<BaoCaoResponse> {
+    return api.get(`/v1/bao-cao/${id}`);
+  },
+
+  create(req: BaoCaoRequest): Promise<BaoCaoResponse> {
+    return api.post("/v1/bao-cao", req);
+  },
+
+  update(id: string, req: BaoCaoRequest): Promise<BaoCaoResponse> {
+    return api.put(`/v1/bao-cao/${id}`, req);
+  },
+};
+
+/**
+ * Shared lookup endpoints
+ */
+export interface CoSoKinhDoanhSearchResponse {
+  maCoSo: string;
+  tenCoSo: string;
+  soGiayPhep?: string;
+  ngayHetHanGiayPhep?: string;
+  trangThai?: string;
+  maPX?: string;
+  tenPhuongXa?: string;
+  anhBia?: string;
+  soViPham?: number;
+  loaiHinhKinhDoanh?: string[];
+}
+
+export const coSoKinhDoanhApi = {
+  search(
+    keyword?: string,
+    page: number = 0,
+    size: number = 50
+  ): Promise<{ content: CoSoKinhDoanhSearchResponse[]; totalElements: number; totalPages: number; number: number }> {
+    const params = new URLSearchParams();
+    if (keyword) params.append("keyword", keyword);
+    params.append("page", page.toString());
+    params.append("size", size.toString());
+    return api.get(`/user/co-so-kinh-doanh/search?${params.toString()}`);
   },
 };
 

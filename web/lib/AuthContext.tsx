@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useSyncExternalStore, useCallback, ReactNode } from 'react';
 import {
   getAccessToken,
   setAccessToken,
@@ -59,31 +59,62 @@ const AuthContext = createContext<AuthContextType>({
   logout: () => {},
 });
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(null);
+const authListeners = new Set<() => void>();
 
-  // Rehydrate from localStorage on mount
-  useEffect(() => {
-    const token = getAccessToken();
-    const stored = getUserInfo();
-    if (token && stored) {
-      setUser({ ...stored, mappedRole: mapBackendRole(stored.role) });
+function readStoredAuthUserSnapshot(): string {
+  const token = getAccessToken();
+  const stored = getUserInfo();
+
+  if (!token || !stored) {
+    return '';
+  }
+
+  return JSON.stringify({ ...stored, mappedRole: mapBackendRole(stored.role) });
+}
+
+function emitAuthChange() {
+  authListeners.forEach((listener) => listener());
+}
+
+function subscribeAuth(listener: () => void) {
+  authListeners.add(listener);
+
+  const handleStorage = (event: StorageEvent) => {
+    if (
+      event.key === null ||
+      event.key === 'access_token' ||
+      event.key === 'refresh_token' ||
+      event.key === 'user_info'
+    ) {
+      listener();
     }
-  }, []);
+  };
+
+  window.addEventListener('storage', handleStorage);
+
+  return () => {
+    authListeners.delete(listener);
+    window.removeEventListener('storage', handleStorage);
+  };
+}
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const authSnapshot = useSyncExternalStore(subscribeAuth, readStoredAuthUserSnapshot, () => '');
+  const user = authSnapshot ? (JSON.parse(authSnapshot) as AuthUser) : null;
 
   const login = useCallback(
     (tokens: { accessToken: string; refreshToken: string }, userInfo: StoredUser) => {
       setAccessToken(tokens.accessToken);
       setRefreshToken(tokens.refreshToken);
       setUserInfo(userInfo);
-      setUser({ ...userInfo, mappedRole: mapBackendRole(userInfo.role) });
+      emitAuthChange();
     },
     []
   );
 
   const logout = useCallback(() => {
     clearTokens();
-    setUser(null);
+    emitAuthChange();
   }, []);
 
   return (

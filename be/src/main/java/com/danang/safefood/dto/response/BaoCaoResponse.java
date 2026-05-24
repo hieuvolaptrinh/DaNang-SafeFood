@@ -5,6 +5,7 @@ import java.time.format.DateTimeFormatter;
 
 public record BaoCaoResponse(
         String id,
+        String facilityId,
         String tenCoSo,
         String loaiThanhTra,
         String thanhTraVien,
@@ -24,6 +25,7 @@ public record BaoCaoResponse(
         String ketQua = null;
         Double diem = null;
         String quanHuyen = null;
+        String facilityId = null;
 
         if (e.getHoSoThanhTra() != null) {
             diem = e.getHoSoThanhTra().getDiem();
@@ -38,6 +40,7 @@ public record BaoCaoResponse(
                     thanhTraVien = e.getHoSoThanhTra().getLichThanhTra().getNguoiPhuTrach().getHoTen();
                 }
                 if (e.getHoSoThanhTra().getLichThanhTra().getCoSoKinhDoanh() != null) {
+                    facilityId = e.getHoSoThanhTra().getLichThanhTra().getCoSoKinhDoanh().getMaCoSo();
                     tenCoSo = e.getHoSoThanhTra().getLichThanhTra().getCoSoKinhDoanh().getTenCoSo();
                     if (e.getHoSoThanhTra().getLichThanhTra().getCoSoKinhDoanh().getPhuongXa() != null) {
                         quanHuyen = e.getHoSoThanhTra().getLichThanhTra().getCoSoKinhDoanh().getPhuongXa().getTenPhuongXa();
@@ -48,6 +51,7 @@ public record BaoCaoResponse(
 
         return new BaoCaoResponse(
                 e.getMaBaoCao(),
+                facilityId,
                 tenCoSo,
                 loaiThanhTra,
                 thanhTraVien,

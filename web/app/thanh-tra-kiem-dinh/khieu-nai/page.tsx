@@ -5,11 +5,8 @@ import AlertBanner from '@/components/AlertBanner';
 import ComplaintDetail from '@/components/ComplaintDetail';
 import ComplaintForm from '@/components/ComplaintForm';
 import ComplaintList from '@/components/ComplaintList';
-import {
-  mockComplaints,
-  type ComplaintRecord,
-  type ComplaintStatus,
-} from '@/data/mockData';
+import { khieuNaiApi, type KhieuNaiDetailResponse, type KhieuNaiSummaryResponse } from '@/api/api';
+import type { ComplaintRecord, ComplaintStatus } from '@/data/mockData';
 
 type ScreenState = 'loading' | 'empty' | 'error' | 'data';
 
@@ -23,6 +20,65 @@ const DEFAULT_FORM_STATE: ComplaintFormState = {
   status: 'processing',
 };
 
+function formatSubmittedAt(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat('vi-VN').format(date);
+}
+
+function mapSummaryToComplaint(summary: KhieuNaiSummaryResponse): ComplaintRecord {
+  return {
+    id: summary.id,
+    title: summary.title,
+    submitter: summary.submitter,
+    submittedAt: formatSubmittedAt(summary.submittedAt),
+    status: summary.status,
+    content: '',
+    submitterInfo: {
+      fullName: summary.submitter,
+      phone: summary.submitterPhone || '',
+      email: '',
+      address: '',
+    },
+    evidence: [],
+    handlingResult: '',
+    inspectionSummary: '',
+  };
+}
+
+function mapDetailToComplaint(detail: KhieuNaiDetailResponse): ComplaintRecord {
+  return {
+    id: detail.id,
+    title: detail.title,
+    submitter: detail.submitterInfo.fullName,
+    submittedAt: formatSubmittedAt(detail.submittedAt),
+    status: detail.status,
+    content: detail.content,
+    submitterInfo: {
+      fullName: detail.submitterInfo.fullName || '',
+      phone: detail.submitterInfo.phone || '',
+      email: detail.submitterInfo.email || '',
+      address: detail.submitterInfo.address || '',
+    },
+    evidence: detail.evidence.map((item) => ({
+      id: item.id,
+      label: item.label,
+      kind: item.kind,
+      note: item.note,
+      url: item.url,
+    })),
+    handlingResult: detail.handlingResult || '',
+    inspectionSummary: detail.inspectionSummary || '',
+  };
+}
+
+function normalizeError(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
+}
+
 export default function KhieuNaiPage() {
   const [screenState, setScreenState] = useState<ScreenState>('loading');
   const [complaints, setComplaints] = useState<ComplaintRecord[]>([]);
@@ -30,32 +86,96 @@ export default function KhieuNaiPage() {
   const [inspectionCompleted, setInspectionCompleted] = useState(false);
   const [formState, setFormState] = useState<ComplaintFormState>(DEFAULT_FORM_STATE);
   const [successMessage, setSuccessMessage] = useState('');
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      if (mockComplaints.length === 0) {
-        setComplaints([]);
-        setScreenState('empty');
-        return;
-      }
-
-      setComplaints(mockComplaints);
-      setSelectedComplaintId(mockComplaints[0].id);
-      setFormState({
-        handlingResult: mockComplaints[0].handlingResult ?? '',
-        status: mockComplaints[0].status === 'pending' ? 'processing' : mockComplaints[0].status,
-      });
-      setInspectionCompleted(Boolean(mockComplaints[0].inspectionSummary));
-      setScreenState('data');
-    }, 700);
-
-    return () => window.clearTimeout(timer);
-  }, []);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const selectedComplaint = useMemo(
     () => complaints.find((complaint) => complaint.id === selectedComplaintId) ?? null,
     [complaints, selectedComplaintId]
   );
+
+  const applyComplaintDetail = (detail: KhieuNaiDetailResponse) => {
+    const mapped = mapDetailToComplaint(detail);
+
+    setComplaints((current) =>
+      current.map((item) => (item.id === detail.id ? mapped : item))
+    );
+    setInspectionCompleted(detail.inspectionCompleted);
+    setFormState({
+      handlingResult: detail.handlingResult ?? '',
+      status: detail.status === 'pending' ? 'processing' : detail.status,
+    });
+  };
+
+  const loadComplaintDetail = async (id: string) => {
+    const detail = await khieuNaiApi.getById(id);
+    applyComplaintDetail(detail);
+  };
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadData = async () => {
+      setScreenState('loading');
+      setErrorMessage('');
+
+      try {
+        const pageData = await khieuNaiApi.search('', '', 0, 100);
+        if (!isMounted) {
+          return;
+        }
+
+        if (pageData.content.length === 0) {
+          setComplaints([]);
+          setSelectedComplaintId('');
+          setScreenState('empty');
+          return;
+        }
+
+        const mapped = pageData.content.map(mapSummaryToComplaint);
+        setComplaints(mapped);
+        setSelectedComplaintId(mapped[0].id);
+        setScreenState('data');
+      } catch (error) {
+        if (isMounted) {
+          setErrorMessage(normalizeError(error, 'Không thể tải danh sách khiếu nại'));
+          setScreenState('error');
+        }
+      }
+    };
+
+    void loadData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!selectedComplaintId || screenState !== 'data') {
+      return;
+    }
+
+    let isMounted = true;
+
+    const fetchDetail = async () => {
+      try {
+        const detail = await khieuNaiApi.getById(selectedComplaintId);
+        if (isMounted) {
+          applyComplaintDetail(detail);
+        }
+      } catch (error) {
+        if (isMounted) {
+          setErrorMessage(normalizeError(error, 'Không thể tải chi tiết khiếu nại'));
+        }
+      }
+    };
+
+    void fetchDetail();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [screenState, selectedComplaintId]);
 
   const validationMessage =
     selectedComplaint && formState.handlingResult.trim() === ''
@@ -68,18 +188,6 @@ export default function KhieuNaiPage() {
   const handleSelectComplaint = (complaint: ComplaintRecord) => {
     setSelectedComplaintId(complaint.id);
     setSuccessMessage('');
-    setInspectionCompleted(Boolean(complaint.inspectionSummary));
-    setFormState({
-      handlingResult: complaint.handlingResult ?? '',
-      status: complaint.status === 'pending' ? 'processing' : complaint.status,
-    });
-  };
-
-  const handleSimulateNotFound = () => {
-    setSelectedComplaintId('KN-404');
-    setSuccessMessage('');
-    setInspectionCompleted(false);
-    setFormState(DEFAULT_FORM_STATE);
   };
 
   const handleResetSelection = () => {
@@ -88,49 +196,39 @@ export default function KhieuNaiPage() {
     }
   };
 
-  const handleRunInspection = () => {
+  const handleRunInspection = async () => {
     if (!selectedComplaint) {
       return;
     }
 
-    setInspectionCompleted(true);
-    setComplaints((current) =>
-      current.map((complaint) =>
-        complaint.id === selectedComplaint.id
-          ? {
-              ...complaint,
-              inspectionSummary:
-                complaint.inspectionSummary ??
-                'Đã kiểm tra hiện trường, đối chiếu minh chứng và ghi nhận cơ sở cần khắc phục theo nội dung phản ánh.',
-            }
-          : complaint
-      )
-    );
+    try {
+      await khieuNaiApi.updateInspection(selectedComplaint.id, {
+        tomTatKiemTra:
+          selectedComplaint.inspectionSummary?.trim() ||
+          'Đã kiểm tra hiện trường, đối chiếu minh chứng và ghi nhận cơ sở cần khắc phục theo nội dung phản ánh.',
+      });
+      await loadComplaintDetail(selectedComplaint.id);
+      setSuccessMessage('Cập nhật kiểm tra thực địa thành công');
+    } catch (error) {
+      setErrorMessage(normalizeError(error, 'Không thể cập nhật kiểm tra thực địa'));
+    }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!selectedComplaint || validationMessage) {
       return;
     }
 
-    const nextInspectionSummary =
-      selectedComplaint.inspectionSummary ??
-      'Đã kiểm tra hiện trường, đối chiếu minh chứng và ghi nhận cơ sở cần khắc phục theo nội dung phản ánh.';
-
-    setComplaints((current) =>
-      current.map((complaint) =>
-        complaint.id === selectedComplaint.id
-          ? {
-              ...complaint,
-              status: formState.status,
-              handlingResult: formState.handlingResult.trim(),
-              inspectionSummary: inspectionCompleted ? nextInspectionSummary : complaint.inspectionSummary,
-            }
-          : complaint
-      )
-    );
-    setInspectionCompleted(true);
-    setSuccessMessage('Cập nhật kết quả xử lý thành công');
+    try {
+      await khieuNaiApi.updateHandling(selectedComplaint.id, {
+        ketQuaXuLy: formState.handlingResult.trim(),
+        trangThai: formState.status,
+      });
+      await loadComplaintDetail(selectedComplaint.id);
+      setSuccessMessage('Cập nhật kết quả xử lý thành công');
+    } catch (error) {
+      setErrorMessage(normalizeError(error, 'Không thể cập nhật kết quả xử lý'));
+    }
   };
 
   return (
@@ -142,17 +240,10 @@ export default function KhieuNaiPage() {
             Theo dõi danh sách khiếu nại, xem chi tiết và cập nhật kết quả xử lý.
           </p>
         </div>
-
-        <button
-          type="button"
-          onClick={handleSimulateNotFound}
-          className="rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-[13px] font-semibold text-slate-600 transition-colors hover:bg-slate-50"
-        >
-          Mô phỏng lỗi không tìm thấy
-        </button>
       </div>
 
       {successMessage && <AlertBanner type="success" title={successMessage} />}
+      {errorMessage && screenState !== 'error' && <AlertBanner type="danger" title={errorMessage} />}
 
       {screenState === 'loading' && (
         <div className="rounded-xl border border-slate-200 bg-white px-5 py-10 text-center text-sm text-slate-500 shadow-sm">
@@ -172,7 +263,7 @@ export default function KhieuNaiPage() {
       {screenState === 'error' && (
         <AlertBanner
           type="danger"
-          title="Không thể tải danh sách khiếu nại"
+          title={errorMessage || 'Không thể tải danh sách khiếu nại'}
           message="Vui lòng thử lại sau."
         />
       )}
@@ -190,13 +281,13 @@ export default function KhieuNaiPage() {
               complaint={selectedComplaint}
               notFound={isNotFound}
               inspectionCompleted={inspectionCompleted}
-              onRunInspection={handleRunInspection}
+              onRunInspection={() => void handleRunInspection()}
               onResetSelection={handleResetSelection}
             />
             <ComplaintForm
               formState={formState}
               onChange={setFormState}
-              onSubmit={handleSubmit}
+              onSubmit={() => void handleSubmit()}
               isDisabled={!selectedComplaint || validationMessage !== ''}
               validationMessage={validationMessage}
               hasComplaintSelected={Boolean(selectedComplaint)}

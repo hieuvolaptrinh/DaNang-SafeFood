@@ -1,12 +1,21 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useSyncExternalStore } from 'react';
 import { SidebarProvider, useSidebar } from '@/lib/SidebarContext';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/AuthContext';
+import { getAccessToken, getUserInfo } from '@/utils/storage';
+
+function useIsClient() {
+  return useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
+}
 
 function ShellContent({ children }: { children: React.ReactNode }) {
   const { collapsed } = useSidebar();
@@ -36,14 +45,16 @@ function ShellContent({ children }: { children: React.ReactNode }) {
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
   const router = useRouter();
+  const isClient = useIsClient();
+  const hasStoredSession = isClient && !!getAccessToken() && !!getUserInfo();
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (isClient && !isAuthenticated && !hasStoredSession) {
       router.replace('/login');
     }
-  }, [isAuthenticated, router]);
+  }, [hasStoredSession, isAuthenticated, isClient, router]);
 
-  if (!isAuthenticated) {
+  if (!isClient || (!isAuthenticated && !hasStoredSession)) {
     // Show nothing while redirecting
     return null;
   }
