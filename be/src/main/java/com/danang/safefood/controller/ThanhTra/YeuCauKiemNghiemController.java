@@ -4,7 +4,9 @@ import com.danang.safefood.config.security.jwt.JwtPrincipal;
 import com.danang.safefood.dto.request.CreateYeuCauKiemNghiemRequest;
 import com.danang.safefood.dto.request.UpdateKetQuaKiemNghiemRequest;
 import com.danang.safefood.dto.response.ApiResponse;
+import com.danang.safefood.dto.response.NguoiDungResponse;
 import com.danang.safefood.dto.response.YeuCauKiemNghiemResponse;
+import com.danang.safefood.dto.response.YeuCauKiemNghiemMauOptionResponse;
 import com.danang.safefood.dto.response.YeuCauKiemNghiemStatsResponse;
 import com.danang.safefood.service.YeuCauKiemNghiemService;
 import jakarta.validation.Valid;
@@ -23,6 +25,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/yeu-cau-kiem-nghiem")
 @RequiredArgsConstructor
@@ -34,6 +38,20 @@ public class YeuCauKiemNghiemController {
     public ResponseEntity<ApiResponse<YeuCauKiemNghiemStatsResponse>> getStats() {
         return ResponseEntity.ok(
                 ApiResponse.success("Lay thong ke thanh cong", yeuCauService.getStats())
+        );
+    }
+
+    @GetMapping("/mau-options")
+    public ResponseEntity<ApiResponse<List<YeuCauKiemNghiemMauOptionResponse>>> getMauOptions() {
+        return ResponseEntity.ok(
+                ApiResponse.success("Lay danh sach mau thanh cong", yeuCauService.getMauOptions())
+        );
+    }
+
+    @GetMapping("/kiem-nghiem-vien-options")
+    public ResponseEntity<ApiResponse<List<NguoiDungResponse>>> getKiemNghiemVienOptions() {
+        return ResponseEntity.ok(
+                ApiResponse.success("Lay danh sach kiem nghiem vien thanh cong", yeuCauService.getKiemNghiemVienOptions())
         );
     }
 

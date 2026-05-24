@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { baoCaoApi, coSoKinhDoanhApi, type BaoCaoResponse } from '@/api/api';
+import { baoCaoApi, type BaoCaoResponse } from '@/api/api';
 import { PageHeader, SectionCard, StatusBadge, GovBtn, ActionButtons, FormLayout, FormSection, FormField } from '@/components/GovUI';
 import AlertBanner from '@/components/AlertBanner';
 
@@ -15,7 +15,6 @@ export default function BaoCaoChinhSuaPage() {
   const router = useRouter();
   const id = params.id;
   const [report, setReport] = useState<BaoCaoResponse | null>(null);
-  const [facilityId, setFacilityId] = useState('');
   const [content, setContent] = useState('');
   const [comment, setComment] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -31,14 +30,11 @@ export default function BaoCaoChinhSuaPage() {
 
       try {
         const data = await baoCaoApi.getById(id);
-        const businessPage = await coSoKinhDoanhApi.search(data.tenCoSo, 0, 20);
-        const matchedBusiness = businessPage.content.find((item) => item.tenCoSo === data.tenCoSo);
         if (!isMounted) {
           return;
         }
 
         setReport(data);
-        setFacilityId(matchedBusiness?.maCoSo ?? '');
         setContent(data.noiDung ?? '');
         setComment(data.nhanXet ?? '');
       } catch (error) {
@@ -63,7 +59,7 @@ export default function BaoCaoChinhSuaPage() {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!report || !isFormValid || isSubmitting) return;
-    if (!facilityId) {
+    if (!report.facilityId) {
       setErrorMessage('Không xác định được cơ sở gốc của báo cáo để cập nhật');
       return;
     }
@@ -73,7 +69,7 @@ export default function BaoCaoChinhSuaPage() {
 
     try {
       await baoCaoApi.update(id, {
-        facilityId,
+        facilityId: report.facilityId,
         inspectionDate: report.ngay,
         inspectionType: report.loaiThanhTra,
         content: content.trim(),

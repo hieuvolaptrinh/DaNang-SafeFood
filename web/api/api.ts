@@ -141,9 +141,33 @@ export interface YeuCauKiemNghiemStatsResponse {
   hoanThanh: number;
 }
 
+export interface YeuCauKiemNghiemMauOptionResponse {
+  maMau: string;
+  maCoSo: string;
+  tenMau: string;
+  loaiMau: string;
+  tenCoSo: string;
+  ngayThu: string;
+}
+
+export interface NguoiDungOptionResponse {
+  maNguoiDung: string;
+  hoTen: string;
+  gioiTinh?: string;
+  cccd?: string;
+}
+
 export const yeuCauKiemNghiemApi = {
   getStats(): Promise<YeuCauKiemNghiemStatsResponse> {
     return api.get("/v1/yeu-cau-kiem-nghiem/stats");
+  },
+
+  getMauOptions(): Promise<YeuCauKiemNghiemMauOptionResponse[]> {
+    return api.get("/v1/yeu-cau-kiem-nghiem/mau-options");
+  },
+
+  getKiemNghiemVienOptions(): Promise<NguoiDungOptionResponse[]> {
+    return api.get("/v1/yeu-cau-kiem-nghiem/kiem-nghiem-vien-options");
   },
 
   searchYeuCau(
@@ -490,6 +514,7 @@ export const hoSoThanhTraApi = {
  */
 export interface BaoCaoResponse {
   id: string;
+  facilityId?: string;
   tenCoSo: string;
   loaiThanhTra: string;
   thanhTraVien: string;

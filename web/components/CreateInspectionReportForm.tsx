@@ -128,12 +128,6 @@ const initialFormState: ReportFormState = {
   hasInspectionRecord: true,
 };
 
-function mockSaveInspectionReport() {
-  return new Promise<void>((resolve) => {
-    window.setTimeout(() => resolve(), 1200);
-  });
-}
-
 function formatFileSize(bytes: number) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
@@ -772,7 +766,6 @@ export default function CreateInspectionReportForm({
     setSubmitError('');
 
     try {
-      await mockSaveInspectionReport();
       await onSubmit?.({
         facilityId: selectedFacility.id,
         facilityName: selectedFacility.name,
