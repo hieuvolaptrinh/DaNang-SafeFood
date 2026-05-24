@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
 import AlertBanner from '@/components/AlertBanner';
 import InspectionTaskDetails from '@/components/InspectionTaskDetails';
 import InspectionTaskList, { type InspectionTaskRecord } from '@/components/InspectionTaskList';
@@ -14,96 +13,44 @@ import {
   normalizeInspectionTaskStatus,
 } from '@/components/inspectionTaskStatus';
 import { PageHeader, GovBtn, MiniStat } from '@/components/GovUI';
+import { nhiemVuApi, type NhiemVuDetailResponse, type NhiemVuListItemResponse, type NhiemVuStatsResponse } from '@/api/api';
 import { RefreshCw } from 'lucide-react';
 
 type LoadState = 'loading' | 'error' | 'empty' | 'data';
-type MockFetchMode = Exclude<LoadState, 'loading'>;
 
-const mockAssignedTasks: InspectionTaskRecord[] = [
-  {
-    id: 'NV-2026-001',
-    businessName: 'Nhà hàng Hải Sản Biển Xanh',
-    address: '12 Võ Nguyên Giáp, Phước Mỹ, Sơn Trà, Đà Nẵng',
-    inspectionTime: '08:30, 28/03/2026',
-    inspectionContent:
-      'Kiểm tra điều kiện vệ sinh khu bếp, hồ sơ nguồn gốc nguyên liệu và việc lưu mẫu thức ăn.',
-    trangThai: 'Đã nhận',
-    ghiChu: 'Đã kiểm tra phần bếp, cần tiếp tục kiểm tra kho lạnh.',
-  },
-  {
-    id: 'NV-2026-002',
-    businessName: 'Cửa hàng Thực phẩm Sạch Organic',
-    address: '45 Nguyễn Văn Linh, Hải Châu 1, Hải Châu, Đà Nẵng',
-    inspectionTime: '14:00, 29/03/2026',
-    inspectionContent:
-      'Đánh giá việc bảo quản thực phẩm tươi sống, nhãn mác sản phẩm và chứng từ pháp lý liên quan.',
-    trangThai: 'Đang thực hiện',
-    ghiChu: 'Đã kiểm tra khu vực bảo quản lạnh, đang đối chiếu chứng từ nhập hàng.',
-  },
-  {
-    id: 'NV-2026-003',
-    businessName: 'Quán Ăn Gia Đình Việt',
-    address: '88 Điện Biên Phủ, Chính Gián, Thanh Khê, Đà Nẵng',
-    inspectionTime: '09:00, 30/03/2026',
-    inspectionContent:
-      'Kiểm tra khu vực chế biến, điều kiện nhân sự trực tiếp chế biến và quy trình lưu trữ thực phẩm.',
-    trangThai: 'Chưa nhận',
-    ghiChu: '',
-    lyDoTuChoi: '',
-  },
-  {
-    id: 'NV-2026-004',
-    businessName: 'Café Sáng Ngời',
-    address: '56 Lê Lợi, Hải Châu 2, Hải Châu, Đà Nẵng',
-    inspectionTime: '15:30, 31/03/2026',
-    inspectionContent:
-      'Kiểm tra điều kiện cơ sở vật chất, vệ sinh nhân viên và quy trình pha chế.',
-    trangThai: 'Hoàn thành',
-    ghiChu: 'Hoàn thành kiểm tra, cơ sở đạt chuẩn.',
-  },
-];
+function formatInspectionTime(value?: string) {
+  if (!value) {
+    return 'Chưa có lịch kiểm tra';
+  }
 
-function mockFetchAssignedTasks(mode: MockFetchMode) {
-  return new Promise<InspectionTaskRecord[]>((resolve, reject) => {
-    window.setTimeout(() => {
-      if (mode === 'error') {
-        reject(new Error('Không thể tải dữ liệu, vui lòng thử lại'));
-        return;
-      }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
 
-      if (mode === 'empty') {
-        resolve([]);
-        return;
-      }
-
-      resolve(mockAssignedTasks);
-    }, 900);
-  });
+  return new Intl.DateTimeFormat('vi-VN', {
+    hour: '2-digit',
+    minute: '2-digit',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(date).replace(',', '');
 }
 
-function mockAcceptTask() {
-  return new Promise<void>((resolve) => {
-    window.setTimeout(() => resolve(), 700);
-  });
+function toTaskRecord(detail: NhiemVuDetailResponse): InspectionTaskRecord {
+  return {
+    id: detail.maThanhTra,
+    businessName: detail.tenCoSo,
+    address: detail.diaChiCoSo || 'Chưa có địa chỉ',
+    inspectionTime: formatInspectionTime(detail.thoiGianTT),
+    inspectionContent: detail.noiDung || 'Chưa có nội dung kiểm tra',
+    trangThai: normalizeInspectionTaskStatus(detail.trangThai),
+    ghiChu: detail.ghiChu || '',
+  };
 }
 
-function mockRejectTask() {
-  return new Promise<void>((resolve) => {
-    window.setTimeout(() => resolve(), 700);
-  });
-}
-
-function mockUpdateTaskProgress(mode: 'success' | 'error') {
-  return new Promise<void>((resolve, reject) => {
-    window.setTimeout(() => {
-      if (mode === 'error') {
-        reject(new Error('Không thể cập nhật dữ liệu, vui lòng thử lại'));
-        return;
-      }
-
-      resolve();
-    }, 800);
-  });
+function normalizeError(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
 }
 
 function LoadingPanel() {
@@ -132,9 +79,9 @@ function LoadingPanel() {
 }
 
 export default function NhiemVuKiemTraPage() {
-  const searchParams = useSearchParams();
   const [loadState, setLoadState] = useState<LoadState>('loading');
   const [tasks, setTasks] = useState<InspectionTaskRecord[]>([]);
+  const [stats, setStats] = useState<NhiemVuStatsResponse>({ tongSo: 0, chuaNhan: 0, daNhan: 0 });
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
@@ -149,74 +96,86 @@ export default function NhiemVuKiemTraPage() {
   });
   const [updateState, setUpdateState] = useState<InspectionTaskUpdateState>('idle');
   const [updateErrorMessage, setUpdateErrorMessage] = useState('');
-  const stateParam = searchParams.get('state');
-  const updateParam = searchParams.get('update');
-  const fetchMode: MockFetchMode =
-    stateParam === 'error' || stateParam === 'empty' || stateParam === 'data'
-      ? stateParam
-      : 'data';
-  const updateMode = updateParam === 'error' ? 'error' : 'success';
 
   useEffect(() => {
     let isMounted = true;
 
-    setLoadState('loading');
-    setErrorMessage('');
-    setSuccessMessage('');
+    const loadData = async () => {
+      setLoadState('loading');
+      setErrorMessage('');
+      setSuccessMessage('');
 
-    mockFetchAssignedTasks(fetchMode)
-      .then((nextTasks) => {
+      try {
+        const [statsData, pageData] = await Promise.all([
+          nhiemVuApi.getStats(),
+          nhiemVuApi.search('', '', 0, 100),
+        ]);
+
+        const detailTasks = await Promise.all(
+          pageData.content.map(async (item: NhiemVuListItemResponse) => {
+            try {
+              const detail = await nhiemVuApi.getById(item.maThanhTra);
+              return toTaskRecord(detail);
+            } catch {
+              return {
+                id: item.maThanhTra,
+                businessName: item.tenCoSo,
+                address: 'Chưa có địa chỉ',
+                inspectionTime: formatInspectionTime(item.thoiGianTT),
+                inspectionContent: 'Chưa có nội dung kiểm tra',
+                trangThai: normalizeInspectionTaskStatus(item.trangThai),
+                ghiChu: item.ghiChu || '',
+              } satisfies InspectionTaskRecord;
+            }
+          })
+        );
+
         if (!isMounted) {
           return;
         }
 
-        const normalizedTasks = nextTasks.map((task) => ({
-          ...task,
-          trangThai: normalizeInspectionTaskStatus(task.trangThai),
-        }));
-
-        setTasks(normalizedTasks);
+        setStats(statsData);
+        setTasks(detailTasks);
         setUpdateState('idle');
         setUpdateErrorMessage('');
 
-        if (normalizedTasks.length === 0) {
+        if (detailTasks.length === 0) {
           setSelectedTaskId(null);
           setLoadState('empty');
           return;
         }
 
         setSelectedTaskId((current) => {
-          if (current && normalizedTasks.some((task) => task.id === current)) {
+          if (current && detailTasks.some((task) => task.id === current)) {
             return current;
           }
 
           return (
-            normalizedTasks.find((task) => isInspectionTaskStatus(task.trangThai, 'pending'))?.id ??
-            normalizedTasks[0].id
+            detailTasks.find((task) => isInspectionTaskStatus(task.trangThai, 'pending'))?.id ??
+            detailTasks[0].id
           );
         });
         setLoadState('data');
-      })
-      .catch((error: Error) => {
+      } catch (error) {
         if (!isMounted) {
           return;
         }
 
         setTasks([]);
         setSelectedTaskId(null);
-        setErrorMessage(error.message);
+        setErrorMessage(normalizeError(error, 'Không thể tải dữ liệu, vui lòng thử lại'));
         setLoadState('error');
-      });
+      }
+    };
+
+    void loadData();
 
     return () => {
       isMounted = false;
     };
-  }, [fetchMode, reloadKey]);
+  }, [reloadKey]);
 
   const selectedTask = tasks.find((task) => task.id === selectedTaskId) ?? null;
-  const totalTasks = tasks.length;
-  const pendingTasks = tasks.filter((task) => isInspectionTaskStatus(task.trangThai, 'pending')).length;
-  const acceptedTasks = tasks.filter((task) => !isInspectionTaskStatus(task.trangThai, 'pending')).length;
 
   useEffect(() => {
     if (!selectedTask) {
@@ -239,12 +198,7 @@ export default function NhiemVuKiemTraPage() {
   };
 
   const handleConfirmTask = async () => {
-    if (
-      !selectedTask ||
-      !isInspectionTaskStatus(selectedTask.trangThai, 'pending') ||
-      isConfirming ||
-      isRejecting
-    ) {
+    if (!selectedTask || !isInspectionTaskStatus(selectedTask.trangThai, 'pending') || isConfirming || isRejecting) {
       return;
     }
 
@@ -252,26 +206,18 @@ export default function NhiemVuKiemTraPage() {
     setSuccessMessage('');
 
     try {
-      await mockAcceptTask();
-
-      setTasks((current) =>
-        current.map((task) =>
-          task.id === selectedTask.id ? { ...task, trangThai: 'Đã nhận' } : task
-        )
-      );
+      await nhiemVuApi.accept(selectedTask.id);
       setSuccessMessage('Đã nhận nhiệm vụ thành công');
+      handleRetry();
+    } catch (error) {
+      setErrorMessage(normalizeError(error, 'Không thể nhận nhiệm vụ'));
     } finally {
       setIsConfirming(false);
     }
   };
 
   const handleRejectTask = async () => {
-    if (
-      !selectedTask ||
-      !isInspectionTaskStatus(selectedTask.trangThai, 'pending') ||
-      isRejecting ||
-      isConfirming
-    ) {
+    if (!selectedTask || !isInspectionTaskStatus(selectedTask.trangThai, 'pending') || isRejecting || isConfirming) {
       return;
     }
 
@@ -280,22 +226,23 @@ export default function NhiemVuKiemTraPage() {
   };
 
   const confirmReject = async () => {
-    if (!selectedTask) return;
-    if (!rejectReason.trim()) return;
+    if (!selectedTask || !rejectReason.trim()) {
+      return;
+    }
 
     setIsRejecting(true);
     setSuccessMessage('');
 
     try {
-      await mockRejectTask();
-
-      setTasks((current) => current.filter((task) => task.id !== selectedTask.id));
-      setSelectedTaskId(null);
+      await nhiemVuApi.reject(selectedTask.id, { lyDoTuChoi: rejectReason.trim() });
       setSuccessMessage('Đã từ chối nhiệm vụ thành công');
-    } finally {
-      setIsRejecting(false);
       setIsRejectModalOpen(false);
       setRejectReason('');
+      handleRetry();
+    } catch (error) {
+      setErrorMessage(normalizeError(error, 'Không thể từ chối nhiệm vụ'));
+    } finally {
+      setIsRejecting(false);
     }
   };
 
@@ -315,27 +262,17 @@ export default function NhiemVuKiemTraPage() {
     setSuccessMessage('');
 
     try {
-      await mockUpdateTaskProgress(updateMode);
-
-      setTasks((current) =>
-        current.map((task) =>
-          task.id === selectedTask.id
-            ? {
-                ...task,
-                trangThai: normalizeInspectionTaskStatus(progressForm.status),
-                ghiChu: progressForm.note.trim(),
-              }
-            : task
-        )
-      );
+      await nhiemVuApi.updateProgress(selectedTask.id, {
+        trangThai: progressForm.status,
+        ghiChu: progressForm.note.trim(),
+      });
       setUpdateState('success');
       setSuccessMessage('Cập nhật trạng thái thành công');
+      handleRetry();
     } catch (error) {
       setUpdateState('error');
       setUpdateErrorMessage(
-        error instanceof Error
-          ? error.message
-          : 'Không thể cập nhật dữ liệu, vui lòng thử lại'
+        normalizeError(error, 'Không thể cập nhật dữ liệu, vui lòng thử lại')
       );
     }
   };
@@ -363,9 +300,9 @@ export default function NhiemVuKiemTraPage() {
             marginBottom: '12px',
           }}
         >
-          <MiniStat label="Tổng nhiệm vụ" value={totalTasks} color="blue" />
-          <MiniStat label="Chưa nhận" value={pendingTasks} color="orange" />
-          <MiniStat label="Đã nhận" value={acceptedTasks} color="green" />
+          <MiniStat label="Tổng nhiệm vụ" value={stats.tongSo} color="blue" />
+          <MiniStat label="Chưa nhận" value={stats.chuaNhan} color="orange" />
+          <MiniStat label="Đã nhận" value={stats.daNhan} color="green" />
         </div>
       )}
 
@@ -457,7 +394,7 @@ export default function NhiemVuKiemTraPage() {
                   color: '#006400',
                 }}
               >
-                {totalTasks} nhiệm vụ
+                {tasks.length} nhiệm vụ
               </span>
             </div>
 

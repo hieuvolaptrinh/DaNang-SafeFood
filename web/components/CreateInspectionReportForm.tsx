@@ -4,7 +4,7 @@ import { ChangeEvent, FormEvent, ReactNode, RefObject, useMemo, useRef, useState
 import { FiCheckCircle, FiFileText, FiPaperclip, FiTrash2 } from 'react-icons/fi';
 import AlertBanner from '@/components/AlertBanner';
 import Badge from '@/components/Badge';
-import { mockBusinesses, type InspectionReportResult } from '@/data/mockData';
+import type { InspectionReportResult } from '@/data/mockData';
 import { cn } from '@/lib/utils';
 
 type InspectionTypeValue = 'Định kỳ' | 'Đột xuất' | 'Theo phản ánh';
@@ -41,8 +41,15 @@ export interface CreateInspectionReportPayload {
   hasInspectionRecord: boolean;
 }
 
+export interface InspectionReportBusinessOption {
+  id: string;
+  name: string;
+  district: string;
+}
+
 interface CreateInspectionReportFormProps {
   reportId: string;
+  businessOptions: InspectionReportBusinessOption[];
   onCancel: () => void;
   onSubmit?: (values: CreateInspectionReportPayload) => Promise<void> | void;
 }
@@ -258,6 +265,7 @@ function FormField({ label, htmlFor, required, hint, error, children }: FieldPro
 
 function ReportInfoSection({
   reportId,
+  businessOptions,
   form,
   errors,
   showError,
@@ -265,6 +273,7 @@ function ReportInfoSection({
   onFieldChange,
 }: {
   reportId: string;
+  businessOptions: InspectionReportBusinessOption[];
   form: ReportFormState;
   errors: ReportFormErrors;
   showError: (field: ReportFormField) => boolean;
@@ -304,7 +313,7 @@ function ReportInfoSection({
             )}
           >
             <option value="">Chọn cơ sở kinh doanh</option>
-            {mockBusinesses.map((business) => (
+            {businessOptions.map((business) => (
               <option key={business.id} value={business.id}>
                 {business.name} • {business.district}
               </option>
@@ -685,6 +694,7 @@ function ConfirmationSection({
 
 export default function CreateInspectionReportForm({
   reportId,
+  businessOptions,
   onCancel,
   onSubmit,
 }: CreateInspectionReportFormProps) {
@@ -696,8 +706,8 @@ export default function CreateInspectionReportForm({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const selectedFacility = useMemo(
-    () => mockBusinesses.find((business) => business.id === form.facilityId),
-    [form.facilityId]
+    () => businessOptions.find((business) => business.id === form.facilityId),
+    [businessOptions, form.facilityId]
   );
 
   const errors = useMemo(() => validateForm(form, fileError), [fileError, form]);
@@ -816,6 +826,7 @@ export default function CreateInspectionReportForm({
       <form onSubmit={handleSubmit} className="space-y-5">
         <ReportInfoSection
           reportId={reportId}
+          businessOptions={businessOptions}
           form={form}
           errors={errors}
           showError={showError}

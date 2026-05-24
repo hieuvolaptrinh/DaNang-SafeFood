@@ -1,8 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Plus, Eye, RefreshCw, FileSpreadsheet, Printer, Upload } from 'lucide-react';
-import CreateInspectionRequestForm, { type FoodInspectionRequestRecord } from '@/components/CreateInspectionRequestForm';
 import { useRole } from '@/lib/RoleContext';
 import {
   PageHeader, FilterBar, FilterField, GovInput, GovSelect, GovBtn,
@@ -10,6 +9,11 @@ import {
   FormLayout, FormSection, FormField,
 } from '@/components/GovUI';
 import DataTable, { type Column } from '@/components/DataTable';
+import {
+  yeuCauKiemNghiemApi,
+  type YeuCauKiemNghiemResponse,
+  type YeuCauKiemNghiemStatsResponse,
+} from '@/api/api';
 
 export interface TestRequest {
   id: string;
@@ -23,78 +27,72 @@ export interface TestRequest {
   reason?: string;
   stampedFile?: string;
   sampleId?: string;
-  collectedDate?: string;
   criteria?: string[];
   requestContent?: string;
 }
-
-const mockTestRequests: TestRequest[] = [
-  {
-    id: 'YC-2025001',
-    business: 'Nhà hàng Hải Sản Biển Xanh',
-    sampleType: 'Mẫu thực phẩm tươi',
-    requestDate: '23/03/2025',
-    deadline: '30/03/2025',
-    status: 'processing',
-    lab: 'Trung tâm Kiểm nghiệm Đà Nẵng',
-    result: 'Đạt tiêu chuẩn',
-    sampleId: 'M-2025-001',
-    collectedDate: '22/03/2025',
-    criteria: ['Vi sinh', 'Hóa học'],
-    requestContent: 'Kiểm nghiệm mẫu hải sản tươi sống, đảm bảo không nhiễm vi khuẩn E.coli và Salmonella theo QCVN 8-3:2012/BYT.',
-  },
-  {
-    id: 'YC-2025002',
-    business: 'Cửa hàng Thực phẩm Sạch Organic',
-    sampleType: 'Mẫu rau hữu cơ',
-    requestDate: '24/03/2025',
-    deadline: '02/04/2025',
-    status: 'pending',
-    lab: 'Lab Việt Nam',
-    sampleId: 'M-2025-002',
-    collectedDate: '23/03/2025',
-    criteria: ['Kim loại nặng', 'Hóa học', 'Cảm quan'],
-    requestContent: 'Kiểm tra dư lượng thuốc bảo vệ thực vật và kim loại nặng trong rau hữu cơ.',
-  },
-  {
-    id: 'YC-2025003',
-    business: 'Siêu thị Mini Mart Đà Nẵng',
-    sampleType: 'Mẫu nước đá',
-    requestDate: '20/03/2025',
-    deadline: '28/03/2025',
-    status: 'completed',
-    lab: 'Trung tâm Kiểm nghiệm Đà Nẵng',
-    result: 'Không đạt',
-    reason: 'Vi phạm giới hạn vi sinh vật',
-    sampleId: 'M-2025-003',
-    collectedDate: '19/03/2025',
-    criteria: ['Vi sinh', 'Cảm quan'],
-    requestContent: 'Kiểm tra chỉ tiêu vi sinh và cảm quan của mẫu nước đá tại siêu thị.',
-  },
-];
 
 const STATUS_VARIANT: Record<string, string> = {
   pending: 'pending',
   processing: 'in-progress',
   completed: 'resolved',
 };
+
 const STATUS_LABEL: Record<string, string> = {
   pending: 'Chờ xử lý',
   processing: 'Đang thực hiện',
   completed: 'Hoàn thành',
 };
 
-type ViewMode = 'list' | 'create';
+const EMPTY_STATS: YeuCauKiemNghiemStatsResponse = {
+  tongYeuCau: 0,
+  choDuyet: 0,
+  dangXuLy: 0,
+  hoanThanh: 0,
+};
+
+function formatDate(value?: string | null) {
+  if (!value) {
+    return 'Chưa có';
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat('vi-VN').format(date);
+}
+
+function mapRequest(item: YeuCauKiemNghiemResponse): TestRequest {
+  return {
+    id: item.maYeuCau,
+    business: item.tenCoSo || 'Chưa rõ',
+    sampleType: item.loaiMau || 'Chưa rõ',
+    requestDate: formatDate(item.ngayYeuCau),
+    deadline: formatDate(item.hanHoanThanh),
+    status: item.trangThai,
+    lab: item.phongLab || 'Chưa rõ',
+    result: item.ketQuaKiemNghiem || undefined,
+    reason: item.lyDoKhongDat || undefined,
+    sampleId: item.maMauLienQuan || undefined,
+    criteria: item.chiTieuKiemDinh ? item.chiTieuKiemDinh.split(',').map((value) => value.trim()).filter(Boolean) : [],
+    requestContent: item.noidungYeuCau || undefined,
+  };
+}
+
+function normalizeError(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
+}
 
 export default function YeuCauPage() {
   const { role } = useRole();
-  const [view, setView] = useState<ViewMode>('list');
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [data, setData] = useState<TestRequest[]>(mockTestRequests);
-  const [selectedSampleId, setSelectedSampleId] = useState('SAMPLE-2025-001');
+  const [data, setData] = useState<TestRequest[]>([]);
+  const [stats, setStats] = useState<YeuCauKiemNghiemStatsResponse>(EMPTY_STATS);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState('');
 
-  // Result modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<TestRequest | null>(null);
   const [modalStatus, setModalStatus] = useState<TestRequest['status']>('pending');
@@ -102,31 +100,42 @@ export default function YeuCauPage() {
   const [reason, setReason] = useState('');
   const [stampedFileName, setStampedFileName] = useState('');
 
-  // Detail modal state
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [detailRequest, setDetailRequest] = useState<TestRequest | null>(null);
 
   const canCreateRequest = role === 'INSPECTOR';
   const canManageResult = role === 'TESTER';
 
-  const openCreateForm = () => {
-    setSelectedSampleId('SAMPLE-2025-001');
-    setView('create');
+  const loadData = async () => {
+    setIsLoading(true);
+    setErrorMessage('');
+
+    try {
+      const [statsData, pageData] = await Promise.all([
+        yeuCauKiemNghiemApi.getStats(),
+        yeuCauKiemNghiemApi.searchYeuCau('', '', 0, 100),
+      ]);
+      setStats(statsData);
+      setData(pageData.content.map(mapRequest));
+    } catch (error) {
+      setErrorMessage(normalizeError(error, 'Không thể tải danh sách yêu cầu kiểm nghiệm'));
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const closeCreateForm = () => {
-    setView('list');
-  };
+  useEffect(() => {
+    void loadData();
+  }, []);
 
-  const handleCreateSuccess = (request: FoodInspectionRequestRecord) => {
-    setData(prev => [request, ...prev]);
-    setSelectedSampleId('SAMPLE-2025-001');
-    setView('list');
-  };
-
-  const openDetail = (request: TestRequest) => {
-    setDetailRequest(request);
-    setIsDetailOpen(true);
+  const openDetail = async (request: TestRequest) => {
+    try {
+      const detail = await yeuCauKiemNghiemApi.getById(request.id);
+      setDetailRequest(mapRequest(detail));
+      setIsDetailOpen(true);
+    } catch (error) {
+      setErrorMessage(normalizeError(error, 'Không thể tải chi tiết yêu cầu kiểm nghiệm'));
+    }
   };
 
   const closeDetail = () => {
@@ -143,83 +152,102 @@ export default function YeuCauPage() {
     setIsModalOpen(true);
   };
 
-  const saveResult = () => {
+  const saveResult = async () => {
     if (!selectedRequest) return;
-    const finalResult = resultStatus === 'Đạt' ? 'Đạt tiêu chuẩn' : 'Không đạt';
-    setData(prev => prev.map(item =>
-      item.id === selectedRequest.id
-        ? { ...item, status: modalStatus, result: finalResult, reason: resultStatus === 'Không đạt' ? reason.trim() : undefined, stampedFile: stampedFileName || item.stampedFile }
-        : item
-    ));
-    setIsModalOpen(false);
-    setSelectedRequest(null);
-    setReason('');
-    setStampedFileName('');
+
+    try {
+      const updated = await yeuCauKiemNghiemApi.updateKetQua(selectedRequest.id, {
+        ketQuaKiemNghiem: resultStatus === 'Đạt' ? 'Đạt tiêu chuẩn' : 'Không đạt',
+        trangThai: modalStatus,
+        lyDoKhongDat: resultStatus === 'Không đạt' ? reason.trim() : undefined,
+        fileCoDauMoc: stampedFileName || undefined,
+      });
+
+      const mapped = mapRequest(updated);
+      setData((prev) => prev.map((item) => (item.id === mapped.id ? mapped : item)));
+      if (detailRequest?.id === mapped.id) {
+        setDetailRequest(mapped);
+      }
+      setIsModalOpen(false);
+      setSelectedRequest(null);
+      setReason('');
+      setStampedFileName('');
+      void loadData();
+    } catch (error) {
+      setErrorMessage(normalizeError(error, 'Không thể cập nhật kết quả kiểm nghiệm'));
+    }
   };
 
   const isSaveDisabled = !stampedFileName || (resultStatus === 'Không đạt' && !reason.trim());
 
-  const filtered = data.filter(r => {
-    const matchSearch = !search || r.business.toLowerCase().includes(search.toLowerCase()) || r.id.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = !statusFilter || r.status === statusFilter;
-    return matchSearch && matchStatus;
-  });
+  const filtered = useMemo(
+    () =>
+      data.filter((request) => {
+        const matchSearch =
+          !search ||
+          request.business.toLowerCase().includes(search.toLowerCase()) ||
+          request.id.toLowerCase().includes(search.toLowerCase());
+        const matchStatus = !statusFilter || request.status === statusFilter;
+        return matchSearch && matchStatus;
+      }),
+    [data, search, statusFilter]
+  );
 
   const columns: Column<TestRequest>[] = [
     {
       key: 'id',
       header: 'Mã yêu cầu',
-      render: r => <span style={{ fontFamily: 'monospace', fontWeight: 600, color: '#005A9E' }}>{r.id}</span>,
+      render: (request) => <span style={{ fontFamily: 'monospace', fontWeight: 600, color: '#005A9E' }}>{request.id}</span>,
     },
     {
       key: 'business',
       header: 'Cơ sở',
-      render: r => (
+      render: (request) => (
         <div>
-          <p style={{ fontWeight: 600, fontSize: '13px', color: '#222' }}>{r.business}</p>
-          {r.sampleId && <p style={{ fontSize: '11px', color: '#888' }}>Mẫu: {r.sampleId}</p>}
+          <p style={{ fontWeight: 600, fontSize: '13px', color: '#222' }}>{request.business}</p>
+          {request.sampleId && <p style={{ fontSize: '11px', color: '#888' }}>Mẫu: {request.sampleId}</p>}
         </div>
       ),
     },
     {
       key: 'sampleType',
       header: 'Loại mẫu',
-      render: r => <span style={{ fontSize: '12px', color: '#333' }}>{r.sampleType}</span>,
+      render: (request) => <span style={{ fontSize: '12px', color: '#333' }}>{request.sampleType}</span>,
     },
     {
       key: 'requestDate',
       header: 'Ngày yêu cầu',
-      render: r => <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>{r.requestDate}</span>,
+      render: (request) => <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>{request.requestDate}</span>,
     },
     {
       key: 'deadline',
       header: 'Hạn hoàn thành',
-      render: r => <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>{r.deadline}</span>,
+      render: (request) => <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>{request.deadline}</span>,
     },
     {
       key: 'status',
       header: 'Trạng thái',
-      render: r => <StatusBadge variant={STATUS_VARIANT[r.status]} label={STATUS_LABEL[r.status]} />,
+      render: (request) => <StatusBadge variant={STATUS_VARIANT[request.status]} label={STATUS_LABEL[request.status]} />,
     },
     {
       key: 'result',
       header: 'Kết quả',
-      render: r => r.result ? (
-        <span style={{ fontSize: '12px', fontWeight: 600, color: r.result.includes('Không đạt') ? '#CC0000' : '#006400' }}>
-          {r.result}
+      render: (request) => request.result ? (
+        <span style={{ fontSize: '12px', fontWeight: 600, color: request.result.includes('Không đạt') ? '#CC0000' : '#006400' }}>
+          {request.result}
         </span>
       ) : <span style={{ fontSize: '11px', color: '#888' }}>—</span>,
     },
     {
       key: 'actions',
       header: 'Thao tác',
-      render: r => (
+      render: (request) => (
         <ActionButtons>
-          <GovBtn variant="secondary" size="sm" title="Xem chi tiết" onClick={() => openDetail(r)}>
+          <GovBtn variant="secondary" size="sm" title="Xem chi tiết" onClick={() => void openDetail(request)}>
             <Eye style={{ width: 12, height: 12 }} />
           </GovBtn>
           {canManageResult && (
-            <GovBtn variant="outline" size="sm" title="Nhập kết quả" onClick={() => openResultModal(r)}>
+            <GovBtn variant="outline" size="sm" title="Nhập kết quả" onClick={() => openResultModal(request)}>
               <Upload style={{ width: 12, height: 12 }} />
             </GovBtn>
           )}
@@ -231,82 +259,67 @@ export default function YeuCauPage() {
   return (
     <div>
       <PageHeader
-        title={view === 'create' ? 'Tạo yêu cầu kiểm nghiệm' : 'Yêu cầu kiểm nghiệm'}
-        subtitle={
-          view === 'create'
-            ? 'Chi cục An toàn Thực phẩm TP. Đà Nẵng — Lập yêu cầu kiểm nghiệm mẫu thực phẩm'
-            : 'Chi cục An toàn Thực phẩm TP. Đà Nẵng — Quản lý các yêu cầu kiểm nghiệm mẫu thực phẩm'
-        }
+        title="Yêu cầu kiểm nghiệm"
+        subtitle="Chi cục An toàn Thực phẩm TP. Đà Nẵng — Quản lý các yêu cầu kiểm nghiệm mẫu thực phẩm"
         actions={
           <ActionButtons>
-            {view === 'list' ? (
-              <>
-                <GovBtn variant="secondary"><RefreshCw style={{ width: 12, height: 12 }} /> Làm mới</GovBtn>
-                <GovBtn variant="secondary"><Printer style={{ width: 12, height: 12 }} /> In danh sách</GovBtn>
-                <GovBtn variant="secondary"><FileSpreadsheet style={{ width: 12, height: 12 }} /> Xuất Excel</GovBtn>
-                {canCreateRequest && (
-                  <GovBtn variant="primary" onClick={openCreateForm}>
-                    <Plus style={{ width: 12, height: 12 }} /> Tạo yêu cầu mới
-                  </GovBtn>
-                )}
-              </>
-            ) : (
-              <GovBtn variant="secondary" onClick={closeCreateForm}>Quay lại danh sách</GovBtn>
+            <GovBtn variant="secondary" onClick={() => void loadData()}><RefreshCw style={{ width: 12, height: 12 }} /> Làm mới</GovBtn>
+            <GovBtn variant="secondary"><Printer style={{ width: 12, height: 12 }} /> In danh sách</GovBtn>
+            <GovBtn variant="secondary"><FileSpreadsheet style={{ width: 12, height: 12 }} /> Xuất Excel</GovBtn>
+            {canCreateRequest && (
+              <GovBtn
+                variant="primary"
+                onClick={() => setErrorMessage('API tạo mới yêu cầu kiểm nghiệm hiện còn thiếu dữ liệu mẫu và người kiểm nghiệm để map đúng từ FE.')}
+              >
+                <Plus style={{ width: 12, height: 12 }} /> Tạo yêu cầu mới
+              </GovBtn>
             )}
           </ActionButtons>
         }
       />
 
-      {view === 'create' ? (
-        <CreateInspectionRequestForm
-          selectedSampleId={selectedSampleId}
-          onCancel={closeCreateForm}
-          onSuccess={handleCreateSuccess}
-        />
-      ) : (
-        <>
-          {/* Stats */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '10px', marginBottom: '12px' }}>
-            <MiniStat label="Tổng yêu cầu" value={data.length} color="neutral" />
-            <MiniStat label="Chờ xử lý" value={data.filter(r => r.status === 'pending').length} color="orange" />
-            <MiniStat label="Đang thực hiện" value={data.filter(r => r.status === 'processing').length} color="blue" />
-            <MiniStat label="Hoàn thành" value={data.filter(r => r.status === 'completed').length} color="green" />
-          </div>
-
-          {/* Filter */}
-          <FilterBar>
-            <FilterField label="Tìm kiếm">
-              <GovInput placeholder="Mã yêu cầu, tên cơ sở..." value={search} onChange={setSearch} width={240} />
-            </FilterField>
-            <FilterField label="Trạng thái">
-              <GovSelect value={statusFilter} onChange={setStatusFilter} options={[
-                { value: '', label: '-- Tất cả --' },
-                { value: 'pending', label: 'Chờ xử lý' },
-                { value: 'processing', label: 'Đang thực hiện' },
-                { value: 'completed', label: 'Hoàn thành' },
-              ]} width={180} />
-            </FilterField>
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px' }}>
-              <GovBtn variant="primary">Tìm kiếm</GovBtn>
-              <GovBtn variant="secondary" onClick={() => { setSearch(''); setStatusFilter(''); }}>Xóa lọc</GovBtn>
-            </div>
-          </FilterBar>
-
-          {/* Table */}
-          <SectionCard
-            title={`Danh sách yêu cầu kiểm nghiệm (${filtered.length} yêu cầu)`}
-            footer={<GovPagination info={`Hiển thị ${filtered.length} / ${data.length} yêu cầu kiểm nghiệm`} />}
-          >
-            <DataTable
-              columns={columns}
-              data={filtered}
-              emptyMessage="Không tìm thấy yêu cầu kiểm nghiệm nào phù hợp."
-            />
-          </SectionCard>
-        </>
+      {errorMessage && (
+        <div style={{ marginBottom: '12px', border: '1px solid #F5C2C7', background: '#FDEBEC', color: '#842029', padding: '10px 12px', borderRadius: '2px', fontSize: '13px' }}>
+          {errorMessage}
+        </div>
       )}
 
-      {/* Modal Chi tiết */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '10px', marginBottom: '12px' }}>
+        <MiniStat label="Tổng yêu cầu" value={stats.tongYeuCau} color="neutral" />
+        <MiniStat label="Chờ xử lý" value={stats.choDuyet} color="orange" />
+        <MiniStat label="Đang thực hiện" value={stats.dangXuLy} color="blue" />
+        <MiniStat label="Hoàn thành" value={stats.hoanThanh} color="green" />
+      </div>
+
+      <FilterBar>
+        <FilterField label="Tìm kiếm">
+          <GovInput placeholder="Mã yêu cầu, tên cơ sở..." value={search} onChange={setSearch} width={240} />
+        </FilterField>
+        <FilterField label="Trạng thái">
+          <GovSelect value={statusFilter} onChange={setStatusFilter} options={[
+            { value: '', label: '-- Tất cả --' },
+            { value: 'pending', label: 'Chờ xử lý' },
+            { value: 'processing', label: 'Đang thực hiện' },
+            { value: 'completed', label: 'Hoàn thành' },
+          ]} width={180} />
+        </FilterField>
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px' }}>
+          <GovBtn variant="primary">Tìm kiếm</GovBtn>
+          <GovBtn variant="secondary" onClick={() => { setSearch(''); setStatusFilter(''); }}>Xóa lọc</GovBtn>
+        </div>
+      </FilterBar>
+
+      <SectionCard
+        title={`Danh sách yêu cầu kiểm nghiệm (${filtered.length} yêu cầu)`}
+        footer={<GovPagination info={`Hiển thị ${filtered.length} / ${data.length} yêu cầu kiểm nghiệm`} />}
+      >
+        <DataTable
+          columns={columns}
+          data={filtered}
+          emptyMessage={isLoading ? 'Đang tải dữ liệu yêu cầu kiểm nghiệm...' : 'Không tìm thấy yêu cầu kiểm nghiệm nào phù hợp.'}
+        />
+      </SectionCard>
+
       {isDetailOpen && detailRequest && (
         <div
           style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: '16px' }}
@@ -328,24 +341,23 @@ export default function YeuCauPage() {
                     { label: 'Cơ sở', value: detailRequest.business },
                     { label: 'Loại mẫu', value: detailRequest.sampleType },
                     { label: 'Mã mẫu', value: detailRequest.sampleId || '—', mono: true },
-                    { label: 'Ngày lấy mẫu', value: detailRequest.collectedDate || '—', mono: true },
                     { label: 'Ngày yêu cầu', value: detailRequest.requestDate, mono: true },
                     { label: 'Hạn hoàn thành', value: detailRequest.deadline, mono: true },
                     { label: 'Đơn vị kiểm nghiệm', value: detailRequest.lab },
-                  ].map((row, i) => (
-                    <tr key={i} style={{ borderBottom: '1px solid #F0F0F0' }}>
+                  ].map((row, index) => (
+                    <tr key={index} style={{ borderBottom: '1px solid #F0F0F0' }}>
                       <td style={{ padding: '7px 10px', fontSize: '12px', fontWeight: 600, color: '#555', width: '160px', background: '#FAFAFA', whiteSpace: 'nowrap' }}>{row.label}</td>
                       <td style={{ padding: '7px 10px', fontSize: '13px', color: '#222', fontFamily: row.mono ? 'monospace' : 'inherit' }}>{row.value}</td>
                     </tr>
                   ))}
-                  {detailRequest.criteria && (
+                  {detailRequest.criteria && detailRequest.criteria.length > 0 && (
                     <tr style={{ borderBottom: '1px solid #F0F0F0' }}>
                       <td style={{ padding: '7px 10px', fontSize: '12px', fontWeight: 600, color: '#555', background: '#FAFAFA' }}>Chỉ tiêu KN</td>
                       <td style={{ padding: '7px 10px' }}>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-                          {detailRequest.criteria.map(c => (
-                            <span key={c} style={{ padding: '1px 7px', borderRadius: '2px', border: '1px solid #94C994', background: '#EAF7EA', color: '#006400', fontSize: '11px', fontWeight: 500 }}>
-                              {c}
+                          {detailRequest.criteria.map((criterion) => (
+                            <span key={criterion} style={{ padding: '1px 7px', borderRadius: '2px', border: '1px solid #94C994', background: '#EAF7EA', color: '#006400', fontSize: '11px', fontWeight: 500 }}>
+                              {criterion}
                             </span>
                           ))}
                         </div>
@@ -384,7 +396,6 @@ export default function YeuCauPage() {
         </div>
       )}
 
-      {/* Modal Nhập Kết Quả (TESTER only) */}
       {isModalOpen && selectedRequest && canManageResult && (
         <div
           style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: '16px' }}
@@ -423,7 +434,7 @@ export default function YeuCauPage() {
                   </FormField>
                   <FormField label="Tệp kết quả có dấu mộc *" fullWidth>
                     <div style={{ border: '1px dashed #D6D6D6', borderRadius: '2px', padding: '12px', textAlign: 'center', background: '#FAFAFA' }}>
-                      <input type="file" id="stamped-file" accept=".pdf,.jpg,.png" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) setStampedFileName(f.name); }} />
+                      <input type="file" id="stamped-file" accept=".pdf,.jpg,.png" style={{ display: 'none' }} onChange={e => { const file = e.target.files?.[0]; if (file) setStampedFileName(file.name); }} />
                       <label htmlFor="stamped-file" style={{ cursor: 'pointer', fontSize: '13px', color: '#005A9E' }}>
                         {stampedFileName || '📎 Chọn tệp PDF/ảnh có dấu mộc'}
                       </label>
@@ -446,7 +457,7 @@ export default function YeuCauPage() {
 
             <div style={{ padding: '10px 14px', borderTop: '1px solid #D6D6D6', display: 'flex', justifyContent: 'flex-end', gap: '6px', background: '#FAFAFA' }}>
               <GovBtn variant="secondary" onClick={() => setIsModalOpen(false)}>Hủy</GovBtn>
-              <GovBtn variant="primary" onClick={saveResult} disabled={isSaveDisabled}>Lưu kết quả</GovBtn>
+              <GovBtn variant="primary" onClick={() => void saveResult()} disabled={isSaveDisabled}>Lưu kết quả</GovBtn>
             </div>
           </div>
         </div>

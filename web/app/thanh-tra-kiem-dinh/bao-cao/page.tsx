@@ -1,26 +1,26 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import AlertBanner from '@/components/AlertBanner';
 import CreateInspectionReportForm, {
   type CreateInspectionReportPayload,
+  type InspectionReportBusinessOption,
 } from '@/components/CreateInspectionReportForm';
 import DataTable, { type Column } from '@/components/DataTable';
 import {
   PageHeader, FilterBar, FilterField, GovInput, GovSelect, GovBtn,
   SectionCard, GovPagination, StatusBadge, MiniStat,
 } from '@/components/GovUI';
-import { mockInspectionReports, type InspectionReport } from '@/data/mockData';
+import {
+  baoCaoApi,
+  coSoKinhDoanhApi,
+  type BaoCaoResponse,
+  type BaoCaoStatsResponse,
+} from '@/api/api';
 import { Eye, Pencil, FileSpreadsheet, RefreshCw, Plus } from 'lucide-react';
 
 type PageMode = 'list' | 'create';
-
-const inspectionTypeLabels: Record<CreateInspectionReportPayload['inspectionType'], string> = {
-  'Định kỳ': 'Thanh tra định kỳ',
-  'Đột xuất': 'Thanh tra đột xuất',
-  'Theo phản ánh': 'Thanh tra theo phản ánh',
-};
 
 function getScoreColor(score: number) {
   if (score >= 80) return '#006400';
@@ -28,25 +28,76 @@ function getScoreColor(score: number) {
   return '#CC0000';
 }
 
+function normalizeError(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
+}
+
+const EMPTY_STATS: BaoCaoStatsResponse = {
+  total: 0,
+  completed: 0,
+  processing: 0,
+  failed: 0,
+};
+
 export default function BaoCaoPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [mode, setMode] = useState<PageMode>('list');
-  const [reports, setReports] = useState<InspectionReport[]>(mockInspectionReports);
+  const [reports, setReports] = useState<BaoCaoResponse[]>([]);
+  const [stats, setStats] = useState<BaoCaoStatsResponse>(EMPTY_STATS);
+  const [businessOptions, setBusinessOptions] = useState<InspectionReportBusinessOption[]>([]);
   const [search, setSearch] = useState('');
   const [resultFilter, setResultFilter] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
 
   const updatedId = searchParams.get('updated');
   const bannerMessage = updatedId ? `Cập nhật báo cáo ${updatedId} thành công` : successMessage;
-  const nextReportId = useMemo(() => `BC-${String(reports.length + 1).padStart(3, '0')}`, [reports.length]);
+
+  const fetchBusinesses = useCallback(async () => {
+    const pageData = await coSoKinhDoanhApi.search('', 0, 100);
+    setBusinessOptions(
+      pageData.content.map((item) => ({
+        id: item.maCoSo,
+        name: item.tenCoSo,
+        district: item.tenPhuongXa ?? 'Chưa rõ',
+      }))
+    );
+  }, []);
+
+  const fetchReports = useCallback(async () => {
+    const [reportPage, nextStats] = await Promise.all([
+      baoCaoApi.search('', '', 0, 100),
+      baoCaoApi.getStats(),
+    ]);
+    setReports(reportPage.content);
+    setStats(nextStats);
+  }, []);
+
+  const refreshData = useCallback(async () => {
+    setIsLoading(true);
+    setErrorMessage('');
+
+    try {
+      await Promise.all([fetchReports(), fetchBusinesses()]);
+    } catch (error) {
+      setErrorMessage(normalizeError(error, 'Không thể tải dữ liệu báo cáo'));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [fetchBusinesses, fetchReports]);
+
+  useEffect(() => {
+    void refreshData();
+  }, [refreshData]);
 
   const filtered = useMemo(
     () =>
       reports.filter((report) => {
         const matchSearch =
           !search ||
-          report.tenCoSo.toLowerCase().includes(search.toLowerCase()) ||
+          report.tenCoSo?.toLowerCase().includes(search.toLowerCase()) ||
           report.id.toLowerCase().includes(search.toLowerCase());
         const matchResult = !resultFilter || report.ketQua === resultFilter;
         return matchSearch && matchResult;
@@ -54,12 +105,9 @@ export default function BaoCaoPage() {
     [reports, resultFilter, search]
   );
 
-  const total = reports.length;
-  const completed = reports.filter((report) => report.ketQua === 'pass' || report.ketQua === 'fail').length;
-  const failed = reports.filter((report) => report.ketQua === 'fail').length;
-
   const handleCreateClick = () => {
     setSuccessMessage('');
+    setErrorMessage('');
     setMode('create');
   };
 
@@ -68,26 +116,27 @@ export default function BaoCaoPage() {
   };
 
   const handleCreateReport = async (values: CreateInspectionReportPayload) => {
-    const nextReport: InspectionReport = {
-      id: nextReportId,
-      tenCoSo: values.facilityName,
-      loaiThanhTra: inspectionTypeLabels[values.inspectionType],
-      thanhTraVien: 'Người dùng hiện tại',
-      ngay: values.inspectionDate,
-      ketQua: values.result,
-      diem: values.score,
-      quanHuyen: values.district,
-      noiDung: values.content,
-      nhanXet: values.comment,
-      tepDinhKem: values.fileName,
-    };
-
-    setReports((current) => [nextReport, ...current]);
-    setMode('list');
-    setSuccessMessage('Gửi báo cáo thành công. Báo cáo mới đã được lưu vào danh sách.');
+    try {
+      await baoCaoApi.create({
+        facilityId: values.facilityId,
+        inspectionDate: values.inspectionDate,
+        inspectionType: values.inspectionType,
+        content: values.content,
+        comment: values.comment,
+        result: values.result,
+        score: values.score,
+        fileName: values.fileName,
+        hasInspectionRecord: values.hasInspectionRecord,
+      });
+      await fetchReports();
+      setMode('list');
+      setSuccessMessage('Gửi báo cáo thành công. Báo cáo mới đã được lưu vào danh sách.');
+    } catch (error) {
+      throw new Error(normalizeError(error, 'Không thể tạo báo cáo lúc này'));
+    }
   };
 
-  const columns: Column<InspectionReport>[] = [
+  const columns: Column<BaoCaoResponse>[] = [
     {
       key: 'id',
       header: 'Mã báo cáo',
@@ -113,7 +162,7 @@ export default function BaoCaoPage() {
     {
       key: 'diem',
       header: 'Điểm',
-      render: (report) => <strong style={{ color: getScoreColor(report.diem) }}>{report.diem}/100</strong>,
+      render: (report) => <strong style={{ color: getScoreColor(report.diem ?? 0) }}>{report.diem ?? 0}/100</strong>,
     },
     {
       key: 'actions',
@@ -140,7 +189,14 @@ export default function BaoCaoPage() {
   ];
 
   if (mode === 'create') {
-    return <CreateInspectionReportForm reportId={nextReportId} onCancel={handleCancel} onSubmit={handleCreateReport} />;
+    return (
+      <CreateInspectionReportForm
+        reportId="Tự động sinh"
+        businessOptions={businessOptions}
+        onCancel={handleCancel}
+        onSubmit={handleCreateReport}
+      />
+    );
   }
 
   return (
@@ -150,7 +206,9 @@ export default function BaoCaoPage() {
         subtitle="Chi cục An toàn Thực phẩm TP. Đà Nẵng — Tổng hợp báo cáo và kết quả thanh tra"
         actions={
           <>
-            <GovBtn variant="secondary"><RefreshCw style={{ width: 12, height: 12 }} /> Làm mới</GovBtn>
+            <GovBtn variant="secondary" onClick={() => void refreshData()} disabled={isLoading}>
+              <RefreshCw style={{ width: 12, height: 12 }} /> Làm mới
+            </GovBtn>
             <GovBtn variant="secondary"><FileSpreadsheet style={{ width: 12, height: 12 }} /> Xuất Excel</GovBtn>
             <GovBtn variant="primary" onClick={handleCreateClick}><Plus style={{ width: 12, height: 12 }} /> Tạo báo cáo</GovBtn>
           </>
@@ -158,13 +216,19 @@ export default function BaoCaoPage() {
       />
 
       {bannerMessage && <AlertBanner type="success" title={bannerMessage} />}
-      <AlertBanner type="warning" title="3 báo cáo chưa hoàn tất — Vui lòng kiểm tra và hoàn thiện báo cáo thanh tra trong tuần này." />
+      {errorMessage && <AlertBanner type="danger" title={errorMessage} />}
+      {!errorMessage && !isLoading && stats.processing > 0 && (
+        <AlertBanner
+          type="warning"
+          title={`${stats.processing} báo cáo đang xử lý — Vui lòng kiểm tra và hoàn thiện báo cáo thanh tra trong tuần này.`}
+        />
+      )}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '10px', marginBottom: '12px' }}>
-        <MiniStat label="Tổng số báo cáo" value={total} color="blue" />
-        <MiniStat label="Hoàn thành" value={completed} color="green" />
-        <MiniStat label="Đang xử lý" value={12} color="orange" />
-        <MiniStat label="Không đạt" value={failed} color="red" />
+        <MiniStat label="Tổng số báo cáo" value={stats.total} color="blue" />
+        <MiniStat label="Hoàn thành" value={stats.completed} color="green" />
+        <MiniStat label="Đang xử lý" value={stats.processing} color="orange" />
+        <MiniStat label="Không đạt" value={stats.failed} color="red" />
       </div>
 
       <FilterBar>
@@ -194,7 +258,11 @@ export default function BaoCaoPage() {
         title={`Danh sách báo cáo thanh tra (${filtered.length} báo cáo)`}
         footer={<GovPagination info={`Hiển thị ${filtered.length} / ${reports.length} báo cáo`} />}
       >
-        <DataTable columns={columns} data={filtered} emptyMessage="Không tìm thấy báo cáo nào" />
+        <DataTable
+          columns={columns}
+          data={filtered}
+          emptyMessage={isLoading ? 'Đang tải dữ liệu báo cáo...' : 'Không tìm thấy báo cáo nào'}
+        />
       </SectionCard>
     </div>
   );
