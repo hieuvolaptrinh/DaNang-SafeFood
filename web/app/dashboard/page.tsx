@@ -1,9 +1,10 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Building2, CheckCircle2, AlertTriangle, FileClock,
-  ClipboardList, FileWarning, Download, RefreshCw,
+  ClipboardList, RefreshCw,
   Printer, FileSpreadsheet,
 } from 'lucide-react';
 import { useRole } from '@/lib/RoleContext';
@@ -13,6 +14,7 @@ import DistrictStats from '@/components/dashboard/DistrictStats';
 import ViolationChart from '@/components/dashboard/ViolationChart';
 import PendingRecords from '@/components/dashboard/PendingRecords';
 import ExpiryAlerts from '@/components/dashboard/ExpiryAlerts';
+import { thongKeApi, DashboardSummary } from '@/api/api';
 
 const GovBadge = ({ variant }: { variant: string }) => {
   const map: Record<string, { label: string; style: React.CSSProperties }> = {
@@ -121,20 +123,40 @@ function AdminDashboard() {
 }
 
 function AuthorityDashboard() {
+  const [summary, setSummary] = useState<DashboardSummary | null>(null);
+
+  useEffect(() => {
+    thongKeApi.getDashboard()
+      .then(setSummary)
+      .catch(() => {/* giữ null → hiển thị fallback */});
+  }, []);
+
+  // Giá trị fallback khi API chưa trả về
+  const total       = summary?.tongCoSoKinhDoanh ?? 1842;
+  const hoatDong    = summary?.coSoHoatDong      ?? 1560;
+  const phanAnh     = summary?.phanAnhChuaXuLy   ?? 128;
+  const thanhTra    = summary?.thanhTraDangXuLy   ?? 47;
+  const chungNhan   = summary?.chungNhanHieuLuc   ?? 312;
+  const tyLe        = total > 0 ? Math.round((hoatDong / total) * 1000) / 10 : 84.7;
+
   return (
     <>
-      <AlertBox type="warn">
-        <strong>⚠ Cảnh báo:</strong> Có <strong>3 giấy phép ATTP sắp hết hạn</strong> trong 30 ngày tới và <strong>2 vụ vi phạm nghiêm trọng</strong> đang chờ xử lý. Vui lòng kiểm tra và xử lý kịp thời.
-      </AlertBox>
+      {phanAnh > 0 && (
+        <AlertBox type="warn">
+          <strong>⚠ Cảnh báo:</strong> Có{' '}
+          <strong>{phanAnh} phản ánh công dân chưa xử lý</strong>{' '}
+          và <strong>{thanhTra} cuộc thanh tra đang xử lý</strong>. Vui lòng kiểm tra và xử lý kịp thời.
+        </AlertBox>
+      )}
 
       {/* Stat widgets */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6,1fr)', gap: '10px', marginBottom: '14px' }}>
-        <StatCard label="Tổng cơ sở ATTP" value="1.842" color="green" icon={Building2} progress={100} trend="+23 tháng này" trendUp />
-        <StatCard label="Cơ sở đạt chuẩn" value="1.560" color="green" icon={CheckCircle2} progress={84.7} trend="84,7% tỷ lệ" trendUp />
-        <StatCard label="Cơ sở vi phạm" value="47" color="red" icon={AlertTriangle} progress={2.5} trend="+5 tuần này" />
-        <StatCard label="Hồ sơ chờ duyệt" value="128" color="orange" icon={FileClock} progress={7} trend="42 ưu tiên cao" />
-        <StatCard label="Kiểm tra tháng" value="312" color="blue" icon={ClipboardList} progress={78} trend="+18% vs T3" trendUp />
-        <StatCard label="Tỷ lệ đạt chuẩn" value="84,7%" color="green" icon={CheckCircle2} progress={84.7} trend="+1,2% so T3" trendUp />
+        <StatCard label="Tổng cơ sở ATTP"  value={total.toLocaleString('vi-VN')}        color="green"   icon={Building2}     progress={100}  trend="Cơ sở đăng ký"   trendUp />
+        <StatCard label="Cơ sở hoạt động"  value={hoatDong.toLocaleString('vi-VN')}   color="green"   icon={CheckCircle2}  progress={tyLe} trend={`${tyLe}% tỷ lệ`}  trendUp />
+        <StatCard label="Thanh tra đang xử lý" value={thanhTra}                              color="orange"  icon={AlertTriangle}  progress={0}    trend="Hoạt động" />
+        <StatCard label="Phản ánh chưa xử lý"  value={phanAnh}                               color="red"     icon={FileClock}      progress={0}    trend="Cần xử lý ngay" />
+        <StatCard label="Chứng nhận hiệu lực" value={chungNhan}                              color="blue"    icon={ClipboardList}  progress={0}    trend="Đang hiệu lực" trendUp />
+        <StatCard label="Tỷ lệ đạt chuẩn"    value={`${tyLe}%`}                             color="green"   icon={CheckCircle2}  progress={tyLe} trend="Theo kỳ báo cáo" trendUp />
       </div>
 
       {/* Charts row */}
@@ -156,35 +178,8 @@ function AuthorityDashboard() {
       <TableCard
         title="Vi phạm gần đây"
         actions={<Link href="/vi-pham" className="gov-btn gov-btn-outline" style={{ fontSize: '12px', height: '26px' }}>Xem tất cả</Link>}
-        footer={<Pagination info="Hiển thị 4 / 47 bản ghi" />}
       >
-        <table className="gov-table">
-          <thead>
-            <tr>{['STT', 'Cơ sở', 'Loại vi phạm', 'Mức độ', 'Trạng thái', 'Thao tác'].map(h => <TH key={h}>{h}</TH>)}</tr>
-          </thead>
-          <tbody>
-            {[
-              { biz: 'Phở Ba Miền', type: 'Vi phạm vệ sinh', sev: 'high', status: 'open' },
-              { biz: 'Bánh Mì Hội An', type: 'Giấy phép hết hạn', sev: 'medium', status: 'in-progress' },
-              { biz: 'Hải Sản Đà Nẵng', type: 'Lỗi dây chuyền lạnh', sev: 'high', status: 'open' },
-              { biz: 'Chợ Tươi Đà Nẵng', type: 'Thiếu nhãn mác', sev: 'low', status: 'resolved' },
-            ].map((r, i) => (
-              <tr key={i}>
-                <TD>{i + 1}</TD>
-                <TD><span style={{ fontWeight: 500 }}>{r.biz}</span></TD>
-                <TD>{r.type}</TD>
-                <TD><GovBadge variant={r.sev} /></TD>
-                <TD><GovBadge variant={r.status} /></TD>
-                <TD>
-                  <div style={{ display: 'flex', gap: '4px' }}>
-                    <button className="gov-btn gov-btn-secondary" style={{ height: '22px', fontSize: '11px', padding: '0 6px' }}>Xem</button>
-                    <button className="gov-btn gov-btn-primary" style={{ height: '22px', fontSize: '11px', padding: '0 6px' }}>Xử lý</button>
-                  </div>
-                </TD>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <PendingRecords />
       </TableCard>
     </>
   );
