@@ -398,6 +398,94 @@ export const khieuNaiApi = {
 };
 
 /**
+ * HoSoThanhTra API endpoints
+ */
+export interface HoSoThanhTraResponse {
+  id: string;
+  facilityId: string;
+  business: string;
+  type: string;
+  inspector: string;
+  date: string;
+  result: string;
+  score: number;
+  businessName: string;
+  address: string;
+  phone: string;
+  owner: string;
+  businessType: string;
+  inspectionTime: string;
+  businessLicense: string;
+  foodSafetyCertificate: string;
+  healthCertificate: string;
+  trainingCertificate: string;
+  checklist: Record<string, string>;
+  violationStatus: string;
+  violationDescription: string;
+  conclusion: string;
+  generalComment: string;
+  actionMeasure: string;
+  recommendation: string;
+}
+
+export interface HoSoThanhTraStatsResponse {
+  total: number;
+  completed: number;
+  scheduled: number;
+  failed: number;
+}
+
+export interface HoSoThanhTraRequest {
+  facilityId: string;
+  inspectionTime: string;
+  businessLicense: string;
+  foodSafetyCertificate: string;
+  healthCertificate: string;
+  trainingCertificate: string;
+  checklist: Record<string, string>;
+  violationStatus: string;
+  violationDescription: string;
+  conclusion: string;
+  generalComment: string;
+  actionMeasure: string;
+  recommendation: string;
+}
+
+export const hoSoThanhTraApi = {
+  getStats(): Promise<HoSoThanhTraStatsResponse> {
+    return api.get("/v1/ho-so-thanh-tra/thong-ke");
+  },
+
+  search(
+    keyword?: string,
+    resultFilter?: string,
+    inspectorFilter?: string,
+    page: number = 0,
+    size: number = 20
+  ): Promise<{ content: HoSoThanhTraResponse[]; totalElements: number; totalPages: number; number: number }> {
+    const params = new URLSearchParams();
+    if (keyword) params.append("keyword", keyword);
+    if (resultFilter) params.append("resultFilter", resultFilter);
+    if (inspectorFilter) params.append("inspectorFilter", inspectorFilter);
+    params.append("page", page.toString());
+    params.append("size", size.toString());
+    return api.get(`/v1/ho-so-thanh-tra?${params.toString()}`);
+  },
+
+  getById(id: string): Promise<HoSoThanhTraResponse> {
+    return api.get(`/v1/ho-so-thanh-tra/${id}`);
+  },
+
+  create(req: HoSoThanhTraRequest): Promise<HoSoThanhTraResponse> {
+    return api.post("/v1/ho-so-thanh-tra", req);
+  },
+
+  update(id: string, req: HoSoThanhTraRequest): Promise<HoSoThanhTraResponse> {
+    return api.put(`/v1/ho-so-thanh-tra/${id}`, req);
+  },
+};
+
+/**
  * BaoCao API endpoints
  */
 export interface BaoCaoResponse {
