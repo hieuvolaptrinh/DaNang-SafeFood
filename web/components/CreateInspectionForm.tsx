@@ -111,7 +111,7 @@ const checklistGroups: ChecklistGroup[] = [
   },
 ];
 
-function createInitialChecklist() {
+export function createInitialChecklist() {
   return checklistGroups.reduce<Record<string, ChecklistResult>>((accumulator, group) => {
     group.items.forEach((item) => {
       accumulator[item.key] = '';
@@ -232,7 +232,12 @@ export default function CreateInspectionForm({
   const isEditMode = mode === 'edit';
 
   useEffect(() => {
-    setForm({ ...createInitialFormState(), ...data });
+    const initial = createInitialFormState();
+    setForm({
+      ...initial,
+      ...data,
+      checklist: { ...initial.checklist, ...(data?.checklist || {}) },
+    });
     setShowValidation(false);
     setSubmitError('');
   }, [data, mode]);

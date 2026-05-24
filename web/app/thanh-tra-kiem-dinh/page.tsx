@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Eye, Pencil, FileSpreadsheet, Plus, RefreshCw } from 'lucide-react';
 import AlertBanner from '@/components/AlertBanner';
 import CreateInspectionForm, {
+  createInitialChecklist,
   type InspectionFacilityOption,
   type InspectionFormResult,
 } from '@/components/CreateInspectionForm';
@@ -82,14 +83,14 @@ function mapBusinessOptions(
 }
 
 function mapRecordToFormData(record: HoSoThanhTraResponse): InspectionFormResult {
-  const checklist = record.checklist && Object.keys(record.checklist).length > 0
-    ? Object.fromEntries(
-        Object.entries(record.checklist).map(([key, value]) => [
-          key,
-          value === 'fail' ? 'fail' : value === 'pass' ? 'pass' : '',
-        ])
-      )
-    : {};
+  const checklist = createInitialChecklist();
+  if (record.checklist) {
+    for (const [key, value] of Object.entries(record.checklist)) {
+      if (key in checklist) {
+        checklist[key] = value === 'pass' ? 'pass' : value === 'fail' ? 'fail' : '';
+      }
+    }
+  }
 
   return {
     facilityId: record.facilityId || '',
@@ -255,6 +256,10 @@ export default function HoSoThanhTraPage() {
     setErrorMessage('');
     try {
       const detail = await hoSoThanhTraApi.getById(id);
+      console.log('[DEBUG] API response:', JSON.stringify(detail, null, 2));
+      console.log('[DEBUG] API checklist:', detail.checklist);
+      const mapped = mapRecordToFormData(detail);
+      console.log('[DEBUG] Mapped checklist:', mapped.checklist);
       setSelectedRecord(detail);
       setMode('view');
     } catch (error) {
