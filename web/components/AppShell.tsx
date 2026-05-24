@@ -1,10 +1,12 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 import { SidebarProvider, useSidebar } from '@/lib/SidebarContext';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/lib/AuthContext';
 
 function ShellContent({ children }: { children: React.ReactNode }) {
   const { collapsed } = useSidebar();
@@ -31,15 +33,36 @@ function ShellContent({ children }: { children: React.ReactNode }) {
   );
 }
 
+function AuthGuard({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.replace('/login');
+    }
+  }, [isAuthenticated, router]);
+
+  if (!isAuthenticated) {
+    // Show nothing while redirecting
+    return null;
+  }
+
+  return <>{children}</>;
+}
+
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+
   if (pathname === '/login') {
     return <>{children}</>;
   }
 
   return (
-    <SidebarProvider>
-      <ShellContent>{children}</ShellContent>
-    </SidebarProvider>
+    <AuthGuard>
+      <SidebarProvider>
+        <ShellContent>{children}</ShellContent>
+      </SidebarProvider>
+    </AuthGuard>
   );
 }

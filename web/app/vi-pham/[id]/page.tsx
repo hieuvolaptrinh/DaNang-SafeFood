@@ -110,7 +110,7 @@ export default function ViPhamDetailPage() {
     );
   }
 
-  const isAuthority = role === 'AUTHORITY';
+  const isAuthority = role === 'LD_ATVSTP';
 
   const handleUpdateStatus = () => {
     setIsApproving(true);
