@@ -78,5 +78,20 @@ public class ThongBaoService {
         }
         return thongBaoRepository.findAllByOrderByNgayGuiDesc(pageable).map(ThongBaoResponse::from);
     }
+
+    @Transactional
+    public ThongBaoResponse update(String id, ThongBaoRequest req) {
+        ThongBao entity = thongBaoRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy thông báo: " + id));
+
+        if (req.tieuDe() != null)      entity.setTieuDe(req.tieuDe());
+        if (req.noiDung() != null)     entity.setNoiDung(req.noiDung());
+        if (req.isCongDong() != null)  entity.setIsCongDong(req.isCongDong());
+        if (req.loaiThongBao() != null) {
+            entity.setLoaiThongBao(LoaiThongBaoEnum.fromLabel(req.loaiThongBao()));
+        }
+
+        return ThongBaoResponse.from(thongBaoRepository.save(entity));
+    }
 }
 

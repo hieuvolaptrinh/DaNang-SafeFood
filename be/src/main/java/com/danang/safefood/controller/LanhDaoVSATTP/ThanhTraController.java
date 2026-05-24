@@ -2,6 +2,7 @@ package com.danang.safefood.controller.LanhDaoVSATTP;
 
 import com.danang.safefood.dto.request.ThanhTraRequest;
 import com.danang.safefood.dto.response.ApiResponse;
+import com.danang.safefood.dto.response.NguoiDungResponse;
 import com.danang.safefood.dto.response.ThanhTraResponse;
 import com.danang.safefood.service.ThanhTraService;
 import jakarta.validation.Valid;
@@ -13,6 +14,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/thanhtra")
@@ -35,5 +38,12 @@ public class ThanhTraController {
             @RequestParam(required = false) String trangThai,
             @PageableDefault(size = 20) Pageable pageable) {
         return ResponseEntity.ok(ApiResponse.success(thanhTraService.getAll(trangThai, pageable)));
+    }
+
+    @GetMapping("/can-bo-thanh-tra")
+    @PreAuthorize("hasAnyRole('LD_ATVSTP','QUAN_TRI_HE_THONG')")
+    public ResponseEntity<ApiResponse<List<NguoiDungResponse>>> getCanBoThanhTra() {
+        List<NguoiDungResponse> list = thanhTraService.getNguoiDungByQuyen("CB_THANH_TRA");
+        return ResponseEntity.ok(ApiResponse.success(list));
     }
 }
