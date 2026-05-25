@@ -280,16 +280,15 @@ export const roleNavMap: Record<Role, NavItem[]> = {
       ]
     },
     {
-      label: 'Thanh tra & Kiểm định', icon: 'clipboard', children: [
-        { label: 'Hồ sơ thanh tra', href: '/thanh-tra-kiem-dinh' },
-        { label: 'Báo cáo thanh tra', href: '/thanh-tra-kiem-dinh/bao-cao' },
-        { label: 'Kết quả kiểm nghiệm', href: '/thanh-tra-kiem-dinh/ket-qua' },
-      ]
+      label: 'Thanh tra', icon: 'clipboard', children: [
+        { label: 'Tạo lịch thanh tra', href: '/thanh-tra-kiem-dinh/thanh-tra' }
+        ]
     },
     {
       label: 'Vi phạm & Phản ánh', icon: 'alert', children: [
         { label: 'Danh sách vi phạm', href: '/vi-pham' },
         { label: 'Phản ánh công dân', href: '/phan-anh-cong-dan' },
+        { label: 'Theo dõi khắc phục', href: '/vi-pham/khac-phuc' }
       ]
     },
     {

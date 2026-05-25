@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useSyncExternalStore } from 'react';
+import { useEffect, useState } from 'react';
 import { SidebarProvider, useSidebar } from '@/lib/SidebarContext';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
@@ -45,17 +45,24 @@ function ShellContent({ children }: { children: React.ReactNode }) {
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
   const router = useRouter();
-  const isClient = useIsClient();
-  const hasStoredSession = isClient && !!getAccessToken() && !!getUserInfo();
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    if (isClient && !isAuthenticated && !hasStoredSession) {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    // Chỉ redirect sau khi đã hydrate xong (tránh flash/loop)
+    if (mounted && !isAuthenticated) {
       router.replace('/login');
     }
-  }, [hasStoredSession, isAuthenticated, isClient, router]);
+  }, [mounted, isAuthenticated, router]);
 
-  if (!isClient || (!isAuthenticated && !hasStoredSession)) {
-    // Show nothing while redirecting
+  // Chưa hydrate: không render gì để tránh layout shift và redirect loop
+  if (!mounted) return null;
+
+  if (!isAuthenticated) {
+    // Đang redirect — không render nội dung
     return null;
   }
 
