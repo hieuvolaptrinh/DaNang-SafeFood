@@ -15,6 +15,7 @@ import 'package:mobile_ui/viewmodel/complaint/complaint_cubit.dart';
 import 'package:mobile_ui/viewmodel/profile/profile_cubit.dart';
 import 'package:mobile_ui/viewmodel/business_status/business_status_cubit.dart';
 import 'package:mobile_ui/core/utils/dio_client.dart';
+import 'package:mobile_ui/core/utils/ai_service.dart';
 import 'package:mobile_ui/data/remote/datasource/home_remote_datasource.dart';
 import 'package:mobile_ui/data/remote/datasource/notification_datasource.dart';
 import 'package:mobile_ui/data/remote/datasource/business_remote_datasource.dart';
@@ -52,6 +53,7 @@ class _MainScaffoldState extends State<MainScaffold> {
   static final ProfileRepository _profileRepository = ProfileRepository(
     remoteDataSource: ProfileRemoteDataSource(dio: _dio),
   );
+  static final AiService _aiService = AiService();
 
   @override
   Widget build(BuildContext context) {
@@ -70,7 +72,10 @@ class _MainScaffoldState extends State<MainScaffold> {
           create: (_) => HomeCubit(homeRepository: _homeRepository)..loadData(),
         ),
         BlocProvider(
-          create: (_) => SearchCubit(businessRepository: _businessRepository),
+          create: (_) => SearchCubit(
+            businessRepository: _businessRepository,
+            aiService: _aiService,
+          ),
         ),
         BlocProvider(
           create: (_) =>

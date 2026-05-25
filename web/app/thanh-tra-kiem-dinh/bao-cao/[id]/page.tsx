@@ -1,14 +1,66 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { mockInspectionReports } from '@/data/mockData';
+import { useParams } from 'next/navigation';
+import { baoCaoApi, type BaoCaoResponse } from '@/api/api';
+import AlertBanner from '@/components/AlertBanner';
 import { PageHeader, SectionCard, StatusBadge, GovBtn, ActionButtons } from '@/components/GovUI';
 
-export default async function BaoCaoChiTietPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await params;
-  const report = mockInspectionReports.find((item) => item.id === id);
+function normalizeError(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
+}
+
+export default function BaoCaoChiTietPage() {
+  const params = useParams<{ id: string }>();
+  const id = params.id;
+  const [report, setReport] = useState<BaoCaoResponse | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadData = async () => {
+      setIsLoading(true);
+      setErrorMessage('');
+
+      try {
+        const data = await baoCaoApi.getById(id);
+        if (isMounted) {
+          setReport(data);
+        }
+      } catch (error) {
+        if (isMounted) {
+          setReport(null);
+          setErrorMessage(normalizeError(error, `Không tìm thấy báo cáo ${id}`));
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    void loadData();
+    return () => {
+      isMounted = false;
+    };
+  }, [id]);
+
+  if (isLoading) {
+    return (
+      <div>
+        <PageHeader
+          title="Đang tải báo cáo"
+          subtitle="Đang lấy dữ liệu chi tiết báo cáo thanh tra"
+        />
+        <SectionCard title="Chi tiết báo cáo">
+          <p style={{ padding: '12px', fontSize: '13px', color: '#555' }}>Đang tải dữ liệu...</p>
+        </SectionCard>
+      </div>
+    );
+  }
 
   if (!report) {
     return (
@@ -22,6 +74,7 @@ export default async function BaoCaoChiTietPage({
             </Link>
           }
         />
+        {errorMessage && <AlertBanner type="danger" title={errorMessage} />}
       </div>
     );
   }
@@ -30,7 +83,7 @@ export default async function BaoCaoChiTietPage({
     <div>
       <PageHeader
         title={`Chi tiết báo cáo thanh tra — ${report.id}`}
-        subtitle={`Chi cục An toàn Thực phẩm TP. Đà Nẵng — Xem chi tiết báo cáo kết quả thanh tra`}
+        subtitle="Chi cục An toàn Thực phẩm TP. Đà Nẵng — Xem chi tiết báo cáo kết quả thanh tra"
         actions={
           <ActionButtons>
             <Link href="/thanh-tra-kiem-dinh/bao-cao">
@@ -43,7 +96,6 @@ export default async function BaoCaoChiTietPage({
         }
       />
 
-      {/* Thông tin tổng quan */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '10px', marginBottom: '12px' }}>
         {[
           { label: 'Mã báo cáo', value: report.id, mono: true },
@@ -62,7 +114,6 @@ export default async function BaoCaoChiTietPage({
         ))}
       </div>
 
-      {/* Kết quả và điểm */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
         <SectionCard title="Kết quả thanh tra">
           <div style={{ padding: '14px 12px', display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -80,19 +131,18 @@ export default async function BaoCaoChiTietPage({
             <span style={{
               fontSize: '28px',
               fontWeight: 700,
-              color: report.diem >= 80 ? '#006400' : report.diem >= 60 ? '#CC6600' : '#CC0000',
+              color: (report.diem ?? 0) >= 80 ? '#006400' : (report.diem ?? 0) >= 60 ? '#CC6600' : '#CC0000',
               fontVariantNumeric: 'tabular-nums',
             }}>
-              {report.diem > 0 ? report.diem : '—'}
+              {report.diem ?? '—'}
             </span>
             <span style={{ fontSize: '12px', color: '#555' }}>
-              {report.diem > 0 ? `/ 100 điểm` : 'Chưa có điểm đánh giá'}
+              {report.diem ? `/ 100 điểm` : 'Chưa có điểm đánh giá'}
             </span>
           </div>
         </SectionCard>
       </div>
 
-      {/* Nội dung chi tiết */}
       <SectionCard title="Nội dung báo cáo thanh tra">
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <tbody>
@@ -103,8 +153,8 @@ export default async function BaoCaoChiTietPage({
               { label: 'Quận/Huyện', value: report.quanHuyen },
               { label: 'Thanh tra viên', value: report.thanhTraVien },
               { label: 'Tệp đính kèm', value: report.tepDinhKem || 'Không có tệp đính kèm' },
-            ].map((row, i) => (
-              <tr key={i} style={{ borderBottom: '1px solid #F0F0F0' }}>
+            ].map((row, index) => (
+              <tr key={index} style={{ borderBottom: '1px solid #F0F0F0' }}>
                 <td style={{ padding: '8px 12px', fontSize: '12px', fontWeight: 600, color: '#555', width: '200px', background: '#FAFAFA', whiteSpace: 'nowrap' }}>
                   {row.label}
                 </td>
@@ -134,10 +184,6 @@ export default async function BaoCaoChiTietPage({
           </p>
         </div>
       </SectionCard>
-
-      <p style={{ fontSize: '11.5px', color: '#888', textAlign: 'center', marginTop: '8px' }}>
-        Báo cáo thanh tra được lưu trữ theo Quy chế lưu trữ hồ sơ ATTP — Chi cục An toàn Thực phẩm TP. Đà Nẵng
-      </p>
     </div>
   );
 }

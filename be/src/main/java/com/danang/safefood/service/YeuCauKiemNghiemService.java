@@ -3,7 +3,9 @@ package com.danang.safefood.service;
 import com.danang.safefood.config.security.jwt.JwtPrincipal;
 import com.danang.safefood.dto.request.CreateYeuCauKiemNghiemRequest;
 import com.danang.safefood.dto.request.UpdateKetQuaKiemNghiemRequest;
+import com.danang.safefood.dto.response.NguoiDungResponse;
 import com.danang.safefood.dto.response.YeuCauKiemNghiemResponse;
+import com.danang.safefood.dto.response.YeuCauKiemNghiemMauOptionResponse;
 import com.danang.safefood.dto.response.YeuCauKiemNghiemStatsResponse;
 import com.danang.safefood.entity.CoSoKinhDoanh;
 import com.danang.safefood.entity.DamNhanKiemNghiem;
@@ -120,6 +122,28 @@ public class YeuCauKiemNghiemService {
         long processing = damNhanRepository.countByMauKiemNghiem_TrangThaiIn(expandStatusFilter(UI_PROCESSING));
         long completed = damNhanRepository.countByMauKiemNghiem_TrangThaiIn(expandStatusFilter(UI_COMPLETED));
         return YeuCauKiemNghiemStatsResponse.from(total, pending, processing, completed);
+    }
+
+    @Transactional(readOnly = true)
+    public List<YeuCauKiemNghiemMauOptionResponse> getMauOptions() {
+        return mauRepository.findAll().stream()
+                .filter(mau -> mau.getCoSoKinhDoanh() != null)
+                .map(mau -> new YeuCauKiemNghiemMauOptionResponse(
+                        mau.getMaMau(),
+                        mau.getCoSoKinhDoanh() != null ? mau.getCoSoKinhDoanh().getMaCoSo() : null,
+                        mau.getTenMau(),
+                        mau.getLoaiMau(),
+                        mau.getCoSoKinhDoanh() != null ? mau.getCoSoKinhDoanh().getTenCoSo() : null,
+                        mau.getNgayThu()
+                ))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<NguoiDungResponse> getKiemNghiemVienOptions() {
+        return nguoiDungRepository.findByQuyenHan("CB_KIEM_DINH").stream()
+                .map(NguoiDungResponse::from)
+                .toList();
     }
 
     private YeuCauKiemNghiemResponse toResponse(DamNhanKiemNghiem damNhan) {

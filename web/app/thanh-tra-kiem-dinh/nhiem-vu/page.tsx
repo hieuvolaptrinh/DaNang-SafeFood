@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
 import AlertBanner from '@/components/AlertBanner';
 import InspectionTaskDetails from '@/components/InspectionTaskDetails';
 import InspectionTaskList, { type InspectionTaskRecord } from '@/components/InspectionTaskList';
@@ -9,97 +8,49 @@ import type {
   InspectionTaskProgressFormValue,
   InspectionTaskUpdateState,
 } from '@/components/InspectionTaskProgressForm';
+import {
+  isInspectionTaskStatus,
+  normalizeInspectionTaskStatus,
+} from '@/components/inspectionTaskStatus';
 import { PageHeader, GovBtn, MiniStat } from '@/components/GovUI';
+import { nhiemVuApi, type NhiemVuDetailResponse, type NhiemVuListItemResponse, type NhiemVuStatsResponse } from '@/api/api';
 import { RefreshCw } from 'lucide-react';
 
 type LoadState = 'loading' | 'error' | 'empty' | 'data';
-type MockFetchMode = Exclude<LoadState, 'loading'>;
 
-const mockAssignedTasks: InspectionTaskRecord[] = [
-  {
-    id: 'NV-2026-001',
-    businessName: 'Nhà hàng Hải Sản Biển Xanh',
-    address: '12 Võ Nguyên Giáp, Phước Mỹ, Sơn Trà, Đà Nẵng',
-    inspectionTime: '08:30, 28/03/2026',
-    inspectionContent:
-      'Kiểm tra điều kiện vệ sinh khu bếp, hồ sơ nguồn gốc nguyên liệu và việc lưu mẫu thức ăn.',
-    trangThai: 'Đã nhận',
-    ghiChu: 'Đã kiểm tra phần bếp, cần tiếp tục kiểm tra kho lạnh.',
-  },
-  {
-    id: 'NV-2026-002',
-    businessName: 'Cửa hàng Thực phẩm Sạch Organic',
-    address: '45 Nguyễn Văn Linh, Hải Châu 1, Hải Châu, Đà Nẵng',
-    inspectionTime: '14:00, 29/03/2026',
-    inspectionContent:
-      'Đánh giá việc bảo quản thực phẩm tươi sống, nhãn mác sản phẩm và chứng từ pháp lý liên quan.',
-    trangThai: 'Đang thực hiện',
-    ghiChu: 'Đã kiểm tra khu vực bảo quản lạnh, đang đối chiếu chứng từ nhập hàng.',
-  },
-  {
-    id: 'NV-2026-003',
-    businessName: 'Quán Ăn Gia Đình Việt',
-    address: '88 Điện Biên Phủ, Chính Gián, Thanh Khê, Đà Nẵng',
-    inspectionTime: '09:00, 30/03/2026',
-    inspectionContent:
-      'Kiểm tra khu vực chế biến, điều kiện nhân sự trực tiếp chế biến và quy trình lưu trữ thực phẩm.',
-    trangThai: 'Chưa nhận',
-    ghiChu: '',
-    lyDoTuChoi: '',
-  },
-  {
-    id: 'NV-2026-004',
-    businessName: 'Café Sáng Ngời',
-    address: '56 Lê Lợi, Hải Châu 2, Hải Châu, Đà Nẵng',
-    inspectionTime: '15:30, 31/03/2026',
-    inspectionContent:
-      'Kiểm tra điều kiện cơ sở vật chất, vệ sinh nhân viên và quy trình pha chế.',
-    trangThai: 'Hoàn thành',
-    ghiChu: 'Hoàn thành kiểm tra, cơ sở đạt chuẩn.',
-  },
-];
+function formatInspectionTime(value?: string) {
+  if (!value) {
+    return 'Chưa có lịch kiểm tra';
+  }
 
-function mockFetchAssignedTasks(mode: MockFetchMode) {
-  return new Promise<InspectionTaskRecord[]>((resolve, reject) => {
-    window.setTimeout(() => {
-      if (mode === 'error') {
-        reject(new Error('Không thể tải dữ liệu, vui lòng thử lại'));
-        return;
-      }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
 
-      if (mode === 'empty') {
-        resolve([]);
-        return;
-      }
-
-      resolve(mockAssignedTasks);
-    }, 900);
-  });
+  return new Intl.DateTimeFormat('vi-VN', {
+    hour: '2-digit',
+    minute: '2-digit',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(date).replace(',', '');
 }
 
-function mockAcceptTask() {
-  return new Promise<void>((resolve) => {
-    window.setTimeout(() => resolve(), 700);
-  });
+function toTaskRecord(detail: NhiemVuDetailResponse): InspectionTaskRecord {
+  return {
+    id: detail.maThanhTra,
+    businessName: detail.tenCoSo,
+    address: detail.diaChiCoSo || 'Chưa có địa chỉ',
+    inspectionTime: formatInspectionTime(detail.thoiGianTT),
+    inspectionContent: detail.noiDung || 'Chưa có nội dung kiểm tra',
+    trangThai: normalizeInspectionTaskStatus(detail.trangThai),
+    ghiChu: detail.ghiChu || '',
+  };
 }
 
-function mockRejectTask() {
-  return new Promise<void>((resolve) => {
-    window.setTimeout(() => resolve(), 700);
-  });
-}
-
-function mockUpdateTaskProgress(mode: 'success' | 'error') {
-  return new Promise<void>((resolve, reject) => {
-    window.setTimeout(() => {
-      if (mode === 'error') {
-        reject(new Error('Không thể cập nhật dữ liệu, vui lòng thử lại'));
-        return;
-      }
-
-      resolve();
-    }, 800);
-  });
+function normalizeError(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
 }
 
 function LoadingPanel() {
@@ -128,9 +79,9 @@ function LoadingPanel() {
 }
 
 export default function NhiemVuKiemTraPage() {
-  const searchParams = useSearchParams();
   const [loadState, setLoadState] = useState<LoadState>('loading');
   const [tasks, setTasks] = useState<InspectionTaskRecord[]>([]);
+  const [stats, setStats] = useState<NhiemVuStatsResponse>({ tongSo: 0, chuaNhan: 0, daNhan: 0 });
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
@@ -145,66 +96,86 @@ export default function NhiemVuKiemTraPage() {
   });
   const [updateState, setUpdateState] = useState<InspectionTaskUpdateState>('idle');
   const [updateErrorMessage, setUpdateErrorMessage] = useState('');
-  const stateParam = searchParams.get('state');
-  const updateParam = searchParams.get('update');
-  const fetchMode: MockFetchMode =
-    stateParam === 'error' || stateParam === 'empty' || stateParam === 'data'
-      ? stateParam
-      : 'data';
-  const updateMode = updateParam === 'error' ? 'error' : 'success';
 
   useEffect(() => {
     let isMounted = true;
 
-    setLoadState('loading');
-    setErrorMessage('');
-    setSuccessMessage('');
+    const loadData = async () => {
+      setLoadState('loading');
+      setErrorMessage('');
+      setSuccessMessage('');
 
-    mockFetchAssignedTasks(fetchMode)
-      .then((nextTasks) => {
+      try {
+        const [statsData, pageData] = await Promise.all([
+          nhiemVuApi.getStats(),
+          nhiemVuApi.search('', '', 0, 100),
+        ]);
+
+        const detailTasks = await Promise.all(
+          pageData.content.map(async (item: NhiemVuListItemResponse) => {
+            try {
+              const detail = await nhiemVuApi.getById(item.maThanhTra);
+              return toTaskRecord(detail);
+            } catch {
+              return {
+                id: item.maThanhTra,
+                businessName: item.tenCoSo,
+                address: 'Chưa có địa chỉ',
+                inspectionTime: formatInspectionTime(item.thoiGianTT),
+                inspectionContent: 'Chưa có nội dung kiểm tra',
+                trangThai: normalizeInspectionTaskStatus(item.trangThai),
+                ghiChu: item.ghiChu || '',
+              } satisfies InspectionTaskRecord;
+            }
+          })
+        );
+
         if (!isMounted) {
           return;
         }
 
-        setTasks(nextTasks);
+        setStats(statsData);
+        setTasks(detailTasks);
         setUpdateState('idle');
         setUpdateErrorMessage('');
 
-        if (nextTasks.length === 0) {
+        if (detailTasks.length === 0) {
           setSelectedTaskId(null);
           setLoadState('empty');
           return;
         }
 
         setSelectedTaskId((current) => {
-          if (current && nextTasks.some((task) => task.id === current)) {
+          if (current && detailTasks.some((task) => task.id === current)) {
             return current;
           }
 
-          return nextTasks[0].id;
+          return (
+            detailTasks.find((task) => isInspectionTaskStatus(task.trangThai, 'pending'))?.id ??
+            detailTasks[0].id
+          );
         });
         setLoadState('data');
-      })
-      .catch((error: Error) => {
+      } catch (error) {
         if (!isMounted) {
           return;
         }
 
         setTasks([]);
         setSelectedTaskId(null);
-        setErrorMessage(error.message);
+        setErrorMessage(normalizeError(error, 'Không thể tải dữ liệu, vui lòng thử lại'));
         setLoadState('error');
-      });
+      }
+    };
+
+    void loadData();
 
     return () => {
       isMounted = false;
     };
-  }, [fetchMode, reloadKey]);
+  }, [reloadKey]);
 
   const selectedTask = tasks.find((task) => task.id === selectedTaskId) ?? null;
-  const totalTasks = tasks.length;
-  const pendingTasks = tasks.filter((task) => task.trangThai === 'Chưa nhận').length;
-  const acceptedTasks = tasks.filter((task) => task.trangThai !== 'Chưa nhận').length;
 
   useEffect(() => {
     if (!selectedTask) {
@@ -215,7 +186,7 @@ export default function NhiemVuKiemTraPage() {
     }
 
     setProgressForm({
-      status: selectedTask.trangThai === 'Chưa nhận' ? '' : selectedTask.trangThai,
+      status: isInspectionTaskStatus(selectedTask.trangThai, 'pending') ? '' : selectedTask.trangThai,
       note: selectedTask.ghiChu,
     });
     setUpdateState('idle');
@@ -227,7 +198,7 @@ export default function NhiemVuKiemTraPage() {
   };
 
   const handleConfirmTask = async () => {
-    if (!selectedTask || selectedTask.trangThai !== 'Chưa nhận' || isConfirming || isRejecting) {
+    if (!selectedTask || !isInspectionTaskStatus(selectedTask.trangThai, 'pending') || isConfirming || isRejecting) {
       return;
     }
 
@@ -235,46 +206,43 @@ export default function NhiemVuKiemTraPage() {
     setSuccessMessage('');
 
     try {
-      await mockAcceptTask();
-
-      setTasks((current) =>
-        current.map((task) =>
-          task.id === selectedTask.id ? { ...task, trangThai: 'Đã nhận' } : task
-        )
-      );
+      await nhiemVuApi.accept(selectedTask.id);
       setSuccessMessage('Đã nhận nhiệm vụ thành công');
+      handleRetry();
+    } catch (error) {
+      setErrorMessage(normalizeError(error, 'Không thể nhận nhiệm vụ'));
     } finally {
       setIsConfirming(false);
     }
   };
 
   const handleRejectTask = async () => {
-    if (!selectedTask || selectedTask.trangThai !== 'Chưa nhận' || isRejecting || isConfirming) {
+    if (!selectedTask || !isInspectionTaskStatus(selectedTask.trangThai, 'pending') || isRejecting || isConfirming) {
       return;
     }
-    // Open modal to collect rejection reason
+
     setRejectReason('');
     setIsRejectModalOpen(true);
   };
 
   const confirmReject = async () => {
-    if (!selectedTask) return;
-    if (!rejectReason.trim()) return;
+    if (!selectedTask || !rejectReason.trim()) {
+      return;
+    }
 
     setIsRejecting(true);
     setSuccessMessage('');
 
     try {
-      await mockRejectTask();
-
-      // For now remove from list (mock). In real flow we'll persist lyDoTuChoi to API.
-      setTasks((current) => current.filter((task) => task.id !== selectedTask.id));
-      setSelectedTaskId(null);
+      await nhiemVuApi.reject(selectedTask.id, { lyDoTuChoi: rejectReason.trim() });
       setSuccessMessage('Đã từ chối nhiệm vụ thành công');
-    } finally {
-      setIsRejecting(false);
       setIsRejectModalOpen(false);
       setRejectReason('');
+      handleRetry();
+    } catch (error) {
+      setErrorMessage(normalizeError(error, 'Không thể từ chối nhiệm vụ'));
+    } finally {
+      setIsRejecting(false);
     }
   };
 
@@ -294,27 +262,17 @@ export default function NhiemVuKiemTraPage() {
     setSuccessMessage('');
 
     try {
-      await mockUpdateTaskProgress(updateMode);
-
-      setTasks((current) =>
-        current.map((task) =>
-          task.id === selectedTask.id
-            ? {
-                ...task,
-                trangThai: progressForm.status,
-                ghiChu: progressForm.note.trim(),
-              }
-            : task
-        )
-      );
+      await nhiemVuApi.updateProgress(selectedTask.id, {
+        trangThai: progressForm.status,
+        ghiChu: progressForm.note.trim(),
+      });
       setUpdateState('success');
       setSuccessMessage('Cập nhật trạng thái thành công');
+      handleRetry();
     } catch (error) {
       setUpdateState('error');
       setUpdateErrorMessage(
-        error instanceof Error
-          ? error.message
-          : 'Không thể cập nhật dữ liệu, vui lòng thử lại'
+        normalizeError(error, 'Không thể cập nhật dữ liệu, vui lòng thử lại')
       );
     }
   };
@@ -334,45 +292,109 @@ export default function NhiemVuKiemTraPage() {
       {successMessage && <AlertBanner type="success" title={successMessage} />}
 
       {loadState !== 'loading' && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '10px', marginBottom: '12px' }}>
-          <MiniStat label="Tổng nhiệm vụ" value={totalTasks} color="blue" />
-          <MiniStat label="Chưa nhận" value={pendingTasks} color="orange" />
-          <MiniStat label="Đã nhận" value={acceptedTasks} color="green" />
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3,1fr)',
+            gap: '10px',
+            marginBottom: '12px',
+          }}
+        >
+          <MiniStat label="Tổng nhiệm vụ" value={stats.tongSo} color="blue" />
+          <MiniStat label="Chưa nhận" value={stats.chuaNhan} color="orange" />
+          <MiniStat label="Đã nhận" value={stats.daNhan} color="green" />
         </div>
       )}
 
       {loadState === 'loading' && <LoadingPanel />}
 
       {loadState === 'error' && (
-        <div style={{ background: '#fff', border: '1px solid #D6D6D6', borderRadius: '2px', padding: '16px' }}>
+        <div
+          style={{
+            background: '#fff',
+            border: '1px solid #D6D6D6',
+            borderRadius: '2px',
+            padding: '16px',
+          }}
+        >
           <AlertBanner type="danger" title={errorMessage} className="mb-0" />
           <div style={{ marginTop: '12px' }}>
-            <GovBtn variant="primary" onClick={handleRetry}>Thử lại</GovBtn>
+            <GovBtn variant="primary" onClick={handleRetry}>
+              Thử lại
+            </GovBtn>
           </div>
         </div>
       )}
 
       {loadState === 'empty' && (
-        <div style={{ background: '#fff', border: '1px dashed #D6D6D6', borderRadius: '2px', padding: '40px', textAlign: 'center' }}>
-          <p style={{ fontSize: '14px', fontWeight: 600, color: '#333' }}>Không có nhiệm vụ nào được giao</p>
-          <p style={{ fontSize: '12px', color: '#888', marginTop: '6px' }}>Danh sách sẽ hiển thị tại đây khi có nhiệm vụ mới được phân công.</p>
+        <div
+          style={{
+            background: '#fff',
+            border: '1px dashed #D6D6D6',
+            borderRadius: '2px',
+            padding: '40px',
+            textAlign: 'center',
+          }}
+        >
+          <p style={{ fontSize: '14px', fontWeight: 600, color: '#333' }}>
+            Không có nhiệm vụ nào được giao
+          </p>
+          <p style={{ fontSize: '12px', color: '#888', marginTop: '6px' }}>
+            Danh sách sẽ hiển thị tại đây khi có nhiệm vụ mới được phân công.
+          </p>
         </div>
       )}
 
       {loadState === 'data' && (
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
-          <section style={{ background: '#fff', border: '1px solid #D6D6D6', borderRadius: '2px', overflow: 'hidden' }}>
-            <div style={{ background: '#EAF7EA', borderBottom: '2px solid #008000', padding: '7px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+          <section
+            style={{
+              background: '#fff',
+              border: '1px solid #D6D6D6',
+              borderRadius: '2px',
+              overflow: 'hidden',
+            }}
+          >
+            <div
+              style={{
+                background: '#EAF7EA',
+                borderBottom: '2px solid #008000',
+                padding: '7px 12px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '8px',
+              }}
+            >
               <div>
-                <h2 style={{ fontSize: '12.5px', fontWeight: 700, color: '#006400', textTransform: 'uppercase', letterSpacing: '0.04em', margin: 0 }}>
+                <h2
+                  style={{
+                    fontSize: '12.5px',
+                    fontWeight: 700,
+                    color: '#006400',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.04em',
+                    margin: 0,
+                  }}
+                >
                   Danh sách nhiệm vụ được giao
                 </h2>
                 <p style={{ fontSize: '11px', color: '#555', marginTop: '2px' }}>
                   Chọn một nhiệm vụ để xem chi tiết và xác nhận nhận việc.
                 </p>
               </div>
-              <span style={{ background: '#fff', border: '1px solid #C8E6C9', borderRadius: '2px', padding: '1px 8px', fontSize: '11px', fontWeight: 600, color: '#006400' }}>
-                {totalTasks} nhiệm vụ
+              <span
+                style={{
+                  background: '#fff',
+                  border: '1px solid #C8E6C9',
+                  borderRadius: '2px',
+                  padding: '1px 8px',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  color: '#006400',
+                }}
+              >
+                {tasks.length} nhiệm vụ
               </span>
             </div>
 
@@ -407,39 +429,48 @@ export default function NhiemVuKiemTraPage() {
         </div>
       )}
 
-      {/* Reject modal */}
       {isRejectModalOpen && selectedTask && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 overflow-hidden">
-            <div className="px-6 py-5 border-b flex items-center justify-between">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+          <div className="mx-4 w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-xl">
+            <div className="flex items-center justify-between border-b px-6 py-5">
               <h3 className="text-lg font-semibold">Từ chối nhiệm vụ</h3>
-              <button onClick={() => setIsRejectModalOpen(false)} className="text-3xl text-slate-400 hover:text-slate-600">×</button>
+              <button
+                onClick={() => setIsRejectModalOpen(false)}
+                className="text-3xl text-slate-400 hover:text-slate-600"
+              >
+                ×
+              </button>
             </div>
 
-            <div className="p-6 space-y-4">
-              <p className="text-sm text-slate-500">Cơ sở: <span className="font-semibold text-slate-800">{selectedTask.businessName}</span></p>
+            <div className="space-y-4 p-6">
+              <p className="text-sm text-slate-500">
+                Cơ sở:{' '}
+                <span className="font-semibold text-slate-800">{selectedTask.businessName}</span>
+              </p>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Lý do từ chối <span className="text-red-500">*</span></label>
+                <label className="mb-2 block text-sm font-medium text-slate-700">
+                  Lý do từ chối <span className="text-red-500">*</span>
+                </label>
                 <textarea
                   value={rejectReason}
                   onChange={(e) => setRejectReason(e.target.value)}
                   placeholder="Nhập lý do từ chối..."
-                  className="w-full h-28 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500"
+                  className="h-28 w-full rounded-xl border border-slate-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500"
                 />
               </div>
             </div>
 
-            <div className="px-6 py-4 border-t bg-slate-50 flex gap-3 justify-end">
+            <div className="flex justify-end gap-3 border-t bg-slate-50 px-6 py-4">
               <button
                 onClick={() => setIsRejectModalOpen(false)}
-                className="px-5 py-2.5 text-slate-600 hover:bg-slate-100 rounded-xl font-medium"
+                className="rounded-xl px-5 py-2.5 font-medium text-slate-600 hover:bg-slate-100"
               >
                 Hủy
               </button>
               <button
                 onClick={confirmReject}
                 disabled={!rejectReason.trim() || isRejecting}
-                className="px-6 py-2.5 font-semibold rounded-xl bg-red-600 hover:bg-red-700 text-white disabled:opacity-50"
+                className="rounded-xl bg-red-600 px-6 py-2.5 font-semibold text-white hover:bg-red-700 disabled:opacity-50"
               >
                 {isRejecting ? 'Đang từ chối...' : 'Xác nhận từ chối'}
               </button>

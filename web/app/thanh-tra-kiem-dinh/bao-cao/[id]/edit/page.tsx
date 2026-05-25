@@ -1,44 +1,110 @@
 'use client';
 
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { mockInspectionReports } from '@/data/mockData';
+import { baoCaoApi, type BaoCaoResponse } from '@/api/api';
 import { PageHeader, SectionCard, StatusBadge, GovBtn, ActionButtons, FormLayout, FormSection, FormField } from '@/components/GovUI';
 import AlertBanner from '@/components/AlertBanner';
 
-function mockUpdateInspectionReport() {
-  return new Promise<void>((resolve) => {
-    window.setTimeout(() => resolve(), 1200);
-  });
+function normalizeError(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
 }
 
 export default function BaoCaoChinhSuaPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const id = params.id;
-  const report = mockInspectionReports.find((item) => item.id === id);
-  const [content, setContent] = useState(report?.noiDung ?? '');
-  const [comment, setComment] = useState(report?.nhanXet ?? '');
+  const [report, setReport] = useState<BaoCaoResponse | null>(null);
+  const [content, setContent] = useState('');
+  const [comment, setComment] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadData = async () => {
+      setIsLoading(true);
+      setErrorMessage('');
+
+      try {
+        const data = await baoCaoApi.getById(id);
+        if (!isMounted) {
+          return;
+        }
+
+        setReport(data);
+        setContent(data.noiDung ?? '');
+        setComment(data.nhanXet ?? '');
+      } catch (error) {
+        if (isMounted) {
+          setErrorMessage(normalizeError(error, `Không tìm thấy báo cáo ${id}`));
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    void loadData();
+    return () => {
+      isMounted = false;
+    };
+  }, [id]);
 
   const isFormValid = content.trim().length > 0 && comment.trim().length > 0;
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!report || !isFormValid || isSubmitting) return;
+    if (!report.facilityId) {
+      setErrorMessage('Không xác định được cơ sở gốc của báo cáo để cập nhật');
+      return;
+    }
+
     setIsSubmitting(true);
+    setErrorMessage('');
+
     try {
-      await mockUpdateInspectionReport();
+      await baoCaoApi.update(id, {
+        facilityId: report.facilityId,
+        inspectionDate: report.ngay,
+        inspectionType: report.loaiThanhTra,
+        content: content.trim(),
+        comment: comment.trim(),
+        result: report.ketQua,
+        score: report.diem,
+        fileName: report.tepDinhKem,
+        hasInspectionRecord: true,
+      });
       router.push(`/thanh-tra-kiem-dinh/bao-cao?updated=${encodeURIComponent(id)}`);
+    } catch (error) {
+      setErrorMessage(normalizeError(error, 'Không thể cập nhật báo cáo lúc này'));
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  if (isLoading) {
+    return (
+      <div>
+        <PageHeader
+          title="Đang tải báo cáo"
+          subtitle="Đang lấy dữ liệu để chỉnh sửa"
+        />
+        <SectionCard title="Chỉnh sửa báo cáo">
+          <p style={{ padding: '12px', fontSize: '13px', color: '#555' }}>Đang tải dữ liệu...</p>
+        </SectionCard>
+      </div>
+    );
+  }
+
   if (!report) {
     return (
       <div>
-        <AlertBanner type="danger" title={`Không tìm thấy báo cáo ${id}`} />
+        <AlertBanner type="danger" title={errorMessage || `Không tìm thấy báo cáo ${id}`} />
         <GovBtn variant="secondary" onClick={() => router.push('/thanh-tra-kiem-dinh/bao-cao')}>
           ← Quay lại danh sách
         </GovBtn>
@@ -50,7 +116,7 @@ export default function BaoCaoChinhSuaPage() {
     <div>
       <PageHeader
         title={`Chỉnh sửa báo cáo — ${report.id}`}
-        subtitle={`Chi cục An toàn Thực phẩm TP. Đà Nẵng — Cập nhật nội dung báo cáo thanh tra`}
+        subtitle="Chi cục An toàn Thực phẩm TP. Đà Nẵng — Cập nhật nội dung báo cáo thanh tra"
         actions={
           <ActionButtons>
             <GovBtn
@@ -64,7 +130,8 @@ export default function BaoCaoChinhSuaPage() {
         }
       />
 
-      {/* Thông tin không thể chỉnh sửa */}
+      {errorMessage && <AlertBanner type="danger" title={errorMessage} />}
+
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '10px', marginBottom: '12px' }}>
         {[
           { label: 'Mã báo cáo', value: report.id, mono: true },
@@ -83,7 +150,6 @@ export default function BaoCaoChinhSuaPage() {
         ))}
       </div>
 
-      {/* Thông tin cơ bản (readonly) */}
       <SectionCard title="Thông tin báo cáo (chỉ đọc)">
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <tbody>
@@ -92,8 +158,8 @@ export default function BaoCaoChinhSuaPage() {
               { label: 'Loại hình thanh tra', value: report.loaiThanhTra },
               { label: 'Kết quả', value: <StatusBadge variant={report.ketQua} /> },
               { label: 'Điểm', value: report.diem > 0 ? `${report.diem} / 100` : 'Chưa có' },
-            ].map((row, i) => (
-              <tr key={i} style={{ borderBottom: '1px solid #F0F0F0' }}>
+            ].map((row, index) => (
+              <tr key={index} style={{ borderBottom: '1px solid #F0F0F0' }}>
                 <td style={{ padding: '8px 12px', fontSize: '12px', fontWeight: 600, color: '#555', width: '200px', background: '#FAFAFA', whiteSpace: 'nowrap' }}>
                   {row.label}
                 </td>
@@ -106,7 +172,6 @@ export default function BaoCaoChinhSuaPage() {
         </table>
       </SectionCard>
 
-      {/* Form chỉnh sửa */}
       <form onSubmit={handleSubmit}>
         <FormLayout>
           <FormSection title="Nội dung có thể chỉnh sửa">
@@ -174,10 +239,6 @@ export default function BaoCaoChinhSuaPage() {
           </div>
         </FormLayout>
       </form>
-
-      <p style={{ fontSize: '11.5px', color: '#888', textAlign: 'center', marginTop: '8px' }}>
-        Thay đổi sẽ được lưu vào hệ thống và ghi lại nhật ký chỉnh sửa theo thời gian thực
-      </p>
     </div>
   );
 }

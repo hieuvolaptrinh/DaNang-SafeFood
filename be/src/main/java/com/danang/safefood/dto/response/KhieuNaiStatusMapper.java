@@ -35,6 +35,8 @@ public final class KhieuNaiStatusMapper {
     private static String normalize(String value) {
         String normalized = java.text.Normalizer.normalize(value.trim(), java.text.Normalizer.Form.NFD)
                 .replaceAll("\\p{M}", "");
-        return normalized.toLowerCase();
+        // Normalize Vietnamese 'đ' / 'Đ' to 'd' after removing diacritics so comparisons succeed
+        String lower = normalized.toLowerCase();
+        return lower.replace('đ', 'd');
     }
 }

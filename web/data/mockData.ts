@@ -76,6 +76,7 @@ export interface ComplaintEvidence {
   label: string;
   kind: 'image' | 'file';
   note: string;
+  url?: string;
 }
 
 export interface ComplaintRecord {

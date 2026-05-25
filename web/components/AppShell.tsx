@@ -7,6 +7,15 @@ import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/AuthContext';
+import { getAccessToken, getUserInfo } from '@/utils/storage';
+
+function useIsClient() {
+  return useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
+}
 
 function ShellContent({ children }: { children: React.ReactNode }) {
   const { collapsed } = useSidebar();
