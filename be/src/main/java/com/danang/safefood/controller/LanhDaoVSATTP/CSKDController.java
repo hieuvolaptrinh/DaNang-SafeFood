@@ -35,7 +35,7 @@ public class CSKDController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('LD_ATVSTPP','CAN_BO_THANH_TRA','CAN_BO_KIEM_DINH','QUAN_TRI_HE_THONG')")
+    @PreAuthorize("hasAnyRole('LD_ATVSTP','CAN_BO_THANH_TRA','CAN_BO_KIEM_DINH','QUAN_TRI_HE_THONG')")
     public ResponseEntity<ApiResponse<CoSoKinhDoanhResponse>> getById(@PathVariable String id) {
         return ResponseEntity.ok(ApiResponse.success(coSoService.getById(id)));
     }
