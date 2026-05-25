@@ -42,7 +42,6 @@ export default function ViolationChart() {
     const { from, to } = getLast6Months();
     thongKeApi.getViPhamTheoThang(from, to)
       .then(res => {
-        console.log('ViPhamTheoThang:', res);
         setData(res);
       })
       .catch(() => setData(FALLBACK))

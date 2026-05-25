@@ -2,11 +2,25 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { Bell, LogOut } from 'lucide-react';
 import { useRole } from '@/lib/RoleContext';
 import { useAuth } from '@/lib/AuthContext';
 import { roleLabels } from '@/data/mockData';
 import { cn } from '@/lib/utils';
+
+const dateFormatter = new Intl.DateTimeFormat('vi-VN', {
+  weekday: 'short',
+  day: '2-digit',
+  month: '2-digit',
+  year: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit',
+});
+
+function getNow() {
+  return dateFormatter.format(new Date());
+}
 
 const breadcrumbMap: Record<string, string[]> = {
   '/dashboard': ['Tổng quan'],
@@ -33,23 +47,19 @@ const breadcrumbMap: Record<string, string[]> = {
   '/cai-dat/may-chu': ['Cài đặt hệ thống', 'Giám sát máy chủ'],
 };
 
-function formatDateTime() {
-  return new Intl.DateTimeFormat('vi-VN', {
-    weekday: 'short',
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date());
-}
-
 export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const { role } = useRole();
   const { user, logout } = useAuth();
   const crumbs = breadcrumbMap[pathname] ?? ['Hệ thống'];
+
+  // Cập nhật đồng hồ mỗi 60 giây thay vì tính lại mỗi lần render
+  const [now, setNow] = useState(getNow);
+  useEffect(() => {
+    const id = setInterval(() => setNow(getNow()), 60_000);
+    return () => clearInterval(id); // cleanup tránh memory leak
+  }, []);
 
   // Avatar initials: last 2 words of fullName
   const avatarInitials = user?.fullName
@@ -85,7 +95,7 @@ export default function Header() {
 
       {/* Ngày giờ + version */}
       <div className="hidden lg:flex items-center gap-3 text-[11px] text-[#555] shrink-0">
-        <span>{formatDateTime()}</span>
+        <span>{now}</span>
         <span className="text-[#D6D6D6]">|</span>
         <span>
           v<strong className="text-[#333]">2.1.0</strong>

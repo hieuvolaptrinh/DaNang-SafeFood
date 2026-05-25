@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { SidebarProvider, useSidebar } from '@/lib/SidebarContext';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
@@ -36,15 +36,24 @@ function ShellContent({ children }: { children: React.ReactNode }) {
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    // Chỉ redirect sau khi đã hydrate xong (tránh flash/loop)
+    if (mounted && !isAuthenticated) {
       router.replace('/login');
     }
-  }, [isAuthenticated, router]);
+  }, [mounted, isAuthenticated, router]);
+
+  // Chưa hydrate: không render gì để tránh layout shift và redirect loop
+  if (!mounted) return null;
 
   if (!isAuthenticated) {
-    // Show nothing while redirecting
+    // Đang redirect — không render nội dung
     return null;
   }
 
