@@ -20,13 +20,13 @@ import {
 // ─── Fallback data khi API offline ───────────────────────────────
 const FALLBACK_ITEMS: CoSoKinhDoanhItem[] = [
   { maCoSo: 'CS-001', tenCoSo: 'Nhà hàng Hải Sản Biển Xanh', soGiayPhep: 'FSL-2024-0234', ngayHetHanGiayPhep: '2026-01-09', trangThai: 'HOAT_DONG', maPX: 'HC01', tenPhuongXa: 'Hải Châu 1', maChuSoHuu: 'U001', tenChuSoHuu: 'Nguyễn Văn An' },
-  { maCoSo: 'CS-002', tenCoSo: 'Quán Ăn Gia Đình Việt',       soGiayPhep: 'FSL-2024-0099', ngayHetHanGiayPhep: '2025-02-14', trangThai: 'HET_HAN',   maPX: 'TK02', tenPhuongXa: 'Thanh Khê Đông', maChuSoHuu: 'U002', tenChuSoHuu: 'Trần Thị Bình' },
-  { maCoSo: 'CS-003', tenCoSo: 'Cửa hàng Thực phẩm Organic',  soGiayPhep: 'FSL-2024-0087', ngayHetHanGiayPhep: '2026-03-19', trangThai: 'HOAT_DONG', maPX: 'NHS03', tenPhuongXa: 'Mỹ An', maChuSoHuu: 'U003', tenChuSoHuu: 'Phạm Văn Cường' },
-  { maCoSo: 'CS-004', tenCoSo: 'Siêu thị Mini Mart Đà Nẵng',  soGiayPhep: 'FSL-2024-0198', ngayHetHanGiayPhep: '2026-01-04', trangThai: 'DINH_CHI',  maPX: 'ST04', tenPhuongXa: 'An Hải Bắc', maChuSoHuu: 'U004', tenChuSoHuu: 'Lê Thị Dung' },
-  { maCoSo: 'CS-005', tenCoSo: 'Công ty Hải Sản Đà Nẵng',     soGiayPhep: 'FSL-2023-0011', ngayHetHanGiayPhep: '2025-06-01', trangThai: 'HET_HAN',   maPX: 'TK05', tenPhuongXa: 'Thanh Khê Tây', maChuSoHuu: 'U005', tenChuSoHuu: 'Hoàng Văn Em' },
-  { maCoSo: 'CS-006', tenCoSo: 'Bánh Mì Hội An',               soGiayPhep: 'FSL-2025-0045', ngayHetHanGiayPhep: '2027-05-15', trangThai: 'HOAT_DONG', maPX: 'ST06', tenPhuongXa: 'Sơn Trà', maChuSoHuu: 'U006', tenChuSoHuu: 'Ngô Thị Phương' },
-  { maCoSo: 'CS-007', tenCoSo: 'Cơm gà Bà Buội Đà Nẵng',      soGiayPhep: '',             ngayHetHanGiayPhep: '',           trangThai: 'CHO_DUYET', maPX: 'HC02', tenPhuongXa: 'Hải Châu 2', maChuSoHuu: 'U007', tenChuSoHuu: 'Lê Hoàng Nam' },
-  { maCoSo: 'CS-008', tenCoSo: 'Trà sữa Gong Cha Nguyễn Văn Linh', soGiayPhep: '',        ngayHetHanGiayPhep: '',           trangThai: 'CHO_DUYET', maPX: 'TK01', tenPhuongXa: 'Vĩnh Trung', maChuSoHuu: 'U008', tenChuSoHuu: 'Nguyễn Bích Thủy' },
+  { maCoSo: 'CS-002', tenCoSo: 'Quán Ăn Gia Đình Việt', soGiayPhep: 'FSL-2024-0099', ngayHetHanGiayPhep: '2025-02-14', trangThai: 'HET_HAN', maPX: 'TK02', tenPhuongXa: 'Thanh Khê Đông', maChuSoHuu: 'U002', tenChuSoHuu: 'Trần Thị Bình' },
+  { maCoSo: 'CS-003', tenCoSo: 'Cửa hàng Thực phẩm Organic', soGiayPhep: 'FSL-2024-0087', ngayHetHanGiayPhep: '2026-03-19', trangThai: 'HOAT_DONG', maPX: 'NHS03', tenPhuongXa: 'Mỹ An', maChuSoHuu: 'U003', tenChuSoHuu: 'Phạm Văn Cường' },
+  { maCoSo: 'CS-004', tenCoSo: 'Siêu thị Mini Mart Đà Nẵng', soGiayPhep: 'FSL-2024-0198', ngayHetHanGiayPhep: '2026-01-04', trangThai: 'DINH_CHI', maPX: 'ST04', tenPhuongXa: 'An Hải Bắc', maChuSoHuu: 'U004', tenChuSoHuu: 'Lê Thị Dung' },
+  { maCoSo: 'CS-005', tenCoSo: 'Công ty Hải Sản Đà Nẵng', soGiayPhep: 'FSL-2023-0011', ngayHetHanGiayPhep: '2025-06-01', trangThai: 'HET_HAN', maPX: 'TK05', tenPhuongXa: 'Thanh Khê Tây', maChuSoHuu: 'U005', tenChuSoHuu: 'Hoàng Văn Em' },
+  { maCoSo: 'CS-006', tenCoSo: 'Bánh Mì Hội An', soGiayPhep: 'FSL-2025-0045', ngayHetHanGiayPhep: '2027-05-15', trangThai: 'HOAT_DONG', maPX: 'ST06', tenPhuongXa: 'Sơn Trà', maChuSoHuu: 'U006', tenChuSoHuu: 'Ngô Thị Phương' },
+  { maCoSo: 'CS-007', tenCoSo: 'Cơm gà Bà Buội Đà Nẵng', soGiayPhep: '', ngayHetHanGiayPhep: '', trangThai: 'CHO_DUYET', maPX: 'HC02', tenPhuongXa: 'Hải Châu 2', maChuSoHuu: 'U007', tenChuSoHuu: 'Lê Hoàng Nam' },
+  { maCoSo: 'CS-008', tenCoSo: 'Trà sữa Gong Cha Nguyễn Văn Linh', soGiayPhep: '', ngayHetHanGiayPhep: '', trangThai: 'CHO_DUYET', maPX: 'TK01', tenPhuongXa: 'Vĩnh Trung', maChuSoHuu: 'U008', tenChuSoHuu: 'Nguyễn Bích Thủy' },
 ];
 
 const FALLBACK_PAGE: CoSoKinhDoanhPageResponse = {
@@ -38,23 +38,23 @@ const FALLBACK_PAGE: CoSoKinhDoanhPageResponse = {
 // ─── Map trangThai backend → StatusBadge variant ─────────────────
 const TRANG_THAI_VARIANT: Record<string, string> = {
   HOAT_DONG: 'active',
-  HET_HAN:   'expired',
-  DINH_CHI:  'suspended',
+  HET_HAN: 'expired',
+  DINH_CHI: 'suspended',
   CHO_DUYET: 'pending',
 };
 
 const TRANG_THAI_LABEL: Record<string, string> = {
   HOAT_DONG: 'Hoạt động',
-  HET_HAN:   'Hết hạn',
-  DINH_CHI:  'Tạm đình chỉ',
+  HET_HAN: 'Hết hạn',
+  DINH_CHI: 'Tạm đình chỉ',
   CHO_DUYET: 'Chờ duyệt',
 };
 
 const TRANG_THAI_OPTIONS = [
-  { value: '',           label: '-- Tất cả --' },
+  { value: '', label: '-- Tất cả --' },
   { value: 'HOAT_DONG', label: 'Đang hoạt động' },
-  { value: 'HET_HAN',   label: 'Hết hạn' },
-  { value: 'DINH_CHI',  label: 'Tạm đình chỉ' },
+  { value: 'HET_HAN', label: 'Hết hạn' },
+  { value: 'DINH_CHI', label: 'Tạm đình chỉ' },
   { value: 'CHO_DUYET', label: 'Chờ duyệt' },
 ];
 
@@ -70,7 +70,7 @@ function Pagination({
   page, totalPages, totalElements, size, onPage,
 }: { page: number; totalPages: number; totalElements: number; size: number; onPage: (p: number) => void }) {
   const from = totalElements === 0 ? 0 : page * size + 1;
-  const to   = Math.min((page + 1) * size, totalElements);
+  const to = Math.min((page + 1) * size, totalElements);
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
@@ -126,15 +126,15 @@ function Pagination({
 
 export default function CoSoKinhDoanhPage() {
   const [pageData, setPageData] = useState<CoSoKinhDoanhPageResponse>(FALLBACK_PAGE);
-  const [loading, setLoading]   = useState(true);
-  const [error, setError]       = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Filter state
-  const [maCoSo, setMaCoSo]           = useState('');
-  const [tenCoSo, setTenCoSo]         = useState('');
-  const [soGiayPhep, setSoGiayPhep]   = useState('');
-  const [trangThai, setTrangThai]     = useState('');
-  const [page, setPage]               = useState(0);
+  const [maCoSo, setMaCoSo] = useState('');
+  const [tenCoSo, setTenCoSo] = useState('');
+  const [soGiayPhep, setSoGiayPhep] = useState('');
+  const [trangThai, setTrangThai] = useState('');
+  const [page, setPage] = useState(0);
 
   // Pending filter (chỉ apply khi bấm Tìm kiếm)
   const [pendingMaCoSo, setPendingMaCoSo] = useState('');
@@ -241,11 +241,11 @@ export default function CoSoKinhDoanhPage() {
   const handleRefresh = () => fetchData(page);
 
   // Stats từ fallback nếu API chưa trả về tổng hợp
-  const total     = pageData.totalElements;
-  const hoatDong  = pageData.content.filter(c => c.trangThai === 'HOAT_DONG').length;
-  const choDuyet  = pageData.content.filter(c => c.trangThai === 'CHO_DUYET').length;
-  const hetHan    = pageData.content.filter(c => c.trangThai === 'HET_HAN').length;
-  const dinhChi   = pageData.content.filter(c => c.trangThai === 'DINH_CHI').length;
+  const total = pageData.totalElements;
+  const hoatDong = pageData.content.filter(c => c.trangThai === 'Hoat dong').length;
+  const choDuyet = pageData.content.filter(c => c.trangThai === 'Cho duyet').length;
+  const hetHan = pageData.content.filter(c => c.trangThai === 'Het han').length;
+  const dinhChi = pageData.content.filter(c => c.trangThai === 'Dinh chi').length;
 
   const columns: Column<CoSoKinhDoanhItem>[] = [
     {
@@ -289,9 +289,9 @@ export default function CoSoKinhDoanhPage() {
       key: 'trangThai',
       header: 'Trạng thái',
       render: r => (
-        <StatusBadge 
-          variant={TRANG_THAI_VARIANT[r.trangThai] ?? r.trangThai} 
-          label={TRANG_THAI_LABEL[r.trangThai] ?? r.trangThai} 
+        <StatusBadge
+          variant={TRANG_THAI_VARIANT[r.trangThai] ?? r.trangThai}
+          label={TRANG_THAI_LABEL[r.trangThai] ?? r.trangThai}
         />
       ),
     },
@@ -337,11 +337,11 @@ export default function CoSoKinhDoanhPage() {
 
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px', marginBottom: '12px' }}>
-        <MiniStat label="Tổng cơ sở ATTP"    value={total.toLocaleString('vi-VN')} color="neutral" icon={Building2} />
-        <MiniStat label="Đang hoạt động"      value={hoatDong}  color="green"   note={total > 0 ? `${Math.round(hoatDong / Math.max(pageData.content.length, 1) * 100)}% trang này` : ''} />
-        <MiniStat label="Chờ duyệt"          value={choDuyet}  color="orange"  note="Cần phê duyệt" />
-        <MiniStat label="Tạm đình chỉ"        value={dinhChi}   color="red" />
-        <MiniStat label="Hết hạn giấy phép"   value={hetHan}    color="neutral" note="Cần gia hạn" />
+        <MiniStat label="Tổng cơ sở ATTP" value={total.toLocaleString('vi-VN')} color="neutral" icon={Building2} />
+        <MiniStat label="Đang hoạt động" value={hoatDong} color="green" note={total > 0 ? `${Math.round(hoatDong / Math.max(pageData.content.length, 1) * 100)}% trang này` : ''} />
+        <MiniStat label="Chờ duyệt" value={choDuyet} color="orange" note="Cần phê duyệt" />
+        <MiniStat label="Tạm đình chỉ" value={dinhChi} color="red" />
+        <MiniStat label="Hết hạn giấy phép" value={hetHan} color="neutral" note="Cần gia hạn" />
       </div>
 
       {/* Filter */}

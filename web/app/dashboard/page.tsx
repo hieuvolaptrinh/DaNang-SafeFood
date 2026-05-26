@@ -17,6 +17,7 @@ import ExpiryAlerts from '@/components/dashboard/ExpiryAlerts';
 import { thongKeApi, DashboardSummary } from '@/api/api';
 import { ketQuaKiemNghiemApi } from '@/api/ketquakiemnghiem';
 import { mauKiemNghiemApi } from '@/api/maukiemnghiem';
+import { getAccessToken } from '@/utils/storage';
 
 const GovBadge = ({ variant }: { variant: string }) => {
   const map: Record<string, { label: string; style: React.CSSProperties }> = {
@@ -360,6 +361,48 @@ function BusinessDashboard() {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function DashboardPage() {
   const { role } = useRole();
+  const [exporting, setExporting] = useState(false);
+
+  const handleExportExcel = async () => {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      const token = getAccessToken();
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+      const response = await fetch(`${apiUrl}/v1/thongke/export-excel`, {
+        method: 'GET',
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : '',
+        },
+      });
+      if (!response.ok) {
+        throw new Error('Không thể tải file excel từ server');
+      }
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      // Get filename from content-disposition if possible
+      const contentDisposition = response.headers.get('content-disposition');
+      let filename = 'BaoCaoTongHop_ATVSTP.xlsx';
+      if (contentDisposition) {
+        const matches = /filename="([^"]+)"/.exec(contentDisposition);
+        if (matches && matches[1]) {
+          filename = matches[1];
+        }
+      }
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode?.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err: any) {
+      console.error('Error exporting excel:', err);
+      alert(err.message || 'Có lỗi xảy ra khi xuất file Excel');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const pageTitle: Record<string, string> = {
     ADMIN:     'Bảng điều hành hệ thống',
@@ -417,9 +460,14 @@ export default function DashboardPage() {
               <Printer style={{ width: '13px', height: '13px' }} />
               In báo cáo
             </button>
-            <button className="gov-btn gov-btn-primary" style={{ height: '28px', fontSize: '12px' }}>
+            <button 
+              className="gov-btn gov-btn-primary" 
+              style={{ height: '28px', fontSize: '12px' }}
+              onClick={handleExportExcel}
+              disabled={exporting}
+            >
               <FileSpreadsheet style={{ width: '13px', height: '13px' }} />
-              Xuất Excel
+              {exporting ? 'Đang xuất...' : 'Xuất Excel'}
             </button>
           </div>
         )}
