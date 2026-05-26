@@ -1,226 +1,220 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
+import { ArrowLeft, Save, Globe, Lock } from 'lucide-react';
+import { thongBaoApi, ThongBaoItem, CreateThongBaoRequest } from '@/api/thongbao';
 import {
-  ArrowLeft, Pencil, Printer, Save, X, AlertTriangle
-} from 'lucide-react';
-import { PageHeader, SectionCard, GovBtn, StatusBadge } from '@/components/GovUI';
+  PageHeader, GovBtn, SectionCard, ActionButtons,
+  FormSection, FormField, GovInput, GovSelect, StatusBadge,
+} from '@/components/GovUI';
+import AlertBanner from '@/components/AlertBanner';
 
-interface Notification {
-  id: string;
-  title: string;
-  content: string;
-  type: string;
-  target: string;
-  sendDate: string;
-  status: 'sent' | 'scheduled';
-  recipientCount: number;
+// ─── helpers ────────────────────────────────────────────────────
+const LOAI_OPTIONS = [
+  { value: 'THONG_BAO', label: 'Thông báo' },
+  { value: 'KHAN_CAP',  label: 'Khẩn cấp' },
+  { value: 'HUONG_DAN', label: 'Hướng dẫn' },
+];
+const CONG_DONG_OPTIONS = [
+  { value: 'true',  label: 'Cộng đồng (hiển thị công khai)' },
+  { value: 'false', label: 'Nội bộ (chỉ cán bộ)' },
+];
+const LOAI_STYLE: Record<string, { bg: string; color: string; border: string }> = {
+  KHAN_CAP:  { bg: '#FDECEA', color: '#CC0000', border: '#F5BCBC' },
+  THONG_BAO: { bg: '#EAF7EA', color: '#006400', border: '#94C994' },
+  HUONG_DAN: { bg: '#E3EFFA', color: '#005A9E', border: '#9FC3E0' },
+};
+const LOAI_LABEL: Record<string, string> = {
+  KHAN_CAP: 'Khẩn cấp', THONG_BAO: 'Thông báo', HUONG_DAN: 'Hướng dẫn',
+};
+function formatDateTime(iso: string) {
+  if (!iso) return '—';
+  try {
+    return new Date(iso).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  } catch { return iso; }
 }
 
-const mockNotifications: Notification[] = [
-  {
-    id: 'TB-2025001',
-    title: 'Cảnh báo khẩn cấp về lô thực phẩm nhiễm khuẩn',
-    content: 'Yêu cầu các cơ sở kinh doanh thực phẩm tăng cường kiểm soát nhiệt độ bảo quản, kiểm tra nguồn gốc nguyên liệu chặt chẽ để tránh ngộ độc thực phẩm trong mùa hè.',
-    type: 'Cảnh báo',
-    target: 'Tất cả cơ sở kinh doanh',
-    sendDate: '18/03/2025',
-    status: 'sent',
-    recipientCount: 1248
-  },
-];
-
-export default function NotificationDetailPage() {
+// ─── component ──────────────────────────────────────────────────
+export default function ThongBaoDetailPage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
 
-  const [notification, setNotification] = useState<Notification | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState<Notification | null>(null);
+  const [item, setItem]       = useState<ThongBaoItem | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError]     = useState<string | null>(null);
+  const [editMode, setEditMode] = useState(false);
+
+  // form state
+  const [tieuDe, setTieuDe]           = useState('');
+  const [noiDung, setNoiDung]         = useState('');
+  const [loai, setLoai]               = useState('THONG_BAO');
+  const [isCongDong, setIsCongDong]   = useState('true');
+
+  const [submitting, setSubmitting]   = useState(false);
+  const [success, setSuccess]         = useState(false);
 
   useEffect(() => {
-    const found = mockNotifications.find(n => n.id === id);
-    if (found) {
-      setNotification(found);
-      setFormData({ ...found });
-    }
-    setLoading(false);
+    if (!id) return;
+    let mounted = true;
+    setLoading(true);
+    thongBaoApi.search({ page: 0, size: 100 })
+      .then(res => {
+        if (!mounted) return;
+        // API không có getById, tìm trong danh sách hoặc thử trực tiếp
+        const found = res.content.find(i => i.maThongBao === id);
+        if (found) {
+          setItem(found);
+          setTieuDe(found.tieuDe);
+          setNoiDung(found.noiDung);
+          setLoai(found.loaiThongBao);
+          setIsCongDong(String(found.isCongDong));
+        } else {
+          setError('Không tìm thấy thông báo.');
+        }
+        setLoading(false);
+      })
+      .catch((err: any) => {
+        if (mounted) { setError(err.message || 'Không thể tải thông tin.'); setLoading(false); }
+      });
+    return () => { mounted = false; };
   }, [id]);
 
-  if (loading || !notification || !formData) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
-        Không tìm thấy thông báo
-      </div>
-    );
-  }
-
-  const patch = (key: keyof Notification, value: string) => {
-    setFormData(p => p ? { ...p, [key]: value } : p);
+  const handleUpdate = async () => {
+    if (!item) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      const body: CreateThongBaoRequest = {
+        tieuDe:       tieuDe.trim(),
+        noiDung:      noiDung.trim(),
+        loaiThongBao: loai,
+        isCongDong:   isCongDong === 'true',
+      };
+      const updated = await thongBaoApi.update(item.maThongBao, body);
+      setItem(updated);
+      setSuccess(true);
+      setEditMode(false);
+      setTimeout(() => setSuccess(false), 3000);
+    } catch (err: any) {
+      setError(err.message || 'Cập nhật thất bại.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const handleSave = () => {
-    setNotification(formData);
-    setIsEditing(false);
-    alert('✅ Đã lưu thay đổi thành công!');
+  const handleCancelEdit = () => {
+    if (!item) return;
+    setTieuDe(item.tieuDe);
+    setNoiDung(item.noiDung);
+    setLoai(item.loaiThongBao);
+    setIsCongDong(String(item.isCongDong));
+    setEditMode(false);
+    setError(null);
   };
 
-  const handleCancel = () => {
-    setFormData({ ...notification });
-    setIsEditing(false);
-  };
+  if (loading) return (
+    <div style={{ padding: '60px', textAlign: 'center', color: '#888', fontSize: '13px' }}>
+      Đang tải thông báo...
+    </div>
+  );
+
+  if (error && !item) return (
+    <div>
+      <PageHeader title="Không tìm thấy thông báo" subtitle={`Mã: ${id}`}
+        actions={<GovBtn variant="secondary" onClick={() => router.push('/truyen-thong/thong-bao')}><ArrowLeft style={{ width: 12, height: 12 }} /> Quay lại</GovBtn>}
+      />
+      <AlertBanner type="error" title={error} />
+    </div>
+  );
+
+  const loaiStyle = LOAI_STYLE[item!.loaiThongBao] ?? { bg: '#F0F0F0', color: '#555', border: '#CCC' };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 pb-16">
+    <div>
       <PageHeader
-        title={notification.title}
-        subtitle={`Mã TB: ${notification.id}`}
-        badge={<StatusBadge variant={notification.status} />}
+        title={editMode ? `Chỉnh sửa — ${item!.maThongBao}` : `Chi tiết thông báo — ${item!.maThongBao}`}
+        subtitle="Chi cục An toàn Thực phẩm TP. Đà Nẵng — Quản lý thông báo"
         actions={
-          <>
-            <GovBtn variant="secondary" onClick={() => router.back()}>
-              <ArrowLeft size={16} /> Quay lại
+          <ActionButtons>
+            <GovBtn variant="secondary" onClick={() => router.push('/truyen-thong/thong-bao')}>
+              <ArrowLeft style={{ width: 12, height: 12 }} /> Quay lại
             </GovBtn>
-
-            {isEditing ? (
-              <>
-                <GovBtn variant="secondary" onClick={handleCancel}>
-                  <X size={16} /> Hủy
-                </GovBtn>
-                <GovBtn variant="primary" onClick={handleSave}>
-                  <Save size={16} /> Lưu thay đổi
-                </GovBtn>
-              </>
-            ) : (
-              <>
-                <GovBtn variant="secondary" onClick={() => setIsEditing(true)}>
-                  <Pencil size={16} /> Chỉnh sửa
-                </GovBtn>
-                <GovBtn variant="secondary" onClick={() => window.print()}>
-                  <Printer size={16} /> In thông báo
-                </GovBtn>
-              </>
-            )}
-          </>
+            {!editMode
+              ? <GovBtn variant="primary" onClick={() => setEditMode(true)}>Chỉnh sửa</GovBtn>
+              : <>
+                  <GovBtn variant="secondary" onClick={handleCancelEdit} disabled={submitting}>Hủy</GovBtn>
+                  <GovBtn variant="primary" onClick={handleUpdate} disabled={submitting}>
+                    <Save style={{ width: 12, height: 12 }} />
+                    {submitting ? 'Đang lưu...' : 'Lưu thay đổi'}
+                  </GovBtn>
+                </>
+            }
+          </ActionButtons>
         }
       />
 
-      {isEditing && (
-        <div className="max-w-[1200px] mx-auto px-6 mt-4">
-          <div className="bg-amber-50 border border-amber-200 rounded-2xl px-5 py-3.5 flex items-center gap-3 text-amber-800 text-sm">
-            <AlertTriangle size={20} /> Đang ở chế độ chỉnh sửa — Nhấn <strong>Lưu thay đổi</strong> để áp dụng
+      {success && <AlertBanner type="success" title="Cập nhật thông báo thành công!" />}
+      {error   && <AlertBanner type="error"   title={error} />}
+
+      {/* Summary */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '10px', marginBottom: '12px' }}>
+        {[
+          { label: 'Mã thông báo', value: item!.maThongBao, mono: true },
+          { label: 'Ngày gửi',     value: formatDateTime(item!.ngayGui), mono: true },
+          { label: 'Loại',         value: LOAI_LABEL[item!.loaiThongBao] ?? item!.loaiThongBao },
+          { label: 'Phạm vi',      value: item!.isCongDong ? 'Cộng đồng' : 'Nội bộ' },
+        ].map(c => (
+          <div key={c.label} style={{ background: '#fff', border: '1px solid #D6D6D6', padding: '10px 14px' }}>
+            <p style={{ fontSize: '10.5px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#555', marginBottom: '4px' }}>{c.label}</p>
+            <p style={{ fontSize: '13px', fontWeight: 700, color: '#222', fontFamily: c.mono ? 'monospace' : 'inherit' }}>{c.value}</p>
           </div>
-        </div>
-      )}
-
-      <div className="max-w-[1200px] mx-auto px-6 pt-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-
-          {/* LEFT - Nội dung chính */}
-          <div className="lg:col-span-8 space-y-8">
-
-            {/* Tiêu đề */}
-            <SectionCard title="Tiêu đề thông báo" className="shadow-sm">
-              <div className="p-8">
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={formData.title}
-                    onChange={(e) => patch('title', e.target.value)}
-                    className="w-full text-2xl font-bold border border-slate-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-2xl px-5 py-4"
-                  />
-                ) : (
-                  <h2 className="text-2xl font-bold text-slate-900 leading-tight">
-                    {notification.title}
-                  </h2>
-                )}
-              </div>
-            </SectionCard>
-
-            {/* Nội dung */}
-            <SectionCard title="Nội dung thông báo" className="shadow-sm">
-              <div className="p-8">
-                {isEditing ? (
-                  <textarea
-                    value={formData.content}
-                    onChange={(e) => patch('content', e.target.value)}
-                    className="w-full min-h-[260px] border border-slate-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-2xl px-5 py-4 text-[15px] leading-relaxed"
-                  />
-                ) : (
-                  <p className="text-[15px] leading-relaxed text-slate-700 whitespace-pre-line">
-                    {notification.content}
-                  </p>
-                )}
-              </div>
-            </SectionCard>
-          </div>
-
-          {/* RIGHT - Thông tin chi tiết */}
-          <div className="lg:col-span-4 space-y-8">
-
-            <SectionCard title="Thông tin chi tiết" className="shadow-sm">
-              <div className="p-8 space-y-8">
-                <div>
-                  <label className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-1.5 block">Loại thông báo</label>
-                  {isEditing ? (
-                    <select
-                      value={formData.type}
-                      onChange={(e) => patch('type', e.target.value)}
-                      className="w-full border border-slate-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-2xl px-5 py-3"
-                    >
-                      <option value="Cảnh báo">Cảnh báo</option>
-                      <option value="Thông báo">Thông báo</option>
-                      <option value="Khẩn cấp">Khẩn cấp</option>
-                    </select>
-                  ) : (
-                    <p className="text-lg font-medium">{notification.type}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-1.5 block">Đối tượng nhận</label>
-                  {isEditing ? (
-                    <select
-                      value={formData.target}
-                      onChange={(e) => patch('target', e.target.value)}
-                      className="w-full border border-slate-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-2xl px-5 py-3"
-                    >
-                      <option value="Tất cả cơ sở kinh doanh">Tất cả cơ sở kinh doanh</option>
-                      <option value="Cơ sở kinh doanh thực phẩm">Cơ sở kinh doanh thực phẩm</option>
-                      <option value="Quản lý cơ sở">Quản lý cơ sở</option>
-                    </select>
-                  ) : (
-                    <p className="text-lg font-medium">{notification.target}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-1.5 block">Ngày gửi</label>
-                  {isEditing ? (
-                    <input
-                      type="date"
-                      value={formData.sendDate}
-                      onChange={(e) => patch('sendDate', e.target.value)}
-                      className="w-full border border-slate-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-2xl px-5 py-3"
-                    />
-                  ) : (
-                    <p className="font-mono text-lg">{notification.sendDate}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-1.5 block">Số người nhận</label>
-                  <p className="text-2xl font-bold text-green-600">{notification.recipientCount.toLocaleString()}</p>
-                </div>
-              </div>
-            </SectionCard>
-          </div>
-        </div>
+        ))}
       </div>
+
+      <SectionCard title={editMode ? 'Chỉnh sửa nội dung thông báo' : 'Nội dung thông báo'}>
+        <div style={{ padding: '14px 16px' }}>
+          {editMode ? (
+            <FormSection title="Thông tin thông báo">
+              <FormField label="Tiêu đề" required fullWidth>
+                <GovInput placeholder="Tiêu đề thông báo..." value={tieuDe} onChange={setTieuDe} disabled={submitting} />
+              </FormField>
+              <FormField label="Loại thông báo" required>
+                <GovSelect value={loai} onChange={setLoai} options={LOAI_OPTIONS} width={220} />
+              </FormField>
+              <FormField label="Phạm vi" required>
+                <GovSelect value={isCongDong} onChange={setIsCongDong} options={CONG_DONG_OPTIONS} width={280} />
+              </FormField>
+              <FormField label="Nội dung" required fullWidth>
+                <textarea
+                  value={noiDung}
+                  onChange={e => setNoiDung(e.target.value)}
+                  rows={10}
+                  disabled={submitting}
+                  style={{ width: '100%', border: '1px solid #D6D6D6', borderRadius: '2px', padding: '8px', fontSize: '13px', fontFamily: 'inherit', resize: 'vertical', outline: 'none', boxSizing: 'border-box', lineHeight: 1.7 }}
+                />
+              </FormField>
+            </FormSection>
+          ) : (
+            <>
+              <div style={{ marginBottom: '12px', display: 'flex', gap: '10px', alignItems: 'center' }}>
+                <span style={{ padding: '2px 8px', borderRadius: '2px', border: `1px solid ${loaiStyle.border}`, background: loaiStyle.bg, color: loaiStyle.color, fontSize: '12px', fontWeight: 500 }}>
+                  {LOAI_LABEL[item!.loaiThongBao] ?? item!.loaiThongBao}
+                </span>
+                {item!.isCongDong
+                  ? <StatusBadge variant="active" label="Cộng đồng" />
+                  : <StatusBadge variant="pending" label="Nội bộ" />
+                }
+              </div>
+              <h2 style={{ fontSize: '15px', fontWeight: 700, color: '#111', marginBottom: '12px' }}>{item!.tieuDe}</h2>
+              <div style={{ fontSize: '13px', lineHeight: 1.9, color: '#333', whiteSpace: 'pre-wrap', padding: '12px', background: '#F9F9F9', border: '1px solid #E8E8E8', borderRadius: '2px' }}>
+                {item!.noiDung}
+              </div>
+            </>
+          )}
+        </div>
+      </SectionCard>
     </div>
   );
 }

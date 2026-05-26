@@ -55,3 +55,34 @@ export {
   type KetQuaKiemNghiemItemResponse,
   type KetQuaKiemNghiemDetailResponse,
 } from "./ketquakiemnghiem";
+
+export {
+  phanAnhApi,
+  type PhanAnhItem,
+  type PhanAnhPageResponse,
+  type UpdatePhanAnhRequest,
+  type TrangThaiPhanAnh,
+} from "./phananh";
+
+export {
+  khacPhucApi,
+  type KhacPhucItem,
+  type KhacPhucPageResponse,
+  type TinhTrangKhacPhuc,
+} from "./khacphuc";
+
+export {
+  thongBaoApi,
+  type ThongBaoItem,
+  type ThongBaoPageResponse,
+  type CreateThongBaoRequest,
+} from "./thongbao";
+
+export {
+  quyDinhApi,
+  type QuyDinhItem,
+  type QuyDinhPageResponse,
+  type CreateQuyDinhRequest,
+  type LoaiQuyDinh,
+  type TrangThaiQuyDinh,
+} from "./quidinh";

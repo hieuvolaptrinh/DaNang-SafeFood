@@ -1,242 +1,248 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Printer, ArrowLeft, FileSpreadsheet, CheckCircle, Upload } from 'lucide-react';
+import { ArrowLeft, ArrowUpRight, Printer } from 'lucide-react';
+import Link from 'next/link';
+import { khacPhucApi, KhacPhucItem } from '@/api/khacphuc';
 import {
-  PageHeader, GovBtn, SectionCard, StatusBadge, ActionButtons, FormSection, FormField, MiniStat,
+  PageHeader, GovBtn, SectionCard, StatusBadge, ActionButtons, FormSection, FormField,
 } from '@/components/GovUI';
+import AlertBanner from '@/components/AlertBanner';
 
-interface ViolationFix {
-  id: string;
-  businessName: string;
-  violationType: string;
-  severity: 'nhẹ' | 'trung bình' | 'nghiêm trọng';
-  fixStatus: 'pending' | 'in_progress' | 'completed';
-  deadline: string;
-  updatedDate: string;
-  address: string;
-  inspector: string;
-  penaltyAmount: string;
-  remediation: string;
+// ─── helpers ────────────────────────────────────────────────────
+const TINH_TRANG_VARIANT: Record<string, string> = {
+  CHUA_KHAC_PHUC: 'expired',
+  DANG_KHAC_PHUC: 'in-progress',
+  DA_KHAC_PHUC:   'active',
+};
+const TINH_TRANG_LABEL: Record<string, string> = {
+  CHUA_KHAC_PHUC: 'Chưa khắc phục',
+  DANG_KHAC_PHUC: 'Đang khắc phục',
+  DA_KHAC_PHUC:   'Đã khắc phục',
+};
+const TINH_TRANG_DESC: Record<string, string> = {
+  CHUA_KHAC_PHUC: 'Cơ sở chưa thực hiện bất kỳ biện pháp khắc phục nào. Cần đôn đốc và yêu cầu thực hiện ngay.',
+  DANG_KHAC_PHUC: 'Cơ sở đang trong quá trình thực hiện khắc phục. Cần tiếp tục giám sát và đánh giá kết quả.',
+  DA_KHAC_PHUC:   'Cơ sở đã hoàn thành việc khắc phục theo yêu cầu. Hình thức xử phạt được xem là hoàn tất.',
+};
+const TINH_TRANG_BG: Record<string, { bg: string; border: string; color: string }> = {
+  CHUA_KHAC_PHUC: { bg: '#FEF2F2', border: '#FECACA', color: '#991B1B' },
+  DANG_KHAC_PHUC: { bg: '#EFF6FF', border: '#BFDBFE', color: '#1E40AF' },
+  DA_KHAC_PHUC:   { bg: '#F0FDF4', border: '#BBF7D0', color: '#166534' },
+};
+
+function formatCurrency(amount: number) {
+  if (!amount && amount !== 0) return '—';
+  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
 }
 
-const mockViolationFixes: ViolationFix[] = [
-  {
-    id: 'VP-2025001',
-    businessName: 'Nhà hàng Hải Sản Biển Xanh',
-    violationType: 'Vi phạm vệ sinh an toàn thực phẩm',
-    severity: 'nghiêm trọng',
-    fixStatus: 'in_progress',
-    deadline: '15/04/2025',
-    updatedDate: '22/03/2025',
-    address: '123 Trần Phú, Hải Châu, Đà Nẵng',
-    inspector: 'Nguyễn Văn Trần',
-    penaltyAmount: '45.000.000 ₫',
-    remediation: 'Cơ sở phải vệ sinh toàn bộ khu vực chế biến, sửa chữa hệ thống làm lạnh, bổ sung nhãn truy xuất nguồn gốc cho tất cả sản phẩm.',
-  },
-  {
-    id: 'VP-2025002',
-    businessName: 'Quán Ăn Gia Đình Việt',
-    violationType: 'Không niêm yết giá',
-    severity: 'nhẹ',
-    fixStatus: 'completed',
-    deadline: '10/03/2025',
-    updatedDate: '08/03/2025',
-    address: '45 Điện Biên Phủ, Thanh Khê, Đà Nẵng',
-    inspector: 'Lê Thị Mai',
-    penaltyAmount: '3.000.000 ₫',
-    remediation: 'Cơ sở phải niêm yết bảng giá tại quầy phục vụ đúng quy định.',
-  },
-  {
-    id: 'VP-2025003',
-    businessName: 'Cửa hàng Thực phẩm Sạch Organic',
-    violationType: 'Sử dụng nguyên liệu hết hạn',
-    severity: 'trung bình',
-    fixStatus: 'pending',
-    deadline: '30/03/2025',
-    updatedDate: '25/03/2025',
-    address: '78 Nguyễn Tất Thành, Ngũ Hành Sơn, Đà Nẵng',
-    inspector: 'Phạm Văn Đức',
-    penaltyAmount: '15.000.000 ₫',
-    remediation: 'Loại bỏ toàn bộ nguyên liệu hết hạn, bổ sung quy trình kiểm soát hạn dùng hàng ngày.',
-  },
-  {
-    id: 'VP-2025004',
-    businessName: 'Siêu thị Mini Mart Đà Nẵng',
-    violationType: 'Thiếu giấy phép kinh doanh',
-    severity: 'nghiêm trọng',
-    fixStatus: 'in_progress',
-    deadline: '20/04/2025',
-    updatedDate: '18/03/2025',
-    address: '22 Hoàng Diệu, Sơn Trà, Đà Nẵng',
-    inspector: 'Nguyễn Văn Trần',
-    penaltyAmount: '30.000.000 ₫',
-    remediation: 'Hoàn thiện hồ sơ đăng ký kinh doanh và nộp đầy đủ các giấy tờ pháp lý theo quy định.',
-  },
-];
+function InfoCard({ label, value, mono = false }: { label: string; value: React.ReactNode; mono?: boolean }) {
+  return (
+    <div style={{ background: '#fff', border: '1px solid #D6D6D6', padding: '10px 14px' }}>
+      <p style={{ fontSize: '10.5px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#555', marginBottom: '4px' }}>
+        {label}
+      </p>
+      <div style={{ fontSize: '14px', fontWeight: 700, color: '#222', fontFamily: mono ? 'monospace' : 'inherit' }}>
+        {value}
+      </div>
+    </div>
+  );
+}
 
-const fixStatusVariant: Record<string, string> = {
-  pending: 'pending',
-  in_progress: 'in-progress',
-  completed: 'resolved',
-};
-const fixStatusLabel: Record<string, string> = {
-  pending: 'Chờ khắc phục',
-  in_progress: 'Đang khắc phục',
-  completed: 'Đã hoàn thành',
-};
-const severityVariant: Record<string, string> = {
-  'nghiêm trọng': 'high',
-  'trung bình': 'medium',
-  'nhẹ': 'low',
-};
-
+// ─── component ──────────────────────────────────────────────────
 export default function KhacPhucViPhamDetailPage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
 
-  const [record, setRecord] = useState<ViolationFix | null>(null);
+  const [item, setItem]       = useState<KhacPhucItem | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError]     = useState<string | null>(null);
 
   useEffect(() => {
-    const found = mockViolationFixes.find(v => v.id === id);
-    setRecord(found || null);
+    if (!id) return;
+    let mounted = true;
+    setLoading(true);
+    setError(null);
+    khacPhucApi
+      .getById(id)
+      .then(data => { if (mounted) { setItem(data); setLoading(false); } })
+      .catch((err: any) => {
+        if (mounted) {
+          setError(err.message || 'Không thể tải thông tin khắc phục.');
+          setLoading(false);
+        }
+      });
+    return () => { mounted = false; };
   }, [id]);
 
-  if (!record) {
+  // ── Loading ──
+  if (loading) {
+    return (
+      <div style={{ padding: '60px', textAlign: 'center', color: '#888', fontSize: '13px' }}>
+        Đang tải thông tin khắc phục...
+      </div>
+    );
+  }
+
+  // ── Error / Not found ──
+  if (error || !item) {
     return (
       <div>
         <PageHeader
-          title="Không tìm thấy hồ sơ"
-          subtitle={`Không tìm thấy hồ sơ khắc phục mã: ${id}`}
+          title="Không tìm thấy thông tin khắc phục"
+          subtitle={`Mã: ${id}`}
           actions={
             <GovBtn variant="secondary" onClick={() => router.push('/vi-pham/khac-phuc')}>
               <ArrowLeft style={{ width: 12, height: 12 }} /> Quay lại danh sách
             </GovBtn>
           }
         />
+        {error && <AlertBanner type="error" title={error} />}
       </div>
     );
   }
 
+  const tinhTrang = item.tinhTrangKhacPhuc;
+  const bgStyle   = TINH_TRANG_BG[tinhTrang] ?? { bg: '#F5F5F5', border: '#D6D6D6', color: '#333' };
+
   return (
     <div>
       <PageHeader
-        title={`Hồ sơ khắc phục — ${record.id}`}
-        subtitle={`Chi cục An toàn Thực phẩm TP. Đà Nẵng — Theo dõi tiến độ khắc phục vi phạm`}
+        title={`Chi tiết khắc phục — ${item.maHinhThucKhacPhuc}`}
+        subtitle="Chi cục An toàn Thực phẩm TP. Đà Nẵng — Theo dõi tiến độ thực hiện khắc phục vi phạm"
         actions={
           <ActionButtons>
             <GovBtn variant="secondary" onClick={() => router.push('/vi-pham/khac-phuc')}>
               <ArrowLeft style={{ width: 12, height: 12 }} /> Quay lại
             </GovBtn>
-            <GovBtn variant="secondary">
+            <GovBtn variant="secondary" onClick={() => window.print()}>
               <Printer style={{ width: 12, height: 12 }} /> In biên bản
             </GovBtn>
-            <GovBtn variant="secondary">
-              <FileSpreadsheet style={{ width: 12, height: 12 }} /> Xuất Excel
-            </GovBtn>
-            <GovBtn variant="outline">
-              <Upload style={{ width: 12, height: 12 }} /> Cập nhật tiến độ
-            </GovBtn>
-            {record.fixStatus !== 'completed' && (
-              <GovBtn variant="primary">
-                <CheckCircle style={{ width: 12, height: 12 }} /> Xác nhận hoàn thành
+            <Link href={`/vi-pham/${item.maViPham}`}>
+              <GovBtn variant="outline">
+                <ArrowUpRight style={{ width: 12, height: 12 }} /> Xem vi phạm
               </GovBtn>
-            )}
+            </Link>
           </ActionButtons>
         }
       />
 
-      {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '10px', marginBottom: '12px' }}>
-        <MiniStat label="Mã vi phạm" value={record.id} color="neutral" />
-        <MiniStat label="Mức phạt" value={record.penaltyAmount} color="red" />
-        <MiniStat label="Hạn khắc phục" value={record.deadline} color="orange" />
-        <MiniStat label="Cập nhật lần cuối" value={record.updatedDate} color="blue" />
+      {/* Summary cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', marginBottom: '12px' }}>
+        <InfoCard label="Mã khắc phục" value={item.maHinhThucKhacPhuc} mono />
+        <InfoCard
+          label="Mã vi phạm"
+          value={
+            <Link
+              href={`/vi-pham/${item.maViPham}`}
+              style={{ color: '#CC0000', fontFamily: 'monospace', textDecoration: 'none' }}
+            >
+              {item.maViPham}
+            </Link>
+          }
+        />
+        <InfoCard
+          label="Số tiền khắc phục"
+          value={
+            <span style={{ color: item.soTienKhacPhuc > 0 ? '#CC0000' : '#666' }}>
+              {formatCurrency(item.soTienKhacPhuc)}
+            </span>
+          }
+        />
+        <InfoCard
+          label="Tình trạng"
+          value={
+            <StatusBadge
+              variant={TINH_TRANG_VARIANT[tinhTrang] ?? 'pending'}
+              label={TINH_TRANG_LABEL[tinhTrang] ?? tinhTrang}
+            />
+          }
+        />
       </div>
 
-      {/* Trạng thái */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
-        <SectionCard title="Trạng thái khắc phục">
-          <div style={{ padding: '14px 12px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <StatusBadge variant={fixStatusVariant[record.fixStatus]} label={fixStatusLabel[record.fixStatus]} />
-            <span style={{ fontSize: '12px', color: '#555' }}>
-              {record.fixStatus === 'pending' ? 'Cơ sở chưa bắt đầu thực hiện khắc phục.' :
-               record.fixStatus === 'in_progress' ? 'Cơ sở đang tiến hành khắc phục vi phạm.' :
-               'Cơ sở đã hoàn tất khắc phục. Chờ xác nhận lần cuối.'}
-            </span>
-          </div>
-        </SectionCard>
-
-        <SectionCard title="Mức độ vi phạm">
-          <div style={{ padding: '14px 12px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <StatusBadge variant={severityVariant[record.severity]} label={record.severity.charAt(0).toUpperCase() + record.severity.slice(1)} />
-            <span style={{ fontSize: '12px', color: '#555' }}>
-              {record.severity === 'nghiêm trọng' ? 'Vi phạm nghiêm trọng — cần giám sát chặt chẽ tiến độ khắc phục.' :
-               record.severity === 'trung bình' ? 'Vi phạm mức trung bình — theo dõi định kỳ.' :
-               'Vi phạm nhẹ — nhắc nhở và kiểm tra lại.'}
-            </span>
-          </div>
-        </SectionCard>
+      {/* Tình trạng banner */}
+      <div style={{
+        background: bgStyle.bg,
+        border: `1px solid ${bgStyle.border}`,
+        borderRadius: '2px',
+        padding: '14px 18px',
+        marginBottom: '12px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '14px',
+      }}>
+        <StatusBadge
+          variant={TINH_TRANG_VARIANT[tinhTrang] ?? 'pending'}
+          label={TINH_TRANG_LABEL[tinhTrang] ?? tinhTrang}
+        />
+        <p style={{ fontSize: '13px', color: bgStyle.color, fontWeight: 500, margin: 0 }}>
+          {TINH_TRANG_DESC[tinhTrang] ?? 'Không có mô tả trạng thái.'}
+        </p>
       </div>
 
       {/* Chi tiết */}
-      <SectionCard title="Thông tin chi tiết hồ sơ khắc phục">
-        <div style={{ padding: '14px 12px' }}>
-          <FormSection title="Thông tin cơ sở">
-            <FormField label="Tên cơ sở kinh doanh">
-              <div style={{ padding: '6px 8px', background: '#F5F5F5', border: '1px solid #D6D6D6', borderRadius: '2px', fontSize: '13px', fontWeight: 600 }}>
-                {record.businessName}
+      <SectionCard title="Thông tin chi tiết hình thức khắc phục">
+        <div style={{ padding: '14px 16px' }}>
+          <FormSection title="Thông tin cơ bản">
+            <FormField label="Mã hình thức KP">
+              <div style={{ padding: '6px 8px', background: '#F5F5F5', border: '1px solid #D6D6D6', borderRadius: '2px', fontSize: '13px', fontFamily: 'monospace', fontWeight: 600, color: '#005A9E' }}>
+                {item.maHinhThucKhacPhuc}
               </div>
             </FormField>
-            <FormField label="Địa chỉ">
+            <FormField label="Liên kết vi phạm">
               <div style={{ padding: '6px 8px', background: '#F5F5F5', border: '1px solid #D6D6D6', borderRadius: '2px', fontSize: '13px' }}>
-                {record.address}
+                <Link href={`/vi-pham/${item.maViPham}`} style={{ color: '#CC0000', fontFamily: 'monospace', fontWeight: 700, textDecoration: 'none' }}>
+                  {item.maViPham} ↗
+                </Link>
               </div>
             </FormField>
-            <FormField label="Thanh tra viên phụ trách">
-              <div style={{ padding: '6px 8px', background: '#F5F5F5', border: '1px solid #D6D6D6', borderRadius: '2px', fontSize: '13px' }}>
-                {record.inspector}
+            <FormField label="Số tiền khắc phục">
+              <div style={{ padding: '6px 8px', background: '#F5F5F5', border: '1px solid #D6D6D6', borderRadius: '2px', fontSize: '13px', fontWeight: 700, color: item.soTienKhacPhuc > 0 ? '#CC0000' : '#666', fontFamily: 'monospace' }}>
+                {formatCurrency(item.soTienKhacPhuc)}
               </div>
             </FormField>
-            <FormField label="Mức phạt áp dụng">
-              <div style={{ padding: '6px 8px', background: '#F5F5F5', border: '1px solid #D6D6D6', borderRadius: '2px', fontSize: '13px', fontWeight: 700, color: '#CC0000' }}>
-                {record.penaltyAmount}
+            <FormField label="Tình trạng">
+              <div style={{ padding: '6px 8px' }}>
+                <StatusBadge
+                  variant={TINH_TRANG_VARIANT[tinhTrang] ?? 'pending'}
+                  label={TINH_TRANG_LABEL[tinhTrang] ?? tinhTrang}
+                />
               </div>
             </FormField>
           </FormSection>
 
           <FormSection title="Nội dung khắc phục">
-            <FormField label="Loại vi phạm" fullWidth>
-              <div style={{ padding: '6px 8px', background: '#F5F5F5', border: '1px solid #D6D6D6', borderRadius: '2px', fontSize: '13px', fontWeight: 600 }}>
-                {record.violationType}
-              </div>
-            </FormField>
-            <FormField label="Yêu cầu khắc phục" fullWidth>
-              <div style={{ padding: '8px', background: '#F5F5F5', border: '1px solid #D6D6D6', borderRadius: '2px', fontSize: '13px', lineHeight: 1.6, minHeight: '80px' }}>
-                {record.remediation}
-              </div>
+            <FormField label="Nội dung" fullWidth>
+              {item.noiDungKhacPhuc ? (
+                <div style={{
+                  padding: '10px 12px',
+                  background: '#F5F5F5',
+                  border: '1px solid #D6D6D6',
+                  borderRadius: '2px',
+                  fontSize: '13px',
+                  lineHeight: 1.8,
+                  minHeight: '60px',
+                  whiteSpace: 'pre-wrap',
+                }}>
+                  {item.noiDungKhacPhuc}
+                </div>
+              ) : (
+                <div style={{
+                  padding: '14px 16px',
+                  background: '#FFFBEA',
+                  border: '1px solid #FDE68A',
+                  borderRadius: '2px',
+                  fontSize: '13px',
+                  color: '#92400E',
+                  fontStyle: 'italic',
+                }}>
+                  Chưa có nội dung khắc phục được ghi nhận. Cán bộ phụ trách cần cập nhật sau khi kiểm tra thực tế.
+                </div>
+              )}
             </FormField>
           </FormSection>
-        </div>
-      </SectionCard>
-
-      {/* Lịch trình kiểm tra */}
-      <SectionCard title="Lịch sử theo dõi khắc phục">
-        <div style={{ padding: '0' }}>
-          {[
-            { date: record.updatedDate, event: 'Cập nhật tiến độ khắc phục', user: record.inspector, note: `Trạng thái: ${fixStatusLabel[record.fixStatus]}` },
-            { date: record.deadline, event: 'Hạn khắc phục tối đa', user: 'Hệ thống', note: 'Cơ sở phải hoàn thành trước ngày này' },
-          ].map((item, i) => (
-            <div key={i} style={{ display: 'flex', gap: '12px', padding: '10px 12px', borderBottom: i < 1 ? '1px solid #F0F0F0' : 'none' }}>
-              <span style={{ fontSize: '12px', fontFamily: 'monospace', color: '#555', flexShrink: 0, width: '100px' }}>{item.date}</span>
-              <div style={{ flex: 1 }}>
-                <p style={{ fontSize: '13px', fontWeight: 600, color: '#222', marginBottom: '2px' }}>{item.event}</p>
-                <p style={{ fontSize: '12px', color: '#666' }}>{item.note} — <em>{item.user}</em></p>
-              </div>
-            </div>
-          ))}
         </div>
       </SectionCard>
 

@@ -1,243 +1,229 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useRole } from '@/lib/RoleContext';
-import { Eye, Pencil, FileSpreadsheet, RefreshCw, Plus } from 'lucide-react';
+import { Eye, RefreshCw, FileSpreadsheet } from 'lucide-react';
+import { khacPhucApi, KhacPhucItem, TinhTrangKhacPhuc } from '@/api/khacphuc';
+import DataTable, { type Column } from '@/components/DataTable';
 import {
-  PageHeader,
-  SectionCard,
-  GovBtn,
-  GovInput,
-  GovSelect,
-  FilterBar,
-  FilterField,
-  MiniStat,
-  StatusBadge,
+  PageHeader, SectionCard, GovBtn, GovInput, GovSelect,
+  FilterBar, FilterField, MiniStat, StatusBadge, ActionButtons, GovPagination,
 } from '@/components/GovUI';
-import DataTable, { Column } from '@/components/DataTable';
+import AlertBanner from '@/components/AlertBanner';
 
-interface ViolationFix {
-  id: string;
-  businessName: string;
-  violationType: string;
-  severity: 'nhẹ' | 'trung bình' | 'nghiêm trọng';
-  fixStatus: 'pending' | 'in_progress' | 'completed';
-  deadline: string;
-  updatedDate: string;
-}
-
-const mockViolationFixes: ViolationFix[] = [
-  {
-    id: 'VP-2025001',
-    businessName: 'Nhà hàng Hải Sản Biển Xanh',
-    violationType: 'Vi phạm vệ sinh an toàn thực phẩm',
-    severity: 'nghiêm trọng',
-    fixStatus: 'in_progress',
-    deadline: '15/04/2025',
-    updatedDate: '22/03/2025',
-  },
-  {
-    id: 'VP-2025002',
-    businessName: 'Quán Ăn Gia Đình Việt',
-    violationType: 'Không niêm yết giá',
-    severity: 'nhẹ',
-    fixStatus: 'completed',
-    deadline: '10/03/2025',
-    updatedDate: '08/03/2025',
-  },
-  {
-    id: 'VP-2025003',
-    businessName: 'Cửa hàng Thực phẩm Sạch Organic',
-    violationType: 'Sử dụng nguyên liệu hết hạn',
-    severity: 'trung bình',
-    fixStatus: 'pending',
-    deadline: '30/03/2025',
-    updatedDate: '25/03/2025',
-  },
-  {
-    id: 'VP-2025004',
-    businessName: 'Siêu thị Mini Mart Đà Nẵng',
-    violationType: 'Thiếu giấy phép kinh doanh',
-    severity: 'nghiêm trọng',
-    fixStatus: 'in_progress',
-    deadline: '20/04/2025',
-    updatedDate: '18/03/2025',
-  },
+// ─── helpers ────────────────────────────────────────────────────
+const TINH_TRANG_OPTIONS = [
+  { value: '',               label: '-- Tất cả --' },
+  { value: 'CHUA_KHAC_PHUC', label: 'Chưa khắc phục' },
+  { value: 'DANG_KHAC_PHUC', label: 'Đang khắc phục' },
+  { value: 'DA_KHAC_PHUC',   label: 'Đã khắc phục' },
 ];
 
-const fixStatusVariant: Record<string, string> = {
-  pending: 'pending',
-  in_progress: 'in-progress',
-  completed: 'resolved',
+const TINH_TRANG_VARIANT: Record<string, string> = {
+  CHUA_KHAC_PHUC: 'expired',
+  DANG_KHAC_PHUC: 'in-progress',
+  DA_KHAC_PHUC:   'active',
+};
+const TINH_TRANG_LABEL: Record<string, string> = {
+  CHUA_KHAC_PHUC: 'Chưa khắc phục',
+  DANG_KHAC_PHUC: 'Đang khắc phục',
+  DA_KHAC_PHUC:   'Đã khắc phục',
 };
 
-const fixStatusLabel: Record<string, string> = {
-  pending: 'Chờ khắc phục',
-  in_progress: 'Đang khắc phục',
-  completed: 'Đã hoàn thành',
-};
+function formatCurrency(amount: number) {
+  if (!amount) return '—';
+  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+}
 
-export default function KhacPhucPage() {
-  const { role } = useRole();
-  const isTester = role === 'TESTER';
+const PAGE_SIZE = 20;
 
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [severityFilter, setSeverityFilter] = useState('');
+// ─── component ──────────────────────────────────────────────────
+export default function KhacPhucListPage() {
+  const [tinhTrang, setTinhTrang] = useState('');
+  const [maViPham, setMaViPham]   = useState('');
+  const [page, setPage]           = useState(0);
 
-  const filtered = mockViolationFixes.filter((v) => {
-    const matchSearch = !search ||
-      v.id.toLowerCase().includes(search.toLowerCase()) ||
-      v.businessName.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = !statusFilter || v.fixStatus === statusFilter;
-    const matchSeverity = !severityFilter || v.severity === severityFilter;
-    return matchSearch && matchStatus && matchSeverity;
-  });
+  const [items, setItems]               = useState<KhacPhucItem[]>([]);
+  const [totalElements, setTotalElements] = useState(0);
+  const [totalPages, setTotalPages]     = useState(0);
+  const [loading, setLoading]           = useState(false);
+  const [error, setError]               = useState<string | null>(null);
 
-  const totalFixes = mockViolationFixes.length;
-  const pendingCount = mockViolationFixes.filter(v => v.fixStatus === 'pending').length;
-  const inProgressCount = mockViolationFixes.filter(v => v.fixStatus === 'in_progress').length;
-  const completedCount = mockViolationFixes.filter(v => v.fixStatus === 'completed').length;
+  // Stats (từ page hiện tại)
+  const chuaKhacPhuc = items.filter(i => i.tinhTrangKhacPhuc === 'CHUA_KHAC_PHUC').length;
+  const dangKhacPhuc = items.filter(i => i.tinhTrangKhacPhuc === 'DANG_KHAC_PHUC').length;
+  const daKhacPhuc   = items.filter(i => i.tinhTrangKhacPhuc === 'DA_KHAC_PHUC').length;
 
-  const columns: Column<ViolationFix>[] = [
+  const fetchData = useCallback(async (currentPage = 0) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await khacPhucApi.search({
+        tinhTrang: tinhTrang as TinhTrangKhacPhuc || undefined,
+        maViPham:  maViPham.trim() || undefined,
+        page:      currentPage,
+        size:      PAGE_SIZE,
+      });
+      setItems(res.content);
+      setTotalElements(res.totalElements);
+      setTotalPages(res.totalPages);
+    } catch (err: any) {
+      setError(err.message || 'Không thể tải danh sách khắc phục.');
+    } finally {
+      setLoading(false);
+    }
+  }, [tinhTrang, maViPham]);
+
+  useEffect(() => { fetchData(0); setPage(0); }, [fetchData]);
+
+  const handleSearch = () => { setPage(0); fetchData(0); };
+  const handleReset  = () => { setTinhTrang(''); setMaViPham(''); };
+  const handlePageChange = (p: number) => { setPage(p); fetchData(p); };
+
+  const columns: Column<KhacPhucItem>[] = [
     {
-      key: 'id',
+      key: 'maHinhThucKhacPhuc',
+      header: 'Mã khắc phục',
+      render: r => (
+        <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: '12px', color: '#005A9E' }}>
+          {r.maHinhThucKhacPhuc}
+        </span>
+      ),
+    },
+    {
+      key: 'maViPham',
       header: 'Mã vi phạm',
-      render: r => <span className="font-mono font-semibold text-blue-700">{r.id}</span>,
+      render: r => (
+        <Link
+          href={`/vi-pham/${r.maViPham}`}
+          style={{ fontFamily: 'monospace', fontWeight: 600, fontSize: '12px', color: '#CC0000', textDecoration: 'none' }}
+        >
+          {r.maViPham}
+        </Link>
+      ),
     },
     {
-      key: 'businessName',
-      header: 'Tên cơ sở',
-      render: r => <span className="font-semibold">{r.businessName}</span>,
+      key: 'soTienKhacPhuc',
+      header: 'Số tiền khắc phục',
+      render: r => (
+        <span style={{ fontFamily: 'monospace', fontSize: '12px', fontWeight: 600 }}>
+          {formatCurrency(r.soTienKhacPhuc)}
+        </span>
+      ),
     },
     {
-      key: 'violationType',
-      header: 'Loại vi phạm',
-      render: r => <span className="text-sm">{r.violationType}</span>,
+      key: 'noiDungKhacPhuc',
+      header: 'Nội dung',
+      render: r => (
+        <span style={{ fontSize: '12px', color: r.noiDungKhacPhuc ? '#222' : '#999', fontStyle: r.noiDungKhacPhuc ? 'normal' : 'italic' }}>
+          {r.noiDungKhacPhuc ?? '(Chưa có nội dung)'}
+        </span>
+      ),
     },
     {
-      key: 'severity',
-      header: 'Mức độ',
-      render: r => <StatusBadge variant={r.severity} />,
-    },
-    {
-      key: 'fixStatus',
-      header: 'Trạng thái khắc phục',
-      render: r => <StatusBadge variant={fixStatusVariant[r.fixStatus]} label={fixStatusLabel[r.fixStatus]} />,
-    },
-    {
-      key: 'deadline',
-      header: 'Hạn khắc phục',
-      render: r => <span className="font-mono text-sm">{r.deadline}</span>,
-    },
-    {
-      key: 'updatedDate',
-      header: 'Ngày cập nhật',
-      render: r => <span className="font-mono text-sm text-slate-500">{r.updatedDate}</span>,
+      key: 'tinhTrangKhacPhuc',
+      header: 'Tình trạng',
+      render: r => (
+        <StatusBadge
+          variant={TINH_TRANG_VARIANT[r.tinhTrangKhacPhuc] ?? 'pending'}
+          label={TINH_TRANG_LABEL[r.tinhTrangKhacPhuc] ?? r.tinhTrangKhacPhuc}
+        />
+      ),
     },
     {
       key: 'actions',
       header: 'Thao tác',
       render: r => (
-        <div className="flex gap-2">
-          <Link href={`/vi-pham/khac-phuc/${r.id}`}>
-            <GovBtn variant="secondary" size="sm">
-              <Eye size={16} />
-            </GovBtn>
-          </Link>
-          <GovBtn variant="secondary" size="sm">
-            <Pencil size={16} />
+        <Link href={`/vi-pham/khac-phuc/${r.maHinhThucKhacPhuc}`}>
+          <GovBtn variant="secondary" size="sm" title="Xem chi tiết">
+            <Eye style={{ width: 12, height: 12 }} />
           </GovBtn>
-        </div>
+        </Link>
       ),
     },
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 pb-16">
+    <div>
       <PageHeader
         title="Theo dõi khắc phục vi phạm"
-        subtitle="Tiến độ khắc phục vi phạm của các cơ sở kinh doanh"
+        subtitle="Chi cục An toàn Thực phẩm TP. Đà Nẵng — Giám sát tiến độ thực hiện khắc phục của các cơ sở vi phạm"
         actions={
-          <>
-            <GovBtn variant="secondary">
-              <RefreshCw size={16} /> Làm mới
+          <ActionButtons>
+            <GovBtn variant="secondary" onClick={() => fetchData(page)} disabled={loading}>
+              <RefreshCw style={{ width: 12, height: 12 }} /> Làm mới
             </GovBtn>
             <GovBtn variant="secondary">
-              <FileSpreadsheet size={16} /> Xuất Excel
+              <FileSpreadsheet style={{ width: 12, height: 12 }} /> Xuất Excel
             </GovBtn>
-
-            {/* Chỉ TESTER mới được tạo mới vi phạm */}
-            {isTester && (
-              <Link href="/vi-pham/them-moi">
-                <GovBtn variant="primary">
-                  <Plus size={16} /> Tạo mới vi phạm
-                </GovBtn>
-              </Link>
-            )}
-          </>
+          </ActionButtons>
         }
       />
 
-      <div className="max-w-[1400px] mx-auto px-6 pt-6">
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <MiniStat label="Tổng hồ sơ" value={totalFixes} color="neutral" />
-          <MiniStat label="Chờ khắc phục" value={pendingCount} color="orange" />
-          <MiniStat label="Đang khắc phục" value={inProgressCount} color="blue" />
-          <MiniStat label="Đã hoàn thành" value={completedCount} color="green" />
-        </div>
+      {error && <AlertBanner type="error" title={error} />}
 
-        {/* Filter */}
-        <SectionCard className="shadow-sm mb-6">
-          <FilterBar>
-            <FilterField label="Tìm kiếm">
-              <GovInput 
-                placeholder="Mã vi phạm, tên cơ sở..." 
-                value={search} 
-                onChange={setSearch} 
-              />
-            </FilterField>
-            <FilterField label="Mức độ vi phạm">
-              <GovSelect 
-                value={severityFilter} 
-                onChange={setSeverityFilter} 
-                options={[
-                  { value: '', label: '-- Tất cả --' },
-                  { value: 'nhẹ', label: 'Nhẹ' },
-                  { value: 'trung bình', label: 'Trung bình' },
-                  { value: 'nghiêm trọng', label: 'Nghiêm trọng' },
-                ]} 
-              />
-            </FilterField>
-            <FilterField label="Trạng thái khắc phục">
-              <GovSelect 
-                value={statusFilter} 
-                onChange={setStatusFilter} 
-                options={[
-                  { value: '', label: '-- Tất cả --' },
-                  { value: 'pending', label: 'Chờ khắc phục' },
-                  { value: 'in_progress', label: 'Đang khắc phục' },
-                  { value: 'completed', label: 'Đã hoàn thành' },
-                ]} 
-              />
-            </FilterField>
-          </FilterBar>
-        </SectionCard>
+      {chuaKhacPhuc > 0 && (
+        <AlertBanner
+          type="warning"
+          title={`Có ${chuaKhacPhuc} hình thức khắc phục chưa được thực hiện. Cần theo dõi và đôn đốc các cơ sở.`}
+        />
+      )}
 
-        {/* Table */}
-        <SectionCard 
-          title={`Tất cả yêu cầu khắc phục (${filtered.length} hồ sơ)`}
-          className="shadow-sm"
-        >
-          <DataTable
-            columns={columns}
-            data={filtered}
-            emptyMessage="Không tìm thấy hồ sơ khắc phục nào phù hợp."
-          />
-        </SectionCard>
+      {/* Stats */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', marginBottom: '12px' }}>
+        <MiniStat label="Tổng hình thức KP"  value={totalElements}  color="neutral" />
+        <MiniStat label="Chưa khắc phục"     value={chuaKhacPhuc}   color="red"    note="Cần đôn đốc" />
+        <MiniStat label="Đang khắc phục"     value={dangKhacPhuc}   color="blue"   />
+        <MiniStat label="Đã khắc phục"       value={daKhacPhuc}     color="green"  />
       </div>
+
+      {/* Filter */}
+      <FilterBar>
+        <FilterField label="Mã vi phạm">
+          <GovInput
+            placeholder="VD: VP001"
+            value={maViPham}
+            onChange={setMaViPham}
+            width={160}
+          />
+        </FilterField>
+        <FilterField label="Tình trạng">
+          <GovSelect
+            value={tinhTrang}
+            onChange={setTinhTrang}
+            options={TINH_TRANG_OPTIONS}
+            width={190}
+          />
+        </FilterField>
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px' }}>
+          <GovBtn variant="primary" onClick={handleSearch} disabled={loading}>
+            {loading ? 'Đang tải...' : 'Tìm kiếm'}
+          </GovBtn>
+          <GovBtn variant="secondary" onClick={handleReset} disabled={loading}>
+            Xóa bộ lọc
+          </GovBtn>
+        </div>
+      </FilterBar>
+
+      {/* Table */}
+      <SectionCard
+        title={`Danh sách hình thức khắc phục (${totalElements} bản ghi)`}
+        footer={
+          <GovPagination
+            info={`Trang ${page + 1} / ${totalPages || 1} — ${totalElements} bản ghi`}
+            page={page}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+          />
+        }
+      >
+        <DataTable
+          columns={columns}
+          data={items}
+          loading={loading}
+          emptyMessage="Không tìm thấy hình thức khắc phục nào."
+        />
+      </SectionCard>
     </div>
   );
 }

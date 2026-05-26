@@ -1,149 +1,147 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Eye, Pencil, FileSpreadsheet, RefreshCw, Plus } from 'lucide-react';
+import { Eye, Pencil, FileSpreadsheet, RefreshCw, Plus, Globe, Lock } from 'lucide-react';
+import { thongBaoApi, ThongBaoItem } from '@/api/thongbao';
+import DataTable, { type Column } from '@/components/DataTable';
 import {
-  PageHeader, FilterBar, FilterField, GovInput, GovSelect, GovBtn,
+  PageHeader, FilterBar, FilterField, GovSelect, GovBtn,
   SectionCard, GovPagination, StatusBadge, MiniStat, ActionButtons,
 } from '@/components/GovUI';
-import DataTable, { Column } from '@/components/DataTable';
+import AlertBanner from '@/components/AlertBanner';
 
-interface Notification {
-  id: string;
-  title: string;
-  type: string;
-  target: string;
-  sendDate: string;
-  status: 'sent' | 'draft' | 'scheduled';
-  recipientCount: number;
-}
-
-const mockNotifications: Notification[] = [
-  {
-    id: 'TB-2025001',
-    title: 'Cảnh báo khẩn cấp về lô thực phẩm nhiễm khuẩn',
-    type: 'Khẩn cấp',
-    target: 'Tất cả cơ sở kinh doanh',
-    sendDate: '25/03/2025',
-    status: 'sent',
-    recipientCount: 1842,
-  },
-  {
-    id: 'TB-2025002',
-    title: 'Hướng dẫn kiểm tra định kỳ quý II/2025',
-    type: 'Thông báo',
-    target: 'Cơ sở kinh doanh thực phẩm',
-    sendDate: '20/03/2025',
-    status: 'sent',
-    recipientCount: 1245,
-  },
-  {
-    id: 'TB-2025003',
-    title: 'Mời tham gia hội thảo an toàn thực phẩm',
-    type: 'Mời tham gia',
-    target: 'Người tiêu dùng',
-    sendDate: '22/03/2025',
-    status: 'scheduled',
-    recipientCount: 350,
-  },
+// ─── helpers ────────────────────────────────────────────────────
+const LOAI_OPTIONS = [
+  { value: '',         label: '-- Tất cả loại --' },
+  { value: 'KHAN_CAP', label: 'Khẩn cấp' },
+  { value: 'THONG_BAO', label: 'Thông báo' },
+  { value: 'HUONG_DAN', label: 'Hướng dẫn' },
 ];
 
-const statusVariantMap: Record<string, string> = {
-  sent: 'resolved',
-  draft: 'pending',
-  scheduled: 'scheduled',
+const CONG_DONG_OPTIONS = [
+  { value: '',      label: '-- Tất cả --' },
+  { value: 'true',  label: 'Cộng đồng' },
+  { value: 'false', label: 'Nội bộ' },
+];
+
+const LOAI_STYLE: Record<string, { bg: string; color: string; border: string }> = {
+  KHAN_CAP:   { bg: '#FDECEA', color: '#CC0000', border: '#F5BCBC' },
+  THONG_BAO:  { bg: '#EAF7EA', color: '#006400', border: '#94C994' },
+  HUONG_DAN:  { bg: '#E3EFFA', color: '#005A9E', border: '#9FC3E0' },
+};
+const LOAI_LABEL: Record<string, string> = {
+  KHAN_CAP:  'Khẩn cấp',
+  THONG_BAO: 'Thông báo',
+  HUONG_DAN: 'Hướng dẫn',
 };
 
-const statusLabelMap: Record<string, string> = {
-  sent: 'Đã gửi',
-  draft: 'Bản nháp',
-  scheduled: 'Đã lên lịch',
-};
+function formatDate(iso: string) {
+  if (!iso) return '—';
+  try {
+    return new Date(iso).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  } catch { return iso; }
+}
 
-const typeColors: Record<string, { bg: string; color: string; border: string }> = {
-  'Khẩn cấp':   { bg: '#FDECEA', color: '#CC0000', border: '#F5BCBC' },
-  'Thông báo':  { bg: '#EAF7EA', color: '#006400', border: '#94C994' },
-  'Mời tham gia': { bg: '#E3EFFA', color: '#005A9E', border: '#9FC3E0' },
-};
+function TypeChip({ loai }: { loai: string }) {
+  const s = LOAI_STYLE[loai] ?? { bg: '#F0F0F0', color: '#555', border: '#CCC' };
+  return (
+    <span style={{
+      display: 'inline-block', padding: '1px 7px', borderRadius: '2px',
+      border: `1px solid ${s.border}`, background: s.bg, color: s.color,
+      fontSize: '11px', fontWeight: 500, whiteSpace: 'nowrap',
+    }}>
+      {LOAI_LABEL[loai] ?? loai}
+    </span>
+  );
+}
 
+const PAGE_SIZE = 20;
+
+// ─── component ──────────────────────────────────────────────────
 export default function ThongBaoPage() {
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [typeFilter, setTypeFilter] = useState('');
+  const [loai, setLoai]               = useState('');
+  const [congDong, setCongDong]       = useState('');
+  const [page, setPage]               = useState(0);
 
-  const filtered = mockNotifications.filter((n) => {
-    const matchSearch =
-      !search ||
-      n.id.toLowerCase().includes(search.toLowerCase()) ||
-      n.title.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = !statusFilter || n.status === statusFilter;
-    const matchType = !typeFilter || n.type === typeFilter;
-    return matchSearch && matchStatus && matchType;
-  });
+  const [items, setItems]             = useState<ThongBaoItem[]>([]);
+  const [totalElements, setTotalElements] = useState(0);
+  const [totalPages, setTotalPages]   = useState(0);
+  const [loading, setLoading]         = useState(false);
+  const [error, setError]             = useState<string | null>(null);
 
-  const totalRecipients = mockNotifications.reduce((s, n) => s + n.recipientCount, 0);
+  const congDongCount = items.filter(i => i.isCongDong).length;
+  const noiBoCount    = items.filter(i => !i.isCongDong).length;
 
-  const columns: Column<Notification>[] = [
+  const fetchData = useCallback(async (p = 0) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await thongBaoApi.search({
+        loai:      loai || undefined,
+        isCongDong: congDong === '' ? undefined : congDong === 'true',
+        page: p,
+        size: PAGE_SIZE,
+        sort: ['ngayGui,desc'],
+      });
+      setItems(res.content);
+      setTotalElements(res.totalElements);
+      setTotalPages(res.totalPages);
+    } catch (err: any) {
+      setError(err.message || 'Không thể tải danh sách thông báo.');
+    } finally {
+      setLoading(false);
+    }
+  }, [loai, congDong]);
+
+  useEffect(() => { fetchData(0); setPage(0); }, [fetchData]);
+
+  const handleSearch = () => { setPage(0); fetchData(0); };
+  const handleReset  = () => { setLoai(''); setCongDong(''); };
+  const handlePageChange = (p: number) => { setPage(p); fetchData(p); };
+
+  const columns: Column<ThongBaoItem>[] = [
     {
-      key: 'id',
+      key: 'maThongBao',
       header: 'Mã thông báo',
-      render: r => <span style={{ fontFamily: 'monospace', fontWeight: 600, color: '#005A9E' }}>{r.id}</span>,
+      render: r => (
+        <span style={{ fontFamily: 'monospace', fontWeight: 600, color: '#005A9E', fontSize: '12px' }}>
+          {r.maThongBao}
+        </span>
+      ),
     },
     {
-      key: 'title',
+      key: 'tieuDe',
       header: 'Tiêu đề',
-      render: r => <span style={{ fontWeight: 600, fontSize: '12px' }}>{r.title}</span>,
+      render: r => <span style={{ fontWeight: 600, fontSize: '12px' }}>{r.tieuDe}</span>,
     },
     {
-      key: 'type',
+      key: 'loaiThongBao',
       header: 'Loại',
-      render: r => {
-        const c = typeColors[r.type] ?? { bg: '#F0F0F0', color: '#555', border: '#CCC' };
-        return (
-          <span style={{
-            display: 'inline-block', padding: '1px 7px', borderRadius: '2px',
-            border: `1px solid ${c.border}`, background: c.bg, color: c.color,
-            fontSize: '11px', fontWeight: 500, whiteSpace: 'nowrap',
-          }}>
-            {r.type}
-          </span>
-        );
-      },
+      render: r => <TypeChip loai={r.loaiThongBao} />,
     },
     {
-      key: 'target',
-      header: 'Đối tượng',
-      render: r => <span style={{ fontSize: '12px', color: '#555' }}>{r.target}</span>,
+      key: 'isCongDong',
+      header: 'Phạm vi',
+      render: r => r.isCongDong
+        ? <StatusBadge variant="active" label="Cộng đồng" />
+        : <StatusBadge variant="pending" label="Nội bộ" />,
     },
     {
-      key: 'sendDate',
+      key: 'ngayGui',
       header: 'Ngày gửi',
-      render: r => <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>{r.sendDate}</span>,
-    },
-    {
-      key: 'status',
-      header: 'Trạng thái',
-      render: r => <StatusBadge variant={statusVariantMap[r.status]} label={statusLabelMap[r.status]} />,
-    },
-    {
-      key: 'recipientCount',
-      header: 'Số người nhận',
-      render: r => <strong style={{ color: '#006400' }}>{r.recipientCount.toLocaleString()}</strong>,
+      render: r => <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>{formatDate(r.ngayGui)}</span>,
     },
     {
       key: 'actions',
       header: 'Thao tác',
-      render: (r : any) => (
+      render: r => (
         <ActionButtons>
-          <Link href={`/truyen-thong/thong-bao/${r.id}`}>
-            <GovBtn variant="secondary" size="sm" title="Xem chi tiết">
-              <Eye size={16} />
+          <Link href={`/truyen-thong/thong-bao/${r.maThongBao}`}>
+            <GovBtn variant="secondary" size="sm" title="Xem & chỉnh sửa">
+              <Eye style={{ width: 12, height: 12 }} />
             </GovBtn>
           </Link>
-          <GovBtn variant="outline" size="sm" title="Chỉnh sửa">
-            <Pencil style={{ width: 12, height: 12 }} />
-          </GovBtn>
         </ActionButtons>
       ),
     },
@@ -153,63 +151,66 @@ export default function ThongBaoPage() {
     <div>
       <PageHeader
         title="Quản lý thông báo công khai"
-        subtitle="Chi cục An toàn Thực phẩm TP. Đà Nẵng — Gửi thông báo đến các cơ sở kinh doanh thực phẩm"
+        subtitle="Chi cục An toàn Thực phẩm TP. Đà Nẵng — Gửi thông báo đến các cơ sở kinh doanh và cộng đồng"
         actions={
           <>
-            <GovBtn variant="secondary"><RefreshCw style={{ width: 12, height: 12 }} /> Làm mới</GovBtn>
-            <GovBtn variant="secondary"><FileSpreadsheet style={{ width: 12, height: 12 }} /> Xuất Excel</GovBtn>
+            <GovBtn variant="secondary" onClick={() => fetchData(page)} disabled={loading}>
+              <RefreshCw style={{ width: 12, height: 12 }} /> Làm mới
+            </GovBtn>
+            <GovBtn variant="secondary">
+              <FileSpreadsheet style={{ width: 12, height: 12 }} /> Xuất Excel
+            </GovBtn>
             <Link href="/truyen-thong/thong-bao/new">
               <GovBtn variant="primary">
-                <Plus size={16} /> Tạo mới thông báo
+                <Plus style={{ width: 12, height: 12 }} /> Tạo thông báo mới
               </GovBtn>
             </Link>
           </>
         }
       />
 
+      {error && <AlertBanner type="error" title={error} />}
+
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '10px', marginBottom: '12px' }}>
-        <MiniStat label="Tổng thông báo" value={mockNotifications.length} color="neutral" />
-        <MiniStat label="Đã gửi" value={mockNotifications.filter(n => n.status === 'sent').length} color="green" />
-        <MiniStat label="Đã lên lịch" value={mockNotifications.filter(n => n.status === 'scheduled').length} color="blue" />
-        <MiniStat label="Tổng người nhận" value={totalRecipients.toLocaleString()} color="orange" />
+        <MiniStat label="Tổng thông báo" value={totalElements} color="neutral" />
+        <MiniStat label="Cộng đồng"      value={congDongCount} color="green"   note="Hiển thị công khai" />
+        <MiniStat label="Nội bộ"         value={noiBoCount}    color="blue"    />
+        <MiniStat label="Trang hiện tại" value={items.length}  color="neutral" />
       </div>
 
       {/* Filter */}
       <FilterBar>
-        <FilterField label="Tìm kiếm">
-          <GovInput placeholder="Mã thông báo, tiêu đề..." value={search} onChange={setSearch} width={240} />
-        </FilterField>
         <FilterField label="Loại thông báo">
-          <GovSelect value={typeFilter} onChange={setTypeFilter} options={[
-            { value: '', label: '-- Tất cả --' },
-            { value: 'Khẩn cấp', label: 'Khẩn cấp' },
-            { value: 'Thông báo', label: 'Thông báo' },
-            { value: 'Mời tham gia', label: 'Mời tham gia' },
-          ]} width={160} />
+          <GovSelect value={loai} onChange={setLoai} options={LOAI_OPTIONS} width={180} />
         </FilterField>
-        <FilterField label="Trạng thái">
-          <GovSelect value={statusFilter} onChange={setStatusFilter} options={[
-            { value: '', label: '-- Tất cả --' },
-            { value: 'sent', label: 'Đã gửi' },
-            { value: 'draft', label: 'Bản nháp' },
-            { value: 'scheduled', label: 'Đã lên lịch' },
-          ]} width={160} />
+        <FilterField label="Phạm vi">
+          <GovSelect value={congDong} onChange={setCongDong} options={CONG_DONG_OPTIONS} width={160} />
         </FilterField>
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px' }}>
-          <GovBtn variant="primary">Tìm kiếm</GovBtn>
-          <GovBtn variant="secondary" onClick={() => { setSearch(''); setStatusFilter(''); setTypeFilter(''); }}>Xóa lọc</GovBtn>
+          <GovBtn variant="primary" onClick={handleSearch} disabled={loading}>
+            {loading ? 'Đang tải...' : 'Tìm kiếm'}
+          </GovBtn>
+          <GovBtn variant="secondary" onClick={handleReset} disabled={loading}>Xóa lọc</GovBtn>
         </div>
       </FilterBar>
 
       {/* Table */}
       <SectionCard
-        title={`Danh sách thông báo (${filtered.length} thông báo)`}
-        footer={<GovPagination info={`Hiển thị ${filtered.length} / ${mockNotifications.length} thông báo`} />}
+        title={`Danh sách thông báo (${totalElements} bản ghi)`}
+        footer={
+          <GovPagination
+            info={`Trang ${page + 1} / ${totalPages || 1} — ${totalElements} thông báo`}
+            page={page}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+          />
+        }
       >
         <DataTable
           columns={columns}
-          data={filtered}
+          data={items}
+          loading={loading}
           emptyMessage="Không tìm thấy thông báo nào phù hợp."
         />
       </SectionCard>
