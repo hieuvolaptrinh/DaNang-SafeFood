@@ -171,8 +171,9 @@ interface GovInputProps {
   name?: string;
   id?: string;
   required?: boolean;
+  disabled?: boolean;
 }
-export function GovInput({ placeholder, value, onChange, width = 180, type = 'text', name, id, required }: GovInputProps) {
+export function GovInput({ placeholder, value, onChange, width = 180, type = 'text', name, id, required, disabled }: GovInputProps) {
   return (
     <input
       type={type}
@@ -182,17 +183,19 @@ export function GovInput({ placeholder, value, onChange, width = 180, type = 'te
       value={value}
       onChange={e => onChange?.(e.target.value)}
       required={required}
+      disabled={disabled}
       style={{
         height: '30px',
         border: '1px solid #D6D6D6',
         borderRadius: '2px',
         padding: '0 8px',
-        background: '#fff',
+        background: disabled ? '#F5F5F5' : '#fff',
         outline: 'none',
         fontSize: '13px',
-        color: '#222',
+        color: disabled ? '#666' : '#222',
         width: typeof width === 'number' ? `${width}px` : width,
         fontFamily: 'inherit',
+        cursor: disabled ? 'not-allowed' : undefined,
       }}
     />
   );
@@ -309,32 +312,99 @@ export function SectionCard({ title, children, actions, footer }: SectionCardPro
 // ─────────────────────────────────────────────────────────────────────────────
 // GOV PAGINATION
 // ─────────────────────────────────────────────────────────────────────────────
-export function GovPagination({ info, total = 3 }: { info: string; total?: number }) {
-  const pages = Array.from({ length: Math.min(total, 5) }, (_, i) => i + 1);
+interface GovPaginationProps {
+  info: string;
+  total?: number;
+  page?: number;
+  totalPages?: number;
+  onPageChange?: (p: number) => void;
+}
+export function GovPagination({
+  info,
+  total = 3,
+  page = 0,
+  totalPages,
+  onPageChange,
+}: GovPaginationProps) {
+  const activePage = page;
+  const finalTotalPages = totalPages ?? total;
+
+  const handlePageClick = (p: number) => {
+    if (onPageChange && p >= 0 && p < finalTotalPages) {
+      onPageChange(p);
+    }
+  };
+
+  const pages = Array.from({ length: finalTotalPages }, (_, i) => i);
+  const start = Math.max(0, Math.min(activePage - 2, Math.max(0, finalTotalPages - 5)));
+  const visiblePages = pages.slice(start, start + 5);
+
   return (
     <>
       <span style={{ fontSize: '12px', color: '#555' }}>{info}</span>
       <nav style={{ display: 'flex', gap: '3px' }}>
-        {['«', ...pages.map(String), '»'].map((p, i) => (
-          <button
-            key={i}
-            type="button"
-            style={{
-              minWidth: '26px',
-              height: '24px',
-              borderRadius: '2px',
-              border: p === '1' ? '1px solid #008000' : '1px solid #D6D6D6',
-              background: p === '1' ? '#008000' : '#fff',
-              color: p === '1' ? '#fff' : '#333',
-              fontSize: '12px',
-              cursor: 'pointer',
-              fontWeight: p === '1' ? 600 : 400,
-              fontFamily: 'inherit',
-            }}
-          >
-            {p}
-          </button>
-        ))}
+        <button
+          type="button"
+          onClick={() => handlePageClick(activePage - 1)}
+          disabled={activePage === 0}
+          style={{
+            minWidth: '26px',
+            height: '24px',
+            borderRadius: '2px',
+            border: '1px solid #D6D6D6',
+            background: '#fff',
+            color: activePage === 0 ? '#aaa' : '#333',
+            fontSize: '12px',
+            cursor: activePage === 0 ? 'not-allowed' : 'pointer',
+            fontFamily: 'inherit',
+          }}
+        >
+          «
+        </button>
+
+        {visiblePages.map((p) => {
+          const isCurrent = p === activePage;
+          return (
+            <button
+              key={p}
+              type="button"
+              onClick={() => handlePageClick(p)}
+              style={{
+                minWidth: '26px',
+                height: '24px',
+                borderRadius: '2px',
+                border: isCurrent ? '1px solid #008000' : '1px solid #D6D6D6',
+                background: isCurrent ? '#008000' : '#fff',
+                color: isCurrent ? '#fff' : '#333',
+                fontSize: '12px',
+                cursor: 'pointer',
+                fontWeight: isCurrent ? 600 : 400,
+                fontFamily: 'inherit',
+              }}
+            >
+              {p + 1}
+            </button>
+          );
+        })}
+
+        <button
+          type="button"
+          onClick={() => handlePageClick(activePage + 1)}
+          disabled={activePage >= finalTotalPages - 1}
+          style={{
+            minWidth: '26px',
+            height: '24px',
+            borderRadius: '2px',
+            border: '1px solid #D6D6D6',
+            background: '#fff',
+            color: activePage >= finalTotalPages - 1 ? '#aaa' : '#333',
+            fontSize: '12px',
+            cursor: activePage >= finalTotalPages - 1 ? 'not-allowed' : 'pointer',
+            fontFamily: 'inherit',
+          }}
+        >
+          »
+        </button>
       </nav>
     </>
   );

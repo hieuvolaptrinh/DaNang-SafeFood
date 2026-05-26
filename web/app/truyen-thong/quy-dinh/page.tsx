@@ -183,7 +183,7 @@ export default function QuyDinhPage() {
         }
       />
 
-      {error && <AlertBanner type="error" title={error} />}
+      {error && <AlertBanner type="danger" title={error} />}
 
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '10px', marginBottom: '12px' }}>

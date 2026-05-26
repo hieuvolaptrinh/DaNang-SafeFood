@@ -16,6 +16,7 @@ interface DataTableProps<T extends object> {
   rowKey?: (row: T, index: number) => string;
   onRowClick?: (row: T) => void;
   sttStart?: number;
+  loading?: boolean;
 }
 
 const TH_STYLE: React.CSSProperties = {
@@ -45,6 +46,7 @@ export default function DataTable<T extends object>({
   rowKey,
   onRowClick,
   sttStart = 1,
+  loading = false,
 }: DataTableProps<T>) {
   return (
     <div style={{ overflowX: 'auto' }} className={className}>
@@ -66,7 +68,21 @@ export default function DataTable<T extends object>({
           </tr>
         </thead>
         <tbody>
-          {data.length === 0 ? (
+          {loading ? (
+            <tr>
+              <td
+                colSpan={columns.length + 1}
+                style={{
+                  ...TD_STYLE,
+                  textAlign: 'center',
+                  padding: '24px',
+                  color: '#666',
+                }}
+              >
+                Đang tải dữ liệu...
+              </td>
+            </tr>
+          ) : data.length === 0 ? (
             <tr>
               <td
                 colSpan={columns.length + 1}

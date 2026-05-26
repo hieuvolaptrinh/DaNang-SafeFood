@@ -59,4 +59,29 @@ export const viPhamApi = {
   pheDuyet(maViPham: string, trangThai: string): Promise<ViPhamItem> {
     return api.put(`/v1/vi-pham/${maViPham}/phe-duyet`, { trangThai });
   },
+
+  /** POST /api/vi-pham */
+  create(body: CreateViPhamRequest): Promise<ViPhamItem> {
+    return api.post(VI_PHAM_BASE, body);
+  },
+
+  /** GET /api/danh-muc/loai-vi-pham */
+  getDanhMucLoaiViPham(): Promise<DanhMucLoaiViPhamItem[]> {
+    return api.get("/danh-muc/loai-vi-pham");
+  }
 };
+
+export interface CreateViPhamRequest {
+  maMau: string;
+  maLoaiViPham: string;
+  soTienPhat: number;
+  moTaThem: string;
+  khacPhuc: string;
+  mucDo: string;
+}
+
+export interface DanhMucLoaiViPhamItem {
+  maLoaiViPham: string;
+  tenLoaiViPham: string;
+  moTaThem?: string;
+}
