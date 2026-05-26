@@ -99,7 +99,7 @@ export default function KhacPhucViPhamDetailPage() {
             </GovBtn>
           }
         />
-        {error && <AlertBanner type="error" title={error} />}
+        {error && <AlertBanner type="danger" title={error} />}
       </div>
     );
   }

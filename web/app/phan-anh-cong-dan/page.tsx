@@ -53,6 +53,10 @@ export default function PhanAnhCongDanPage() {
   const [toDate, setToDate]         = useState('');
   const [page, setPage]             = useState(0);
 
+  const [searchTieuDe, setSearchTieuDe] = useState('');
+  const [searchCoSo, setSearchCoSo] = useState('');
+  const [searchNguoiGui, setSearchNguoiGui] = useState('');
+
   const [items, setItems]           = useState<PhanAnhItem[]>([]);
   const [totalElements, setTotalElements] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
@@ -90,8 +94,27 @@ export default function PhanAnhCongDanPage() {
   useEffect(() => { fetchData(0); setPage(0); }, [fetchData]);
 
   const handleSearch = () => { setPage(0); fetchData(0); };
-  const handleReset  = () => { setTrangThai(''); setFromDate(''); setToDate(''); };
+  const handleReset  = () => {
+    setTrangThai('');
+    setFromDate('');
+    setToDate('');
+    setSearchTieuDe('');
+    setSearchCoSo('');
+    setSearchNguoiGui('');
+  };
   const handlePageChange = (newPage: number) => { setPage(newPage); fetchData(newPage); };
+
+  const filteredItems = items.filter(r => {
+    const termTieuDe = searchTieuDe.toLowerCase().trim();
+    const termCoSo = searchCoSo.toLowerCase().trim();
+    const termNguoiGui = searchNguoiGui.toLowerCase().trim();
+
+    if (termTieuDe && (!r.tieuDe || !r.tieuDe.toLowerCase().includes(termTieuDe))) return false;
+    if (termCoSo && (!r.tenCoSo || !r.tenCoSo.toLowerCase().includes(termCoSo))) return false;
+    if (termNguoiGui && (!r.tenNguoiPhanAnh || !r.tenNguoiPhanAnh.toLowerCase().includes(termNguoiGui))) return false;
+
+    return true;
+  });
 
   const columns: Column<PhanAnhItem>[] = [
     {
@@ -177,7 +200,7 @@ export default function PhanAnhCongDanPage() {
         }
       />
 
-      {error && <AlertBanner type="error" title={error} />}
+      {error && <AlertBanner type="danger" title={error} />}
 
       {choXuLy > 0 && (
         <AlertBanner
@@ -196,12 +219,36 @@ export default function PhanAnhCongDanPage() {
 
       {/* Filter */}
       <FilterBar>
+        <FilterField label="Tiêu đề phản ánh">
+          <GovInput
+            placeholder="Ví dụ: Vệ sinh..."
+            value={searchTieuDe}
+            onChange={setSearchTieuDe}
+            width={160}
+          />
+        </FilterField>
+        <FilterField label="Tên cơ sở">
+          <GovInput
+            placeholder="Ví dụ: Phở..."
+            value={searchCoSo}
+            onChange={setSearchCoSo}
+            width={160}
+          />
+        </FilterField>
+        <FilterField label="Người gửi">
+          <GovInput
+            placeholder="Ví dụ: Nguyễn..."
+            value={searchNguoiGui}
+            onChange={setSearchNguoiGui}
+            width={140}
+          />
+        </FilterField>
         <FilterField label="Trạng thái">
           <GovSelect
             value={trangThai}
             onChange={setTrangThai}
             options={TRANG_THAI_OPTIONS}
-            width={180}
+            width={150}
           />
         </FilterField>
         <FilterField label="Từ ngày">
@@ -209,7 +256,7 @@ export default function PhanAnhCongDanPage() {
             type="date"
             value={fromDate}
             onChange={setFromDate}
-            width={150}
+            width={120}
           />
         </FilterField>
         <FilterField label="Đến ngày">
@@ -217,22 +264,22 @@ export default function PhanAnhCongDanPage() {
             type="date"
             value={toDate}
             onChange={setToDate}
-            width={150}
+            width={120}
           />
         </FilterField>
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px' }}>
           <GovBtn variant="primary" onClick={handleSearch} disabled={loading}>
-            {loading ? 'Đang tải...' : 'Tìm kiếm'}
+            Tìm
           </GovBtn>
           <GovBtn variant="secondary" onClick={handleReset} disabled={loading}>
-            Xóa bộ lọc
+            Xóa lọc
           </GovBtn>
         </div>
       </FilterBar>
 
       {/* Table */}
       <SectionCard
-        title={`Danh sách phản ánh (${totalElements} bản ghi)`}
+        title={`Danh sách phản ánh (${filteredItems.length} bản ghi)`}
         footer={
           <GovPagination
             info={`Trang ${page + 1} / ${totalPages || 1} — ${totalElements} phản ánh`}
@@ -244,7 +291,7 @@ export default function PhanAnhCongDanPage() {
       >
         <DataTable
           columns={columns}
-          data={items}
+          data={filteredItems}
           loading={loading}
           emptyMessage="Không tìm thấy phản ánh nào phù hợp."
         />

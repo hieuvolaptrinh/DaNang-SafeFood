@@ -41,6 +41,7 @@ const PAGE_SIZE = 20;
 export default function KhacPhucListPage() {
   const [tinhTrang, setTinhTrang] = useState('');
   const [maViPham, setMaViPham]   = useState('');
+  const [maKhacPhuc, setMaKhacPhuc] = useState('');
   const [page, setPage]           = useState(0);
 
   const [items, setItems]               = useState<KhacPhucItem[]>([]);
@@ -77,8 +78,14 @@ export default function KhacPhucListPage() {
   useEffect(() => { fetchData(0); setPage(0); }, [fetchData]);
 
   const handleSearch = () => { setPage(0); fetchData(0); };
-  const handleReset  = () => { setTinhTrang(''); setMaViPham(''); };
+  const handleReset  = () => { setTinhTrang(''); setMaViPham(''); setMaKhacPhuc(''); };
   const handlePageChange = (p: number) => { setPage(p); fetchData(p); };
+
+  const filteredItems = items.filter(r => {
+    const termKhacPhuc = maKhacPhuc.toLowerCase().trim();
+    if (termKhacPhuc && (!r.maHinhThucKhacPhuc || !r.maHinhThucKhacPhuc.toLowerCase().includes(termKhacPhuc))) return false;
+    return true;
+  });
 
   const columns: Column<KhacPhucItem>[] = [
     {
@@ -160,7 +167,7 @@ export default function KhacPhucListPage() {
         }
       />
 
-      {error && <AlertBanner type="error" title={error} />}
+      {error && <AlertBanner type="danger" title={error} />}
 
       {chuaKhacPhuc > 0 && (
         <AlertBanner
@@ -179,6 +186,14 @@ export default function KhacPhucListPage() {
 
       {/* Filter */}
       <FilterBar>
+        <FilterField label="Mã khắc phục">
+          <GovInput
+            placeholder="Ví dụ: HT001"
+            value={maKhacPhuc}
+            onChange={setMaKhacPhuc}
+            width={160}
+          />
+        </FilterField>
         <FilterField label="Mã vi phạm">
           <GovInput
             placeholder="VD: VP001"
@@ -197,17 +212,17 @@ export default function KhacPhucListPage() {
         </FilterField>
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px' }}>
           <GovBtn variant="primary" onClick={handleSearch} disabled={loading}>
-            {loading ? 'Đang tải...' : 'Tìm kiếm'}
+            Tìm
           </GovBtn>
           <GovBtn variant="secondary" onClick={handleReset} disabled={loading}>
-            Xóa bộ lọc
+            Xóa lọc
           </GovBtn>
         </div>
       </FilterBar>
 
       {/* Table */}
       <SectionCard
-        title={`Danh sách hình thức khắc phục (${totalElements} bản ghi)`}
+        title={`Danh sách hình thức khắc phục (${filteredItems.length} bản ghi)`}
         footer={
           <GovPagination
             info={`Trang ${page + 1} / ${totalPages || 1} — ${totalElements} bản ghi`}
@@ -219,7 +234,7 @@ export default function KhacPhucListPage() {
       >
         <DataTable
           columns={columns}
-          data={items}
+          data={filteredItems}
           loading={loading}
           emptyMessage="Không tìm thấy hình thức khắc phục nào."
         />

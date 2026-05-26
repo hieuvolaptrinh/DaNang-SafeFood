@@ -25,6 +25,8 @@ const FALLBACK_ITEMS: CoSoKinhDoanhItem[] = [
   { maCoSo: 'CS-004', tenCoSo: 'Siêu thị Mini Mart Đà Nẵng',  soGiayPhep: 'FSL-2024-0198', ngayHetHanGiayPhep: '2026-01-04', trangThai: 'DINH_CHI',  maPX: 'ST04', tenPhuongXa: 'An Hải Bắc', maChuSoHuu: 'U004', tenChuSoHuu: 'Lê Thị Dung' },
   { maCoSo: 'CS-005', tenCoSo: 'Công ty Hải Sản Đà Nẵng',     soGiayPhep: 'FSL-2023-0011', ngayHetHanGiayPhep: '2025-06-01', trangThai: 'HET_HAN',   maPX: 'TK05', tenPhuongXa: 'Thanh Khê Tây', maChuSoHuu: 'U005', tenChuSoHuu: 'Hoàng Văn Em' },
   { maCoSo: 'CS-006', tenCoSo: 'Bánh Mì Hội An',               soGiayPhep: 'FSL-2025-0045', ngayHetHanGiayPhep: '2027-05-15', trangThai: 'HOAT_DONG', maPX: 'ST06', tenPhuongXa: 'Sơn Trà', maChuSoHuu: 'U006', tenChuSoHuu: 'Ngô Thị Phương' },
+  { maCoSo: 'CS-007', tenCoSo: 'Cơm gà Bà Buội Đà Nẵng',      soGiayPhep: '',             ngayHetHanGiayPhep: '',           trangThai: 'CHO_DUYET', maPX: 'HC02', tenPhuongXa: 'Hải Châu 2', maChuSoHuu: 'U007', tenChuSoHuu: 'Lê Hoàng Nam' },
+  { maCoSo: 'CS-008', tenCoSo: 'Trà sữa Gong Cha Nguyễn Văn Linh', soGiayPhep: '',        ngayHetHanGiayPhep: '',           trangThai: 'CHO_DUYET', maPX: 'TK01', tenPhuongXa: 'Vĩnh Trung', maChuSoHuu: 'U008', tenChuSoHuu: 'Nguyễn Bích Thủy' },
 ];
 
 const FALLBACK_PAGE: CoSoKinhDoanhPageResponse = {
@@ -39,6 +41,13 @@ const TRANG_THAI_VARIANT: Record<string, string> = {
   HET_HAN:   'expired',
   DINH_CHI:  'suspended',
   CHO_DUYET: 'pending',
+};
+
+const TRANG_THAI_LABEL: Record<string, string> = {
+  HOAT_DONG: 'Hoạt động',
+  HET_HAN:   'Hết hạn',
+  DINH_CHI:  'Tạm đình chỉ',
+  CHO_DUYET: 'Chờ duyệt',
 };
 
 const TRANG_THAI_OPTIONS = [
@@ -121,53 +130,107 @@ export default function CoSoKinhDoanhPage() {
   const [error, setError]       = useState<string | null>(null);
 
   // Filter state
-  const [keyword, setKeyword]         = useState('');
+  const [maCoSo, setMaCoSo]           = useState('');
+  const [tenCoSo, setTenCoSo]         = useState('');
+  const [soGiayPhep, setSoGiayPhep]   = useState('');
   const [trangThai, setTrangThai]     = useState('');
   const [page, setPage]               = useState(0);
 
   // Pending filter (chỉ apply khi bấm Tìm kiếm)
-  const [pendingKeyword, setPendingKeyword] = useState('');
+  const [pendingMaCoSo, setPendingMaCoSo] = useState('');
+  const [pendingTenCoSo, setPendingTenCoSo] = useState('');
+  const [pendingSoGiayPhep, setPendingSoGiayPhep] = useState('');
   const [pendingTrangThai, setPendingTrangThai] = useState('');
 
-  const fetchData = useCallback(async (p = 0, tt = trangThai, kw = keyword) => {
+  const fetchData = useCallback(async (p = 0, tt = trangThai, ma = maCoSo, ten = tenCoSo, gp = soGiayPhep) => {
     setLoading(true);
     setError(null);
     try {
       const res = await coSoKinhDoanhApi.getList({ trangThai: tt || undefined, page: p, size: PAGE_SIZE });
-      // Client-side keyword filter nếu server không hỗ trợ
-      if (kw) {
-        const lower = kw.toLowerCase();
-        const filtered = res.content.filter(
-          c => c.tenCoSo.toLowerCase().includes(lower) || c.maCoSo.toLowerCase().includes(lower) || c.soGiayPhep.toLowerCase().includes(lower)
-        );
-        setPageData({ ...res, content: filtered, numberOfElements: filtered.length });
-      } else {
-        setPageData(res);
+      // Client-side granular filters
+      let filtered = res.content;
+      const lowerMa = ma.toLowerCase().trim();
+      const lowerTen = ten.toLowerCase().trim();
+      const lowerGp = gp.toLowerCase().trim();
+
+      if (lowerMa) {
+        filtered = filtered.filter(c => c.maCoSo.toLowerCase().includes(lowerMa));
       }
+      if (lowerTen) {
+        filtered = filtered.filter(c => c.tenCoSo.toLowerCase().includes(lowerTen));
+      }
+      if (lowerGp) {
+        filtered = filtered.filter(c => c.soGiayPhep.toLowerCase().includes(lowerGp));
+      }
+
+      setPageData({
+        ...res,
+        content: filtered,
+        numberOfElements: filtered.length,
+        totalElements: (lowerMa || lowerTen || lowerGp) ? filtered.length : res.totalElements
+      });
     } catch {
-      setPageData(FALLBACK_PAGE);
-      setError('Không thể kết nối API — hiển thị dữ liệu mẫu');
+      // Fallback
+      let filtered = FALLBACK_ITEMS;
+      const lowerMa = ma.toLowerCase().trim();
+      const lowerTen = ten.toLowerCase().trim();
+      const lowerGp = gp.toLowerCase().trim();
+
+      if (tt) {
+        filtered = filtered.filter(c => c.trangThai === tt);
+      }
+      if (lowerMa) {
+        filtered = filtered.filter(c => c.maCoSo.toLowerCase().includes(lowerMa));
+      }
+      if (lowerTen) {
+        filtered = filtered.filter(c => c.tenCoSo.toLowerCase().includes(lowerTen));
+      }
+      if (lowerGp) {
+        filtered = filtered.filter(c => c.soGiayPhep.toLowerCase().includes(lowerGp));
+      }
+      setPageData({
+        totalPages: 1,
+        totalElements: filtered.length,
+        size: PAGE_SIZE,
+        content: filtered,
+        number: 0,
+        first: true,
+        last: true,
+        numberOfElements: filtered.length,
+        empty: filtered.length === 0
+      });
+      if (tt || lowerMa || lowerTen || lowerGp) {
+        setError('Không thể kết nối API — lọc dữ liệu mẫu');
+      } else {
+        setError('Không thể kết nối API — hiển thị dữ liệu mẫu');
+      }
     } finally {
       setLoading(false);
     }
-  }, [trangThai, keyword]);
+  }, [trangThai, maCoSo, tenCoSo, soGiayPhep]);
 
   useEffect(() => { fetchData(0); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSearch = () => {
-    setKeyword(pendingKeyword);
+    setMaCoSo(pendingMaCoSo);
+    setTenCoSo(pendingTenCoSo);
+    setSoGiayPhep(pendingSoGiayPhep);
     setTrangThai(pendingTrangThai);
     setPage(0);
-    fetchData(0, pendingTrangThai, pendingKeyword);
+    fetchData(0, pendingTrangThai, pendingMaCoSo, pendingTenCoSo, pendingSoGiayPhep);
   };
 
   const handleClear = () => {
-    setPendingKeyword('');
+    setPendingMaCoSo('');
+    setPendingTenCoSo('');
+    setPendingSoGiayPhep('');
     setPendingTrangThai('');
-    setKeyword('');
+    setMaCoSo('');
+    setTenCoSo('');
+    setSoGiayPhep('');
     setTrangThai('');
     setPage(0);
-    fetchData(0, '', '');
+    fetchData(0, '', '', '', '');
   };
 
   const handlePageChange = (p: number) => {
@@ -180,6 +243,7 @@ export default function CoSoKinhDoanhPage() {
   // Stats từ fallback nếu API chưa trả về tổng hợp
   const total     = pageData.totalElements;
   const hoatDong  = pageData.content.filter(c => c.trangThai === 'HOAT_DONG').length;
+  const choDuyet  = pageData.content.filter(c => c.trangThai === 'CHO_DUYET').length;
   const hetHan    = pageData.content.filter(c => c.trangThai === 'HET_HAN').length;
   const dinhChi   = pageData.content.filter(c => c.trangThai === 'DINH_CHI').length;
 
@@ -224,7 +288,12 @@ export default function CoSoKinhDoanhPage() {
     {
       key: 'trangThai',
       header: 'Trạng thái',
-      render: r => <StatusBadge variant={TRANG_THAI_VARIANT[r.trangThai] ?? r.trangThai} />,
+      render: r => (
+        <StatusBadge 
+          variant={TRANG_THAI_VARIANT[r.trangThai] ?? r.trangThai} 
+          label={TRANG_THAI_LABEL[r.trangThai] ?? r.trangThai} 
+        />
+      ),
     },
     {
       key: 'actions',
@@ -267,21 +336,38 @@ export default function CoSoKinhDoanhPage() {
       )}
 
       {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '10px', marginBottom: '12px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px', marginBottom: '12px' }}>
         <MiniStat label="Tổng cơ sở ATTP"    value={total.toLocaleString('vi-VN')} color="neutral" icon={Building2} />
-        <MiniStat label="Đang hoạt động"      value={hoatDong}  color="green"   note={total > 0 ? `${Math.round(hoatDong / Math.max(pageData.numberOfElements, 1) * 100)}% trang này` : ''} />
-        <MiniStat label="Tạm đình chỉ"        value={dinhChi}   color="orange" />
-        <MiniStat label="Hết hạn giấy phép"   value={hetHan}    color="red"    note="Cần gia hạn" />
+        <MiniStat label="Đang hoạt động"      value={hoatDong}  color="green"   note={total > 0 ? `${Math.round(hoatDong / Math.max(pageData.content.length, 1) * 100)}% trang này` : ''} />
+        <MiniStat label="Chờ duyệt"          value={choDuyet}  color="orange"  note="Cần phê duyệt" />
+        <MiniStat label="Tạm đình chỉ"        value={dinhChi}   color="red" />
+        <MiniStat label="Hết hạn giấy phép"   value={hetHan}    color="neutral" note="Cần gia hạn" />
       </div>
 
       {/* Filter */}
       <FilterBar>
-        <FilterField label="Tìm kiếm">
+        <FilterField label="Mã cơ sở">
           <GovInput
-            placeholder="Tên cơ sở, mã cơ sở, số GP..."
-            value={pendingKeyword}
-            onChange={setPendingKeyword}
-            width={240}
+            placeholder="Ví dụ: CS-001"
+            value={pendingMaCoSo}
+            onChange={setPendingMaCoSo}
+            width={120}
+          />
+        </FilterField>
+        <FilterField label="Tên cơ sở">
+          <GovInput
+            placeholder="Ví dụ: Biển Xanh"
+            value={pendingTenCoSo}
+            onChange={setPendingTenCoSo}
+            width={180}
+          />
+        </FilterField>
+        <FilterField label="Số giấy phép">
+          <GovInput
+            placeholder="Ví dụ: FSL-2024"
+            value={pendingSoGiayPhep}
+            onChange={setPendingSoGiayPhep}
+            width={160}
           />
         </FilterField>
         <FilterField label="Trạng thái">
@@ -289,15 +375,15 @@ export default function CoSoKinhDoanhPage() {
             value={pendingTrangThai}
             onChange={setPendingTrangThai}
             options={TRANG_THAI_OPTIONS}
-            width={170}
+            width={150}
           />
         </FilterField>
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px' }}>
           <GovBtn variant="primary" onClick={handleSearch}>
-            <Search style={{ width: 12, height: 12 }} /> Tìm kiếm
+            Tìm kiếm
           </GovBtn>
           <GovBtn variant="secondary" onClick={handleClear}>
-            <X style={{ width: 12, height: 12 }} /> Xóa bộ lọc
+            Xóa lọc
           </GovBtn>
         </div>
       </FilterBar>
