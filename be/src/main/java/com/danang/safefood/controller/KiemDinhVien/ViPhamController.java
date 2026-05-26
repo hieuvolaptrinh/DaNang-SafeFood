@@ -23,7 +23,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/vi-pham")
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyRole('CB_KIEM_DINH', 'QUAN_TRI_HE_THONG')")
+@PreAuthorize("hasAnyRole('CB_KIEM_DINH', 'QUAN_TRI_HE_THONG','LD_ATVSTP')")
 public class ViPhamController {
 
     private final KiemDinhVienService kiemDinhVienService;
@@ -66,5 +66,14 @@ public class ViPhamController {
                 ApiResponse.success("Tạo đơn vi phạm thành công",
                         kiemDinhVienService.taoViPham(req))
         );
+    }
+
+    @GetMapping("/{maViPham}")
+    public ResponseEntity<ApiResponse<ViPhamResponse>> getViPhamById(
+            @PathVariable String maViPham) {
+
+        ViPhamResponse response = kiemDinhVienService.getViPhamById(maViPham);
+
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 }
