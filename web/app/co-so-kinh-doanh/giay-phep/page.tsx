@@ -30,18 +30,30 @@ const licenseStatusMap: Record<string, string> = {
   revoked: 'suspended',
 };
 
+const licenseLabelMap: Record<string, string> = {
+  valid:   'Còn hiệu lực',
+  expired: 'Hết hạn',
+  revoked: 'Đã thu hồi',
+};
+
 const districts = [...new Set(mockLicenses.map(l => l.district))];
 
 export default function GiayPhepPage() {
-  const [search, setSearch]             = useState('');
+  const [searchMa, setSearchMa]         = useState('');
+  const [searchCoSo, setSearchCoSo]     = useState('');
   const [statusFilter, setStatusFilter]   = useState('');
   const [districtFilter, setDistrictFilter] = useState('');
 
   const filtered = mockLicenses.filter(l => {
-    const matchSearch   = !search       || l.id.toLowerCase().includes(search.toLowerCase()) || l.businessName.toLowerCase().includes(search.toLowerCase());
+    const termMa = searchMa.toLowerCase().trim();
+    const termCoSo = searchCoSo.toLowerCase().trim();
+
+    if (termMa && (!l.id || !l.id.toLowerCase().includes(termMa))) return false;
+    if (termCoSo && (!l.businessName || !l.businessName.toLowerCase().includes(termCoSo))) return false;
+
     const matchStatus   = !statusFilter   || l.status   === statusFilter;
     const matchDistrict = !districtFilter || l.district === districtFilter;
-    return matchSearch && matchStatus && matchDistrict;
+    return matchStatus && matchDistrict;
   });
 
   const columns: Column<License>[] = [
@@ -117,8 +129,11 @@ export default function GiayPhepPage() {
 
       {/* Filter */}
       <FilterBar>
-        <FilterField label="Tìm kiếm">
-          <GovInput placeholder="Mã giấy phép, tên cơ sở..." value={search} onChange={setSearch} width={220} />
+        <FilterField label="Mã giấy phép">
+          <GovInput placeholder="Ví dụ: GP-2025" value={searchMa} onChange={setSearchMa} width={150} />
+        </FilterField>
+        <FilterField label="Tên cơ sở">
+          <GovInput placeholder="Ví dụ: Biển Xanh" value={searchCoSo} onChange={setSearchCoSo} width={180} />
         </FilterField>
         <FilterField label="Trạng thái">
           <GovSelect value={statusFilter} onChange={setStatusFilter} options={[
@@ -126,17 +141,16 @@ export default function GiayPhepPage() {
             { value: 'valid',   label: 'Còn hiệu lực' },
             { value: 'expired', label: 'Hết hạn' },
             { value: 'revoked', label: 'Đã thu hồi' },
-          ]} width={150} />
+          ]} width={140} />
         </FilterField>
         <FilterField label="Quận/Huyện">
           <GovSelect value={districtFilter} onChange={setDistrictFilter} options={[
             { value: '', label: '-- Tất cả --' },
             ...districts.map(d => ({ value: d, label: d })),
-          ]} width={160} />
+          ]} width={140} />
         </FilterField>
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px' }}>
-          <GovBtn variant="primary">Tìm kiếm</GovBtn>
-          <GovBtn variant="secondary" onClick={() => { setSearch(''); setStatusFilter(''); setDistrictFilter(''); }}>Xóa bộ lọc</GovBtn>
+          <GovBtn variant="secondary" onClick={() => { setSearchMa(''); setSearchCoSo(''); setStatusFilter(''); setDistrictFilter(''); }}>Xóa lọc</GovBtn>
         </div>
       </FilterBar>
 

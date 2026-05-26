@@ -44,7 +44,8 @@ export default function PheDuyetChungNhanPage() {
   const [loading, setLoading] = useState(true);
   
   // Search and Filter State
-  const [search, setSearch] = useState('');
+  const [searchMa, setSearchMa] = useState('');
+  const [searchCoSo, setSearchCoSo] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   
   // Pagination State
@@ -183,13 +184,13 @@ export default function PheDuyetChungNhanPage() {
   };
 
   const filteredCerts = certs.filter((c) => {
-    if (!search) return true;
-    const kw = search.toLowerCase();
-    return (
-      c.maCN.toLowerCase().includes(kw) ||
-      (c.tenCoSo && c.tenCoSo.toLowerCase().includes(kw)) ||
-      (c.tenChungNhan && c.tenChungNhan.toLowerCase().includes(kw))
-    );
+    const termMa = searchMa.toLowerCase().trim();
+    const termCoSo = searchCoSo.toLowerCase().trim();
+
+    if (termMa && (!c.maCN || !c.maCN.toLowerCase().includes(termMa))) return false;
+    if (termCoSo && (!c.tenCoSo || !c.tenCoSo.toLowerCase().includes(termCoSo))) return false;
+
+    return true;
   });
 
   const columns: Column<GiayChungNhanItem>[] = [
@@ -332,8 +333,11 @@ export default function PheDuyetChungNhanPage() {
 
       {/* Filter */}
       <FilterBar>
-        <FilterField label="Tìm kiếm nhanh">
-          <GovInput placeholder="Mã, tên cơ sở..." value={search} onChange={setSearch} width={220} />
+        <FilterField label="Mã chứng nhận">
+          <GovInput placeholder="Ví dụ: CN-2026" value={searchMa} onChange={setSearchMa} width={150} />
+        </FilterField>
+        <FilterField label="Tên cơ sở">
+          <GovInput placeholder="Ví dụ: Biển Xanh" value={searchCoSo} onChange={setSearchCoSo} width={180} />
         </FilterField>
         <FilterField label="Trạng thái hiệu lực">
           <GovSelect value={statusFilter} onChange={(val) => { setStatusFilter(val); setCurrentPage(0); }} options={[
@@ -344,7 +348,7 @@ export default function PheDuyetChungNhanPage() {
           ]} width={160} />
         </FilterField>
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px' }}>
-          <GovBtn variant="secondary" onClick={() => { setSearch(''); setStatusFilter(''); setCurrentPage(0); }}>Xóa lọc</GovBtn>
+          <GovBtn variant="secondary" onClick={() => { setSearchMa(''); setSearchCoSo(''); setStatusFilter(''); setCurrentPage(0); }}>Xóa lọc</GovBtn>
         </div>
       </FilterBar>
 

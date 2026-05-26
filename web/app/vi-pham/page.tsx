@@ -33,7 +33,9 @@ function formatCurrency(amount: number) {
 export default function DanhSachViPhamPage() {
   const [screenState, setScreenState] = useState<ScreenState>('loading');
   const [items, setItems] = useState<ViPhamItem[]>([]);
-  const [search, setSearch] = useState('');
+  const [searchMa, setSearchMa] = useState('');
+  const [searchCoSo, setSearchCoSo] = useState('');
+  const [searchLoai, setSearchLoai] = useState('');
   const [mucDoFilter, setMucDoFilter] = useState('');
   const [trangThaiFilter, setTrangThaiFilter] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
@@ -55,14 +57,18 @@ export default function DanhSachViPhamPage() {
   useEffect(() => { void load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const filtered = useMemo(() => items.filter(v => {
-    const matchSearch = !search ||
-      v.maViPham.toLowerCase().includes(search.toLowerCase()) ||
-      v.tenCoSo.toLowerCase().includes(search.toLowerCase()) ||
-      v.tenLoaiViPham.toLowerCase().includes(search.toLowerCase());
+    const termMa = searchMa.toLowerCase().trim();
+    const termCoSo = searchCoSo.toLowerCase().trim();
+    const termLoai = searchLoai.toLowerCase().trim();
+
+    if (termMa && (!v.maViPham || !v.maViPham.toLowerCase().includes(termMa))) return false;
+    if (termCoSo && (!v.tenCoSo || !v.tenCoSo.toLowerCase().includes(termCoSo))) return false;
+    if (termLoai && (!v.tenLoaiViPham || !v.tenLoaiViPham.toLowerCase().includes(termLoai))) return false;
+
     const matchMucDo = !mucDoFilter || v.mucDo === mucDoFilter;
     const matchTrangThai = !trangThaiFilter || v.trangThaiPheDuyet === trangThaiFilter;
-    return matchSearch && matchMucDo && matchTrangThai;
-  }), [items, search, mucDoFilter, trangThaiFilter]);
+    return matchMucDo && matchTrangThai;
+  }), [items, searchMa, searchCoSo, searchLoai, mucDoFilter, trangThaiFilter]);
 
   // Stats
   const choDuyet = items.filter(v => v.trangThaiPheDuyet === 'Chờ Duyệt').length;
@@ -175,12 +181,28 @@ export default function DanhSachViPhamPage() {
       {screenState === 'data' && (
         <>
           <FilterBar>
-            <FilterField label="Tìm kiếm">
+            <FilterField label="Mã vi phạm">
               <GovInput
-                placeholder="Mã vi phạm, tên cơ sở, loại vi phạm..."
-                value={search}
-                onChange={setSearch}
-                width={260}
+                placeholder="Ví dụ: VP001"
+                value={searchMa}
+                onChange={setSearchMa}
+                width={120}
+              />
+            </FilterField>
+            <FilterField label="Tên cơ sở">
+              <GovInput
+                placeholder="Ví dụ: Phở Ba Miền"
+                value={searchCoSo}
+                onChange={setSearchCoSo}
+                width={180}
+              />
+            </FilterField>
+            <FilterField label="Loại vi phạm">
+              <GovInput
+                placeholder="Ví dụ: Vệ sinh cơ sở"
+                value={searchLoai}
+                onChange={setSearchLoai}
+                width={180}
               />
             </FilterField>
             <FilterField label="Mức độ">
@@ -193,7 +215,7 @@ export default function DanhSachViPhamPage() {
                   { value: 'Trung bình', label: 'Trung bình' },
                   { value: 'Nhẹ', label: 'Nhẹ' },
                 ]}
-                width={150}
+                width={130}
               />
             </FilterField>
             <FilterField label="Trạng thái">
@@ -206,11 +228,11 @@ export default function DanhSachViPhamPage() {
                   { value: 'Đã Duyệt', label: 'Đã duyệt' },
                   { value: 'Từ Chối', label: 'Từ chối' },
                 ]}
-                width={140}
+                width={130}
               />
             </FilterField>
             <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px' }}>
-              <GovBtn variant="secondary" onClick={() => { setSearch(''); setMucDoFilter(''); setTrangThaiFilter(''); }}>Xóa lọc</GovBtn>
+              <GovBtn variant="secondary" onClick={() => { setSearchMa(''); setSearchCoSo(''); setSearchLoai(''); setMucDoFilter(''); setTrangThaiFilter(''); }}>Xóa lọc</GovBtn>
             </div>
           </FilterBar>
 

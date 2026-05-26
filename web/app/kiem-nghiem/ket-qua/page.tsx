@@ -12,7 +12,9 @@ import AlertBanner from '@/components/AlertBanner';
 import { ketQuaKiemNghiemApi, KetQuaKiemNghiemItemResponse } from '@/api/ketquakiemnghiem';
 
 export default function KetQuaKiemNghiemPage() {
-  const [keyword, setKeyword] = useState('');
+  // Separate search inputs for code, business/sample name
+  const [searchMa, setSearchMa] = useState('');
+  const [searchTen, setSearchTen] = useState('');
   const [resultFilter, setResultFilter] = useState('');
   
   const [items, setItems] = useState<KetQuaKiemNghiemItemResponse[]>([]);
@@ -28,13 +30,27 @@ export default function KetQuaKiemNghiemPage() {
     setLoading(true);
     setError('');
     try {
+      // Primary keyword to search on backend
+      const queryKeyword = (searchMa.trim() || searchTen.trim());
       const res = await ketQuaKiemNghiemApi.search(
-        keyword.trim(),
+        queryKeyword,
         resultFilter || undefined,
         currentPage,
         size
       );
-      setItems(res.content || []);
+      
+      // Perform further client-side filter if both inputs are typed to ensure they are narrow-matched
+      let filteredContent = res.content || [];
+      if (searchMa.trim() && searchTen.trim()) {
+        const maLower = searchMa.toLowerCase().trim();
+        const tenLower = searchTen.toLowerCase().trim();
+        filteredContent = filteredContent.filter(r => 
+          ((r.maKetQua && r.maKetQua.toLowerCase().includes(maLower)) || (r.maMau && r.maMau.toLowerCase().includes(maLower))) &&
+          ((r.tenCoSo && r.tenCoSo.toLowerCase().includes(tenLower)) || (r.tenMau && r.tenMau.toLowerCase().includes(tenLower)))
+        );
+      }
+
+      setItems(filteredContent);
       setTotalElements(res.totalElements || 0);
       setTotalPages(res.totalPages || 0);
       setPage(res.number || 0);
@@ -55,9 +71,9 @@ export default function KetQuaKiemNghiemPage() {
   };
 
   const handleReset = () => {
-    setKeyword('');
+    setSearchMa('');
+    setSearchTen('');
     setResultFilter('');
-    // State setters are async, so fetch directly with empty values
     setLoading(true);
     ketQuaKiemNghiemApi.search('', undefined, 0, size)
       .then(res => {
@@ -168,13 +184,16 @@ export default function KetQuaKiemNghiemPage() {
         <MiniStat label="Không đạt (Trang hiện tại)" value={failCount} color="red" />
       </div>
 
-      {/* Filter */}
+      {/* Segmented Filters */}
       <form onSubmit={handleSearchSubmit}>
         <FilterBar>
-          <FilterField label="Tìm kiếm">
-            <GovInput placeholder="Mã kết quả, mã mẫu, cơ sở..." value={keyword} onChange={setKeyword} width={240} />
+          <FilterField label="Mã kết quả / Mã mẫu">
+            <GovInput placeholder="Ví dụ: KQ-01..." value={searchMa} onChange={setSearchMa} width={180} />
           </FilterField>
-          <FilterField label="Kết quả">
+          <FilterField label="Tên cơ sở / Sản phẩm">
+            <GovInput placeholder="Ví dụ: Phở Ba Miền..." value={searchTen} onChange={setSearchTen} width={220} />
+          </FilterField>
+          <FilterField label="Kết quả đánh giá">
             <GovSelect value={resultFilter} onChange={setResultFilter} options={[
               { value: '', label: '-- Tất cả --' },
               { value: 'pass', label: 'Đạt (pass)' },

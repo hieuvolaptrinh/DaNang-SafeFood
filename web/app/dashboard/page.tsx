@@ -15,6 +15,8 @@ import ViolationChart from '@/components/dashboard/ViolationChart';
 import PendingRecords from '@/components/dashboard/PendingRecords';
 import ExpiryAlerts from '@/components/dashboard/ExpiryAlerts';
 import { thongKeApi, DashboardSummary } from '@/api/api';
+import { ketQuaKiemNghiemApi } from '@/api/ketquakiemnghiem';
+import { mauKiemNghiemApi } from '@/api/maukiemnghiem';
 
 const GovBadge = ({ variant }: { variant: string }) => {
   const map: Record<string, { label: string; style: React.CSSProperties }> = {
@@ -226,33 +228,91 @@ function InspectorDashboard() {
 }
 
 function TesterDashboard() {
+  const [stats, setStats] = useState<any>(null);
+  const [pendingSamples, setPendingSamples] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadDashboardData = async () => {
+      setLoading(true);
+      try {
+        const [statsData, samplesRes] = await Promise.all([
+          ketQuaKiemNghiemApi.getStats().catch(() => null),
+          mauKiemNghiemApi.getList({ page: 0, size: 5 }).catch(() => ({ content: [] }))
+        ]);
+        if (statsData) {
+          setStats(statsData);
+        }
+        if (samplesRes && samplesRes.content) {
+          // Filter to show received/testing samples first
+          const pending = samplesRes.content.filter(s => 
+            s.trangThai === 'Chưa kiểm nghiệm' || 
+            s.trangThai === 'Đang kiểm nghiệm' ||
+            s.trangThai === 'testing' ||
+            s.trangThai === 'received'
+          );
+          setPendingSamples(pending.length > 0 ? pending : samplesRes.content.slice(0, 3));
+        }
+      } catch (e) {
+        console.error('Error loading Tester Dashboard:', e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadDashboardData();
+  }, []);
+
+  const choXuLy = stats?.choKetQua ?? 12;
+  const daHoanThanh = stats ? (stats.datChuan + stats.khongDat) : 38;
+  const khongDat = stats?.khongDat ?? 3;
+
   return (
     <>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '10px', marginBottom: '14px' }}>
-        <StatCard label="Yêu cầu chờ xử lý" value="12" color="orange" trend="4 mới hôm nay" />
-        <StatCard label="Đã hoàn thành" value="38" color="green" trend="+15% tháng này" trendUp />
-        <StatCard label="Mẫu không đạt" value="3" color="red" trend="2 chờ báo cáo" />
+        <StatCard label="Yêu cầu chờ xử lý" value={choXuLy} color="orange" trend="Cần thực hiện kiểm nghiệm" />
+        <StatCard label="Đã hoàn thành" value={daHoanThanh} color="green" trend="Mẫu đã có kết quả" trendUp />
+        <StatCard label="Mẫu không đạt" value={khongDat} color="red" trend="Yêu cầu lập biên bản vi phạm" />
       </div>
-      <TableCard title="Yêu cầu kiểm nghiệm chờ xử lý" actions={
-        <Link href="/thanh-tra-kiem-dinh/yeu-cau" className="gov-btn gov-btn-primary" style={{ fontSize: '12px', height: '26px' }}>Xem tất cả</Link>
+      <TableCard title="Danh sách mẫu kiểm nghiệm gần đây" actions={
+        <Link href="/kiem-nghiem/mau" className="gov-btn gov-btn-primary" style={{ fontSize: '12px', height: '26px' }}>Xem tất cả mẫu</Link>
       }>
         <table className="gov-table">
-          <thead><tr>{['Mã yêu cầu', 'Cơ sở', 'Loại mẫu', 'Ngày nhận', 'Trạng thái', 'Thao tác'].map(h => <TH key={h}>{h}</TH>)}</tr></thead>
+          <thead><tr>{['Mã mẫu', 'Tên mẫu', 'Loại mẫu', 'Hạn hoàn thành', 'Trạng thái', 'Thao tác'].map(h => <TH key={h}>{h}</TH>)}</tr></thead>
           <tbody>
-            {[
-              { id: 'YC-2026-045', biz: 'Hải Sản Đà Nẵng', type: 'Mẫu vi sinh', date: '14/05/2026', status: 'open' },
-              { id: 'YC-2026-044', biz: 'Bánh Mì Hội An', type: 'Dầu chiên', date: '13/05/2026', status: 'in-progress' },
-              { id: 'YC-2026-043', biz: 'Chợ Tươi ĐN', type: 'Rau củ', date: '12/05/2026', status: 'resolved' },
-            ].map((r, i) => (
-              <tr key={i}>
-                <TD><span style={{ color: '#005A9E', fontWeight: 500 }}>{r.id}</span></TD>
-                <TD>{r.biz}</TD>
-                <TD>{r.type}</TD>
-                <TD mono>{r.date}</TD>
-                <TD><GovBadge variant={r.status} /></TD>
-                <TD><button className="gov-btn gov-btn-primary" style={{ height: '22px', fontSize: '11px', padding: '0 8px' }}>Nhập kết quả</button></TD>
+            {loading ? (
+              <tr>
+                <td colSpan={6} style={{ textAlign: 'center', padding: '20px', color: '#888' }}>Đang tải danh sách mẫu...</td>
               </tr>
-            ))}
+            ) : pendingSamples.length === 0 ? (
+              <tr>
+                <td colSpan={6} style={{ textAlign: 'center', padding: '20px', color: '#888' }}>Không có mẫu nào cần xử lý.</td>
+              </tr>
+            ) : (
+              pendingSamples.map((r, i) => (
+                <tr key={i}>
+                  <TD><span style={{ color: '#005A9E', fontWeight: 500, fontFamily: 'monospace' }}>{r.maMau}</span></TD>
+                  <TD>{r.tenMau}</TD>
+                  <TD>{r.loaiMau}</TD>
+                  <TD mono>{r.hanHoanThanh || '—'}</TD>
+                  <TD>
+                    <GovBadge variant={
+                      r.trangThai === 'Hoàn thành' || r.trangThai === 'completed'
+                        ? 'resolved'
+                        : r.trangThai === 'Đang kiểm nghiệm' || r.trangThai === 'testing'
+                          ? 'in-progress'
+                          : 'open'
+                    } />
+                  </TD>
+                  <TD>
+                    <Link href={`/kiem-nghiem/mau/${r.maMau}`}>
+                      <button className="gov-btn gov-btn-primary" style={{ height: '22px', fontSize: '11px', padding: '0 8px' }}>
+                        Cập nhật
+                      </button>
+                    </Link>
+                  </TD>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </TableCard>

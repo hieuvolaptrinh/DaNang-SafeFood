@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { Eye, RefreshCw, FileSpreadsheet, FlaskConical } from 'lucide-react';
+import { Eye, RefreshCw, FileSpreadsheet, FlaskConical, Search } from 'lucide-react';
 import {
   PageHeader, FilterBar, FilterField, GovInput, GovSelect, GovBtn,
   SectionCard, GovPagination, StatusBadge, MiniStat, ActionButtons,
@@ -22,23 +22,17 @@ const statusVariant: Record<string, string> = {
   'cancelled': 'expired',
 };
 
-const statusLabel: Record<string, string> = {
-  'Chưa kiểm nghiệm': 'Chưa kiểm nghiệm',
-  'Đang kiểm nghiệm': 'Đang kiểm nghiệm',
-  'Hoàn thành': 'Hoàn thành',
-  'Đã tiếp nhận': 'Đã tiếp nhận',
-  'received': 'Đã tiếp nhận',
-  'testing': 'Đang kiểm nghiệm',
-  'completed': 'Hoàn thành',
-  'cancelled': 'Hủy bỏ',
-};
-
 const PAGE_SIZE = 10;
 
 export default function MauKiemNghiemPage() {
   const [mauList, setMauList] = useState<MauKiemNghiemItem[]>([]);
-  const [search, setSearch] = useState('');
+  
+  // Separate search inputs for code, name, and type
+  const [searchMa, setSearchMa] = useState('');
+  const [searchTen, setSearchTen] = useState('');
+  const [searchLoai, setSearchLoai] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(0);
@@ -84,7 +78,6 @@ export default function MauKiemNghiemPage() {
         trangThai: newStatus,
         ghiChu: 'Cập nhật trạng thái từ danh sách',
       });
-      // Refetch the list to reflect status changes
       fetchMauList(page);
     } catch (err: any) {
       setError(err.message || 'Cập nhật trạng thái thất bại.');
@@ -93,16 +86,17 @@ export default function MauKiemNghiemPage() {
     }
   };
 
-  // Client side keyword search over the current page list
+  // Client side split keyword searches
   const filtered = mauList.filter(m => {
-    const term = search.toLowerCase();
-    if (!term) return true;
-    return (
-      (m.maMau && m.maMau.toLowerCase().includes(term)) ||
-      (m.tenMau && m.tenMau.toLowerCase().includes(term)) ||
-      (m.loaiMau && m.loaiMau.toLowerCase().includes(term)) ||
-      (m.noiDung && m.noiDung.toLowerCase().includes(term))
-    );
+    const termMa = searchMa.toLowerCase().trim();
+    const termTen = searchTen.toLowerCase().trim();
+    const termLoai = searchLoai.toLowerCase().trim();
+    
+    if (termMa && (!m.maMau || !m.maMau.toLowerCase().includes(termMa))) return false;
+    if (termTen && (!m.tenMau || !m.tenMau.toLowerCase().includes(termTen))) return false;
+    if (termLoai && (!m.loaiMau || !m.loaiMau.toLowerCase().includes(termLoai))) return false;
+    
+    return true;
   });
 
   const stats = {
@@ -193,6 +187,13 @@ export default function MauKiemNghiemPage() {
     },
   ];
 
+  const handleResetFilters = () => {
+    setSearchMa('');
+    setSearchTen('');
+    setSearchLoai('');
+    setStatusFilter('');
+  };
+
   return (
     <div>
       <PageHeader
@@ -223,10 +224,16 @@ export default function MauKiemNghiemPage() {
         <MiniStat label="Hoàn thành" value={stats.completed} color="green" />
       </div>
 
-      {/* Filter */}
+      {/* Segmented filter fields */}
       <FilterBar>
-        <FilterField label="Tìm kiếm nhanh">
-          <GovInput placeholder="Mã mẫu, tên mẫu, loại..." value={search} onChange={setSearch} width={240} />
+        <FilterField label="Mã mẫu">
+          <GovInput placeholder="Ví dụ: MAU-01" value={searchMa} onChange={setSearchMa} width={150} />
+        </FilterField>
+        <FilterField label="Tên mẫu">
+          <GovInput placeholder="Ví dụ: Thịt heo, Phở..." value={searchTen} onChange={setSearchTen} width={180} />
+        </FilterField>
+        <FilterField label="Loại mẫu">
+          <GovInput placeholder="Ví dụ: Thực phẩm chín..." value={searchLoai} onChange={setSearchLoai} width={160} />
         </FilterField>
         <FilterField label="Trạng thái">
           <GovSelect value={statusFilter} onChange={setStatusFilter} options={[
@@ -234,10 +241,10 @@ export default function MauKiemNghiemPage() {
             { value: 'Chưa kiểm nghiệm', label: 'Chưa kiểm nghiệm' },
             { value: 'Đang kiểm nghiệm', label: 'Đang kiểm nghiệm' },
             { value: 'Hoàn thành', label: 'Hoàn thành' },
-          ]} width={180} />
+          ]} width={160} />
         </FilterField>
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px' }}>
-          <GovBtn variant="secondary" onClick={() => { setSearch(''); setStatusFilter(''); }}>Xóa lọc</GovBtn>
+          <GovBtn variant="secondary" onClick={handleResetFilters}>Xóa lọc</GovBtn>
         </div>
       </FilterBar>
 

@@ -31,6 +31,29 @@ const TRANG_THAI_VARIANT: Record<string, string> = {
   CHO_DUYET: 'pending',
 };
 
+const TRANG_THAI_LABEL: Record<string, string> = {
+  HOAT_DONG: 'Hoạt động',
+  HET_HAN:   'Hết hạn',
+  DINH_CHI:  'Tạm đình chỉ',
+  CHO_DUYET: 'Chờ duyệt',
+};
+
+const mapCertStatusToVariant = (status: string) => {
+  const s = String(status || '').trim().toLowerCase();
+  if (s === 'còn hiệu lực' || s === 'cap moi' || s === 'gia han' || s === 'hoat_dong') return 'pass'; 
+  if (s === 'hết hạn' || s === 'expired') return 'expired'; 
+  if (s === 'thu hoi' || s === 'suspended' || s === 'dinh_chi') return 'fail'; 
+  return 'pending'; 
+};
+
+const mapCertStatusToLabel = (status: string) => {
+  const s = String(status || '').trim();
+  if (s === 'Cap moi') return 'Cấp mới';
+  if (s === 'Gia han') return 'Gia hạn';
+  if (s === 'Thu hoi') return 'Thu hồi';
+  return s;
+};
+
 function formatDate(iso?: string | null) {
   if (!iso) return '—';
   return new Date(iso).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
@@ -59,7 +82,7 @@ function ChungNhanCard({ cn }: { cn: GiayChungNhanItem }) {
           <p style={{ fontWeight: 700, fontSize: 13, color: '#222', margin: '0 0 4px' }}>{cn.tenChungNhan}</p>
           <p style={{ fontFamily: 'monospace', fontSize: 11.5, color: '#005A9E', margin: 0 }}>{cn.maCN}</p>
         </div>
-        <StatusBadge variant={TRANG_THAI_VARIANT[cn.trangThai] ?? cn.trangThai} />
+        <StatusBadge variant={mapCertStatusToVariant(cn.trangThai)} label={mapCertStatusToLabel(cn.trangThai)} />
       </div>
       <div style={{ marginTop: 8, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, fontSize: 12, color: '#555' }}>
         <span>Ngày ban hành: <strong style={{ color: '#222' }}>{formatDate(cn.ngayBanHanh)}</strong></span>
@@ -166,7 +189,10 @@ export default function CoSoKinhDoanhDetailPage() {
               <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 12, color: '#005A9E', background: '#EAF3FB', border: '1px solid #C7DDF0', padding: '3px 8px' }}>
                 {coSo.maCoSo}
               </span>
-              <StatusBadge variant={TRANG_THAI_VARIANT[coSo.trangThai] ?? coSo.trangThai} />
+              <StatusBadge 
+                variant={TRANG_THAI_VARIANT[coSo.trangThai] ?? coSo.trangThai} 
+                label={TRANG_THAI_LABEL[coSo.trangThai] ?? coSo.trangThai} 
+              />
               {isExpired && (
                 <span style={{ fontSize: 11, color: '#CC0000', fontWeight: 600, background: '#FDECEA', border: '1px solid #F5BCBC', padding: '2px 7px', borderRadius: 2 }}>
                   ⚠ Giấy phép hết hạn
@@ -208,7 +234,12 @@ export default function CoSoKinhDoanhDetailPage() {
               <InfoRow label="Tên cơ sở" value={<strong>{coSo.tenCoSo}</strong>} />
               <InfoRow label="Phường/Xã" value={coSo.tenPhuongXa || '—'} />
               <InfoRow label="Mã phường/xã" value={coSo.maPX || '—'} mono />
-              <InfoRow label="Trạng thái" value={<StatusBadge variant={TRANG_THAI_VARIANT[coSo.trangThai] ?? coSo.trangThai} />} />
+              <InfoRow label="Trạng thái" value={
+                <StatusBadge 
+                  variant={TRANG_THAI_VARIANT[coSo.trangThai] ?? coSo.trangThai} 
+                  label={TRANG_THAI_LABEL[coSo.trangThai] ?? coSo.trangThai} 
+                />
+              } />
             </tbody>
           </table>
         </SectionCard>
