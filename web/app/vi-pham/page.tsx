@@ -1,225 +1,228 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useRole } from '@/lib/RoleContext';
-import { Eye, Pencil, FileSpreadsheet, Printer, RefreshCw, Plus } from 'lucide-react';
+import { RefreshCw, FileSpreadsheet, Eye } from 'lucide-react';
 import {
-  PageHeader,
-  SectionCard,
-  GovBtn,
-  GovInput,
-  GovSelect,
-  FilterBar,
-  FilterField,
-  MiniStat,
-  StatusBadge,
+  PageHeader, SectionCard, GovBtn, GovInput, GovSelect,
+  FilterBar, FilterField, MiniStat, StatusBadge, ActionButtons,
 } from '@/components/GovUI';
-import DataTable, { Column } from '@/components/DataTable';
+import DataTable, { type Column } from '@/components/DataTable';
 import AlertBanner from '@/components/AlertBanner';
+import { viPhamApi, type ViPhamItem } from '@/api/vipham';
 
-interface Violation {
-  id: string;
-  businessName: string;
-  violationType: string;
-  severity: 'nhẹ' | 'trung bình' | 'nghiêm trọng';
-  detectedDate: string;
-  status: 'pending' | 'processing' | 'resolved';
-  district: string;
-  penalty: string;
+type ScreenState = 'loading' | 'error' | 'empty' | 'data';
+
+const MUC_DO_VARIANT: Record<string, string> = {
+  'Nghiêm trọng': 'expired',
+  'Trung bình': 'pending',
+  'Nhẹ': 'processing',
+};
+
+const TRANG_THAI_VARIANT: Record<string, string> = {
+  'Đã Duyệt': 'active',
+  'Chờ Duyệt': 'pending',
+  'Từ Chối': 'expired',
+};
+
+function formatCurrency(amount: number) {
+  if (!amount) return '—';
+  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
 }
 
-const mockViolations: Violation[] = [
-  { id: 'VP-2025001', businessName: 'Nhà hàng Hải Sản Biển Xanh', violationType: 'Vi phạm vệ sinh ATTP', severity: 'nghiêm trọng', detectedDate: '18/03/2025', status: 'processing', district: 'Hải Châu', penalty: '25.000.000 đ' },
-  { id: 'VP-2025002', businessName: 'Quán Ăn Gia Đình Việt', violationType: 'Không niêm yết giá bán', severity: 'nhẹ', detectedDate: '15/03/2025', status: 'resolved', district: 'Thanh Khê', penalty: '1.500.000 đ' },
-  { id: 'VP-2025003', businessName: 'Cửa hàng Thực phẩm Organic', violationType: 'Sử dụng chất cấm', severity: 'nghiêm trọng', detectedDate: '22/03/2025', status: 'pending', district: 'Ngũ Hành Sơn', penalty: 'Đang xác định' },
-  { id: 'VP-2025004', businessName: 'Siêu thị Mini Mart Đà Nẵng', violationType: 'Bán hàng hết hạn sử dụng', severity: 'trung bình', detectedDate: '20/03/2025', status: 'processing', district: 'Sơn Trà', penalty: '8.000.000 đ' },
-  { id: 'VP-2025005', businessName: 'Bánh Mì Hội An', violationType: 'Giấy phép hết hạn', severity: 'trung bình', detectedDate: '10/03/2025', status: 'pending', district: 'Sơn Trà', penalty: '5.000.000 đ' },
-];
-
 export default function DanhSachViPhamPage() {
-  const { role } = useRole();
-  const isTester = role === 'TESTER';
-
+  const [screenState, setScreenState] = useState<ScreenState>('loading');
+  const [items, setItems] = useState<ViPhamItem[]>([]);
   const [search, setSearch] = useState('');
-  const [severityFilter, setSeverityFilter] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [districtFilter, setDistrictFilter] = useState('');
+  const [mucDoFilter, setMucDoFilter] = useState('');
+  const [trangThaiFilter, setTrangThaiFilter] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
 
-  const districts = [...new Set(mockViolations.map((v) => v.district))];
+  const load = useCallback(async () => {
+    setScreenState('loading');
+    setErrorMessage('');
+    try {
+      const res = await viPhamApi.getList({ page: 0, size: 100 });
+      const content = res.content ?? [];
+      setItems(content);
+      setScreenState(content.length === 0 ? 'empty' : 'data');
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Không thể tải danh sách vi phạm');
+      setScreenState('error');
+    }
+  }, []);
 
-  const filtered = mockViolations.filter((v) => {
+  useEffect(() => { void load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const filtered = useMemo(() => items.filter(v => {
     const matchSearch = !search ||
-      v.id.toLowerCase().includes(search.toLowerCase()) ||
-      v.businessName.toLowerCase().includes(search.toLowerCase());
-    const matchSeverity = !severityFilter || v.severity === severityFilter;
-    const matchStatus = !statusFilter || v.status === statusFilter;
-    const matchDistrict = !districtFilter || v.district === districtFilter;
-    return matchSearch && matchSeverity && matchStatus && matchDistrict;
-  });
+      v.maViPham.toLowerCase().includes(search.toLowerCase()) ||
+      v.tenCoSo.toLowerCase().includes(search.toLowerCase()) ||
+      v.tenLoaiViPham.toLowerCase().includes(search.toLowerCase());
+    const matchMucDo = !mucDoFilter || v.mucDo === mucDoFilter;
+    const matchTrangThai = !trangThaiFilter || v.trangThaiPheDuyet === trangThaiFilter;
+    return matchSearch && matchMucDo && matchTrangThai;
+  }), [items, search, mucDoFilter, trangThaiFilter]);
 
-  const total = mockViolations.length;
-  const nghiemTrong = mockViolations.filter(v => v.severity === 'nghiêm trọng').length;
-  const dangXuLy = mockViolations.filter(v => v.status === 'processing' || v.status === 'in-progress').length;
-  const daXuLy = mockViolations.filter(v => v.status === 'resolved').length;
+  // Stats
+  const choDuyet = items.filter(v => v.trangThaiPheDuyet === 'Chờ Duyệt').length;
+  const daDuyet = items.filter(v => v.trangThaiPheDuyet === 'Đã Duyệt').length;
+  const tuChoi = items.filter(v => v.trangThaiPheDuyet === 'Từ Chối').length;
 
-  const columns: Column<Violation>[] = [
+  const columns: Column<ViPhamItem>[] = [
     {
-      key: 'id',
-      header: 'Mã vi phạm',
-      render: r => <span className="font-mono font-semibold text-blue-700">{r.id}</span>,
+      key: 'maViPham',
+      header: 'Mã VP',
+      render: r => (
+        <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: '12px', color: '#005A9E' }}>{r.maViPham}</span>
+      ),
     },
     {
-      key: 'businessName',
-      header: 'Tên cơ sở',
-      render: r => <span className="font-semibold">{r.businessName}</span>,
+      key: 'tenCoSo',
+      header: 'Cơ sở',
+      render: r => <span style={{ fontWeight: 600 }}>{r.tenCoSo}</span>,
     },
     {
-      key: 'violationType',
+      key: 'tenLoaiViPham',
       header: 'Loại vi phạm',
-      render: r => <span className="text-sm">{r.violationType}</span>,
+      render: r => <span style={{ fontSize: '12px' }}>{r.tenLoaiViPham}</span>,
     },
     {
-      key: 'severity',
+      key: 'mucDo',
       header: 'Mức độ',
-      render: r => <StatusBadge variant={r.severity} />,
+      render: r => <StatusBadge variant={MUC_DO_VARIANT[r.mucDo] ?? 'pending'} label={r.mucDo} />,
     },
     {
-      key: 'detectedDate',
-      header: 'Ngày phát hiện',
-      render: r => <span className="font-mono text-sm">{r.detectedDate}</span>,
-    },
-    { key: 'district', header: 'Quận/Huyện' },
-    { 
-      key: 'penalty', 
-      header: 'Mức phạt',
-      render: r => <span className="font-medium text-red-600">{r.penalty}</span>
+      key: 'tongTienPhat',
+      header: 'Tiền phạt',
+      render: r => (
+        <span style={{ fontFamily: 'monospace', fontSize: '12px', fontWeight: 600, color: '#CC0000' }}>
+          {formatCurrency(r.tongTienPhat)}
+        </span>
+      ),
     },
     {
-      key: 'status',
+      key: 'trangThaiPheDuyet',
       header: 'Trạng thái',
-      render: r => <StatusBadge variant={r.status} />,
+      render: r => (
+        <StatusBadge
+          variant={TRANG_THAI_VARIANT[r.trangThaiPheDuyet] ?? 'pending'}
+          label={r.trangThaiPheDuyet}
+        />
+      ),
     },
     {
       key: 'actions',
       header: 'Thao tác',
       render: r => (
-        <div className="flex gap-2">
-          <Link href={`/vi-pham/${r.id}`}>
-            <GovBtn variant="secondary" size="sm">
-              <Eye size={16} />
-            </GovBtn>
-          </Link>
-          <GovBtn variant="secondary" size="sm">
-            <Pencil size={16} />
+        <Link href={`/vi-pham/${r.maViPham}`}>
+          <GovBtn variant="secondary" size="sm" title="Xem chi tiết">
+            <Eye style={{ width: 12, height: 12 }} />
           </GovBtn>
-        </div>
+        </Link>
       ),
     },
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 pb-16">
+    <div>
       <PageHeader
         title="Quản lý vi phạm an toàn thực phẩm"
-        subtitle="Danh sách vi phạm đã ghi nhận trên địa bàn TP. Đà Nẵng"
+        subtitle="Chi cục An toàn Thực phẩm TP. Đà Nẵng — Danh sách vi phạm chờ duyệt và đã xử lý"
         actions={
-          <>
-            <GovBtn variant="secondary">
-              <RefreshCw size={16} /> Làm mới
+          <ActionButtons>
+            <GovBtn variant="secondary" onClick={() => void load()} disabled={screenState === 'loading'}>
+              <RefreshCw style={{ width: 12, height: 12 }} /> Làm mới
             </GovBtn>
             <GovBtn variant="secondary">
-              <Printer size={16} /> In báo cáo
+              <FileSpreadsheet style={{ width: 12, height: 12 }} /> Xuất Excel
             </GovBtn>
-            <GovBtn variant="secondary">
-              <FileSpreadsheet size={16} /> Xuất Excel
-            </GovBtn>
-
-            {/* Chỉ Tester mới thấy nút Tạo mới */}
-            {isTester && (
-              <Link href="/vi-pham/add">
-                <GovBtn variant="primary">
-                  <Plus size={16} /> Tạo mới vi phạm
-                </GovBtn>
-              </Link>
-            )}
-          </>
+          </ActionButtons>
         }
       />
 
-      <div className="max-w-[1400px] mx-auto px-6 pt-6">
+      {errorMessage && <AlertBanner type="danger" title={errorMessage} />}
+
+      {/* Stats */}
+      {screenState !== 'loading' && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', marginBottom: '12px' }}>
+          <MiniStat label="Tổng vi phạm" value={items.length} color="neutral" />
+          <MiniStat label="Chờ duyệt" value={choDuyet} color="orange" />
+          <MiniStat label="Đã duyệt" value={daDuyet} color="green" />
+          <MiniStat label="Từ chối" value={tuChoi} color="red" />
+        </div>
+      )}
+
+      {choDuyet > 0 && (
         <AlertBanner
           type="warning"
-          title={`Có ${nghiemTrong} vi phạm mức nghiêm trọng đang chờ xử lý. Vui lòng ưu tiên xử lý.`}
+          title={`Có ${choDuyet} vi phạm đang chờ phê duyệt. Vui lòng xem xét và xử lý.`}
         />
+      )}
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <MiniStat label="Tổng vi phạm" value={total} color="neutral" />
-          <MiniStat label="Nghiêm trọng" value={nghiemTrong} color="red" note="Cần xử lý khẩn" />
-          <MiniStat label="Đang xử lý" value={dangXuLy} color="orange" />
-          <MiniStat label="Đã xử lý" value={daXuLy} color="green" />
+      {screenState === 'loading' && (
+        <div style={{ background: '#fff', border: '1px solid #D6D6D6', padding: '40px', textAlign: 'center', color: '#888', fontSize: '13px' }}>
+          Đang tải danh sách vi phạm...
         </div>
+      )}
 
-        {/* Filter Bar */}
-        <SectionCard className="shadow-sm mb-6">
+      {screenState === 'empty' && (
+        <div style={{ background: '#fff', border: '1px dashed #D6D6D6', padding: '40px', textAlign: 'center' }}>
+          <p style={{ fontSize: '14px', fontWeight: 600, color: '#333' }}>Chưa có vi phạm nào</p>
+        </div>
+      )}
+
+      {screenState === 'data' && (
+        <>
           <FilterBar>
             <FilterField label="Tìm kiếm">
               <GovInput
-                placeholder="Mã vi phạm, tên cơ sở..."
+                placeholder="Mã vi phạm, tên cơ sở, loại vi phạm..."
                 value={search}
                 onChange={setSearch}
+                width={260}
               />
             </FilterField>
             <FilterField label="Mức độ">
               <GovSelect
-                value={severityFilter}
-                onChange={setSeverityFilter}
+                value={mucDoFilter}
+                onChange={setMucDoFilter}
                 options={[
                   { value: '', label: '-- Tất cả --' },
-                  { value: 'nhẹ', label: 'Nhẹ' },
-                  { value: 'trung bình', label: 'Trung bình' },
-                  { value: 'nghiêm trọng', label: 'Nghiêm trọng' },
+                  { value: 'Nghiêm trọng', label: 'Nghiêm trọng' },
+                  { value: 'Trung bình', label: 'Trung bình' },
+                  { value: 'Nhẹ', label: 'Nhẹ' },
                 ]}
+                width={150}
               />
             </FilterField>
             <FilterField label="Trạng thái">
               <GovSelect
-                value={statusFilter}
-                onChange={setStatusFilter}
+                value={trangThaiFilter}
+                onChange={setTrangThaiFilter}
                 options={[
                   { value: '', label: '-- Tất cả --' },
-                  { value: 'pending', label: 'Chưa xử lý' },
-                  { value: 'processing', label: 'Đang xử lý' },
-                  { value: 'resolved', label: 'Đã xử lý' },
+                  { value: 'Chờ Duyệt', label: 'Chờ duyệt' },
+                  { value: 'Đã Duyệt', label: 'Đã duyệt' },
+                  { value: 'Từ Chối', label: 'Từ chối' },
                 ]}
+                width={140}
               />
             </FilterField>
-            <FilterField label="Quận/Huyện">
-              <GovSelect
-                value={districtFilter}
-                onChange={setDistrictFilter}
-                options={[
-                  { value: '', label: '-- Tất cả --' },
-                  ...districts.map(d => ({ value: d, label: d })),
-                ]}
-              />
-            </FilterField>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px' }}>
+              <GovBtn variant="secondary" onClick={() => { setSearch(''); setMucDoFilter(''); setTrangThaiFilter(''); }}>Xóa lọc</GovBtn>
+            </div>
           </FilterBar>
-        </SectionCard>
 
-        {/* Data Table */}
-        <SectionCard 
-          title={`Danh sách vi phạm (${filtered.length} bản ghi)`}
-          className="shadow-sm"
-        >
-          <DataTable
-            columns={columns}
-            data={filtered}
-            emptyMessage="Không tìm thấy vi phạm nào phù hợp."
-          />
-        </SectionCard>
-      </div>
+          <SectionCard title={`Danh sách vi phạm (${filtered.length} bản ghi)`}>
+            <DataTable
+              columns={columns}
+              data={filtered}
+              emptyMessage="Không tìm thấy vi phạm nào phù hợp."
+            />
+          </SectionCard>
+        </>
+      )}
     </div>
   );
 }
