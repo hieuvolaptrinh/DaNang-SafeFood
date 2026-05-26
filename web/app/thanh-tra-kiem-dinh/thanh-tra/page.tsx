@@ -4,35 +4,57 @@ import { useEffect, useMemo, useState } from 'react';
 import ThanhTraList from '@/components/ThanhTraList';
 import ThanhTraDetail from '@/components/ThanhTraDetail';
 import ThanhTraForm from '@/components/ThanhTraForm';
-import {
-  mockLichThanhTra,
-  mockNguoiThanhTra,
-  mockCoSo,
-  type LichThanhTra,
-  type ThanhTraStatus,
-} from '@/data/mockData';
+import { thanhTraApi } from '@/api/thanhtra';
+import { coSoKinhDoanhApi } from '@/api/cosokinhdoanh';
+import type { ThanhTraItem } from '@/api/thanhtra';
+import type { CoSoKinhDoanhItem } from '@/api/cosokinhdoanh';
+import type { CanBoThanhTraItem } from '@/api/thanhtra';
 
 type ScreenState = 'loading' | 'empty' | 'error' | 'data';
 type ActiveTab = 'list' | 'create';
 
 export default function ThanhTraPage() {
   const [screenState, setScreenState] = useState<ScreenState>('loading');
-  const [items, setItems] = useState<LichThanhTra[]>([]);
+  const [items, setItems] = useState<ThanhTraItem[]>([]);
   const [selectedId, setSelectedId] = useState('');
   const [activeTab, setActiveTab] = useState<ActiveTab>('list');
   const [successMessage, setSuccessMessage] = useState('');
 
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      if (mockLichThanhTra.length === 0) {
+  // Dropdown lists state
+  const [coSoList, setCoSoList] = useState<CoSoKinhDoanhItem[]>([]);
+  const [inspectors, setInspectors] = useState<CanBoThanhTraItem[]>([]);
+
+  const loadData = async () => {
+    setScreenState('loading');
+    try {
+      const res = await thanhTraApi.getList({ page: 0, size: 100 });
+      const content = res.content || [];
+      setItems(content);
+      if (content.length > 0) {
+        setItems(content);
+        setSelectedId(content[0].maThanhTra);
+        setScreenState('data');
+      } else {
+        setItems([]);
         setScreenState('empty');
-        return;
       }
-      setItems(mockLichThanhTra);
-      setSelectedId(mockLichThanhTra[0].maThanhTra);
-      setScreenState('data');
-    }, 700);
-    return () => window.clearTimeout(timer);
+    } catch (err) {
+      console.error('Lỗi tải danh sách thanh tra:', err);
+      setScreenState('error');
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+
+    // Fetch dropdowns
+    coSoKinhDoanhApi.getDropdown()
+      .then(setCoSoList)
+      .catch(err => console.error('Lỗi tải danh sách cơ sở kinh doanh:', err));
+
+    thanhTraApi.getCanBoThanhTra()
+      .then(setInspectors)
+      .catch(err => console.error('Lỗi tải danh sách cán bộ thanh tra:', err));
   }, []);
 
   const selectedItem = useMemo(
@@ -43,7 +65,7 @@ export default function ThanhTraPage() {
   const isNotFound =
     screenState === 'data' && Boolean(selectedId) && selectedItem === null;
 
-  const handleSelect = (item: LichThanhTra) => {
+  const handleSelect = (item: ThanhTraItem) => {
     setSelectedId(item.maThanhTra);
     setSuccessMessage('');
   };
@@ -54,45 +76,23 @@ export default function ThanhTraPage() {
     }
   };
 
-  const handleCreateSubmit = (data: {
+  const handleCreateSubmit = async (data: {
     maCoSo: string;
     noiDung: string;
     maNguoiPhuTrach: string;
   }) => {
-    const coSo = mockCoSo.find((c) => c.maCoSo === data.maCoSo);
-    const nguoi = mockNguoiThanhTra.find((n) => n.maNguoiDung === data.maNguoiPhuTrach);
-
-    const newItem: LichThanhTra = {
-      maThanhTra: `TT-${Date.now()}`,
-      trangThai: 'Dang xu ly',
-      noiDung: data.noiDung,
-      ngayTao: new Date().toISOString().slice(0, 10),
-      maCoSo: data.maCoSo,
-      tenCoSo: coSo?.tenCoSo ?? '',
-      diaChi: coSo?.diaChi ?? '',
-      maNguoiPhuTrach: nguoi?.maNguoiDung ?? null,
-      tenNguoiPhuTrach: nguoi?.hoTen ?? null,
-    };
-
-    setItems((prev) => [newItem, ...prev]);
-    setSelectedId(newItem.maThanhTra);
-    setSuccessMessage('Tạo lịch thanh tra thành công');
-    setActiveTab('list');
-  };
-
-  const handleUpdateSubmit = (data: {
-    ketQuaKiemTra: string;
-    trangThai: ThanhTraStatus;
-  }) => {
-    if (!selectedItem) return;
-    setItems((prev) =>
-      prev.map((i) =>
-        i.maThanhTra === selectedItem.maThanhTra
-          ? { ...i, trangThai: data.trangThai, ketQuaKiemTra: data.ketQuaKiemTra }
-          : i
-      )
-    );
-    setSuccessMessage('Cập nhật kết quả thành công');
+    try {
+      setSuccessMessage('');
+      const newItem = await thanhTraApi.create(data);
+      setItems((prev) => [newItem, ...prev]);
+      setSelectedId(newItem.maThanhTra);
+      setSuccessMessage('Tạo lịch thanh tra thành công');
+      setScreenState('data');
+      setActiveTab('list');
+    } catch (err: any) {
+      console.error('Lỗi tạo lịch thanh tra:', err);
+      alert(err.message || 'Có lỗi xảy ra khi tạo lịch thanh tra. Vui lòng thử lại.');
+    }
   };
 
   return (
@@ -102,7 +102,7 @@ export default function ThanhTraPage() {
         <div>
           <h1 className="font-display text-[22px] font-extrabold text-slate-900">Thanh tra</h1>
           <p className="mt-0.5 text-[13px] text-slate-500">
-            Theo dõi lịch thanh tra, tạo đơn mới và cập nhật kết quả kiểm tra.
+            Theo dõi lịch thanh tra, phân công và ban hành lịch thanh tra cơ sở kinh doanh.
           </p>
         </div>
 
@@ -135,30 +135,47 @@ export default function ThanhTraPage() {
         </div>
       </div>
 
-      {/* States */}
-      {screenState === 'loading' && (
-        <div className="rounded-xl border border-slate-200 bg-white px-5 py-10 text-center text-sm text-slate-500 shadow-sm">
-          Đang tải danh sách thanh tra...
+      {/* Views */}
+      {activeTab === 'create' && (
+        <div className="max-w-xl">
+          <ThanhTraForm
+            coSoList={coSoList}
+            nguoiThanhTraList={inspectors}
+            onCreateSubmit={handleCreateSubmit}
+            successMessage={successMessage}
+          />
         </div>
       )}
 
-      {screenState === 'empty' && (
-        <div className="rounded-xl border border-slate-200 bg-white px-5 py-10 text-center shadow-sm">
-          <p className="text-sm font-semibold text-slate-700">Chưa có lịch thanh tra nào</p>
-          <p className="mt-1 text-sm text-slate-500">Tạo lịch thanh tra đầu tiên để bắt đầu.</p>
-          <button
-            type="button"
-            onClick={() => setActiveTab('create')}
-            className="mt-4 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
-          >
-            Tạo lịch thanh tra
-          </button>
-        </div>
-      )}
-
-      {screenState === 'data' && (
+      {activeTab === 'list' && (
         <>
-          {activeTab === 'list' && (
+          {screenState === 'loading' && (
+            <div className="rounded-xl border border-slate-200 bg-white px-5 py-10 text-center text-sm text-slate-500 shadow-sm">
+              Đang tải danh sách thanh tra...
+            </div>
+          )}
+
+          {screenState === 'error' && (
+            <div className="rounded-xl border border-red-200 bg-red-50 px-5 py-10 text-center text-sm text-red-600 shadow-sm">
+              Lỗi khi kết nối tới máy chủ. Vui lòng kiểm tra lại server.
+            </div>
+          )}
+
+          {screenState === 'empty' && (
+            <div className="rounded-xl border border-slate-200 bg-white px-5 py-10 text-center shadow-sm">
+              <p className="text-sm font-semibold text-slate-700">Chưa có lịch thanh tra nào</p>
+              <p className="mt-1 text-sm text-slate-500">Tạo lịch thanh tra đầu tiên để bắt đầu.</p>
+              <button
+                type="button"
+                onClick={() => setActiveTab('create')}
+                className="mt-4 rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800 transition-colors"
+              >
+                Tạo lịch thanh tra
+              </button>
+            </div>
+          )}
+
+          {screenState === 'data' && (
             <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
               <ThanhTraList
                 items={items}
@@ -171,30 +188,7 @@ export default function ThanhTraPage() {
                   notFound={isNotFound}
                   onResetSelection={handleResetSelection}
                 />
-                <ThanhTraForm
-                  mode="update"
-                  selectedItem={selectedItem}
-                  nguoiThanhTraList={mockNguoiThanhTra}
-                  coSoList={mockCoSo}
-                  onCreateSubmit={handleCreateSubmit}
-                  onUpdateSubmit={handleUpdateSubmit}
-                  successMessage={successMessage}
-                />
               </div>
-            </div>
-          )}
-
-          {activeTab === 'create' && (
-            <div className="max-w-xl">
-              <ThanhTraForm
-                mode="create"
-                selectedItem={null}
-                nguoiThanhTraList={mockNguoiThanhTra}
-                coSoList={mockCoSo}
-                onCreateSubmit={handleCreateSubmit}
-                onUpdateSubmit={handleUpdateSubmit}
-                successMessage={successMessage}
-              />
             </div>
           )}
         </>

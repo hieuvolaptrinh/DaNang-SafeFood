@@ -46,17 +46,15 @@ export default function ThanhTraList({ items, selectedId, onSelect }: ThanhTraLi
               <button
                 type="button"
                 onClick={() => onSelect(item)}
-                className={`w-full text-left px-5 py-4 transition-colors ${
-                  isSelected ? 'bg-blue-50' : 'hover:bg-slate-50'
-                }`}
+                className={`w-full text-left px-5 py-4 transition-colors ${isSelected ? 'bg-blue-50' : 'hover:bg-slate-50'
+                  }`}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span
-                        className={`text-[11px] font-bold font-mono ${
-                          isSelected ? 'text-blue-700' : 'text-slate-400'
-                        }`}
+                        className={`text-[11px] font-bold font-mono ${isSelected ? 'text-blue-700' : 'text-slate-400'
+                          }`}
                       >
                         {item.maThanhTra}
                       </span>

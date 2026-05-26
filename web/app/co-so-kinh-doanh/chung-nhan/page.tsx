@@ -113,7 +113,7 @@ export default function PheDuyetChungNhanPage() {
   useEffect(() => {
     if (isCreateModalOpen) {
       setLoadingBiz(true);
-      coSoKinhDoanhApi.getDropdown({ trangThai: 'HOAT_DONG' })
+      coSoKinhDoanhApi.getDropdown()
         .then(setBusinesses)
         .catch(err => console.error('Lỗi tải danh sách cơ sở:', err))
         .finally(() => setLoadingBiz(false));
