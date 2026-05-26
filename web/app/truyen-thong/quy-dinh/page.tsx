@@ -1,149 +1,161 @@
 'use client';
 
-import { useState } from 'react';
-import { Eye, Pencil, FileSpreadsheet, RefreshCw, Plus } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import Link from 'next/link';
+import { Eye, FileSpreadsheet, RefreshCw, Plus } from 'lucide-react';
+import { quyDinhApi, QuyDinhItem, TrangThaiQuyDinh } from '@/api/quidinh';
+import DataTable, { type Column } from '@/components/DataTable';
 import {
-  PageHeader, FilterBar, FilterField, GovInput, GovSelect, GovBtn,
+  PageHeader, FilterBar, FilterField, GovSelect, GovBtn,
   SectionCard, GovPagination, StatusBadge, MiniStat, ActionButtons,
 } from '@/components/GovUI';
-import Link from 'next/link';
-import DataTable, { Column } from '@/components/DataTable';
+import AlertBanner from '@/components/AlertBanner';
 
-interface Regulation {
-  id: string;
-  title: string;
-  category: string;
-  issueDate: string;
-  effectiveDate: string;
-  status: 'active' | 'draft' | 'expired';
-  authority: string;
-}
-
-const mockRegulations: Regulation[] = [
-  {
-    id: 'QD-2025-001',
-    title: 'Quy định về kiểm tra an toàn thực phẩm năm 2025',
-    category: 'An toàn thực phẩm',
-    issueDate: '01/01/2025',
-    effectiveDate: '01/02/2025',
-    status: 'active',
-    authority: 'Sở Y tế Đà Nẵng',
-  },
-  {
-    id: 'QD-2025-002',
-    title: 'Hướng dẫn cấp giấy phép kinh doanh thực phẩm',
-    category: 'Giấy phép',
-    issueDate: '15/02/2025',
-    effectiveDate: '01/03/2025',
-    status: 'active',
-    authority: 'UBND TP. Đà Nẵng',
-  },
-  {
-    id: 'QD-2024-015',
-    title: 'Quy định xử phạt vi phạm hành chính lĩnh vực ATTP',
-    category: 'Xử phạt',
-    issueDate: '10/12/2024',
-    effectiveDate: '01/01/2025',
-    status: 'active',
-    authority: 'Chính phủ',
-  },
+// ─── helpers ────────────────────────────────────────────────────
+const TRANG_THAI_OPTIONS = [
+  { value: '',             label: '-- Tất cả --' },
+  { value: 'NHAP',        label: 'Bản nháp' },
+  { value: 'HIEU_LUC',    label: 'Đang hiệu lực' },
+  { value: 'HET_HIEU_LUC', label: 'Hết hiệu lực' },
 ];
 
-const statusVariantMap: Record<string, string> = {
-  active: 'active',
-  draft: 'pending',
-  expired: 'expired',
+const TRANG_THAI_VARIANT: Record<string, string> = {
+  NHAP:         'pending',
+  HIEU_LUC:     'active',
+  HET_HIEU_LUC: 'expired',
+};
+const TRANG_THAI_LABEL: Record<string, string> = {
+  NHAP:         'Bản nháp',
+  HIEU_LUC:     'Đang hiệu lực',
+  HET_HIEU_LUC: 'Hết hiệu lực',
 };
 
-const statusLabelMap: Record<string, string> = {
-  active: 'Đang hiệu lực',
-  draft: 'Bản nháp',
-  expired: 'Hết hiệu lực',
+const LOAI_STYLE: Record<string, { bg: string; color: string; border: string }> = {
+  QUY_DINH:   { bg: '#EAF7EA', color: '#006400', border: '#94C994' },
+  HUONG_DAN:  { bg: '#E3EFFA', color: '#005A9E', border: '#9FC3E0' },
+  THONG_TU:   { bg: '#FFF4E5', color: '#CC6600', border: '#FFCC80' },
+  NGHI_DINH:  { bg: '#FDECEA', color: '#CC0000', border: '#F5BCBC' },
+};
+const LOAI_LABEL: Record<string, string> = {
+  QUY_DINH:  'Quy định',
+  HUONG_DAN: 'Hướng dẫn',
+  THONG_TU:  'Thông tư',
+  NGHI_DINH: 'Nghị định',
 };
 
-const categoryColors: Record<string, { bg: string; color: string; border: string }> = {
-  'An toàn thực phẩm': { bg: '#EAF7EA', color: '#006400', border: '#94C994' },
-  'Giấy phép': { bg: '#E3EFFA', color: '#005A9E', border: '#9FC3E0' },
-  'Xử phạt': { bg: '#FDECEA', color: '#CC0000', border: '#F5BCBC' },
-};
+function formatDate(d: string) {
+  if (!d) return '—';
+  try {
+    return new Date(d).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  } catch { return d; }
+}
 
+function LoaiChip({ loai }: { loai: string }) {
+  const s = LOAI_STYLE[loai] ?? { bg: '#F0F0F0', color: '#555', border: '#CCC' };
+  return (
+    <span style={{
+      display: 'inline-block', padding: '1px 7px', borderRadius: '2px',
+      border: `1px solid ${s.border}`, background: s.bg, color: s.color,
+      fontSize: '11px', fontWeight: 500, whiteSpace: 'nowrap',
+    }}>
+      {LOAI_LABEL[loai] ?? loai}
+    </span>
+  );
+}
+
+const PAGE_SIZE = 20;
+
+// ─── component ──────────────────────────────────────────────────
 export default function QuyDinhPage() {
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('');
+  const [trangThai, setTrangThai]     = useState('');
+  const [page, setPage]               = useState(0);
 
-  const categories = [...new Set(mockRegulations.map((r) => r.category))];
+  const [items, setItems]             = useState<QuyDinhItem[]>([]);
+  const [totalElements, setTotalElements] = useState(0);
+  const [totalPages, setTotalPages]   = useState(0);
+  const [loading, setLoading]         = useState(false);
+  const [error, setError]             = useState<string | null>(null);
 
-  const filtered = mockRegulations.filter((r) => {
-    const matchSearch =
-      !search ||
-      r.id.toLowerCase().includes(search.toLowerCase()) ||
-      r.title.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = !statusFilter || r.status === statusFilter;
-    const matchCategory = !categoryFilter || r.category === categoryFilter;
-    return matchSearch && matchStatus && matchCategory;
-  });
+  const hieuLucCount    = items.filter(i => i.trangThai === 'HIEU_LUC').length;
+  const nhapCount       = items.filter(i => i.trangThai === 'NHAP').length;
+  const hetHieuLucCount = items.filter(i => i.trangThai === 'HET_HIEU_LUC').length;
 
-  const columns: Column<Regulation>[] = [
+  const fetchData = useCallback(async (p = 0) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await quyDinhApi.search({
+        trangThai: trangThai as TrangThaiQuyDinh || undefined,
+        page: p,
+        size: PAGE_SIZE,
+        sort: ['ngayBanHanh,desc'],
+      });
+      setItems(res.content);
+      setTotalElements(res.totalElements);
+      setTotalPages(res.totalPages);
+    } catch (err: any) {
+      setError(err.message || 'Không thể tải danh sách quy định.');
+    } finally {
+      setLoading(false);
+    }
+  }, [trangThai]);
+
+  useEffect(() => { fetchData(0); setPage(0); }, [fetchData]);
+
+  const handleSearch = () => { setPage(0); fetchData(0); };
+  const handleReset  = () => setTrangThai('');
+  const handlePageChange = (p: number) => { setPage(p); fetchData(p); };
+
+  const columns: Column<QuyDinhItem>[] = [
     {
-      key: 'id',
+      key: 'maQuyDinh',
       header: 'Mã quy định',
-      render: r => <span style={{ fontFamily: 'monospace', fontWeight: 600, color: '#005A9E' }}>{r.id}</span>,
+      render: r => (
+        <span style={{ fontFamily: 'monospace', fontWeight: 600, color: '#005A9E', fontSize: '12px' }}>
+          {r.maQuyDinh}
+        </span>
+      ),
     },
     {
-      key: 'title',
+      key: 'tieuDe',
       header: 'Tiêu đề văn bản',
-      render: r => <span style={{ fontWeight: 600, fontSize: '12px' }}>{r.title}</span>,
+      render: r => <span style={{ fontWeight: 600, fontSize: '12px' }}>{r.tieuDe}</span>,
     },
     {
-      key: 'category',
-      header: 'Danh mục',
-      render: r => {
-        const c = categoryColors[r.category] ?? { bg: '#F0F0F0', color: '#555', border: '#CCC' };
-        return (
-          <span style={{
-            display: 'inline-block', padding: '1px 7px', borderRadius: '2px',
-            border: `1px solid ${c.border}`, background: c.bg, color: c.color,
-            fontSize: '11px', fontWeight: 500, whiteSpace: 'nowrap',
-          }}>
-            {r.category}
-          </span>
-        );
-      },
+      key: 'loai',
+      header: 'Loại văn bản',
+      render: r => <LoaiChip loai={r.loai} />,
     },
     {
-      key: 'issueDate',
+      key: 'ngayBanHanh',
       header: 'Ngày ban hành',
-      render: r => <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>{r.issueDate}</span>,
+      render: r => <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>{formatDate(r.ngayBanHanh)}</span>,
     },
     {
-      key: 'effectiveDate',
-      header: 'Ngày hiệu lực',
-      render: r => <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>{r.effectiveDate}</span>,
+      key: 'createdBy',
+      header: 'Người tạo',
+      render: r => <span style={{ fontSize: '12px', color: '#555' }}>{r.createdBy || '—'}</span>,
     },
     {
-      key: 'status',
+      key: 'trangThai',
       header: 'Trạng thái',
-      render: r => <StatusBadge variant={statusVariantMap[r.status]} label={statusLabelMap[r.status]} />,
-    },
-    {
-      key: 'authority',
-      header: 'Cơ quan ban hành',
-      render: r => <span style={{ fontSize: '12px', color: '#333' }}>{r.authority}</span>,
+      render: r => (
+        <StatusBadge
+          variant={TRANG_THAI_VARIANT[r.trangThai] ?? 'pending'}
+          label={TRANG_THAI_LABEL[r.trangThai] ?? r.trangThai}
+        />
+      ),
     },
     {
       key: 'actions',
       header: 'Thao tác',
-      render: (r: any) => (
+      render: r => (
         <ActionButtons>
-          <Link href={`/truyen-thong/quy-dinh/${r.id}`}>
-            <GovBtn variant="secondary" size="sm" title="Xem chi tiết">
-              <Eye size={16} />
+          <Link href={`/truyen-thong/quy-dinh/${r.maQuyDinh}`}>
+            <GovBtn variant="secondary" size="sm" title="Xem & chỉnh sửa">
+              <Eye style={{ width: 12, height: 12 }} />
             </GovBtn>
           </Link>
-          <GovBtn variant="outline" size="sm" title="Chỉnh sửa">
-            <Pencil style={{ width: 12, height: 12 }} />
-          </GovBtn>
         </ActionButtons>
       ),
     },
@@ -153,77 +165,64 @@ export default function QuyDinhPage() {
     <div>
       <PageHeader
         title="Quy định pháp luật về ATTP"
-        subtitle="Chi cục An toàn Thực phẩm TP. Đà Nẵng — Danh sách văn bản quy phạm pháp luật về an toàn thực phẩm"
+        subtitle="Chi cục An toàn Thực phẩm TP. Đà Nẵng — Thư viện văn bản quy phạm pháp luật về an toàn thực phẩm"
         actions={
           <>
-            <GovBtn variant="secondary"><RefreshCw style={{ width: 12, height: 12 }} /> Làm mới</GovBtn>
-            <GovBtn variant="secondary"><FileSpreadsheet style={{ width: 12, height: 12 }} /> Xuất Excel</GovBtn>
+            <GovBtn variant="secondary" onClick={() => fetchData(page)} disabled={loading}>
+              <RefreshCw style={{ width: 12, height: 12 }} /> Làm mới
+            </GovBtn>
+            <GovBtn variant="secondary">
+              <FileSpreadsheet style={{ width: 12, height: 12 }} /> Xuất Excel
+            </GovBtn>
             <Link href="/truyen-thong/quy-dinh/new">
               <GovBtn variant="primary">
-                <Plus size={16} /> Tạo mới quy định
+                <Plus style={{ width: 12, height: 12 }} /> Tạo quy định mới
               </GovBtn>
             </Link>
           </>
         }
       />
 
+      {error && <AlertBanner type="error" title={error} />}
+
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '10px', marginBottom: '12px' }}>
-        <MiniStat label="Tổng quy định" value={mockRegulations.length} color="neutral" />
-        <MiniStat label="Đang hiệu lực" value={mockRegulations.filter(r => r.status === 'active').length} color="green" />
-        <MiniStat label="Bản nháp" value={mockRegulations.filter(r => r.status === 'draft').length} color="orange" />
-        <MiniStat label="Hết hiệu lực" value={mockRegulations.filter(r => r.status === 'expired').length} color="neutral" />
+        <MiniStat label="Tổng văn bản"    value={totalElements}  color="neutral" />
+        <MiniStat label="Đang hiệu lực"   value={hieuLucCount}   color="green"   />
+        <MiniStat label="Bản nháp"        value={nhapCount}      color="orange"  />
+        <MiniStat label="Hết hiệu lực"    value={hetHieuLucCount} color="neutral" />
       </div>
 
       {/* Filter */}
       <FilterBar>
-        <FilterField label="Tìm kiếm">
-          <GovInput
-            placeholder="Mã quy định, tiêu đề..."
-            value={search}
-            onChange={setSearch}
-            width={240}
-          />
-        </FilterField>
-        <FilterField label="Danh mục">
-          <GovSelect
-            value={categoryFilter}
-            onChange={setCategoryFilter}
-            options={[
-              { value: '', label: '-- Tất cả --' },
-              ...categories.map(c => ({ value: c, label: c })),
-            ]}
-            width={180}
-          />
-        </FilterField>
         <FilterField label="Trạng thái">
-          <GovSelect
-            value={statusFilter}
-            onChange={setStatusFilter}
-            options={[
-              { value: '', label: '-- Tất cả --' },
-              { value: 'active', label: 'Đang hiệu lực' },
-              { value: 'draft', label: 'Bản nháp' },
-              { value: 'expired', label: 'Hết hiệu lực' },
-            ]}
-            width={160}
-          />
+          <GovSelect value={trangThai} onChange={setTrangThai} options={TRANG_THAI_OPTIONS} width={200} />
         </FilterField>
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px' }}>
-          <GovBtn variant="primary">Tìm kiếm</GovBtn>
-          <GovBtn variant="secondary" onClick={() => { setSearch(''); setStatusFilter(''); setCategoryFilter(''); }}>Xóa lọc</GovBtn>
+          <GovBtn variant="primary" onClick={handleSearch} disabled={loading}>
+            {loading ? 'Đang tải...' : 'Tìm kiếm'}
+          </GovBtn>
+          <GovBtn variant="secondary" onClick={handleReset} disabled={loading}>Xóa lọc</GovBtn>
         </div>
       </FilterBar>
 
       {/* Table */}
       <SectionCard
-        title={`Danh sách quy định pháp luật (${filtered.length} văn bản)`}
-        footer={<GovPagination info={`Hiển thị ${filtered.length} / ${mockRegulations.length} quy định`} />}
+        title={`Danh sách văn bản quy định (${totalElements} văn bản)`}
+        footer={
+          <GovPagination
+            info={`Trang ${page + 1} / ${totalPages || 1} — ${totalElements} văn bản`}
+            page={page}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+          />
+        }
       >
         <DataTable
           columns={columns}
-          data={filtered}
-          emptyMessage="Không tìm thấy quy định nào phù hợp."
+          data={items}
+          loading={loading}
+          emptyMessage="Không tìm thấy văn bản quy định nào phù hợp."
         />
       </SectionCard>
     </div>

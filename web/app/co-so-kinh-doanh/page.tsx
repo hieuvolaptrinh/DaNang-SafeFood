@@ -1,262 +1,240 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 import {
-  mockBusinesses,
-  mockInspections,
-  mockViolations,
-  type Business,
-  type Inspection,
-  type Violation,
-} from '@/data/mockData';
-import {
-  AlertTriangle,
-  ArrowLeft,
-  Building2,
-  CalendarDays,
-  CheckCircle2,
-  Eye,
-  FileClock,
-  FileSpreadsheet,
-  Pencil,
-  Plus,
-  Printer,
-  RefreshCw,
-  Trash2,
+  Building2, Eye, FileSpreadsheet, Printer, RefreshCw,
+  Search, X, ChevronLeft, ChevronRight,
 } from 'lucide-react';
 import DataTable, { type Column } from '@/components/DataTable';
 import {
-  PageHeader,
-  FilterBar,
-  FilterField,
-  GovInput,
-  GovSelect,
-  GovBtn,
-  SectionCard,
-  GovPagination,
-  StatusBadge,
-  MiniStat,
+  PageHeader, FilterBar, FilterField, GovInput, GovSelect,
+  GovBtn, SectionCard, StatusBadge, MiniStat, ActionButtons,
 } from '@/components/GovUI';
+import {
+  coSoKinhDoanhApi,
+  type CoSoKinhDoanhItem,
+  type CoSoKinhDoanhPageResponse,
+} from '@/api/api';
 
-function DetailItem({
-  label,
-  value,
-  icon,
-}: {
-  label: string;
-  value: React.ReactNode;
-  icon?: React.ReactNode;
-}) {
-  return (
-    <div
-      style={{
-        border: '1px solid #D6D6D6',
-        background: '#FAFAFA',
-        padding: '12px 14px',
-        borderRadius: '2px',
-      }}
-    >
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '6px',
-          marginBottom: '6px',
-          fontSize: '11px',
-          fontWeight: 700,
-          color: '#666',
-          textTransform: 'uppercase',
-          letterSpacing: '0.04em',
-        }}
-      >
-        {icon}
-        <span>{label}</span>
-      </div>
-      <div style={{ fontSize: '13px', fontWeight: 600, color: '#222' }}>{value}</div>
-    </div>
-  );
+// ─── Fallback data khi API offline ───────────────────────────────
+const FALLBACK_ITEMS: CoSoKinhDoanhItem[] = [
+  { maCoSo: 'CS-001', tenCoSo: 'Nhà hàng Hải Sản Biển Xanh', soGiayPhep: 'FSL-2024-0234', ngayHetHanGiayPhep: '2026-01-09', trangThai: 'HOAT_DONG', maPX: 'HC01', tenPhuongXa: 'Hải Châu 1', maChuSoHuu: 'U001', tenChuSoHuu: 'Nguyễn Văn An' },
+  { maCoSo: 'CS-002', tenCoSo: 'Quán Ăn Gia Đình Việt',       soGiayPhep: 'FSL-2024-0099', ngayHetHanGiayPhep: '2025-02-14', trangThai: 'HET_HAN',   maPX: 'TK02', tenPhuongXa: 'Thanh Khê Đông', maChuSoHuu: 'U002', tenChuSoHuu: 'Trần Thị Bình' },
+  { maCoSo: 'CS-003', tenCoSo: 'Cửa hàng Thực phẩm Organic',  soGiayPhep: 'FSL-2024-0087', ngayHetHanGiayPhep: '2026-03-19', trangThai: 'HOAT_DONG', maPX: 'NHS03', tenPhuongXa: 'Mỹ An', maChuSoHuu: 'U003', tenChuSoHuu: 'Phạm Văn Cường' },
+  { maCoSo: 'CS-004', tenCoSo: 'Siêu thị Mini Mart Đà Nẵng',  soGiayPhep: 'FSL-2024-0198', ngayHetHanGiayPhep: '2026-01-04', trangThai: 'DINH_CHI',  maPX: 'ST04', tenPhuongXa: 'An Hải Bắc', maChuSoHuu: 'U004', tenChuSoHuu: 'Lê Thị Dung' },
+  { maCoSo: 'CS-005', tenCoSo: 'Công ty Hải Sản Đà Nẵng',     soGiayPhep: 'FSL-2023-0011', ngayHetHanGiayPhep: '2025-06-01', trangThai: 'HET_HAN',   maPX: 'TK05', tenPhuongXa: 'Thanh Khê Tây', maChuSoHuu: 'U005', tenChuSoHuu: 'Hoàng Văn Em' },
+  { maCoSo: 'CS-006', tenCoSo: 'Bánh Mì Hội An',               soGiayPhep: 'FSL-2025-0045', ngayHetHanGiayPhep: '2027-05-15', trangThai: 'HOAT_DONG', maPX: 'ST06', tenPhuongXa: 'Sơn Trà', maChuSoHuu: 'U006', tenChuSoHuu: 'Ngô Thị Phương' },
+];
+
+const FALLBACK_PAGE: CoSoKinhDoanhPageResponse = {
+  totalPages: 1, totalElements: FALLBACK_ITEMS.length, size: 20,
+  content: FALLBACK_ITEMS, number: 0, first: true, last: true,
+  numberOfElements: FALLBACK_ITEMS.length, empty: false,
+};
+
+// ─── Map trangThai backend → StatusBadge variant ─────────────────
+const TRANG_THAI_VARIANT: Record<string, string> = {
+  HOAT_DONG: 'active',
+  HET_HAN:   'expired',
+  DINH_CHI:  'suspended',
+  CHO_DUYET: 'pending',
+};
+
+const TRANG_THAI_OPTIONS = [
+  { value: '',           label: '-- Tất cả --' },
+  { value: 'HOAT_DONG', label: 'Đang hoạt động' },
+  { value: 'HET_HAN',   label: 'Hết hạn' },
+  { value: 'DINH_CHI',  label: 'Tạm đình chỉ' },
+  { value: 'CHO_DUYET', label: 'Chờ duyệt' },
+];
+
+function formatDate(iso: string) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
-function EmptyPanel({ message }: { message: string }) {
-  return (
-    <div
-      style={{
-        padding: '20px',
-        border: '1px dashed #CFCFCF',
-        background: '#FAFAFA',
-        color: '#666',
-        fontSize: '13px',
-      }}
-    >
-      {message}
-    </div>
-  );
-}
+const PAGE_SIZE = 20;
 
-function ApprovalBadge({ label = 'Đã duyệt' }: { label?: string }) {
+// ─── Real pagination component ────────────────────────────────────
+function Pagination({
+  page, totalPages, totalElements, size, onPage,
+}: { page: number; totalPages: number; totalElements: number; size: number; onPage: (p: number) => void }) {
+  const from = totalElements === 0 ? 0 : page * size + 1;
+  const to   = Math.min((page + 1) * size, totalElements);
+
   return (
-    <span
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        height: '22px',
-        padding: '0 8px',
-        borderRadius: '10px',
-        border: '1px solid #94C994',
-        background: '#E6F4E6',
-        color: '#006400',
-        fontSize: '11px',
-        fontWeight: 700,
-        whiteSpace: 'nowrap',
-      }}
-    >
-      {label}
-    </span>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+      <span style={{ fontSize: '12px', color: '#555' }}>
+        Hiển thị {from}–{to} / {totalElements.toLocaleString('vi-VN')} cơ sở
+      </span>
+      <nav style={{ display: 'flex', gap: '3px', alignItems: 'center' }}>
+        <button
+          type="button"
+          disabled={page === 0}
+          onClick={() => onPage(page - 1)}
+          style={{ width: 28, height: 24, borderRadius: 2, border: '1px solid #D6D6D6', background: '#fff', cursor: page === 0 ? 'not-allowed' : 'pointer', opacity: page === 0 ? 0.4 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        >
+          <ChevronLeft style={{ width: 13, height: 13 }} />
+        </button>
+        {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+          let p = i;
+          if (totalPages > 7) {
+            if (page <= 3) p = i;
+            else if (page >= totalPages - 4) p = totalPages - 7 + i;
+            else p = page - 3 + i;
+          }
+          return (
+            <button
+              key={p}
+              type="button"
+              onClick={() => onPage(p)}
+              style={{
+                minWidth: 28, height: 24, borderRadius: 2, fontSize: 12,
+                border: p === page ? '1px solid #006400' : '1px solid #D6D6D6',
+                background: p === page ? '#008000' : '#fff',
+                color: p === page ? '#fff' : '#333',
+                fontWeight: p === page ? 700 : 400,
+                cursor: 'pointer',
+              }}
+            >
+              {p + 1}
+            </button>
+          );
+        })}
+        <button
+          type="button"
+          disabled={page >= totalPages - 1}
+          onClick={() => onPage(page + 1)}
+          style={{ width: 28, height: 24, borderRadius: 2, border: '1px solid #D6D6D6', background: '#fff', cursor: page >= totalPages - 1 ? 'not-allowed' : 'pointer', opacity: page >= totalPages - 1 ? 0.4 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        >
+          <ChevronRight style={{ width: 13, height: 13 }} />
+        </button>
+      </nav>
+    </div>
   );
 }
 
 export default function CoSoKinhDoanhPage() {
-  const [data, setData] = useState<Business[]>(mockBusinesses);
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [districtFilter, setDistrictFilter] = useState('');
-  const [viewMode, setViewMode] = useState<'list' | 'detail' | 'edit'>('list');
-  const [selectedBusinessId, setSelectedBusinessId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState<Business | null>(null);
+  const [pageData, setPageData] = useState<CoSoKinhDoanhPageResponse>(FALLBACK_PAGE);
+  const [loading, setLoading]   = useState(true);
+  const [error, setError]       = useState<string | null>(null);
 
-  const filtered = data.filter((business) => {
-    const matchSearch =
-      !search ||
-      business.name.toLowerCase().includes(search.toLowerCase()) ||
-      business.id.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = !statusFilter || business.status === statusFilter;
-    const matchDistrict = !districtFilter || business.district === districtFilter;
-    return matchSearch && matchStatus && matchDistrict;
-  });
+  // Filter state
+  const [keyword, setKeyword]         = useState('');
+  const [trangThai, setTrangThai]     = useState('');
+  const [page, setPage]               = useState(0);
 
-  const districts = [...new Set(data.map((business) => business.district))];
-  const selectedBusiness =
-    selectedBusinessId ? data.find((business) => business.id === selectedBusinessId) ?? null : null;
+  // Pending filter (chỉ apply khi bấm Tìm kiếm)
+  const [pendingKeyword, setPendingKeyword] = useState('');
+  const [pendingTrangThai, setPendingTrangThai] = useState('');
 
-  const relatedInspections: Inspection[] = selectedBusiness
-    ? mockInspections.filter((inspection) => inspection.business === selectedBusiness.name)
-    : [];
-  const latestInspection = relatedInspections[0] ?? null;
-
-  const relatedViolations: Violation[] = selectedBusiness
-    ? mockViolations.filter((violation) => violation.business === selectedBusiness.name)
-    : [];
-
-  const openDetail = (business: Business) => {
-    setSelectedBusinessId(business.id);
-    setEditForm(null);
-    setViewMode('detail');
-  };
-
-  const openEdit = (business: Business) => {
-    setSelectedBusinessId(business.id);
-    setEditForm({ ...business });
-    setViewMode('edit');
-  };
-
-  const closePanel = () => {
-    setSelectedBusinessId(null);
-    setEditForm(null);
-    setViewMode('list');
-  };
-
-  const cancelEdit = () => {
-    if (!selectedBusiness) {
-      closePanel();
-      return;
+  const fetchData = useCallback(async (p = 0, tt = trangThai, kw = keyword) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await coSoKinhDoanhApi.getList({ trangThai: tt || undefined, page: p, size: PAGE_SIZE });
+      // Client-side keyword filter nếu server không hỗ trợ
+      if (kw) {
+        const lower = kw.toLowerCase();
+        const filtered = res.content.filter(
+          c => c.tenCoSo.toLowerCase().includes(lower) || c.maCoSo.toLowerCase().includes(lower) || c.soGiayPhep.toLowerCase().includes(lower)
+        );
+        setPageData({ ...res, content: filtered, numberOfElements: filtered.length });
+      } else {
+        setPageData(res);
+      }
+    } catch {
+      setPageData(FALLBACK_PAGE);
+      setError('Không thể kết nối API — hiển thị dữ liệu mẫu');
+    } finally {
+      setLoading(false);
     }
+  }, [trangThai, keyword]);
 
-    setEditForm({ ...selectedBusiness });
-    setViewMode('detail');
+  useEffect(() => { fetchData(0); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleSearch = () => {
+    setKeyword(pendingKeyword);
+    setTrangThai(pendingTrangThai);
+    setPage(0);
+    fetchData(0, pendingTrangThai, pendingKeyword);
   };
 
-  const saveEdit = () => {
-    if (!editForm) {
-      return;
-    }
-
-    setData((current) =>
-      current.map((business) =>
-        business.id === editForm.id ? { ...editForm } : business
-      )
-    );
-    setSelectedBusinessId(editForm.id);
-    setViewMode('detail');
+  const handleClear = () => {
+    setPendingKeyword('');
+    setPendingTrangThai('');
+    setKeyword('');
+    setTrangThai('');
+    setPage(0);
+    fetchData(0, '', '');
   };
 
-  const columns: Column<Business>[] = [
+  const handlePageChange = (p: number) => {
+    setPage(p);
+    fetchData(p);
+  };
+
+  const handleRefresh = () => fetchData(page);
+
+  // Stats từ fallback nếu API chưa trả về tổng hợp
+  const total     = pageData.totalElements;
+  const hoatDong  = pageData.content.filter(c => c.trangThai === 'HOAT_DONG').length;
+  const hetHan    = pageData.content.filter(c => c.trangThai === 'HET_HAN').length;
+  const dinhChi   = pageData.content.filter(c => c.trangThai === 'DINH_CHI').length;
+
+  const columns: Column<CoSoKinhDoanhItem>[] = [
     {
-      key: 'id',
+      key: 'maCoSo',
       header: 'Mã cơ sở',
-      render: (business) => (
-        <span style={{ fontFamily: 'monospace', fontWeight: 600, color: '#005A9E' }}>
-          {business.id}
-        </span>
-      ),
+      render: r => <span style={{ fontFamily: 'monospace', fontWeight: 600, color: '#005A9E' }}>{r.maCoSo}</span>,
     },
     {
-      key: 'name',
+      key: 'tenCoSo',
       header: 'Tên cơ sở',
-      render: (business) => <span style={{ fontWeight: 600 }}>{business.name}</span>,
+      render: r => (
+        <div>
+          <p style={{ fontWeight: 600, color: '#222', margin: 0 }}>{r.tenCoSo}</p>
+          <p style={{ fontSize: '11px', color: '#888', margin: 0 }}>{r.tenPhuongXa}</p>
+        </div>
+      ),
     },
-    { key: 'category', header: 'Loại hình' },
-    { key: 'district', header: 'Quận/Huyện' },
     {
-      key: 'license',
+      key: 'soGiayPhep',
       header: 'Số giấy phép',
-      render: (business) => (
-        <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>{business.license}</span>
-      ),
+      render: r => <span style={{ fontFamily: 'monospace', fontSize: '12px', color: '#444' }}>{r.soGiayPhep || '—'}</span>,
     },
     {
-      key: 'expiry',
-      header: 'Ngày hết hạn',
-      render: (business) => (
-        <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>{business.expiry}</span>
-      ),
+      key: 'ngayHetHanGiayPhep',
+      header: 'Hết hạn GP',
+      render: r => {
+        const expired = r.ngayHetHanGiayPhep && new Date(r.ngayHetHanGiayPhep) < new Date();
+        return (
+          <span style={{ fontFamily: 'monospace', fontSize: '12px', color: expired ? '#CC0000' : '#222', fontWeight: expired ? 600 : 400 }}>
+            {formatDate(r.ngayHetHanGiayPhep)}
+          </span>
+        );
+      },
     },
     {
-      key: 'status',
+      key: 'tenChuSoHuu',
+      header: 'Chủ sở hữu',
+      render: r => <span style={{ fontSize: '12.5px' }}>{r.tenChuSoHuu || '—'}</span>,
+    },
+    {
+      key: 'trangThai',
       header: 'Trạng thái',
-      render: (business) => <StatusBadge variant={business.status} />,
-    },
-    {
-      key: 'lastInspection',
-      header: 'Thanh tra cuối',
-      render: (business) => (
-        <span style={{ fontSize: '12px', color: '#555' }}>{business.lastInspection}</span>
-      ),
+      render: r => <StatusBadge variant={TRANG_THAI_VARIANT[r.trangThai] ?? r.trangThai} />,
     },
     {
       key: 'actions',
       header: 'Thao tác',
-      render: (business) => (
-        <div style={{ display: 'flex', gap: '3px' }}>
-          <GovBtn
-            variant="secondary"
-            size="sm"
-            title="Xem chi tiết"
-            onClick={() => openDetail(business)}
-          >
-            <Eye style={{ width: 12, height: 12 }} />
+      render: r => (
+        <Link href={`/co-so-kinh-doanh/${r.maCoSo}`}>
+          <GovBtn variant="secondary" size="sm" title="Xem chi tiết">
+            <Eye style={{ width: 12, height: 12 }} /> Chi tiết
           </GovBtn>
-          <GovBtn
-            variant="outline"
-            size="sm"
-            title="Chỉnh sửa"
-            onClick={() => openEdit(business)}
-          >
-            <Pencil style={{ width: 12, height: 12 }} />
-          </GovBtn>
-          <GovBtn variant="danger" size="sm" title="Xóa">
-            <Trash2 style={{ width: 12, height: 12 }} />
-          </GovBtn>
-        </div>
+        </Link>
       ),
     },
   ];
@@ -267,8 +245,8 @@ export default function CoSoKinhDoanhPage() {
         title="Quản lý cơ sở kinh doanh thực phẩm"
         subtitle="Chi cục An toàn Thực phẩm TP. Đà Nẵng — Danh sách cơ sở đã đăng ký"
         actions={
-          <>
-            <GovBtn variant="secondary">
+          <ActionButtons>
+            <GovBtn variant="secondary" onClick={handleRefresh}>
               <RefreshCw style={{ width: 12, height: 12 }} /> Làm mới
             </GovBtn>
             <GovBtn variant="secondary">
@@ -277,459 +255,81 @@ export default function CoSoKinhDoanhPage() {
             <GovBtn variant="secondary">
               <FileSpreadsheet style={{ width: 12, height: 12 }} /> Xuất Excel
             </GovBtn>
-            <GovBtn variant="primary">
-              <Plus style={{ width: 12, height: 12 }} /> Thêm mới
-            </GovBtn>
-          </>
+          </ActionButtons>
         }
       />
 
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(4,1fr)',
-          gap: '10px',
-          marginBottom: '12px',
-        }}
-      >
-        <MiniStat label="Tổng cơ sở ATTP" value="1.842" color="neutral" />
-        <MiniStat label="Đang hoạt động" value="1.673" color="green" note="90,8% tỷ lệ" />
-        <MiniStat label="Tạm đình chỉ" value="89" color="orange" note="5 tuần này" />
-        <MiniStat label="Hết hạn giấy phép" value="80" color="red" note="Cần gia hạn" />
+      {/* Thông báo lỗi API */}
+      {error && (
+        <div style={{ background: '#FFF4E5', border: '1px solid #FFCC80', borderLeft: '4px solid #CC6600', borderRadius: 2, padding: '8px 12px', marginBottom: 10, fontSize: 12.5, color: '#7a3e00' }}>
+          ⚠ {error}
+        </div>
+      )}
+
+      {/* Stats */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '10px', marginBottom: '12px' }}>
+        <MiniStat label="Tổng cơ sở ATTP"    value={total.toLocaleString('vi-VN')} color="neutral" icon={Building2} />
+        <MiniStat label="Đang hoạt động"      value={hoatDong}  color="green"   note={total > 0 ? `${Math.round(hoatDong / Math.max(pageData.numberOfElements, 1) * 100)}% trang này` : ''} />
+        <MiniStat label="Tạm đình chỉ"        value={dinhChi}   color="orange" />
+        <MiniStat label="Hết hạn giấy phép"   value={hetHan}    color="red"    note="Cần gia hạn" />
       </div>
 
+      {/* Filter */}
       <FilterBar>
         <FilterField label="Tìm kiếm">
           <GovInput
-            placeholder="Tên cơ sở, mã cơ sở..."
-            value={search}
-            onChange={setSearch}
-            width={220}
+            placeholder="Tên cơ sở, mã cơ sở, số GP..."
+            value={pendingKeyword}
+            onChange={setPendingKeyword}
+            width={240}
           />
         </FilterField>
         <FilterField label="Trạng thái">
           <GovSelect
-            value={statusFilter}
-            onChange={setStatusFilter}
-            options={[
-              { value: '', label: '-- Tất cả --' },
-              { value: 'active', label: 'Đang hoạt động' },
-              { value: 'suspended', label: 'Tạm đình chỉ' },
-              { value: 'pending', label: 'Chờ xử lý' },
-              { value: 'expired', label: 'Hết hạn' },
-            ]}
-            width={160}
-          />
-        </FilterField>
-        <FilterField label="Quận/Huyện">
-          <GovSelect
-            value={districtFilter}
-            onChange={setDistrictFilter}
-            options={[
-              { value: '', label: '-- Tất cả --' },
-              ...districts.map((district) => ({ value: district, label: district })),
-            ]}
-            width={160}
+            value={pendingTrangThai}
+            onChange={setPendingTrangThai}
+            options={TRANG_THAI_OPTIONS}
+            width={170}
           />
         </FilterField>
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px' }}>
-          <GovBtn variant="primary">Tìm kiếm</GovBtn>
-          <GovBtn
-            variant="secondary"
-            onClick={() => {
-              setSearch('');
-              setStatusFilter('');
-              setDistrictFilter('');
-            }}
-          >
-            Xóa bộ lọc
+          <GovBtn variant="primary" onClick={handleSearch}>
+            <Search style={{ width: 12, height: 12 }} /> Tìm kiếm
+          </GovBtn>
+          <GovBtn variant="secondary" onClick={handleClear}>
+            <X style={{ width: 12, height: 12 }} /> Xóa bộ lọc
           </GovBtn>
         </div>
       </FilterBar>
 
-      {viewMode === 'list' || !selectedBusiness ? (
-        <SectionCard
-          title={`Danh sách cơ sở kinh doanh thực phẩm (${filtered.length} cơ sở)`}
-          footer={<GovPagination info={`Hiển thị ${filtered.length} / 1.842 cơ sở`} />}
-        >
+      {/* Table */}
+      <SectionCard
+        title={`Danh sách cơ sở kinh doanh (${pageData.totalElements.toLocaleString('vi-VN')} cơ sở)`}
+        footer={
+          <Pagination
+            page={page}
+            totalPages={pageData.totalPages}
+            totalElements={pageData.totalElements}
+            size={PAGE_SIZE}
+            onPage={handlePageChange}
+          />
+        }
+      >
+        {loading ? (
+          <div style={{ padding: '32px', textAlign: 'center', color: '#888', fontSize: 13 }}>
+            <RefreshCw style={{ width: 18, height: 18, display: 'inline-block', marginRight: 8, animation: 'spin 1s linear infinite' }} />
+            Đang tải dữ liệu...
+          </div>
+        ) : (
           <DataTable
             columns={columns}
-            data={filtered}
-            emptyMessage="Không tìm thấy cơ sở kinh doanh nào khớp với điều kiện tìm kiếm."
+            data={pageData.content}
+            sttStart={page * PAGE_SIZE + 1}
+            rowKey={r => r.maCoSo}
+            emptyMessage="Không tìm thấy cơ sở kinh doanh nào phù hợp với bộ lọc."
           />
-        </SectionCard>
-      ) : viewMode === 'detail' ? (
-        <SectionCard
-          title={`Chi tiết cơ sở kinh doanh: ${selectedBusiness.name}`}
-          actions={
-            <>
-              <GovBtn variant="outline" onClick={() => openEdit(selectedBusiness)}>
-                <Pencil style={{ width: 12, height: 12 }} /> Chỉnh sửa
-              </GovBtn>
-              <GovBtn variant="secondary" onClick={closePanel}>
-                <ArrowLeft style={{ width: 12, height: 12 }} /> Quay lại danh sách
-              </GovBtn>
-            </>
-          }
-        >
-          <div style={{ padding: '14px' }}>
-            <div
-              style={{
-                border: '1px solid #CFE6CF',
-                background: 'linear-gradient(135deg, #F4FBF4 0%, #FFFFFF 100%)',
-                padding: '18px',
-                marginBottom: '14px',
-              }}
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  gap: '16px',
-                  alignItems: 'flex-start',
-                  flexWrap: 'wrap',
-                }}
-              >
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', flexWrap: 'wrap' }}>
-                    <span
-                      style={{
-                        fontFamily: 'monospace',
-                        fontWeight: 700,
-                        fontSize: '12px',
-                        color: '#005A9E',
-                        background: '#EAF3FB',
-                        border: '1px solid #C7DDF0',
-                        padding: '4px 8px',
-                      }}
-                    >
-                      {selectedBusiness.id}
-                    </span>
-                    <StatusBadge variant={selectedBusiness.status} />
-                  </div>
-                  <h2 style={{ margin: '0 0 6px', fontSize: '22px', fontWeight: 800, color: '#1F2937' }}>
-                    {selectedBusiness.name}
-                  </h2>
-                  <p style={{ margin: 0, fontSize: '13px', color: '#555' }}>
-                    Hồ sơ tổng quan của cơ sở kinh doanh, tình trạng pháp lý và lịch sử thanh tra liên quan.
-                  </p>
-                </div>
-
-                <div
-                  style={{
-                    minWidth: '260px',
-                    border: '1px solid #D6E8D6',
-                    background: '#fff',
-                    padding: '12px 14px',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                    <CheckCircle2 style={{ width: 16, height: 16, color: '#008000' }} />
-                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#006400', textTransform: 'uppercase' }}>
-                      Đánh giá nhanh
-                    </span>
-                  </div>
-                  <div style={{ fontSize: '13px', color: '#222', lineHeight: 1.6 }}>
-                    <div>Giấy phép: <strong>{selectedBusiness.license}</strong></div>
-                    <div>Hạn hiệu lực: <strong>{selectedBusiness.expiry}</strong></div>
-                    <div>
-                      Vi phạm đang theo dõi: <strong>{relatedViolations.filter((item) => item.status !== 'resolved').length}</strong>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-                gap: '14px',
-                marginBottom: '14px',
-              }}
-            >
-              <SectionCard title="Thông tin nhận diện">
-                <div style={{ padding: '14px', display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '10px' }}>
-                  <DetailItem
-                    label="Tên cơ sở"
-                    value={selectedBusiness.name}
-                    icon={<Building2 style={{ width: 12, height: 12 }} />}
-                  />
-                  <DetailItem
-                    label="Mã cơ sở"
-                    value={<span style={{ fontFamily: 'monospace' }}>{selectedBusiness.id}</span>}
-                    icon={<Building2 style={{ width: 12, height: 12 }} />}
-                  />
-                  <DetailItem label="Loại hình" value={selectedBusiness.category} />
-                  <DetailItem label="Quận/Huyện" value={selectedBusiness.district} />
-                </div>
-              </SectionCard>
-
-              <SectionCard title="Tình trạng pháp lý">
-                <div style={{ padding: '14px', display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '10px' }}>
-                  <DetailItem
-                    label="Số giấy phép"
-                    value={<span style={{ fontFamily: 'monospace' }}>{selectedBusiness.license}</span>}
-                    icon={<FileClock style={{ width: 12, height: 12 }} />}
-                  />
-                  <DetailItem
-                    label="Ngày hết hạn"
-                    value={<span style={{ fontFamily: 'monospace' }}>{selectedBusiness.expiry}</span>}
-                    icon={<CalendarDays style={{ width: 12, height: 12 }} />}
-                  />
-                  <DetailItem label="Trạng thái hồ sơ" value={<StatusBadge variant={selectedBusiness.status} />} />
-                  <DetailItem
-                    label="Thanh tra cuối"
-                    value={<span style={{ fontFamily: 'monospace' }}>{selectedBusiness.lastInspection}</span>}
-                    icon={<CalendarDays style={{ width: 12, height: 12 }} />}
-                  />
-                </div>
-              </SectionCard>
-            </div>
-
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '1.15fr 0.85fr',
-                gap: '14px',
-              }}
-            >
-              <SectionCard title="Lịch sử thanh tra liên quan">
-                <div style={{ padding: '14px' }}>
-                  {relatedInspections.length > 0 ? (
-                    <div style={{ display: 'grid', gap: '10px' }}>
-                      {relatedInspections.slice(0, 3).map((inspection) => (
-                        <div
-                          key={inspection.id}
-                          style={{
-                            border: '1px solid #D6D6D6',
-                            background: '#FAFAFA',
-                            padding: '12px 14px',
-                          }}
-                        >
-                          <div
-                            style={{
-                              display: 'flex',
-                              justifyContent: 'space-between',
-                              gap: '12px',
-                              alignItems: 'center',
-                              marginBottom: '8px',
-                              flexWrap: 'wrap',
-                            }}
-                          >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#005A9E', fontSize: '12px' }}>
-                                {inspection.id}
-                              </span>
-                              <StatusBadge variant={inspection.result} />
-                            </div>
-                            <span style={{ fontSize: '12px', color: '#555' }}>{inspection.date}</span>
-                          </div>
-                          <div style={{ fontSize: '13px', color: '#222', lineHeight: 1.6 }}>
-                            <div>Loại kiểm tra: <strong>{inspection.type}</strong></div>
-                            <div>Thanh tra viên: <strong>{inspection.inspector}</strong></div>
-                            <div>Điểm đánh giá: <strong>{inspection.score}/100</strong></div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <EmptyPanel message="Chưa có lịch sử thanh tra nào được liên kết với cơ sở này." />
-                  )}
-                </div>
-              </SectionCard>
-
-              <SectionCard title="Vi phạm liên quan">
-                <div style={{ padding: '14px' }}>
-                  {relatedViolations.length > 0 ? (
-                    <div style={{ display: 'grid', gap: '10px' }}>
-                      {relatedViolations.slice(0, 3).map((violation) => (
-                        <div
-                          key={violation.id}
-                          style={{
-                            border: '1px solid #D6D6D6',
-                            background: violation.status === 'resolved' ? '#FAFAFA' : '#FFF8F0',
-                            padding: '12px 14px',
-                          }}
-                        >
-                          <div
-                            style={{
-                              display: 'flex',
-                              justifyContent: 'space-between',
-                              gap: '10px',
-                              alignItems: 'center',
-                              marginBottom: '8px',
-                              flexWrap: 'wrap',
-                            }}
-                          >
-                            <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#B45309', fontSize: '12px' }}>
-                              {violation.id}
-                            </span>
-                            <ApprovalBadge />
-                          </div>
-                          <div style={{ fontSize: '13px', color: '#222', lineHeight: 1.6 }}>
-                            <div>
-                              <AlertTriangle style={{ width: 13, height: 13, display: 'inline-block', marginRight: '6px', color: '#CC6600', verticalAlign: 'text-bottom' }} />
-                              <strong>{violation.type}</strong>
-                            </div>
-                            <div>Mức độ: <strong>{violation.severity}</strong></div>
-                            <div>Ngày lập biên bản: <strong>{violation.date}</strong></div>
-                            <div>Mức phạt: <strong>{violation.penalty}</strong></div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <EmptyPanel message="Không có vi phạm nào đang được ghi nhận cho cơ sở này." />
-                  )}
-                </div>
-              </SectionCard>
-            </div>
-
-            {latestInspection && (
-              <div style={{ marginTop: '14px' }}>
-                <SectionCard title="Gợi ý thông tin nên xem nhanh">
-                  <div style={{ padding: '14px', fontSize: '13px', color: '#333', lineHeight: 1.7 }}>
-                    <div>
-                      Cơ sở này được kiểm tra gần nhất vào <strong>{latestInspection.date}</strong>, kết quả{' '}
-                      <strong>{latestInspection.result === 'pass' ? 'đạt' : latestInspection.result === 'fail' ? 'không đạt' : 'đã lên lịch'}</strong>.
-                    </div>
-                    <div>
-                      Khi tra cứu từ màn danh sách, nhóm thông tin nên ưu tiên là: trạng thái hoạt động, giấy phép còn hạn hay không, lần thanh tra gần nhất và vi phạm chưa xử lý.
-                    </div>
-                  </div>
-                </SectionCard>
-              </div>
-            )}
-          </div>
-        </SectionCard>
-      ) : editForm ? (
-        <SectionCard
-          title={`Chỉnh sửa cơ sở kinh doanh: ${editForm.name}`}
-          actions={
-            <>
-              <GovBtn variant="secondary" onClick={cancelEdit}>
-                <ArrowLeft style={{ width: 12, height: 12 }} /> Hủy chỉnh sửa
-              </GovBtn>
-              <GovBtn variant="primary" onClick={saveEdit}>
-                <CheckCircle2 style={{ width: 12, height: 12 }} /> Lưu cập nhật
-              </GovBtn>
-            </>
-          }
-        >
-          <div style={{ padding: '14px' }}>
-            <div
-              style={{
-                border: '1px solid #D6D6D6',
-                background: '#F8FBF8',
-                padding: '14px',
-                marginBottom: '14px',
-                fontSize: '13px',
-                color: '#444',
-                lineHeight: 1.6,
-              }}
-            >
-              Chỉnh sửa nhanh các thông tin đang hiển thị trên danh sách: tên cơ sở, loại hình, khu vực,
-              giấy phép, trạng thái và ngày thanh tra gần nhất.
-            </div>
-
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-                gap: '14px',
-              }}
-            >
-              <SectionCard title="Thông tin cơ sở">
-                <div style={{ padding: '14px', display: 'grid', gap: '12px' }}>
-                  <FilterField label="Mã cơ sở">
-                    <GovInput value={editForm.id} onChange={() => {}} width="100%" />
-                  </FilterField>
-                  <FilterField label="Tên cơ sở">
-                    <GovInput
-                      value={editForm.name}
-                      onChange={(value) =>
-                        setEditForm((current) => (current ? { ...current, name: value } : current))
-                      }
-                      width="100%"
-                    />
-                  </FilterField>
-                  <FilterField label="Loại hình">
-                    <GovInput
-                      value={editForm.category}
-                      onChange={(value) =>
-                        setEditForm((current) => (current ? { ...current, category: value } : current))
-                      }
-                      width="100%"
-                    />
-                  </FilterField>
-                  <FilterField label="Quận/Huyện">
-                    <GovSelect
-                      value={editForm.district}
-                      onChange={(value) =>
-                        setEditForm((current) => (current ? { ...current, district: value } : current))
-                      }
-                      options={districts.map((district) => ({ value: district, label: district }))}
-                      width="100%"
-                    />
-                  </FilterField>
-                </div>
-              </SectionCard>
-
-              <SectionCard title="Pháp lý và vận hành">
-                <div style={{ padding: '14px', display: 'grid', gap: '12px' }}>
-                  <FilterField label="Số giấy phép">
-                    <GovInput
-                      value={editForm.license}
-                      onChange={(value) =>
-                        setEditForm((current) => (current ? { ...current, license: value } : current))
-                      }
-                      width="100%"
-                    />
-                  </FilterField>
-                  <FilterField label="Ngày hết hạn">
-                    <GovInput
-                      value={editForm.expiry}
-                      onChange={(value) =>
-                        setEditForm((current) => (current ? { ...current, expiry: value } : current))
-                      }
-                      width="100%"
-                    />
-                  </FilterField>
-                  <FilterField label="Trạng thái">
-                    <GovSelect
-                      value={editForm.status}
-                      onChange={(value) =>
-                        setEditForm((current) =>
-                          current ? { ...current, status: value as Business['status'] } : current
-                        )
-                      }
-                      options={[
-                        { value: 'active', label: 'Đang hoạt động' },
-                        { value: 'suspended', label: 'Tạm đình chỉ' },
-                        { value: 'pending', label: 'Chờ xử lý' },
-                        { value: 'expired', label: 'Hết hạn' },
-                      ]}
-                      width="100%"
-                    />
-                  </FilterField>
-                  <FilterField label="Thanh tra cuối">
-                    <GovInput
-                      value={editForm.lastInspection}
-                      onChange={(value) =>
-                        setEditForm((current) =>
-                          current ? { ...current, lastInspection: value } : current
-                        )
-                      }
-                      width="100%"
-                    />
-                  </FilterField>
-                </div>
-              </SectionCard>
-            </div>
-          </div>
-        </SectionCard>
-      ) : null}
+        )}
+      </SectionCard>
     </div>
   );
 }

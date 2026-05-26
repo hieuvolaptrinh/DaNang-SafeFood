@@ -2,249 +2,161 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Save } from 'lucide-react';
-import Link from 'next/link';
-import { PageHeader, SectionCard, GovBtn } from '@/components/GovUI';
+import { ArrowLeft, Plus } from 'lucide-react';
+import { quyDinhApi, CreateQuyDinhRequest } from '@/api/quidinh';
+import {
+  PageHeader, GovBtn, SectionCard, ActionButtons,
+  FormSection, FormField, GovInput, GovSelect,
+} from '@/components/GovUI';
+import AlertBanner from '@/components/AlertBanner';
 
-interface FormData {
-  title: string;
-  content: string;
-  category: string;
-  issueDate: string;
-  effectiveDate: string;
-  authority: string;
-  attachment: File | null;
-}
+const LOAI_OPTIONS = [
+  { value: 'QUY_DINH',  label: 'Quy định' },
+  { value: 'HUONG_DAN', label: 'Hướng dẫn' },
+  { value: 'THONG_TU',  label: 'Thông tư' },
+  { value: 'NGHI_DINH', label: 'Nghị định' },
+];
 
-export default function NewRegulationPage() {
+const TRANG_THAI_OPTIONS = [
+  { value: 'NHAP',     label: 'Bản nháp' },
+  { value: 'HIEU_LUC', label: 'Đang hiệu lực' },
+];
+
+export default function TaoQuyDinhPage() {
   const router = useRouter();
-  
-  const [formData, setFormData] = useState<FormData>({
-    title: '',
-    content: '',
-    category: 'An toàn thực phẩm',
-    issueDate: '',
-    effectiveDate: '',
-    authority: '',
-    attachment: null,
-  });
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
+  const [tieuDe, setTieuDe]             = useState('');
+  const [noiDung, setNoiDung]           = useState('');
+  const [loai, setLoai]                 = useState('QUY_DINH');
+  const [trangThai, setTrangThai]       = useState('NHAP');
+  const [ngayBanHanh, setNgayBanHanh]   = useState('');
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+  const [submitting, setSubmitting]     = useState(false);
+  const [error, setError]               = useState<string | null>(null);
+  const [success, setSuccess]           = useState(false);
 
-    if (errors[name as keyof FormData]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
-    }
-  };
+  const isValid = tieuDe.trim() && noiDung.trim() && loai && trangThai && ngayBanHanh;
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] || null;
-    setFormData(prev => ({ ...prev, attachment: file }));
-  };
-
-  const validateForm = (): boolean => {
-    const newErrors: Partial<Record<keyof FormData, string>> = {};
-
-    if (!formData.title.trim()) newErrors.title = 'Tiêu đề không được để trống';
-    if (!formData.content.trim()) newErrors.content = 'Nội dung không được để trống';
-    if (!formData.issueDate) newErrors.issueDate = 'Vui lòng chọn ngày ban hành';
-    if (!formData.effectiveDate) newErrors.effectiveDate = 'Vui lòng chọn ngày hiệu lực';
-    if (!formData.authority.trim()) newErrors.authority = 'Cơ quan ban hành không được để trống';
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validateForm()) return;
-
-    setIsSubmitting(true);
-
+  const handleSubmit = async () => {
+    if (!isValid) return;
+    setSubmitting(true);
+    setError(null);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1200));
-      
-      console.log('✅ Ban hành quy định:', {
-        ...formData,
-        attachment: formData.attachment?.name || null,
-      });
-
-      alert('✅ Ban hành quy định thành công!');
-      router.push('/quy-dinh');
-    } catch (error) {
-      alert('❌ Có lỗi xảy ra');
+      const body: CreateQuyDinhRequest = {
+        tieuDe:      tieuDe.trim(),
+        noiDung:     noiDung.trim(),
+        loai,
+        trangThai,
+        ngayBanHanh, // YYYY-MM-DD from date input
+      };
+      await quyDinhApi.create(body);
+      setSuccess(true);
+      setTimeout(() => router.push('/truyen-thong/quy-dinh'), 1200);
+    } catch (err: any) {
+      setError(err.message || 'Không thể tạo quy định. Vui lòng thử lại.');
     } finally {
-      setIsSubmitting(false);
+      setSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 pb-16">
+    <div>
       <PageHeader
-        title="Ban hành quy định mới"
-        subtitle="Chi cục An toàn Thực phẩm TP. Đà Nẵng"
+        title="Tạo văn bản quy định mới"
+        subtitle="Chi cục An toàn Thực phẩm TP. Đà Nẵng — Nhập và ban hành văn bản quy phạm pháp luật"
         actions={
-          <Link href="/truyen-thong/quy-dinh">
-            <GovBtn variant="secondary">
-              <ArrowLeft size={16} /> Quay lại
+          <ActionButtons>
+            <GovBtn variant="secondary" onClick={() => router.push('/truyen-thong/quy-dinh')}>
+              <ArrowLeft style={{ width: 12, height: 12 }} /> Quay lại
             </GovBtn>
-          </Link>
+            <GovBtn variant="primary" onClick={handleSubmit} disabled={submitting || !isValid}>
+              <Plus style={{ width: 12, height: 12 }} />
+              {submitting ? 'Đang lưu...' : 'Lưu quy định'}
+            </GovBtn>
+          </ActionButtons>
         }
       />
 
-      <div className="max-w-[900px] mx-auto px-6 pt-8">
-        <SectionCard title="Thông tin quy định" className="shadow-sm">
-          <form onSubmit={handleSubmit} className="p-8 space-y-8">
-            
-            <div>
-              <label className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-1.5 block">
-                Tiêu đề quy định <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="title"
-                value={formData.title}
-                onChange={handleInputChange}
-                placeholder="Nhập tiêu đề quy định..."
-                className="w-full border border-slate-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-2xl px-5 py-3 text-sm"
-                disabled={isSubmitting}
-              />
-              {errors.title && <p className="mt-1 text-sm text-red-500">{errors.title}</p>}
-            </div>
+      {success && <AlertBanner type="success" title="Tạo văn bản quy định thành công! Đang chuyển về danh sách..." />}
+      {error   && <AlertBanner type="error"   title={error} />}
 
-            <div>
-              <label className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-1.5 block">
-                Nội dung quy định <span className="text-red-500">*</span>
-              </label>
+      <SectionCard
+        title="Thông tin văn bản quy định"
+        footer={
+          <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
+            <GovBtn variant="secondary" onClick={() => router.push('/truyen-thong/quy-dinh')} disabled={submitting}>
+              Hủy
+            </GovBtn>
+            <GovBtn variant="primary" onClick={handleSubmit} disabled={submitting || !isValid}>
+              {submitting ? 'Đang lưu...' : 'Lưu quy định'}
+            </GovBtn>
+          </div>
+        }
+      >
+        <div style={{ padding: '14px 16px' }}>
+          <FormSection title="Thông tin cơ bản">
+            <FormField label="Tiêu đề văn bản" required fullWidth>
+              <GovInput
+                placeholder="VD: Quy định về kiểm tra an toàn thực phẩm năm 2026..."
+                value={tieuDe}
+                onChange={setTieuDe}
+                disabled={submitting}
+              />
+            </FormField>
+
+            <FormField label="Loại văn bản" required>
+              <GovSelect
+                value={loai}
+                onChange={setLoai}
+                options={LOAI_OPTIONS}
+                width={200}
+              />
+            </FormField>
+
+            <FormField label="Trạng thái" required>
+              <GovSelect
+                value={trangThai}
+                onChange={setTrangThai}
+                options={TRANG_THAI_OPTIONS}
+                width={200}
+              />
+            </FormField>
+
+            <FormField label="Ngày ban hành" required>
+              <GovInput
+                type="date"
+                value={ngayBanHanh}
+                onChange={setNgayBanHanh}
+                disabled={submitting}
+                width={180}
+              />
+            </FormField>
+
+            <FormField label="Nội dung văn bản" required fullWidth>
               <textarea
-                name="content"
-                value={formData.content}
-                onChange={handleInputChange}
-                rows={10}
-                placeholder="Nhập nội dung chi tiết của quy định..."
-                className="w-full border border-slate-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-2xl px-5 py-4 text-sm resize-y min-h-[220px]"
-                disabled={isSubmitting}
+                value={noiDung}
+                onChange={e => setNoiDung(e.target.value)}
+                placeholder="Nhập nội dung chi tiết của văn bản quy định..."
+                rows={12}
+                disabled={submitting}
+                style={{
+                  width: '100%',
+                  border: '1px solid #D6D6D6',
+                  borderRadius: '2px',
+                  padding: '8px',
+                  fontSize: '13px',
+                  fontFamily: 'inherit',
+                  color: '#222',
+                  resize: 'vertical',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                  lineHeight: 1.7,
+                }}
               />
-              {errors.content && <p className="mt-1 text-sm text-red-500">{errors.content}</p>}
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-1.5 block">
-                  Danh mục
-                </label>
-                <select
-                  name="category"
-                  value={formData.category}
-                  onChange={handleInputChange}
-                  className="w-full border border-slate-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-2xl px-5 py-3 text-sm bg-white"
-                  disabled={isSubmitting}
-                >
-                  <option value="An toàn thực phẩm">An toàn thực phẩm</option>
-                  <option value="Giấy phép">Giấy phép</option>
-                  <option value="Xử phạt">Xử phạt vi phạm</option>
-                  <option value="Vệ sinh">Vệ sinh môi trường</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-1.5 block">
-                  Cơ quan ban hành <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="authority"
-                  value={formData.authority}
-                  onChange={handleInputChange}
-                  placeholder="Ví dụ: Chi cục An toàn Thực phẩm TP. Đà Nẵng"
-                  className="w-full border border-slate-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-2xl px-5 py-3 text-sm"
-                  disabled={isSubmitting}
-                />
-                {errors.authority && <p className="mt-1 text-sm text-red-500">{errors.authority}</p>}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-1.5 block">
-                  Ngày ban hành <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="date"
-                  name="issueDate"
-                  value={formData.issueDate}
-                  onChange={handleInputChange}
-                  className="w-full border border-slate-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-2xl px-5 py-3 text-sm"
-                  disabled={isSubmitting}
-                />
-                {errors.issueDate && <p className="mt-1 text-sm text-red-500">{errors.issueDate}</p>}
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-1.5 block">
-                  Ngày hiệu lực <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="date"
-                  name="effectiveDate"
-                  value={formData.effectiveDate}
-                  onChange={handleInputChange}
-                  className="w-full border border-slate-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-2xl px-5 py-3 text-sm"
-                  disabled={isSubmitting}
-                />
-                {errors.effectiveDate && <p className="mt-1 text-sm text-red-500">{errors.effectiveDate}</p>}
-              </div>
-            </div>
-
-            {/* File đính kèm */}
-            <div>
-              <label className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-1.5 block">
-                File đính kèm
-              </label>
-              <div className="border-2 border-dashed border-slate-300 hover:border-green-400 rounded-2xl p-8 text-center transition-all">
-                <input
-                  type="file"
-                  onChange={handleFileChange}
-                  className="hidden"
-                  id="file-upload"
-                  disabled={isSubmitting}
-                />
-                <label htmlFor="file-upload" className="cursor-pointer block">
-                  <div className="mx-auto w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-3 text-2xl">
-                    📎
-                  </div>
-                  <p className="font-medium text-slate-700">
-                    {formData.attachment ? formData.attachment.name : 'Chọn file đính kèm'}
-                  </p>
-                  <p className="text-xs text-slate-400 mt-1">PDF, Word, JPG (tối đa 10MB)</p>
-                </label>
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-4 pt-6 border-t">
-              <GovBtn 
-                variant="secondary" 
-                onClick={() => router.push('/quy-dinh')}
-                disabled={isSubmitting}
-              >
-                Hủy
-              </GovBtn>
-
-              <GovBtn 
-                variant="primary" 
-                type="submit"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? 'Đang ban hành...' : 'Ban hành quy định'}
-              </GovBtn>
-            </div>
-          </form>
-        </SectionCard>
-      </div>
+            </FormField>
+          </FormSection>
+        </div>
+      </SectionCard>
     </div>
   );
 }
