@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import {
@@ -11,13 +11,7 @@ import {
   PageHeader, GovBtn, SectionCard, StatusBadge, ActionButtons,
 } from '@/components/GovUI';
 import AlertBanner from '@/components/AlertBanner';
-
-// ─── Types ──────────────────────────────────────────────────────────────────
-
-interface ChiTieuKiemNghiem {
-  maChiTieu: string;
-  tenChiTieu: string;
-}
+import { mauKiemNghiemApi, MauKiemNghiemItem } from '@/api/maukiemnghiem';
 
 interface MauChiTieuRow {
   maChiTieu: string;
@@ -27,31 +21,11 @@ interface MauChiTieuRow {
   ketQua: 'Đạt' | 'Không đạt' | '';
 }
 
-interface MauKiemNghiemDetail {
-  maMau: string;
-  businessName: string;
-  sampleType: string;
-  collectedDate: string;
-  collectedBy: string;
-  lab: string;
-  status: 'received' | 'testing' | 'completed' | 'cancelled';
-  inspectionId: string;
+interface ChiTieuKiemNghiem {
+  maChiTieu: string;
+  tenChiTieu: string;
 }
 
-// ─── Mock data ───────────────────────────────────────────────────────────────
-
-const mockMauDetail: MauKiemNghiemDetail = {
-  maMau: 'MKN-2025001',
-  businessName: 'Nhà hàng Phở Ba Miền',
-  sampleType: 'Nước uống',
-  collectedDate: '10/01/2025',
-  collectedBy: 'Nguyễn Văn Trần',
-  lab: 'Phòng xét nghiệm Sở Y tế',
-  status: 'testing',
-  inspectionId: 'INS-2847',
-};
-
-// Danh sách chỉ tiêu từ bảng chỉ tiêu (image 1)
 const allChiTieu: ChiTieuKiemNghiem[] = [
   { maChiTieu: 'CT001', tenChiTieu: 'Chỉ tiêu vi sinh vật tổng số' },
   { maChiTieu: 'CT002', tenChiTieu: 'Coliform tổng số' },
@@ -60,48 +34,96 @@ const allChiTieu: ChiTieuKiemNghiem[] = [
   { maChiTieu: 'CT005', tenChiTieu: 'Kim loại nặng (Pb, Hg, Cd)' },
 ];
 
-// Dữ liệu hiện có (image 2 — mau_chi_tieu table)
 const initialRows: MauChiTieuRow[] = [
   { maChiTieu: 'CT001', tenChiTieu: 'Chỉ tiêu vi sinh vật tổng số', giaTriDo: '10^3 CFU/g', gioiHanChoPhep: '<= 10^4 CFU/g', ketQua: 'Đạt' },
   { maChiTieu: 'CT003', tenChiTieu: 'E.coli', giaTriDo: 'Âm tính', gioiHanChoPhep: 'Âm tính', ketQua: 'Đạt' },
 ];
 
 const statusVariant: Record<string, string> = {
-  received: 'pending',
-  testing: 'in-progress',
-  completed: 'resolved',
-  cancelled: 'expired',
-};
-const statusLabel: Record<string, string> = {
-  received: 'Đã tiếp nhận',
-  testing: 'Đang kiểm nghiệm',
-  completed: 'Hoàn thành',
-  cancelled: 'Hủy bỏ',
+  'Chưa kiểm nghiệm': 'pending',
+  'Đang kiểm nghiệm': 'in-progress',
+  'Hoàn thành': 'resolved',
+  'Đã tiếp nhận': 'pending',
+  'received': 'pending',
+  'testing': 'in-progress',
+  'completed': 'resolved',
+  'cancelled': 'expired',
 };
 
-// ─── Component ───────────────────────────────────────────────────────────────
+const statusLabel: Record<string, string> = {
+  'Chưa kiểm nghiệm': 'Chưa kiểm nghiệm',
+  'Đang kiểm nghiệm': 'Đang kiểm nghiệm',
+  'Hoàn thành': 'Hoàn thành',
+  'Đã tiếp nhận': 'Đã tiếp nhận',
+  'received': 'Đã tiếp nhận',
+  'testing': 'Đang kiểm nghiệm',
+  'completed': 'Hoàn thành',
+  'cancelled': 'Hủy bỏ',
+};
 
 export default function MauChiTieuPage() {
-  const params = useParams();
-  const maMau = (params?.id as string) ?? mockMauDetail.maMau;
+  const nextParams = useParams();
+  const maMau = nextParams?.id as string;
 
-  const [rows, setRows] = useState<MauChiTieuRow[]>(initialRows);
+  const [mauDetail, setMauDetail] = useState<MauKiemNghiemItem | null>(null);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
+  
+  // Status form fields
+  const [selectedStatus, setSelectedStatus] = useState('Chưa kiểm nghiệm');
+  const [ghiChu, setGhiChu] = useState('');
+
+  // Local criteria rows
+  const [rows, setRows] = useState<MauChiTieuRow[]>([]);
   const [addingNew, setAddingNew] = useState(false);
   const [newChiTieu, setNewChiTieu] = useState('');
   const [newGiaTri, setNewGiaTri] = useState('');
   const [newGioiHan, setNewGioiHan] = useState('');
   const [newKetQua, setNewKetQua] = useState<'Đạt' | 'Không đạt' | ''>('');
+  
+  // Catalog list of criteria from API
+  const [danhMucChiTieu, setDanhMucChiTieu] = useState<ChiTieuKiemNghiem[]>([]);
 
-  const mauDetail = mockMauDetail;
+  const fetchDetailAndCriteria = async () => {
+    if (!maMau) return;
+    setLoading(true);
+    setError('');
+    try {
+      const [detailData, criteriaList, catalogList] = await Promise.all([
+        mauKiemNghiemApi.getById(maMau),
+        mauKiemNghiemApi.getChiTieuList(maMau),
+        mauKiemNghiemApi.getDanhMucChiTieu().catch(() => []) // gracefully handle catalog fetch errors
+      ]);
+      setMauDetail(detailData);
+      setSelectedStatus(detailData.trangThai || 'Chưa kiểm nghiệm');
+      
+      // Load catalog from API, fallback to default hardcoded catalog if empty
+      const catalog = (catalogList && catalogList.length > 0) ? catalogList : allChiTieu;
+      setDanhMucChiTieu(catalog);
 
-  // ── Helpers ──────────────────────────────────────────────────────────────
+      if (criteriaList && criteriaList.length > 0) {
+        setRows(criteriaList.map(item => ({
+          maChiTieu: item.maChiTieu,
+          tenChiTieu: item.tenChiTieu || '',
+          giaTriDo: item.giaTriDo || '',
+          gioiHanChoPhep: item.gioiHanChoPhep || '',
+          ketQua: (item.ketQua === 'Đạt' || item.ketQua === 'Không đạt') ? item.ketQua : '',
+        })));
+      } else {
+        setRows([]);
+      }
+    } catch (err: any) {
+      setError(err.message || 'Không thể tải thông tin mẫu kiểm nghiệm.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const availableChiTieu = allChiTieu.filter(
-    ct => !rows.some(r => r.maChiTieu === ct.maChiTieu),
-  );
+  useEffect(() => {
+    fetchDetailAndCriteria();
+  }, [maMau]);
 
   const updateRow = (index: number, field: keyof MauChiTieuRow, value: string) => {
     setRows(prev => prev.map((r, i) => i === index ? { ...r, [field]: value } : r));
@@ -118,7 +140,7 @@ export default function MauChiTieuPage() {
       setError('Vui lòng điền đầy đủ thông tin chỉ tiêu mới.');
       return;
     }
-    const ct = allChiTieu.find(c => c.maChiTieu === newChiTieu)!;
+    const ct = danhMucChiTieu.find(c => c.maChiTieu === newChiTieu)!;
     setRows(prev => [...prev, {
       maChiTieu: ct.maChiTieu,
       tenChiTieu: ct.tenChiTieu,
@@ -135,39 +157,90 @@ export default function MauChiTieuPage() {
     setSaved(false);
   };
 
-  const handleSave = async () => {
-    setError('');
-    if (rows.some(r => !r.giaTriDo || !r.gioiHanChoPhep || !r.ketQua)) {
-      setError('Vui lòng điền đầy đủ giá trị đo, giới hạn và kết quả cho tất cả chỉ tiêu.');
-      return;
-    }
+  const handleSaveStatus = async () => {
+    if (!maMau) return;
     setSaving(true);
+    setError('');
+    setSaved(false);
     try {
-      // PUT /api/mau-kiem-nghiem/{maMau}/chi-tieu
+      const updated = await mauKiemNghiemApi.updateTrangThai(maMau, {
+        trangThai: selectedStatus,
+        ghiChu: ghiChu || 'Cập nhật từ trang chi tiết',
+      });
+      setMauDetail(updated);
+      setSaved(true);
+      setGhiChu('');
+    } catch (err: any) {
+      setError(err.message || 'Không thể cập nhật trạng thái.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSaveChiTieu = async () => {
+    if (!maMau) return;
+    setSaving(true);
+    setError('');
+    setSaved(false);
+    try {
       const body = {
         chiTieus: rows.map(r => ({
           maChiTieu: r.maChiTieu,
           giaTriDo: r.giaTriDo,
           gioiHanChoPhep: r.gioiHanChoPhep,
           ketQua: r.ketQua,
-        })),
+        }))
       };
-      // Simulated API call
-      await new Promise(res => setTimeout(res, 800));
-      console.log(`PUT /api/mau-kiem-nghiem/${maMau}/chi-tieu`, body);
+      const updatedList = await mauKiemNghiemApi.updateChiTieuList(maMau, body);
+      setRows(updatedList.map(item => ({
+        maChiTieu: item.maChiTieu,
+        tenChiTieu: item.tenChiTieu || '',
+        giaTriDo: item.giaTriDo || '',
+        gioiHanChoPhep: item.gioiHanChoPhep || '',
+        ketQua: (item.ketQua === 'Đạt' || item.ketQua === 'Không đạt') ? item.ketQua : '',
+      })));
       setSaved(true);
-    } catch {
-      setError('Lưu thất bại. Vui lòng thử lại.');
+    } catch (err: any) {
+      setError(err.message || 'Không thể lưu danh sách chỉ tiêu.');
     } finally {
       setSaving(false);
     }
   };
 
+  const availableChiTieu = danhMucChiTieu.filter(
+    ct => !rows.some(r => r.maChiTieu === ct.maChiTieu),
+  );
+
   const overallKetQua = rows.length > 0
     ? rows.every(r => r.ketQua === 'Đạt') ? 'pass' : 'fail'
     : null;
 
-  // ── Render ───────────────────────────────────────────────────────────────
+  if (loading) {
+    return (
+      <div style={{ padding: '60px', textAlign: 'center', color: '#888', fontSize: '13px' }}>
+        Đang tải thông tin mẫu kiểm nghiệm...
+      </div>
+    );
+  }
+
+  if (error && !mauDetail) {
+    return (
+      <div>
+        <PageHeader
+          title="Lỗi tải mẫu kiểm nghiệm"
+          subtitle="Không tìm thấy thông tin hoặc đã xảy ra lỗi."
+          actions={
+            <Link href="/kiem-nghiem/mau">
+              <GovBtn variant="secondary">
+                <ArrowLeft style={{ width: 12, height: 12 }} /> Quay lại
+              </GovBtn>
+            </Link>
+          }
+        />
+        <AlertBanner type="danger" title={error} />
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -181,70 +254,99 @@ export default function MauChiTieuPage() {
                 <ArrowLeft style={{ width: 12, height: 12 }} /> Quay lại
               </GovBtn>
             </Link>
-            <GovBtn variant="secondary" onClick={() => setRows(initialRows)}>
-              <RefreshCw style={{ width: 12, height: 12 }} /> Đặt lại
-            </GovBtn>
-            <GovBtn variant="primary" onClick={handleSave} disabled={saving}>
-              {saving
-                ? <><RefreshCw style={{ width: 12, height: 12, animation: 'spin 1s linear infinite' }} /> Đang lưu...</>
-                : <><Save style={{ width: 12, height: 12 }} /> Lưu kết quả</>
-              }
+            <GovBtn variant="secondary" onClick={fetchDetailAndCriteria}>
+              <RefreshCw style={{ width: 12, height: 12 }} /> Tải lại
             </GovBtn>
           </ActionButtons>
         }
       />
 
-      {/* Alerts */}
       {saved && (
-        <AlertBanner type="success" title="Kết quả chỉ tiêu đã được cập nhật thành công." />
+        <AlertBanner type="success" title="Trạng thái mẫu đã được cập nhật thành công." />
       )}
       {error && (
         <AlertBanner type="warning" title={error} />
       )}
 
       {/* Mau info */}
-      <SectionCard title="Thông tin mẫu kiểm nghiệm">
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
-          gap: '12px 24px',
-          padding: '4px 0',
-        }}>
-          <InfoRow label="Mã mẫu" value={mauDetail.maMau} mono />
-          <InfoRow label="Mã thanh tra" value={mauDetail.inspectionId} mono />
-          <InfoRow label="Trạng thái">
-            <StatusBadge variant={statusVariant[mauDetail.status]} label={statusLabel[mauDetail.status]} />
-          </InfoRow>
-          <InfoRow label="Cơ sở lấy mẫu" value={mauDetail.businessName} />
-          <InfoRow label="Loại mẫu">
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12 }}>
-              <FlaskConical style={{ width: 12, height: 12, color: '#005A9E' }} />
-              {mauDetail.sampleType}
-            </span>
-          </InfoRow>
-          <InfoRow label="Ngày lấy mẫu" value={mauDetail.collectedDate} mono />
-          <InfoRow label="Người lấy mẫu" value={mauDetail.collectedBy} />
-          <InfoRow label="Đơn vị kiểm nghiệm" value={mauDetail.lab} />
-          {overallKetQua && (
-            <InfoRow label="Kết quả tổng hợp">
-              {overallKetQua === 'pass'
-                ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#15803d', fontWeight: 600, fontSize: 12 }}>
-                    <CheckCircle2 style={{ width: 14, height: 14 }} /> Đạt yêu cầu ATTP
-                  </span>
-                : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#b91c1c', fontWeight: 600, fontSize: 12 }}>
-                    <XCircle style={{ width: 14, height: 14 }} /> Không đạt yêu cầu ATTP
-                  </span>
-              }
+      <div style={{ display: 'grid', gridTemplateColumns: '3fr 1.5fr', gap: '16px', marginBottom: '16px' }}>
+        <SectionCard title="Thông tin mẫu kiểm nghiệm">
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(2, 1fr)',
+            gap: '12px 24px',
+            padding: '4px 0',
+          }}>
+            <InfoRow label="Mã mẫu" value={mauDetail?.maMau} mono />
+            <InfoRow label="Tên mẫu" value={mauDetail?.tenMau} />
+            <InfoRow label="Loại mẫu">
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12 }}>
+                <FlaskConical style={{ width: 12, height: 12, color: '#005A9E' }} />
+                {mauDetail?.loaiMau}
+              </span>
             </InfoRow>
-          )}
-        </div>
-      </SectionCard>
+            <InfoRow label="Ngày thu mẫu" value={mauDetail?.ngayThu} mono />
+            <InfoRow label="Ngày kiểm nghiệm" value={mauDetail?.ngayKiemNghiem || 'Chưa thực hiện'} mono />
+            <InfoRow label="Ngày yêu cầu" value={mauDetail?.ngayYeuCau} mono />
+            <InfoRow label="Hạn hoàn thành" value={mauDetail?.hanHoanThanh} mono />
+            <InfoRow label="Nội dung / Mô tả" value={mauDetail?.noiDung || '—'} />
+            <InfoRow label="Trạng thái hiện tại">
+              <StatusBadge variant={statusVariant[mauDetail?.trangThai || '']} label={statusLabel[mauDetail?.trangThai || '']} />
+            </InfoRow>
+            {overallKetQua && (
+              <InfoRow label="Kết quả tổng hợp (Chỉ tiêu)">
+                {overallKetQua === 'pass'
+                  ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#15803d', fontWeight: 600, fontSize: 12 }}>
+                      <CheckCircle2 style={{ width: 14, height: 14 }} /> Đạt yêu cầu ATTP
+                    </span>
+                  : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#b91c1c', fontWeight: 600, fontSize: 12 }}>
+                      <XCircle style={{ width: 14, height: 14 }} /> Không đạt yêu cầu ATTP
+                    </span>
+                }
+              </InfoRow>
+            )}
+          </div>
+        </SectionCard>
+
+        <SectionCard title="Cập nhật trạng thái mẫu">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div>
+              <label style={{ fontSize: '11px', color: '#555', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Trạng thái kiểm nghiệm</label>
+              <select
+                value={selectedStatus}
+                onChange={e => setSelectedStatus(e.target.value)}
+                style={inputStyle}
+              >
+                <option value="Chưa kiểm nghiệm">Chưa kiểm nghiệm</option>
+                <option value="Đang kiểm nghiệm">Đang kiểm nghiệm</option>
+                <option value="Hoàn thành">Hoàn thành</option>
+              </select>
+            </div>
+            <div>
+              <label style={{ fontSize: '11px', color: '#555', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Ghi chú kiểm nghiệm</label>
+              <textarea
+                value={ghiChu}
+                onChange={e => setGhiChu(e.target.value)}
+                placeholder="Nhập kết luận hoặc ghi chú..."
+                rows={3}
+                style={{ ...inputStyle, resize: 'none' }}
+              />
+            </div>
+            <GovBtn variant="primary" onClick={handleSaveStatus} disabled={saving} style={{ marginTop: '4px' }}>
+              {saving ? 'Đang lưu...' : 'Lưu trạng thái'}
+            </GovBtn>
+          </div>
+        </SectionCard>
+      </div>
 
       {/* Chi tieu table */}
       <SectionCard
-        title={`Chỉ tiêu kiểm nghiệm (${rows.length} chỉ tiêu)`}
+        title={`Chỉ tiêu kiểm nghiệm thực tế (${rows.length} chỉ tiêu)`}
         footer={
-          <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '6px 0' }}>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', padding: '6px 0' }}>
+            <GovBtn variant="primary" onClick={handleSaveChiTieu} disabled={saving}>
+              <Save style={{ width: 12, height: 12 }} /> Lưu chỉ tiêu
+            </GovBtn>
             {availableChiTieu.length > 0 && (
               <GovBtn variant="secondary" onClick={() => setAddingNew(v => !v)}>
                 <Plus style={{ width: 12, height: 12 }} /> Thêm chỉ tiêu
@@ -294,31 +396,22 @@ export default function MauChiTieuPage() {
               background: i % 2 === 0 ? '#fff' : '#fafbfc',
             }}
           >
-            {/* Mã chỉ tiêu */}
             <span style={{ fontFamily: 'monospace', fontWeight: 600, color: '#005A9E', fontSize: 12 }}>
               {row.maChiTieu}
             </span>
-
-            {/* Tên chỉ tiêu */}
             <span style={{ fontSize: 12, color: '#222' }}>{row.tenChiTieu}</span>
-
-            {/* Giá trị đo */}
             <input
               value={row.giaTriDo}
               onChange={e => updateRow(i, 'giaTriDo', e.target.value)}
               placeholder="VD: 10^3 CFU/g"
               style={inputStyle}
             />
-
-            {/* Giới hạn */}
             <input
               value={row.gioiHanChoPhep}
               onChange={e => updateRow(i, 'gioiHanChoPhep', e.target.value)}
               placeholder="VD: <= 10^4 CFU/g"
               style={inputStyle}
             />
-
-            {/* Kết quả */}
             <div style={{ position: 'relative' }}>
               <select
                 value={row.ketQua}
@@ -338,8 +431,6 @@ export default function MauChiTieuPage() {
               </select>
               <ChevronDown style={{ position: 'absolute', right: 4, top: '50%', transform: 'translateY(-50%)', width: 12, height: 12, color: '#888', pointerEvents: 'none' }} />
             </div>
-
-            {/* Xóa */}
             <button
               onClick={() => removeRow(i)}
               style={{
@@ -354,7 +445,6 @@ export default function MauChiTieuPage() {
           </div>
         ))}
 
-        {/* Add new row */}
         {addingNew && (
           <div style={{
             display: 'grid',
@@ -366,7 +456,6 @@ export default function MauChiTieuPage() {
             background: '#f0f7ff',
             borderTop: '2px dashed #93c5fd',
           }}>
-            {/* Select chỉ tiêu */}
             <div style={{ position: 'relative', gridColumn: '1 / 3' }}>
               <select
                 value={newChiTieu}
@@ -382,7 +471,6 @@ export default function MauChiTieuPage() {
               </select>
               <ChevronDown style={{ position: 'absolute', right: 4, top: '50%', transform: 'translateY(-50%)', width: 12, height: 12, color: '#888', pointerEvents: 'none' }} />
             </div>
-
             <input
               value={newGiaTri}
               onChange={e => setNewGiaTri(e.target.value)}
@@ -395,7 +483,6 @@ export default function MauChiTieuPage() {
               placeholder="Giới hạn cho phép"
               style={inputStyle}
             />
-
             <div style={{ position: 'relative' }}>
               <select
                 value={newKetQua}
@@ -408,7 +495,6 @@ export default function MauChiTieuPage() {
               </select>
               <ChevronDown style={{ position: 'absolute', right: 4, top: '50%', transform: 'translateY(-50%)', width: 12, height: 12, color: '#888', pointerEvents: 'none' }} />
             </div>
-
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               <button
                 onClick={addRow}
@@ -432,7 +518,6 @@ export default function MauChiTieuPage() {
           </div>
         )}
 
-        {/* Summary row */}
         {rows.length > 0 && (
           <div style={{
             display: 'flex',
@@ -469,8 +554,6 @@ export default function MauChiTieuPage() {
     </div>
   );
 }
-
-// ─── Small helpers ───────────────────────────────────────────────────────────
 
 const inputStyle: React.CSSProperties = {
   width: '100%',

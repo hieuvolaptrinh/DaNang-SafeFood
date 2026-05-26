@@ -1,140 +1,139 @@
 'use client';
 
-import { useState } from 'react';
-import { Plus, Eye, RefreshCw, FileSpreadsheet, Printer, FlaskConical } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { Eye, RefreshCw, FileSpreadsheet, Printer, FlaskConical, Search } from 'lucide-react';
 import {
   PageHeader, FilterBar, FilterField, GovInput, GovSelect, GovBtn,
   SectionCard, GovPagination, StatusBadge, MiniStat, ActionButtons,
 } from '@/components/GovUI';
 import DataTable, { Column } from '@/components/DataTable';
 import AlertBanner from '@/components/AlertBanner';
-
-interface KetQuaKiemNghiem {
-  id: string;
-  mauId: string;
-  businessName: string;
-  sampleType: string;
-  testDate: string;
-  testedBy: string;
-  criteria: string;
-  result: 'pass' | 'fail';
-  deviation?: string;
-  certNo?: string;
-}
-
-const mockKetQua: KetQuaKiemNghiem[] = [
-  {
-    id: 'KQ-2025001',
-    mauId: 'MKN-2025001',
-    businessName: 'Nhà hàng Phở Ba Miền',
-    sampleType: 'Nước uống',
-    testDate: '14/01/2025',
-    testedBy: 'Hoàng Kiểm Nghiệm',
-    criteria: 'TCVN 6096:2004 — Nước uống đóng chai',
-    result: 'pass',
-    certNo: 'CN-KN-2025/001',
-  },
-  {
-    id: 'KQ-2025002',
-    mauId: 'MKN-2025002',
-    businessName: 'Công ty Hải Sản Đà Nẵng',
-    sampleType: 'Hải sản tươi sống',
-    testDate: '13/01/2025',
-    testedBy: 'Hoàng Kiểm Nghiệm',
-    criteria: 'QCVN 8-3:2012/BYT — Giới hạn ô nhiễm vi sinh vật',
-    result: 'fail',
-    deviation: 'Phát hiện Salmonella vượt ngưỡng cho phép (MPN/g). Mẫu không đạt QCVN.',
-  },
-  {
-    id: 'KQ-2025003',
-    mauId: 'MKN-2025003',
-    businessName: 'Chợ Tươi Đà Nẵng',
-    sampleType: 'Rau củ quả',
-    testDate: '11/01/2025',
-    testedBy: 'Hoàng Kiểm Nghiệm',
-    criteria: 'QCVN 8-2:2011/BYT — Giới hạn ô nhiễm kim loại nặng',
-    result: 'pass',
-    certNo: 'CN-KN-2025/002',
-  },
-];
+import { ketQuaKiemNghiemApi, KetQuaKiemNghiemItemResponse } from '@/api/ketquakiemnghiem';
 
 export default function KetQuaKiemNghiemPage() {
-  const [search, setSearch] = useState('');
+  const [keyword, setKeyword] = useState('');
   const [resultFilter, setResultFilter] = useState('');
+  
+  const [items, setItems] = useState<KetQuaKiemNghiemItemResponse[]>([]);
+  const [totalElements, setTotalElements] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [page, setPage] = useState(0);
+  const [size] = useState(10);
+  
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const filtered = mockKetQua.filter(kq => {
-    const matchSearch = !search ||
-      kq.id.toLowerCase().includes(search.toLowerCase()) ||
-      kq.businessName.toLowerCase().includes(search.toLowerCase()) ||
-      kq.mauId.toLowerCase().includes(search.toLowerCase());
-    const matchResult = !resultFilter || kq.result === resultFilter;
-    return matchSearch && matchResult;
-  });
+  const fetchResults = async (currentPage: number = 0) => {
+    setLoading(true);
+    setError('');
+    try {
+      const res = await ketQuaKiemNghiemApi.search(
+        keyword.trim(),
+        resultFilter || undefined,
+        currentPage,
+        size
+      );
+      setItems(res.content || []);
+      setTotalElements(res.totalElements || 0);
+      setTotalPages(res.totalPages || 0);
+      setPage(res.number || 0);
+    } catch (err: any) {
+      setError(err.message || 'Không thể tải danh sách kết quả kiểm nghiệm.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const passCount = mockKetQua.filter(kq => kq.result === 'pass').length;
-  const failCount = mockKetQua.filter(kq => kq.result === 'fail').length;
+  useEffect(() => {
+    fetchResults(0);
+  }, [resultFilter]);
 
-  const columns: Column<KetQuaKiemNghiem>[] = [
+  const handleSearchSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    fetchResults(0);
+  };
+
+  const handleReset = () => {
+    setKeyword('');
+    setResultFilter('');
+    // State setters are async, so fetch directly with empty values
+    setLoading(true);
+    ketQuaKiemNghiemApi.search('', undefined, 0, size)
+      .then(res => {
+        setItems(res.content || []);
+        setTotalElements(res.totalElements || 0);
+        setTotalPages(res.totalPages || 0);
+        setPage(res.number || 0);
+      })
+      .catch(err => setError(err.message || 'Không thể tải danh sách kết quả kiểm nghiệm.'))
+      .finally(() => setLoading(false));
+  };
+
+  const passCount = items.filter(kq => kq.ketQua === 'pass' || kq.ketQua === 'Đạt' || kq.ketQua === 'DAT').length;
+  const failCount = items.filter(kq => kq.ketQua === 'fail' || kq.ketQua === 'Không đạt' || kq.ketQua === 'KHONG_DAT').length;
+
+  const columns: Column<KetQuaKiemNghiemItemResponse>[] = [
     {
-      key: 'id',
+      key: 'maKetQua',
       header: 'Mã kết quả',
-      render: r => <span style={{ fontFamily: 'monospace', fontWeight: 600, color: '#005A9E' }}>{r.id}</span>,
+      render: r => <span style={{ fontFamily: 'monospace', fontWeight: 600, color: '#005A9E' }}>{r.maKetQua}</span>,
     },
     {
-      key: 'mauId',
+      key: 'maMau',
       header: 'Mã mẫu',
-      render: r => <span style={{ fontFamily: 'monospace', fontSize: '12px', color: '#333' }}>{r.mauId}</span>,
+      render: r => <span style={{ fontFamily: 'monospace', fontSize: '12px', color: '#333' }}>{r.maMau}</span>,
     },
     {
-      key: 'businessName',
-      header: 'Cơ sở',
+      key: 'tenCoSo',
+      header: 'Cơ sở / Sản phẩm',
       render: r => (
         <div>
-          <p style={{ fontWeight: 600, fontSize: '13px', color: '#222' }}>{r.businessName}</p>
+          <p style={{ fontWeight: 600, fontSize: '13px', color: '#222' }}>{r.tenCoSo}</p>
           <p style={{ fontSize: '11px', color: '#888', display: 'flex', alignItems: 'center', gap: '3px' }}>
-            <FlaskConical style={{ width: 10, height: 10 }} /> {r.sampleType}
+            <FlaskConical style={{ width: 10, height: 10 }} /> {r.tenMau} — {r.loaiMau}
           </p>
         </div>
       ),
     },
     {
-      key: 'criteria',
+      key: 'chiTieu',
       header: 'Tiêu chuẩn áp dụng',
-      render: r => <span style={{ fontSize: '11.5px', color: '#333', fontStyle: 'italic' }}>{r.criteria}</span>,
+      render: r => <span style={{ fontSize: '11.5px', color: '#333', fontStyle: 'italic' }}>{r.chiTieu || '—'}</span>,
     },
     {
-      key: 'testDate',
+      key: 'ngayKiemNghiem',
       header: 'Ngày kiểm nghiệm',
-      render: r => <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>{r.testDate}</span>,
+      render: r => <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>{r.ngayKiemNghiem || '—'}</span>,
     },
     {
-      key: 'testedBy',
-      header: 'Kiểm nghiệm viên',
-      render: r => <span style={{ fontSize: '12px' }}>{r.testedBy}</span>,
+      key: 'phongLab',
+      header: 'Phòng thí nghiệm',
+      render: r => <span style={{ fontSize: '12px' }}>{r.phongLab || 'Phòng LAB'}</span>,
     },
     {
-      key: 'result',
+      key: 'ketQua',
       header: 'Kết quả',
-      render: r => <StatusBadge variant={r.result} />,
+      render: r => {
+        const isDat = r.ketQua === 'pass' || r.ketQua === 'Đạt' || r.ketQua === 'DAT';
+        return <StatusBadge variant={isDat ? 'active' : 'expired'} label={isDat ? 'Đạt' : 'Không đạt'} />;
+      },
     },
     {
-      key: 'certNo',
-      header: 'Số chứng nhận',
-      render: r => r.certNo
-        ? <span style={{ fontFamily: 'monospace', fontSize: '12px', color: '#006400', fontWeight: 600 }}>{r.certNo}</span>
-        : <span style={{ fontSize: '11px', color: '#CC0000' }}>Không đạt</span>,
+      key: 'diem',
+      header: 'Điểm số',
+      render: r => r.diem !== null && r.diem !== undefined ? <span style={{ fontWeight: 600 }}>{r.diem}/100</span> : <span>—</span>,
     },
     {
       key: 'actions',
       header: 'Thao tác',
-      render: () => (
+      render: r => (
         <ActionButtons>
-          <GovBtn variant="secondary" size="sm" title="Xem chi tiết">
-            <Eye style={{ width: 12, height: 12 }} />
-          </GovBtn>
-          <GovBtn variant="secondary" size="sm" title="In kết quả">
-            <Printer style={{ width: 12, height: 12 }} />
-          </GovBtn>
+          <Link href={`/kiem-nghiem/ket-qua/${r.maKetQua}`}>
+            <GovBtn variant="secondary" size="sm" title="Xem chi tiết">
+              <Eye style={{ width: 12, height: 12 }} />
+            </GovBtn>
+          </Link>
         </ActionButtons>
       ),
     },
@@ -147,71 +146,83 @@ export default function KetQuaKiemNghiemPage() {
         subtitle="Chi cục An toàn Thực phẩm TP. Đà Nẵng — Tổng hợp kết quả kiểm nghiệm và chứng nhận"
         actions={
           <ActionButtons>
-            <GovBtn variant="secondary"><RefreshCw style={{ width: 12, height: 12 }} /> Làm mới</GovBtn>
+            <GovBtn variant="secondary" onClick={() => fetchResults(page)}><RefreshCw style={{ width: 12, height: 12 }} /> Làm mới</GovBtn>
             <GovBtn variant="secondary"><Printer style={{ width: 12, height: 12 }} /> In báo cáo</GovBtn>
             <GovBtn variant="secondary"><FileSpreadsheet style={{ width: 12, height: 12 }} /> Xuất Excel</GovBtn>
-            {/* <GovBtn variant="primary"><Plus style={{ width: 12, height: 12 }} /> Nhập kết quả mới</GovBtn> */}
           </ActionButtons>
         }
       />
 
-      {failCount > 0 && (
+      {error && (
         <AlertBanner
           type="danger"
-          title={`${failCount} kết quả kiểm nghiệm KHÔNG ĐẠT. Cần lập biên bản xử lý vi phạm ngay.`}
+          title={error}
         />
       )}
 
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '10px', marginBottom: '12px' }}>
-        <MiniStat label="Tổng kết quả" value={mockKetQua.length} color="neutral" />
-        <MiniStat label="Đạt yêu cầu" value={passCount} color="green" />
-        <MiniStat label="Không đạt" value={failCount} color="red" />
-        <MiniStat label="Tỷ lệ đạt" value={`${Math.round((passCount / mockKetQua.length) * 100)}%`} color="blue" />
+        <MiniStat label="Tổng kết quả (Trang hiện tại)" value={items.length} color="neutral" />
+        <MiniStat label="Tổng số bản ghi" value={totalElements} color="blue" />
+        <MiniStat label="Đạt yêu cầu (Trang hiện tại)" value={passCount} color="green" />
+        <MiniStat label="Không đạt (Trang hiện tại)" value={failCount} color="red" />
       </div>
 
       {/* Filter */}
-      <FilterBar>
-        <FilterField label="Tìm kiếm">
-          <GovInput placeholder="Mã kết quả, mã mẫu, cơ sở..." value={search} onChange={setSearch} width={240} />
-        </FilterField>
-        <FilterField label="Kết quả">
-          <GovSelect value={resultFilter} onChange={setResultFilter} options={[
-            { value: '', label: '-- Tất cả --' },
-            { value: 'pass', label: 'Đạt' },
-            { value: 'fail', label: 'Không đạt' },
-          ]} width={140} />
-        </FilterField>
-        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px' }}>
-          <GovBtn variant="primary">Tìm kiếm</GovBtn>
-          <GovBtn variant="secondary" onClick={() => { setSearch(''); setResultFilter(''); }}>Xóa lọc</GovBtn>
-        </div>
-      </FilterBar>
+      <form onSubmit={handleSearchSubmit}>
+        <FilterBar>
+          <FilterField label="Tìm kiếm">
+            <GovInput placeholder="Mã kết quả, mã mẫu, cơ sở..." value={keyword} onChange={setKeyword} width={240} />
+          </FilterField>
+          <FilterField label="Kết quả">
+            <GovSelect value={resultFilter} onChange={setResultFilter} options={[
+              { value: '', label: '-- Tất cả --' },
+              { value: 'pass', label: 'Đạt (pass)' },
+              { value: 'fail', label: 'Không đạt (fail)' },
+            ]} width={140} />
+          </FilterField>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px' }}>
+            <GovBtn type="submit" variant="primary">
+              <Search style={{ width: 12, height: 12, marginRight: 2 }} />
+              Tìm kiếm
+            </GovBtn>
+            <GovBtn type="button" variant="secondary" onClick={handleReset}>Xóa lọc</GovBtn>
+          </div>
+        </FilterBar>
+      </form>
 
       {/* Bảng kết quả */}
       <SectionCard
-        title={`Tổng hợp kết quả kiểm nghiệm (${filtered.length} bản ghi)`}
-        footer={<GovPagination info={`Hiển thị ${filtered.length} / ${mockKetQua.length} kết quả`} />}
+        title={`Tổng hợp kết quả kiểm nghiệm (${totalElements} bản ghi)`}
+        footer={
+          <GovPagination
+            info={`Trang ${page + 1} / ${totalPages || 1}`}
+            page={page}
+            totalPages={totalPages}
+            onPageChange={(p) => fetchResults(p)}
+          />
+        }
       >
         <DataTable
           columns={columns}
-          data={filtered}
+          data={items}
+          loading={loading}
           emptyMessage="Không tìm thấy kết quả kiểm nghiệm nào."
         />
       </SectionCard>
 
       {/* Mẫu không đạt */}
       {failCount > 0 && (
-        <SectionCard title="Chi tiết mẫu không đạt yêu cầu">
+        <SectionCard title="Chi tiết mẫu không đạt yêu cầu (Trong trang hiện tại)">
           <div style={{ padding: '0' }}>
-            {mockKetQua.filter(kq => kq.result === 'fail').map((kq, i) => (
+            {items.filter(kq => kq.ketQua === 'fail' || kq.ketQua === 'Không đạt' || kq.ketQua === 'KHONG_DAT').map((kq, i) => (
               <div key={i} style={{ padding: '10px 12px', borderBottom: '1px solid #F0F0F0', borderLeft: '3px solid #CC0000' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <div>
-                    <p style={{ fontSize: '13px', fontWeight: 600, color: '#CC0000' }}>{kq.businessName} — {kq.sampleType}</p>
-                    <p style={{ fontSize: '12px', color: '#555', marginTop: '4px' }}>{kq.deviation}</p>
+                    <p style={{ fontSize: '13px', fontWeight: 600, color: '#CC0000' }}>{kq.tenCoSo} — {kq.tenMau} ({kq.loaiMau})</p>
+                    <p style={{ fontSize: '12px', color: '#555', marginTop: '4px' }}>Mã kết quả: {kq.maKetQua} — Phòng LAB: {kq.phongLab || 'Chưa xác định'}</p>
                   </div>
-                  <span style={{ fontFamily: 'monospace', fontSize: '11px', color: '#888', flexShrink: 0 }}>{kq.testDate}</span>
+                  <span style={{ fontFamily: 'monospace', fontSize: '11px', color: '#888', flexShrink: 0 }}>{kq.ngayKiemNghiem || '—'}</span>
                 </div>
               </div>
             ))}

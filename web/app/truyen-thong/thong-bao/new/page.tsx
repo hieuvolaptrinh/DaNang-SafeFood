@@ -75,7 +75,7 @@ export default function TaoThongBaoPage() {
       />
 
       {success && <AlertBanner type="success" title="Tạo thông báo thành công! Đang chuyển về danh sách..." />}
-      {error   && <AlertBanner type="error"   title={error} />}
+      {error   && <AlertBanner type="danger"   title={error} />}
 
       <SectionCard
         title="Nội dung thông báo"

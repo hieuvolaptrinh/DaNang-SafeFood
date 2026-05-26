@@ -1,168 +1,161 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { Plus, Eye, RefreshCw, FileSpreadsheet, Printer, FlaskConical } from 'lucide-react';
+import { Eye, RefreshCw, FileSpreadsheet, FlaskConical } from 'lucide-react';
 import {
   PageHeader, FilterBar, FilterField, GovInput, GovSelect, GovBtn,
   SectionCard, GovPagination, StatusBadge, MiniStat, ActionButtons,
 } from '@/components/GovUI';
 import DataTable, { Column } from '@/components/DataTable';
 import AlertBanner from '@/components/AlertBanner';
-
-interface MauKiemNghiem {
-  id: string;
-  businessName: string;
-  sampleType: string;
-  collectedDate: string;
-  collectedBy: string;
-  lab: string;
-  status: 'received' | 'testing' | 'completed' | 'cancelled';
-  result?: 'pass' | 'fail';
-  inspectionId: string;
-}
-
-
-const mockMau: MauKiemNghiem[] = [
-  {
-    id: 'MKN-2025001',
-    businessName: 'Nhà hàng Phở Ba Miền',
-    sampleType: 'Nước uống',
-    collectedDate: '10/01/2025',
-    collectedBy: 'Nguyễn Văn Trần',
-    lab: 'Phòng xét nghiệm Sở Y tế',
-    status: 'completed',
-    result: 'pass',
-    inspectionId: 'INS-2847',
-  },
-  {
-    id: 'MKN-2025002',
-    businessName: 'Công ty Hải Sản Đà Nẵng',
-    sampleType: 'Hải sản tươi sống',
-    collectedDate: '09/01/2025',
-    collectedBy: 'Lê Thị Mai',
-    lab: 'Trung tâm Kiểm nghiệm thực phẩm',
-    status: 'completed',
-    result: 'fail',
-    inspectionId: 'INS-2846',
-  },
-  {
-    id: 'MKN-2025003',
-    businessName: 'Chợ Tươi Đà Nẵng',
-    sampleType: 'Rau củ quả',
-    collectedDate: '08/01/2025',
-    collectedBy: 'Phạm Văn Đức',
-    lab: 'Trung tâm Kiểm nghiệm thực phẩm',
-    status: 'completed',
-    result: 'pass',
-    inspectionId: 'INS-2845',
-  },
-  {
-    id: 'MKN-2025004',
-    businessName: 'Bánh Mì Hội An',
-    sampleType: 'Bột mì & phụ gia',
-    collectedDate: '20/12/2024',
-    collectedBy: 'Phạm Văn Đức',
-    lab: 'Phòng xét nghiệm Sở Y tế',
-    status: 'testing',
-    inspectionId: 'INS-2842',
-  },
-  {
-    id: 'MKN-2025005',
-    businessName: 'Cà Phê Thu Hiền',
-    sampleType: 'Cà phê & đồ uống',
-    collectedDate: '28/12/2024',
-    collectedBy: 'Nguyễn Văn Trần',
-    lab: 'Trung tâm Kiểm nghiệm thực phẩm',
-    status: 'received',
-    inspectionId: 'INS-2841',
-  },
-];
-
-
+import { mauKiemNghiemApi, MauKiemNghiemItem } from '@/api/maukiemnghiem';
 
 const statusVariant: Record<string, string> = {
-  received: 'pending',
-  testing: 'in-progress',
-  completed: 'resolved',
-  cancelled: 'expired',
+  'Chưa kiểm nghiệm': 'pending',
+  'Đang kiểm nghiệm': 'in-progress',
+  'Hoàn thành': 'resolved',
+  'Đã tiếp nhận': 'pending',
+  'received': 'pending',
+  'testing': 'in-progress',
+  'completed': 'resolved',
+  'cancelled': 'expired',
 };
+
 const statusLabel: Record<string, string> = {
-  received: 'Đã tiếp nhận',
-  testing: 'Đang kiểm nghiệm',
-  completed: 'Hoàn thành',
-  cancelled: 'Hủy bỏ',
+  'Chưa kiểm nghiệm': 'Chưa kiểm nghiệm',
+  'Đang kiểm nghiệm': 'Đang kiểm nghiệm',
+  'Hoàn thành': 'Hoàn thành',
+  'Đã tiếp nhận': 'Đã tiếp nhận',
+  'received': 'Đã tiếp nhận',
+  'testing': 'Đang kiểm nghiệm',
+  'completed': 'Hoàn thành',
+  'cancelled': 'Hủy bỏ',
 };
+
+const PAGE_SIZE = 10;
 
 export default function MauKiemNghiemPage() {
-  const [mauList, setMauList] = useState<MauKiemNghiem[]>(mockMau);
+  const [mauList, setMauList] = useState<MauKiemNghiemItem[]>([]);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [resultFilter, setResultFilter] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
 
+  // Fetch list from API
+  const fetchMauList = useCallback(async (p: number = 0) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await mauKiemNghiemApi.getList({
+        trangThai: statusFilter || undefined,
+        page: p,
+        size: PAGE_SIZE,
+        sort: ['ngayYeuCau,desc'],
+      });
+      setMauList(res.content || []);
+      setTotalElements(res.totalElements || 0);
+      setTotalPages(res.totalPages || 0);
+    } catch (err: any) {
+      setError(err.message || 'Không thể tải danh sách mẫu kiểm nghiệm.');
+    } finally {
+      setLoading(false);
+    }
+  }, [statusFilter]);
+
+  useEffect(() => {
+    fetchMauList(0);
+    setPage(0);
+  }, [fetchMauList]);
+
+  const handlePageChange = (p: number) => {
+    setPage(p);
+    fetchMauList(p);
+  };
+
+  const handleStatusChange = async (maMau: string, newStatus: string) => {
+    setUpdatingId(maMau);
+    try {
+      await mauKiemNghiemApi.updateTrangThai(maMau, {
+        trangThai: newStatus,
+        ghiChu: 'Cập nhật trạng thái từ danh sách',
+      });
+      // Refetch the list to reflect status changes
+      fetchMauList(page);
+    } catch (err: any) {
+      setError(err.message || 'Cập nhật trạng thái thất bại.');
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  // Client side keyword search over the current page list
   const filtered = mauList.filter(m => {
-    const matchSearch = !search ||
-      m.id.toLowerCase().includes(search.toLowerCase()) ||
-      m.businessName.toLowerCase().includes(search.toLowerCase()) ||
-      m.sampleType.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = !statusFilter || m.status === statusFilter;
-    const matchResult = !resultFilter || m.result === resultFilter;
-    return matchSearch && matchStatus && matchResult;
+    const term = search.toLowerCase();
+    if (!term) return true;
+    return (
+      (m.maMau && m.maMau.toLowerCase().includes(term)) ||
+      (m.tenMau && m.tenMau.toLowerCase().includes(term)) ||
+      (m.loaiMau && m.loaiMau.toLowerCase().includes(term)) ||
+      (m.noiDung && m.noiDung.toLowerCase().includes(term))
+    );
   });
 
-  const completedCount = mauList.filter(m => m.status === 'completed').length;
-  const testingCount = mauList.filter(m => m.status === 'testing').length;
-  const receivedCount = mauList.filter(m => m.status === 'received').length;
-  const failCount = mauList.filter(m => m.result === 'fail').length;
+  const stats = {
+    total: totalElements,
+    received: mauList.filter(m => m.trangThai === 'Đã tiếp nhận' || m.trangThai === 'Chưa kiểm nghiệm' || m.trangThai === 'received').length,
+    testing: mauList.filter(m => m.trangThai === 'Đang kiểm nghiệm' || m.trangThai === 'testing').length,
+    completed: mauList.filter(m => m.trangThai === 'Hoàn thành' || m.trangThai === 'completed').length,
+  };
 
-  const columns: Column<MauKiemNghiem>[] = [
+  const columns: Column<MauKiemNghiemItem>[] = [
     {
-      key: 'id',
+      key: 'maMau',
       header: 'Mã mẫu',
-      render: r => <span style={{ fontFamily: 'monospace', fontWeight: 600, color: '#005A9E' }}>{r.id}</span>,
+      render: r => <span style={{ fontFamily: 'monospace', fontWeight: 600, color: '#005A9E' }}>{r.maMau}</span>,
     },
     {
-      key: 'businessName',
-      header: 'Cơ sở lấy mẫu',
+      key: 'tenMau',
+      header: 'Tên mẫu kiểm nghiệm',
       render: r => (
         <div>
-          <p style={{ fontWeight: 600, fontSize: '13px', color: '#222' }}>{r.businessName}</p>
-          <p style={{ fontSize: '11px', color: '#888' }}>Mã TT: {r.inspectionId}</p>
+          <p style={{ fontWeight: 600, fontSize: '13px', color: '#222' }}>{r.tenMau}</p>
+          <p style={{ fontSize: '11px', color: '#888' }}>{r.noiDung || 'Không có mô tả'}</p>
         </div>
       ),
     },
     {
-      key: 'sampleType',
+      key: 'loaiMau',
       header: 'Loại mẫu',
       render: r => (
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: 500, color: '#333' }}>
           <FlaskConical style={{ width: 12, height: 12, color: '#005A9E' }} />
-          {r.sampleType}
+          {r.loaiMau}
         </span>
       ),
     },
     {
-      key: 'collectedDate',
+      key: 'ngayThu',
       header: 'Ngày lấy mẫu',
-      render: r => <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>{r.collectedDate}</span>,
+      render: r => <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>{r.ngayThu || '—'}</span>,
     },
     {
-      key: 'collectedBy',
-      header: 'Người lấy mẫu',
-      render: r => <span style={{ fontSize: '12px' }}>{r.collectedBy}</span>,
+      key: 'hanHoanThanh',
+      header: 'Hạn hoàn thành',
+      render: r => <span style={{ fontFamily: 'monospace', fontSize: '12px', color: '#c2410c' }}>{r.hanHoanThanh || '—'}</span>,
     },
     {
-      key: 'lab',
-      header: 'Đơn vị kiểm nghiệm',
-      render: r => <span style={{ fontSize: '12px', color: '#555' }}>{r.lab}</span>,
-    },
-    {
-      key: 'status',
+      key: 'trangThai',
       header: 'Trạng thái',
       render: r => (
         <select
-          value={r.status}
-          onChange={(e) => handleStatusChange(r.id, e.target.value as MauKiemNghiem['status'])}
+          value={r.trangThai}
+          disabled={updatingId === r.maMau}
+          onChange={(e) => handleStatusChange(r.maMau, e.target.value)}
           style={{
             padding: '6px 10px',
             borderRadius: '8px',
@@ -172,32 +165,25 @@ export default function MauKiemNghiemPage() {
             background: '#fff',
             cursor: 'pointer',
             color:
-              r.status === 'completed'
+              r.trangThai === 'Hoàn thành' || r.trangThai === 'completed'
                 ? '#15803d'
-                : r.status === 'testing'
+                : r.trangThai === 'Đang kiểm nghiệm' || r.trangThai === 'testing'
                   ? '#c2410c'
                   : '#005A9E',
           }}
         >
-          <option value="received">Đã tiếp nhận</option>
-          <option value="testing">Đang kiểm nghiệm</option>
-          <option value="completed">Hoàn thành</option>
+          <option value="Chưa kiểm nghiệm">Chưa kiểm nghiệm</option>
+          <option value="Đang kiểm nghiệm">Đang kiểm nghiệm</option>
+          <option value="Hoàn thành">Hoàn thành</option>
         </select>
       ),
     },
-    // {
-    //   key: 'result',
-    //   header: 'Kết quả',
-    //   render: r => r.result
-    //     ? <StatusBadge variant={r.result} />
-    //     : <span style={{ fontSize: '11px', color: '#888' }}>Chưa có</span>,
-    // },
     {
       key: 'actions',
       header: 'Thao tác',
       render: r => (
         <ActionButtons>
-          <Link href={`/kiem-nghiem/mau/${r.id}`}>
+          <Link href={`/kiem-nghiem/mau/${r.maMau}`}>
             <GovBtn variant="secondary" size="sm" title="Xem chi tiết">
               <Eye style={{ width: 12, height: 12 }} />
             </GovBtn>
@@ -206,18 +192,6 @@ export default function MauKiemNghiemPage() {
       ),
     },
   ];
-  const handleStatusChange = (
-  id: string,
-  newStatus: MauKiemNghiem['status']
-) => {
-  setMauList(prev =>
-    prev.map(item =>
-      item.id === id
-        ? { ...item, status: newStatus }
-        : item
-    )
-  );
-};
 
   return (
     <div>
@@ -226,64 +200,63 @@ export default function MauKiemNghiemPage() {
         subtitle="Chi cục An toàn Thực phẩm TP. Đà Nẵng — Tiếp nhận và theo dõi mẫu kiểm nghiệm thực phẩm"
         actions={
           <ActionButtons>
-            <GovBtn variant="secondary"><RefreshCw style={{ width: 12, height: 12 }} /> Làm mới</GovBtn>
-            <GovBtn variant="secondary"><Printer style={{ width: 12, height: 12 }} /> In báo cáo</GovBtn>
+            <GovBtn variant="secondary" onClick={() => fetchMauList(page)} disabled={loading}>
+              <RefreshCw style={{ width: 12, height: 12 }} /> Làm mới
+            </GovBtn>
             <GovBtn variant="secondary"><FileSpreadsheet style={{ width: 12, height: 12 }} /> Xuất Excel</GovBtn>
           </ActionButtons>
         }
       />
 
-      {failCount > 0 && (
+      {error && (
         <AlertBanner
-          type="warning"
-          title={`${failCount} mẫu kiểm nghiệm không đạt yêu cầu ATTP. Cần xem xét và lập biên bản xử lý.`}
+          type="error"
+          title={error}
         />
       )}
 
       {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: '10px', marginBottom: '12px' }}>
-        <MiniStat label="Tổng mẫu" value={mauList.length} color="neutral" />
-        <MiniStat label="Đã tiếp nhận" value={receivedCount} color="blue" />
-        <MiniStat label="Đang kiểm nghiệm" value={testingCount} color="orange" />
-        <MiniStat label="Hoàn thành" value={completedCount} color="green" />
-        <MiniStat label="Không đạt" value={failCount} color="red" />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '10px', marginBottom: '12px' }}>
+        <MiniStat label="Tổng mẫu" value={stats.total} color="neutral" />
+        <MiniStat label="Chưa kiểm nghiệm / Đã tiếp nhận" value={stats.received} color="blue" />
+        <MiniStat label="Đang kiểm nghiệm" value={stats.testing} color="orange" />
+        <MiniStat label="Hoàn thành" value={stats.completed} color="green" />
       </div>
 
       {/* Filter */}
       <FilterBar>
-        <FilterField label="Tìm kiếm">
-          <GovInput placeholder="Mã mẫu, cơ sở, loại mẫu..." value={search} onChange={setSearch} width={240} />
+        <FilterField label="Tìm kiếm nhanh">
+          <GovInput placeholder="Mã mẫu, tên mẫu, loại..." value={search} onChange={setSearch} width={240} />
         </FilterField>
         <FilterField label="Trạng thái">
           <GovSelect value={statusFilter} onChange={setStatusFilter} options={[
             { value: '', label: '-- Tất cả --' },
-            { value: 'received', label: 'Đã tiếp nhận' },
-            { value: 'testing', label: 'Đang kiểm nghiệm' },
-            { value: 'completed', label: 'Hoàn thành' },
-            { value: 'cancelled', label: 'Hủy bỏ' },
+            { value: 'Chưa kiểm nghiệm', label: 'Chưa kiểm nghiệm' },
+            { value: 'Đang kiểm nghiệm', label: 'Đang kiểm nghiệm' },
+            { value: 'Hoàn thành', label: 'Hoàn thành' },
           ]} width={180} />
         </FilterField>
-        <FilterField label="Kết quả">
-          <GovSelect value={resultFilter} onChange={setResultFilter} options={[
-            { value: '', label: '-- Tất cả --' },
-            { value: 'pass', label: 'Đạt' },
-            { value: 'fail', label: 'Không đạt' },
-          ]} width={140} />
-        </FilterField>
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px' }}>
-          <GovBtn variant="primary">Tìm kiếm</GovBtn>
-          <GovBtn variant="secondary" onClick={() => { setSearch(''); setStatusFilter(''); setResultFilter(''); }}>Xóa lọc</GovBtn>
+          <GovBtn variant="secondary" onClick={() => { setSearch(''); setStatusFilter(''); }}>Xóa lọc</GovBtn>
         </div>
       </FilterBar>
 
       {/* Table */}
       <SectionCard
-        title={`Danh sách mẫu kiểm nghiệm (${filtered.length} mẫu)`}
-        footer={<GovPagination info={`Hiển thị ${filtered.length} / ${mauList.length} mẫu kiểm nghiệm`} />}
+        title={`Danh sách mẫu kiểm nghiệm (${filtered.length} mẫu trong trang)`}
+        footer={
+          <GovPagination
+            info={`Trang ${page + 1} / ${totalPages || 1} — Tổng cộng ${totalElements} mẫu`}
+            page={page}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+          />
+        }
       >
         <DataTable
           columns={columns}
           data={filtered}
+          loading={loading}
           emptyMessage="Không tìm thấy mẫu kiểm nghiệm nào phù hợp điều kiện."
         />
       </SectionCard>

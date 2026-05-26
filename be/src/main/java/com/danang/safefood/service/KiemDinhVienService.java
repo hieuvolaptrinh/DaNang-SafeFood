@@ -184,6 +184,7 @@ public class KiemDinhVienService {
                 .collect(Collectors.toList());
     }
 
+
     @Transactional
     public ViPhamResponse capNhatTrangThaiViPham(String maViPham, String trangThai) {
         ViPham viPham = viPhamRepo.findById(maViPham)
@@ -212,6 +213,28 @@ public class KiemDinhVienService {
                         x.getMaChiTieu(),
                         x.getTenChiTieu()
                 )).collect(Collectors.toList());
+    }
+    /**
+     * Lấy chi tiết một vi phạm theo mã
+     */
+    @Transactional(readOnly = true)
+    public ViPhamResponse getViPhamById(String maViPham) {
+        ViPham viPham = viPhamRepo.findById(maViPham)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy vi phạm: " + maViPham));
+
+        return ViPhamResponse.from(viPham);
+    }
+
+    @Transactional
+    public List<LoaiViPhamResponse> getAllLoaiViPham() {
+        return loaiViPhamRepo.findAll()
+                .stream()
+                .map(loaiViPham -> LoaiViPhamResponse.builder()
+                        .maLoaiViPham(loaiViPham.getMaLoaiViPham())
+                        .tenLoaiViPham(loaiViPham.getTenLoaiViPham())
+                        .moTaThem(loaiViPham.getMoTaThem())
+                        .build())
+                .toList();
     }
 
     public List<MauSelectResponse> getMauSelect(){
@@ -254,8 +277,8 @@ public class KiemDinhVienService {
                 .trim();
 
         return switch (normalized) {
-            case "dat", "pass" -> "Đạt";
-            case "khong dat", "fail" -> "Không đạt";
+            case "đat", "pass" -> "Đạt";
+            case "khong đat", "fail" -> "Không đạt";
             default -> throw new RuntimeException("Ket qua chi tieu khong hop le: " + value);
         };
     }

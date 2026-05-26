@@ -4,7 +4,11 @@ public enum LoaiThongBaoEnum {
 
     PHAP_QUY("Pháp Quy"),
     TIN_TUC("Tin Tức"),
-    KHAN_CAP("Khẩn Cấp");
+    KHAN_CAP("Khẩn Cấp"),
+    THONG_BAO("Thông báo"),
+    HUONG_DAN("Hướng dẫn"),
+    NGHI_DINH("Nghị định"),
+    THONG_TU("Thông tư");
 
     private final String label;
 
@@ -19,7 +23,7 @@ public enum LoaiThongBaoEnum {
     // Convert từ DB string → enum
     public static LoaiThongBaoEnum fromLabel(String label) {
         for (LoaiThongBaoEnum e : values()) {
-            if (e.label.equalsIgnoreCase(label)) {
+            if (e.name().equalsIgnoreCase(label)) {
                 return e;
             }
         }

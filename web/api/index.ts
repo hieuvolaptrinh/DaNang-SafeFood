@@ -86,3 +86,22 @@ export {
   type LoaiQuyDinh,
   type TrangThaiQuyDinh,
 } from "./quidinh";
+
+export {
+  mauKiemNghiemApi,
+  type MauKiemNghiemItem,
+  type MauKiemNghiemPageResponse,
+  type MauKiemNghiemSelectOption,
+  type MauChiTieuItem,
+  type SaveMauChiTieuRequest,
+  type DanhMucChiTieuItem,
+} from "./maukiemnghiem";
+
+export {
+  viPhamApi,
+  type ViPhamItem,
+  type ViPhamPageResponse,
+  type TrangThaiPheDuyet,
+  type CreateViPhamRequest,
+  type DanhMucLoaiViPhamItem,
+} from "./vipham";

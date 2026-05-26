@@ -136,7 +136,7 @@ export default function QuyDinhDetailPage() {
       <PageHeader title="Không tìm thấy văn bản" subtitle={`Mã: ${id}`}
         actions={<GovBtn variant="secondary" onClick={() => router.push('/truyen-thong/quy-dinh')}><ArrowLeft style={{ width: 12, height: 12 }} /> Quay lại</GovBtn>}
       />
-      <AlertBanner type="error" title={error} />
+      <AlertBanner type="danger" title={error} />
     </div>
   );
 
@@ -167,7 +167,7 @@ export default function QuyDinhDetailPage() {
       />
 
       {success && <AlertBanner type="success" title="Cập nhật văn bản quy định thành công!" />}
-      {error   && <AlertBanner type="error"   title={error} />}
+      {error   && <AlertBanner type="danger"   title={error} />}
 
       {/* Summary cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '10px', marginBottom: '12px' }}>

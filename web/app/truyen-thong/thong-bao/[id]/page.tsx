@@ -125,7 +125,7 @@ export default function ThongBaoDetailPage() {
       <PageHeader title="Không tìm thấy thông báo" subtitle={`Mã: ${id}`}
         actions={<GovBtn variant="secondary" onClick={() => router.push('/truyen-thong/thong-bao')}><ArrowLeft style={{ width: 12, height: 12 }} /> Quay lại</GovBtn>}
       />
-      <AlertBanner type="error" title={error} />
+      <AlertBanner type="danger" title={error} />
     </div>
   );
 
@@ -156,7 +156,7 @@ export default function ThongBaoDetailPage() {
       />
 
       {success && <AlertBanner type="success" title="Cập nhật thông báo thành công!" />}
-      {error   && <AlertBanner type="error"   title={error} />}
+      {error   && <AlertBanner type="danger"   title={error} />}
 
       {/* Summary */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '10px', marginBottom: '12px' }}>

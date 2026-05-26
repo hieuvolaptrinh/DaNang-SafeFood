@@ -2,5 +2,8 @@ package com.danang.safefood.util;
 
 public enum LoaiQuyDinh {
     QUY_DINH,
-    TIEU_CHI
+    TIEU_CHI,
+    NGHI_DINH,
+    HUONG_DAN,
+    THONG_TU,
 }

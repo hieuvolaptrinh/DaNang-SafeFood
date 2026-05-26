@@ -78,7 +78,7 @@ export default function TaoQuyDinhPage() {
       />
 
       {success && <AlertBanner type="success" title="Tạo văn bản quy định thành công! Đang chuyển về danh sách..." />}
-      {error   && <AlertBanner type="error"   title={error} />}
+      {error   && <AlertBanner type="danger"   title={error} />}
 
       <SectionCard
         title="Thông tin văn bản quy định"
