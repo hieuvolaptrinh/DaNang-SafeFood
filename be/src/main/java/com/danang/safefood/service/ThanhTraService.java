@@ -5,17 +5,21 @@ import com.danang.safefood.dto.response.NguoiDungResponse;
 import com.danang.safefood.dto.response.ThanhTraResponse;
 import com.danang.safefood.entity.CoSoKinhDoanh;
 import com.danang.safefood.entity.LichThanhTra;
+import com.danang.safefood.entity.LichThanhTraNguoiDung;
 import com.danang.safefood.entity.NguoiDung;
 import com.danang.safefood.repository.CoSoKinhDoanhRepository;
 import com.danang.safefood.repository.LichThanhTraRepository;
+import com.danang.safefood.repository.LichThanhTraNguoiDungRepository;
 import com.danang.safefood.repository.NguoiDungRepository;
 import com.danang.safefood.util.IdGenerator;
+import com.danang.safefood.util.NhiemVuStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -25,6 +29,7 @@ public class ThanhTraService {
     private final LichThanhTraRepository lichThanhTraRepo;
     private final CoSoKinhDoanhRepository coSoRepo;
     private final NguoiDungRepository nguoiDungRepo;
+    private final LichThanhTraNguoiDungRepository lichThanhTraNguoiDungRepo;
 
     @Transactional
     public ThanhTraResponse taoThanhTra(ThanhTraRequest req) {
@@ -45,7 +50,22 @@ public class ThanhTraService {
                 .nguoiPhuTrach(nguoiPhuTrach)
                 .build();
 
-        return ThanhTraResponse.from(lichThanhTraRepo.save(entity));
+        LichThanhTra saved = lichThanhTraRepo.save(entity);
+
+        // Auto-create assignment so CB_THANH_TRA can see it in /api/v1/nhiem-vu.
+        if (nguoiPhuTrach != null) {
+            String maNguoiThanhTra = nguoiPhuTrach.getMaNguoiDung();
+            if (!lichThanhTraNguoiDungRepo.existsByMaThanhTraAndMaNguoiThanhTra(saved.getMaThanhTra(), maNguoiThanhTra)) {
+                lichThanhTraNguoiDungRepo.save(LichThanhTraNguoiDung.builder()
+                        .maThanhTra(saved.getMaThanhTra())
+                        .maNguoiThanhTra(maNguoiThanhTra)
+                        .thoiGianTT(LocalDateTime.now())
+                        .trangThai(NhiemVuStatus.CHUA_NHAN)
+                        .build());
+            }
+        }
+
+        return ThanhTraResponse.from(saved);
     }
 
     @Transactional(readOnly = true)
