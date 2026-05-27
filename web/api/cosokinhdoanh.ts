@@ -42,6 +42,44 @@ export interface GiayChungNhanItem {
 const CSKD_BASE = "/v1/cosokinhdoanh";
 
 export const coSoKinhDoanhApi = {
+  /**
+   * Backward-compatible alias.
+   * Some screens expect `coSoKinhDoanhApi.search(keyword, page, size)` returning a page shape.
+   *
+   * If `keyword` is provided, we use `/dropdown` then wrap to a page-like response.
+   * Otherwise we call the normal paged `getList` endpoint.
+   */
+  async search(
+    keyword: string = "",
+    page: number = 0,
+    size: number = 20,
+  ): Promise<CoSoKinhDoanhPageResponse> {
+    const trimmed = keyword.trim();
+
+    if (!trimmed) {
+      return coSoKinhDoanhApi.getList({ page, size });
+    }
+
+    const list = await coSoKinhDoanhApi.getDropdown({ keyword: trimmed });
+    const totalElements = list.length;
+    const totalPages = size > 0 ? Math.max(1, Math.ceil(totalElements / size)) : 1;
+    const start = Math.max(0, page) * (size > 0 ? size : totalElements);
+    const end = size > 0 ? start + size : totalElements;
+    const content = list.slice(start, end);
+
+    return {
+      totalPages,
+      totalElements,
+      size,
+      content,
+      number: page,
+      first: page <= 0,
+      last: page >= totalPages - 1,
+      numberOfElements: content.length,
+      empty: content.length === 0,
+    };
+  },
+
   getList(
     params: {
       trangThai?: string;
