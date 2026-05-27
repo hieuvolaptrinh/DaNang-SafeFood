@@ -67,6 +67,7 @@ public class NhiemVuServiceImpl implements NhiemVuService {
                     .tenCoSo(tenCoSo)
                     .trangThai(ln.getTrangThai())
                     .ghiChu(ln.getGhiChu())
+                    .lyDoTuChoi(ln.getLyDoTuChoi())
                     .thoiGianTT(ln.getThoiGianTT())
                     .nguoiPhuTrach(tenNguoiPhuTrach)
                     .build();
@@ -91,6 +92,7 @@ public class NhiemVuServiceImpl implements NhiemVuService {
                 .maThanhTra(lichThanhTra.getMaThanhTra())
                 .trangThai(assignment.getTrangThai())
                 .ghiChu(assignment.getGhiChu())
+                .lyDoTuChoi(assignment.getLyDoTuChoi())
                 .noiDung(lichThanhTra.getNoiDung())
                 .thoiGianTT(assignment.getThoiGianTT());
                 
