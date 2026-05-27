@@ -33,7 +33,7 @@ const NHIEM_VU_BASE = "/v1/nhiem-vu";
 
 export const nhiemVuApi = {
   getStats(): Promise<NhiemVuStatsResponse> {
-    return api.get(`${NHIEM_VU_BASE}/stats`);
+    return api.get(`${NHIEM_VU_BASE}/thong-ke`);
   },
 
   search(
@@ -54,18 +54,18 @@ export const nhiemVuApi = {
     return api.get(`${NHIEM_VU_BASE}/${id}`);
   },
 
-  accept(id: string): Promise<NhiemVuDetailResponse> {
-    return api.patch(`${NHIEM_VU_BASE}/${id}/nhan`);
+  accept(id: string): Promise<void> {
+    return api.put(`${NHIEM_VU_BASE}/${id}/nhan`);
   },
 
-  reject(id: string, body: { lyDoTuChoi: string }): Promise<NhiemVuDetailResponse> {
-    return api.patch(`${NHIEM_VU_BASE}/${id}/tu-choi`, body);
+  reject(id: string, body: { lyDoTuChoi: string }): Promise<void> {
+    return api.put(`${NHIEM_VU_BASE}/${id}/tu-choi`, body);
   },
 
   updateProgress(
     id: string,
     body: { trangThai: string; ghiChu?: string },
-  ): Promise<NhiemVuDetailResponse> {
-    return api.patch(`${NHIEM_VU_BASE}/${id}/tien-do`, body);
+  ): Promise<void> {
+    return api.put(`${NHIEM_VU_BASE}/${id}/trang-thai`, body);
   },
 };
