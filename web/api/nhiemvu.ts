@@ -31,11 +31,35 @@ export interface NhiemVuDetailResponse {
   lyDoTuChoi?: string;
 }
 
+export interface NhiemVuDashboardItemResponse {
+  maThanhTra: string;
+  tenCoSo: string;
+  loaiThanhTra: string;
+  thoiGianTT?: string;
+  trangThai: string;
+  lyDoTuChoi?: string;
+}
+
+export interface NhiemVuDashboardResponse {
+  lichTuanToi: number;
+  thanhTraThangNay: number;
+  daHoanThanhThangNay: number;
+  dangLenLichThangNay: number;
+  quaHanThangNay: number;
+  viPhamPhatHienThangNay: number;
+  nhiemVuGanNhat: NhiemVuDashboardItemResponse[];
+}
+
 const NHIEM_VU_BASE = "/v1/nhiem-vu";
 
 export const nhiemVuApi = {
   getStats(): Promise<NhiemVuStatsResponse> {
     return api.get(`${NHIEM_VU_BASE}/thong-ke`);
+  },
+
+  /** GET /api/v1/nhiem-vu/dashboard */
+  getDashboard(limit: number = 5): Promise<NhiemVuDashboardResponse> {
+    return api.get(`${NHIEM_VU_BASE}/dashboard?limit=${limit}`);
   },
 
   search(
