@@ -2,6 +2,7 @@ package com.danang.safefood.service.impl;
 
 import com.danang.safefood.config.security.jwt.JwtPrincipal;
 import com.danang.safefood.dto.request.CapNhatTienDoRequest;
+import com.danang.safefood.dto.response.NhiemVuDashboardResponse;
 import com.danang.safefood.dto.response.NhiemVuDetailResponse;
 import com.danang.safefood.dto.response.NhiemVuListResponse;
 import com.danang.safefood.dto.response.ThongKeNhiemVuResponse;
@@ -11,14 +12,18 @@ import com.danang.safefood.entity.NguoiDung;
 import com.danang.safefood.repository.LichThanhTraRepository;
 import com.danang.safefood.repository.LichThanhTraNguoiDungRepository;
 import com.danang.safefood.repository.NguoiDungRepository;
+import com.danang.safefood.repository.ViPhamRepository;
 import com.danang.safefood.service.NhiemVuService;
 import com.danang.safefood.util.NhiemVuStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
 
@@ -29,6 +34,7 @@ public class NhiemVuServiceImpl implements NhiemVuService {
     private final LichThanhTraRepository lichThanhTraRepository;
     private final LichThanhTraNguoiDungRepository lichThanhTraNguoiDungRepository;
     private final NguoiDungRepository nguoiDungRepository;
+    private final ViPhamRepository viPhamRepository;
 
     private NguoiDung getNguoiDung(JwtPrincipal jwtPrincipal) {
         return nguoiDungRepository.findByTaiKhoan_Id(jwtPrincipal.userId())
@@ -49,6 +55,78 @@ public class NhiemVuServiceImpl implements NhiemVuService {
                 .chuaNhan(chuaNhan)
                 .daNhan(daNhan)
                 .build();
+    }
+
+    @Override
+    public NhiemVuDashboardResponse getDashboard(JwtPrincipal jwtPrincipal, int limit) {
+        NguoiDung nguoiDung = getNguoiDung(jwtPrincipal);
+        String maNguoiDung = nguoiDung.getMaNguoiDung();
+
+        LocalDateTime now = LocalDateTime.now();
+        LocalDate startOfMonthDate = LocalDate.now().withDayOfMonth(1);
+        LocalDateTime startOfMonth = startOfMonthDate.atStartOfDay();
+        LocalDateTime startOfNextMonth = startOfMonthDate.plusMonths(1).atStartOfDay();
+
+        LocalDateTime weekEnd = now.plusDays(7);
+
+        long thanhTraThangNay = lichThanhTraNguoiDungRepository.countTrongKhoangThoiGian(maNguoiDung, startOfMonth, startOfNextMonth);
+        long daHoanThanhThangNay = lichThanhTraNguoiDungRepository.countTheoTrangThaiTrongKhoangThoiGian(maNguoiDung, NhiemVuStatus.HOAN_THANH, startOfMonth, startOfNextMonth);
+        long dangLenLichThangNay = lichThanhTraNguoiDungRepository.countDangLenLichTrongThang(maNguoiDung, startOfMonth, startOfNextMonth, now, NhiemVuStatus.HOAN_THANH);
+        long quaHanThangNay = lichThanhTraNguoiDungRepository.countQuaHanTrongThang(maNguoiDung, startOfMonth, startOfNextMonth, now, NhiemVuStatus.HOAN_THANH);
+
+        long lichTuanToi = lichThanhTraNguoiDungRepository.countTrongKhoangThoiGian(maNguoiDung, now, weekEnd);
+
+        long viPhamPhatHienThangNay = viPhamRepository.countViPhamTheoCanBoTrongKhoangThoiGian(maNguoiDung, startOfMonth, startOfNextMonth);
+
+        int safeLimit = Math.max(1, Math.min(limit, 20));
+        List<LichThanhTraNguoiDung> items = lichThanhTraNguoiDungRepository.findDashboardItemsTrongKhoangThoiGian(
+                maNguoiDung,
+                startOfMonth,
+                startOfNextMonth,
+                PageRequest.of(0, safeLimit)
+        );
+
+        List<NhiemVuDashboardResponse.Item> mapped = items.stream().map(ln -> {
+            LichThanhTra l = ln.getLichThanhTra();
+            String tenCoSo = (l != null && l.getCoSoKinhDoanh() != null) ? l.getCoSoKinhDoanh().getTenCoSo() : null;
+            String noiDung = l != null ? l.getNoiDung() : null;
+            String loaiThanhTra = inferLoaiThanhTra(noiDung);
+
+            return NhiemVuDashboardResponse.Item.builder()
+                    .maThanhTra(l != null ? l.getMaThanhTra() : ln.getMaThanhTra())
+                    .tenCoSo(tenCoSo)
+                    .loaiThanhTra(loaiThanhTra)
+                    .thoiGianTT(ln.getThoiGianTT())
+                    .trangThai(ln.getTrangThai())
+                    .lyDoTuChoi(ln.getLyDoTuChoi())
+                    .build();
+        }).toList();
+
+        return NhiemVuDashboardResponse.builder()
+                .lichTuanToi(lichTuanToi)
+                .thanhTraThangNay(thanhTraThangNay)
+                .daHoanThanhThangNay(daHoanThanhThangNay)
+                .dangLenLichThangNay(dangLenLichThangNay)
+                .quaHanThangNay(quaHanThangNay)
+                .viPhamPhatHienThangNay(viPhamPhatHienThangNay)
+                .nhiemVuGanNhat(mapped)
+                .build();
+    }
+
+    private static String inferLoaiThanhTra(String noiDung) {
+        if (noiDung == null || noiDung.isBlank()) {
+            return "Định kỳ";
+        }
+
+        String normalized = noiDung.trim().toLowerCase();
+        if (normalized.contains("đột xuất") || normalized.contains("dot xuat")) {
+            return "Đột xuất";
+        }
+        if (normalized.contains("định kỳ") || normalized.contains("dinh ky")) {
+            return "Định kỳ";
+        }
+
+        return "Định kỳ";
     }
 
     @Override

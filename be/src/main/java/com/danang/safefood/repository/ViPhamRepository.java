@@ -53,4 +53,22 @@ public interface ViPhamRepository extends JpaRepository<ViPham, String> {
     ORDER BY ht.thoiGianKiemTra DESC NULLS LAST
     """)
     Page<ViPham> findRecentViPham(Pageable pageable);
+
+    @Query("""
+            SELECT COUNT(vp) FROM ViPham vp
+            JOIN vp.hoSoThanhTra hs
+            JOIN hs.lichThanhTra ltt
+            WHERE EXISTS (
+                SELECT 1 FROM LichThanhTraNguoiDung ln
+                WHERE ln.maThanhTra = ltt.maThanhTra
+                  AND ln.maNguoiThanhTra = :maNguoiThanhTra
+                  AND ln.thoiGianTT >= :fromStart
+                  AND ln.thoiGianTT < :toEnd
+            )
+            """)
+    long countViPhamTheoCanBoTrongKhoangThoiGian(
+            @Param("maNguoiThanhTra") String maNguoiThanhTra,
+            @Param("fromStart") LocalDateTime fromStart,
+            @Param("toEnd") LocalDateTime toEnd
+    );
 }
