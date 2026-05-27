@@ -72,10 +72,12 @@ export default function InspectionTaskDetails({
   }
 
   const statusKey = getInspectionTaskStatusKey(task.trangThai);
-  const badge = getInspectionTaskStatusBadge(task.trangThai);
-  const canAcceptTask = statusKey === 'pending';
-  const canRejectTask = statusKey === 'pending';
-  const canUpdateProgress = statusKey !== 'pending';
+  const badge = task.lyDoTuChoi
+    ? { variant: 'pending' as const, label: 'Từ chối' }
+    : getInspectionTaskStatusBadge(task.trangThai);
+  const canAcceptTask = statusKey === 'pending' && !task.lyDoTuChoi;
+  const canRejectTask = statusKey === 'pending' && !task.lyDoTuChoi;
+  const canUpdateProgress = statusKey !== 'pending' && !task.lyDoTuChoi;
 
   return (
     <div className="border border-slate-300 bg-white shadow-sm">
@@ -108,6 +110,14 @@ export default function InspectionTaskDetails({
             {task.inspectionTime}
           </div>
         </DetailSection>
+
+        {task.lyDoTuChoi && (
+          <DetailSection icon={FiClipboard} title="Lý do từ chối">
+            <div className="border border-red-200 bg-red-50 px-4 py-4 text-sm leading-6 text-red-700">
+              {task.lyDoTuChoi}
+            </div>
+          </DetailSection>
+        )}
 
         {canUpdateProgress && (
           <DetailSection icon={FiClipboard} title="Cập nhật tiến độ kiểm tra">

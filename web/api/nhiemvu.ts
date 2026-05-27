@@ -17,6 +17,7 @@ export interface NhiemVuListItemResponse {
   thoiGianTT?: string;
   trangThai: string;
   ghiChu?: string;
+  lyDoTuChoi?: string;
 }
 
 export interface NhiemVuDetailResponse {
@@ -27,6 +28,7 @@ export interface NhiemVuDetailResponse {
   noiDung?: string;
   trangThai: string;
   ghiChu?: string;
+  lyDoTuChoi?: string;
 }
 
 const NHIEM_VU_BASE = "/v1/nhiem-vu";

@@ -46,6 +46,7 @@ function toTaskRecord(detail: NhiemVuDetailResponse): InspectionTaskRecord {
     inspectionContent: detail.noiDung || 'Chưa có nội dung kiểm tra',
     trangThai: normalizeInspectionTaskStatus(detail.trangThai),
     ghiChu: detail.ghiChu || '',
+    lyDoTuChoi: detail.lyDoTuChoi || undefined,
   };
 }
 
@@ -125,6 +126,7 @@ export default function NhiemVuKiemTraPage() {
                 inspectionContent: 'Chưa có nội dung kiểm tra',
                 trangThai: normalizeInspectionTaskStatus(item.trangThai),
                 ghiChu: item.ghiChu || '',
+                lyDoTuChoi: item.lyDoTuChoi || undefined,
               } satisfies InspectionTaskRecord;
             }
           })
