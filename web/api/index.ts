@@ -41,6 +41,13 @@ export {
 } from "./thanhtra";
 
 export {
+  hoSoThanhTraApi,
+  type HoSoThanhTraResponse,
+  type HoSoThanhTraStatsResponse,
+  type HoSoThanhTraRequest,
+} from "./hosothanhtra";
+
+export {
   yeuCauKiemNghiemApi,
   type YeuCauKiemNghiemResponse,
   type CreateYeuCauKiemNghiemRequest,
