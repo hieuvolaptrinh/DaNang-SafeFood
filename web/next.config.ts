@@ -17,6 +17,9 @@ const nextConfig: NextConfig = {
     ],
   },
 
+  // Next 16: khi có custom `webpack()` thì cần khai báo `turbopack` (dù để trống) để build không báo lỗi.
+  turbopack: {},
+
   // Webpack fallback (chỉ dùng khi chạy `npm run dev:safe` với --webpack)
   webpack(config, { dev }) {
     if (dev) {

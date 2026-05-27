@@ -138,7 +138,9 @@ export default function HoSoThanhTraPage() {
   const [selectedRecord, setSelectedRecord] = useState<HoSoThanhTraResponse | null>(null);
   const [businessOptions, setBusinessOptions] = useState<InspectionFacilityOption[]>([]);
   const [stats, setStats] = useState<HoSoThanhTraStatsResponse>(EMPTY_STATS);
-  const [search, setSearch] = useState('');
+  const [maHoSo, setMaHoSo] = useState('');
+  const [coSo, setCoSo] = useState('');
+  const [thanhTraVien, setThanhTraVien] = useState('');
   const [resultFilter, setResultFilter] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
@@ -171,16 +173,22 @@ export default function HoSoThanhTraPage() {
 
   const filtered = useMemo(() => {
     return records.filter((record) => {
-      const matchSearch =
-        !search ||
-        record.id.toLowerCase().includes(search.toLowerCase()) ||
-        record.business.toLowerCase().includes(search.toLowerCase()) ||
-        record.inspector.toLowerCase().includes(search.toLowerCase());
+      const matchMaHoSo =
+        !maHoSo ||
+        (record.id || '').toLowerCase().includes(maHoSo.toLowerCase());
+
+      const matchCoSo =
+        !coSo ||
+        (record.business || '').toLowerCase().includes(coSo.toLowerCase());
+
+      const matchThanhTraVien =
+        !thanhTraVien ||
+        (record.inspector || '').toLowerCase().includes(thanhTraVien.toLowerCase());
 
       const matchResult = !resultFilter || (record.result || '').toLowerCase() === resultFilter.toLowerCase();
-      return matchSearch && matchResult;
+      return matchMaHoSo && matchCoSo && matchThanhTraVien && matchResult;
     });
-  }, [records, resultFilter, search]);
+  }, [records, resultFilter, maHoSo, coSo, thanhTraVien]);
 
   const columns: Column<HoSoThanhTraResponse>[] = [
     { key: 'id', header: 'Mã hồ sơ' },
@@ -334,14 +342,15 @@ export default function HoSoThanhTraPage() {
             <MiniStat label="Không đạt" value={stats.failed} color="red" />
           </div>
 
-          <FilterBar>
-            <FilterField label="Tìm kiếm">
-              <GovInput
-                placeholder="Mã hồ sơ, cơ sở, thanh tra viên..."
-                value={search}
-                onChange={setSearch}
-                width={260}
-              />
+           <FilterBar>
+            <FilterField label="Mã hồ sơ">
+              <GovInput placeholder="VD: HS001" value={maHoSo} onChange={setMaHoSo} width={160} />
+            </FilterField>
+            <FilterField label="Cơ sở">
+              <GovInput placeholder="Tên cơ sở" value={coSo} onChange={setCoSo} width={220} />
+            </FilterField>
+            <FilterField label="Thanh tra viên">
+              <GovInput placeholder="Họ tên" value={thanhTraVien} onChange={setThanhTraVien} width={200} />
             </FilterField>
             <FilterField label="Kết luận">
               <GovSelect
@@ -361,7 +370,9 @@ export default function HoSoThanhTraPage() {
               <GovBtn
                 variant="secondary"
                 onClick={() => {
-                  setSearch('');
+                  setMaHoSo('');
+                  setCoSo('');
+                  setThanhTraVien('');
                   setResultFilter('');
                 }}
               >

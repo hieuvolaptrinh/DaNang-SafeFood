@@ -46,7 +46,9 @@ export default function BaoCaoPage() {
   const [reports, setReports] = useState<BaoCaoResponse[]>([]);
   const [stats, setStats] = useState<BaoCaoStatsResponse>(EMPTY_STATS);
   const [businessOptions, setBusinessOptions] = useState<InspectionReportBusinessOption[]>([]);
-  const [search, setSearch] = useState('');
+  const [maBaoCao, setMaBaoCao] = useState('');
+  const [coSo, setCoSo] = useState('');
+  const [thanhTraVien, setThanhTraVien] = useState('');
   const [resultFilter, setResultFilter] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
@@ -95,14 +97,19 @@ export default function BaoCaoPage() {
   const filtered = useMemo(
     () =>
       reports.filter((report) => {
-        const matchSearch =
-          !search ||
-          report.tenCoSo?.toLowerCase().includes(search.toLowerCase()) ||
-          report.id.toLowerCase().includes(search.toLowerCase());
+        const matchMaBaoCao =
+          !maBaoCao || report.id.toLowerCase().includes(maBaoCao.toLowerCase());
+
+        const matchCoSo =
+          !coSo || (report.tenCoSo || '').toLowerCase().includes(coSo.toLowerCase());
+
+        const matchThanhTraVien =
+          !thanhTraVien || (report.thanhTraVien || '').toLowerCase().includes(thanhTraVien.toLowerCase());
+
         const matchResult = !resultFilter || report.ketQua === resultFilter;
-        return matchSearch && matchResult;
+        return matchMaBaoCao && matchCoSo && matchThanhTraVien && matchResult;
       }),
-    [reports, resultFilter, search]
+    [reports, resultFilter, maBaoCao, coSo, thanhTraVien]
   );
 
   const handleCreateClick = () => {
@@ -232,8 +239,14 @@ export default function BaoCaoPage() {
       </div>
 
       <FilterBar>
-        <FilterField label="Tìm kiếm">
-          <GovInput placeholder="Tên cơ sở, mã báo cáo..." value={search} onChange={setSearch} width={220} />
+        <FilterField label="Mã báo cáo">
+          <GovInput placeholder="VD: BC001" value={maBaoCao} onChange={setMaBaoCao} width={160} />
+        </FilterField>
+        <FilterField label="Cơ sở">
+          <GovInput placeholder="Tên cơ sở" value={coSo} onChange={setCoSo} width={220} />
+        </FilterField>
+        <FilterField label="Thanh tra viên">
+          <GovInput placeholder="Họ tên" value={thanhTraVien} onChange={setThanhTraVien} width={200} />
         </FilterField>
         <FilterField label="Kết quả">
           <GovSelect
@@ -250,7 +263,17 @@ export default function BaoCaoPage() {
         </FilterField>
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px' }}>
           <GovBtn variant="primary">Tìm kiếm</GovBtn>
-          <GovBtn variant="secondary" onClick={() => { setSearch(''); setResultFilter(''); }}>Xóa lọc</GovBtn>
+          <GovBtn
+            variant="secondary"
+            onClick={() => {
+              setMaBaoCao('');
+              setCoSo('');
+              setThanhTraVien('');
+              setResultFilter('');
+            }}
+          >
+            Xóa lọc
+          </GovBtn>
         </div>
       </FilterBar>
 

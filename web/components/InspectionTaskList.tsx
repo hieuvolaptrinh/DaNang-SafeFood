@@ -31,7 +31,9 @@ export default function InspectionTaskList({
     <div className="space-y-3">
       {tasks.map((task) => {
         const isSelected = task.id === selectedTaskId;
-        const badge = getInspectionTaskStatusBadge(task.trangThai);
+        const badge = task.lyDoTuChoi
+          ? { variant: 'pending' as const, label: 'Từ chối' }
+          : getInspectionTaskStatusBadge(task.trangThai);
 
         return (
           <button

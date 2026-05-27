@@ -17,6 +17,7 @@ export interface NhiemVuListItemResponse {
   thoiGianTT?: string;
   trangThai: string;
   ghiChu?: string;
+  lyDoTuChoi?: string;
 }
 
 export interface NhiemVuDetailResponse {
@@ -27,13 +28,38 @@ export interface NhiemVuDetailResponse {
   noiDung?: string;
   trangThai: string;
   ghiChu?: string;
+  lyDoTuChoi?: string;
+}
+
+export interface NhiemVuDashboardItemResponse {
+  maThanhTra: string;
+  tenCoSo: string;
+  loaiThanhTra: string;
+  thoiGianTT?: string;
+  trangThai: string;
+  lyDoTuChoi?: string;
+}
+
+export interface NhiemVuDashboardResponse {
+  lichTuanToi: number;
+  thanhTraThangNay: number;
+  daHoanThanhThangNay: number;
+  dangLenLichThangNay: number;
+  quaHanThangNay: number;
+  viPhamPhatHienThangNay: number;
+  nhiemVuGanNhat: NhiemVuDashboardItemResponse[];
 }
 
 const NHIEM_VU_BASE = "/v1/nhiem-vu";
 
 export const nhiemVuApi = {
   getStats(): Promise<NhiemVuStatsResponse> {
-    return api.get(`${NHIEM_VU_BASE}/stats`);
+    return api.get(`${NHIEM_VU_BASE}/thong-ke`);
+  },
+
+  /** GET /api/v1/nhiem-vu/dashboard */
+  getDashboard(limit: number = 5): Promise<NhiemVuDashboardResponse> {
+    return api.get(`${NHIEM_VU_BASE}/dashboard?limit=${limit}`);
   },
 
   search(
@@ -54,18 +80,18 @@ export const nhiemVuApi = {
     return api.get(`${NHIEM_VU_BASE}/${id}`);
   },
 
-  accept(id: string): Promise<NhiemVuDetailResponse> {
-    return api.patch(`${NHIEM_VU_BASE}/${id}/nhan`);
+  accept(id: string): Promise<void> {
+    return api.put(`${NHIEM_VU_BASE}/${id}/nhan`);
   },
 
-  reject(id: string, body: { lyDoTuChoi: string }): Promise<NhiemVuDetailResponse> {
-    return api.patch(`${NHIEM_VU_BASE}/${id}/tu-choi`, body);
+  reject(id: string, body: { lyDoTuChoi: string }): Promise<void> {
+    return api.put(`${NHIEM_VU_BASE}/${id}/tu-choi`, body);
   },
 
   updateProgress(
     id: string,
     body: { trangThai: string; ghiChu?: string },
-  ): Promise<NhiemVuDetailResponse> {
-    return api.patch(`${NHIEM_VU_BASE}/${id}/tien-do`, body);
+  ): Promise<void> {
+    return api.put(`${NHIEM_VU_BASE}/${id}/trang-thai`, body);
   },
 };

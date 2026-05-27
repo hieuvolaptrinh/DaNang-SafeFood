@@ -4,7 +4,7 @@ const apiURL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
 console.log("DEBUG: apiURL is", apiURL);
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   data: T;
   message?: string;
@@ -13,6 +13,10 @@ export interface ApiResponse<T = any> {
 
 export interface FetchOptions extends RequestInit {
   requireAuth?: boolean;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
 }
 
 async function fetchApi<T>(
@@ -42,16 +46,38 @@ async function fetchApi<T>(
       credentials: "include", // Include cookies for refresh token
     });
 
-    const data = await response.json();
+    const rawBody = await response.text();
+    let data: unknown = undefined;
+    if (rawBody) {
+      try {
+        data = JSON.parse(rawBody);
+      } catch {
+        data = undefined;
+      }
+    }
 
     if (!response.ok) {
-      throw new Error(data.message || data.error || "Request failed");
+      if (response.status === 401 || response.status === 403) {
+        throw new Error(
+          "Không có quyền hoặc phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
+        );
+      }
+      if (isRecord(data)) {
+        const message = typeof data.message === "string" ? data.message : undefined;
+        const errorText = typeof data.error === "string" ? data.error : undefined;
+        throw new Error(message || errorText || "Request failed");
+      }
+      throw new Error("Request failed");
     }
 
     // Return data directly from response.data if exists, otherwise return data
-    return data.data !== undefined ? data.data : data;
-  } catch (error: any) {
-    if (error.name === "TypeError" && error.message === "Failed to fetch") {
+    if (isRecord(data) && "data" in data) {
+      return data.data as T;
+    }
+
+    return data as T;
+  } catch (error: unknown) {
+    if (error instanceof Error && error.name === "TypeError" && error.message === "Failed to fetch") {
       throw new Error(
         "Không thể kết nối đến server. Vui lòng kiểm tra kết nối.",
       );
@@ -68,7 +94,7 @@ export const api = {
     return fetchApi<T>(endpoint, { ...options, method: "GET" });
   },
 
-  post<T>(endpoint: string, body?: any, options?: FetchOptions): Promise<T> {
+  post<T>(endpoint: string, body?: unknown, options?: FetchOptions): Promise<T> {
     return fetchApi<T>(endpoint, {
       ...options,
       method: "POST",
@@ -76,7 +102,7 @@ export const api = {
     });
   },
 
-  put<T>(endpoint: string, body?: any, options?: FetchOptions): Promise<T> {
+  put<T>(endpoint: string, body?: unknown, options?: FetchOptions): Promise<T> {
     return fetchApi<T>(endpoint, {
       ...options,
       method: "PUT",
@@ -84,7 +110,7 @@ export const api = {
     });
   },
 
-  patch<T>(endpoint: string, body?: any, options?: FetchOptions): Promise<T> {
+  patch<T>(endpoint: string, body?: unknown, options?: FetchOptions): Promise<T> {
     return fetchApi<T>(endpoint, {
       ...options,
       method: "PATCH",

@@ -2,7 +2,7 @@ import { api } from "./client";
 
 // ─────────────────────────────────────────────────────────────────
 // Yêu Cầu Kiểm Nghiệm
-// Base: /api/yeu-cau-kiem-nghiem
+// Base: /api/v1/yeu-cau-kiem-nghiem
 // ─────────────────────────────────────────────────────────────────
 
 export interface YeuCauKiemNghiemResponse {
@@ -47,9 +47,37 @@ export interface YeuCauKiemNghiemStatsResponse {
   hoanThanh: number;
 }
 
+export interface YeuCauKiemNghiemMauOptionResponse {
+  maMau: string;
+  maCoSo: string;
+  tenMau: string;
+  loaiMau: string;
+  tenCoSo: string;
+  ngayThu: string; // ISO date
+}
+
+export interface NguoiDungOptionResponse {
+  maNguoiDung: string;
+  hoTen: string;
+  gioiTinh?: string;
+  cccd?: string;
+}
+
+const YEU_CAU_BASE = "/v1/yeu-cau-kiem-nghiem";
+
 export const yeuCauKiemNghiemApi = {
   getStats(): Promise<YeuCauKiemNghiemStatsResponse> {
-    return api.get("/yeu-cau-kiem-nghiem/stats");
+    return api.get(`${YEU_CAU_BASE}/stats`);
+  },
+
+  /** Danh sách mẫu để tạo yêu cầu */
+  getMauOptions(): Promise<YeuCauKiemNghiemMauOptionResponse[]> {
+    return api.get(`${YEU_CAU_BASE}/mau-options`);
+  },
+
+  /** Danh sách kiểm nghiệm viên để chọn khi tạo yêu cầu */
+  getKiemNghiemVienOptions(): Promise<NguoiDungOptionResponse[]> {
+    return api.get(`${YEU_CAU_BASE}/kiem-nghiem-vien-options`);
   },
 
   searchYeuCau(
@@ -68,23 +96,23 @@ export const yeuCauKiemNghiemApi = {
     if (status) params.append("status", status);
     params.append("page", page.toString());
     params.append("size", size.toString());
-    return api.get(`/yeu-cau-kiem-nghiem?${params.toString()}`);
+    return api.get(`${YEU_CAU_BASE}?${params.toString()}`);
   },
 
   getById(maYeuCau: string): Promise<YeuCauKiemNghiemResponse> {
-    return api.get(`/yeu-cau-kiem-nghiem/${maYeuCau}`);
+    return api.get(`${YEU_CAU_BASE}/${maYeuCau}`);
   },
 
   create(
     req: CreateYeuCauKiemNghiemRequest,
   ): Promise<YeuCauKiemNghiemResponse> {
-    return api.post("/yeu-cau-kiem-nghiem", req);
+    return api.post(`${YEU_CAU_BASE}`, req);
   },
 
   updateKetQua(
     maYeuCau: string,
     req: UpdateKetQuaKiemNghiemRequest,
   ): Promise<YeuCauKiemNghiemResponse> {
-    return api.put(`/yeu-cau-kiem-nghiem/${maYeuCau}/ket-qua`, req);
+    return api.put(`${YEU_CAU_BASE}/${maYeuCau}/ket-qua`, req);
   },
 };

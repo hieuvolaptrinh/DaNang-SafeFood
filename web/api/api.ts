@@ -45,6 +45,14 @@ export {
   type CreateThanhTraRequest,
 } from './thanhtra';
 
+// Ho so thanh tra
+export {
+  hoSoThanhTraApi,
+  type HoSoThanhTraResponse,
+  type HoSoThanhTraStatsResponse,
+  type HoSoThanhTraRequest,
+} from './hosothanhtra';
+
 // Yêu cầu kiểm nghiệm
 export {
   yeuCauKiemNghiemApi,

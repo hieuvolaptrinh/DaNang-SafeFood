@@ -134,7 +134,8 @@ function DetailField({
 
 export default function TieuChiDanhGiaPage() {
   const [data, setData] = useState<TieuChi[]>(mockTieuChi);
-  const [search, setSearch] = useState('');
+  const [maTieuChi, setMaTieuChi] = useState('');
+  const [tenTieuChi, setTenTieuChi] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [viewMode, setViewMode] = useState<ViewMode>('list');
@@ -142,13 +143,13 @@ export default function TieuChiDanhGiaPage() {
   const [editForm, setEditForm] = useState<TieuChi | null>(null);
 
   const filtered = data.filter((tc) => {
-    const matchSearch =
-      !search ||
-      tc.id.toLowerCase().includes(search.toLowerCase()) ||
-      tc.name.toLowerCase().includes(search.toLowerCase());
+    const matchMa =
+      !maTieuChi || tc.id.toLowerCase().includes(maTieuChi.toLowerCase());
+    const matchTen =
+      !tenTieuChi || tc.name.toLowerCase().includes(tenTieuChi.toLowerCase());
     const matchStatus = !statusFilter || tc.status === statusFilter;
     const matchCategory = !categoryFilter || tc.category === categoryFilter;
-    return matchSearch && matchStatus && matchCategory;
+    return matchMa && matchTen && matchStatus && matchCategory;
   });
 
   const selectedTieuChi = selectedId ? data.find((item) => item.id === selectedId) ?? null : null;
@@ -460,8 +461,11 @@ export default function TieuChiDanhGiaPage() {
       </div>
 
       <FilterBar>
-        <FilterField label="Tìm kiếm">
-          <GovInput placeholder="Mã tiêu chí, tên tiêu chí..." value={search} onChange={setSearch} width={240} />
+        <FilterField label="Mã tiêu chí">
+          <GovInput placeholder="VD: TC001" value={maTieuChi} onChange={setMaTieuChi} width={160} />
+        </FilterField>
+        <FilterField label="Tên tiêu chí">
+          <GovInput placeholder="Tên tiêu chí" value={tenTieuChi} onChange={setTenTieuChi} width={240} />
         </FilterField>
         <FilterField label="Nhóm tiêu chí">
           <GovSelect
@@ -489,7 +493,15 @@ export default function TieuChiDanhGiaPage() {
         </FilterField>
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px' }}>
           <GovBtn variant="primary">Tìm kiếm</GovBtn>
-          <GovBtn variant="secondary" onClick={() => { setSearch(''); setStatusFilter(''); setCategoryFilter(''); }}>
+          <GovBtn
+            variant="secondary"
+            onClick={() => {
+              setMaTieuChi('');
+              setTenTieuChi('');
+              setStatusFilter('');
+              setCategoryFilter('');
+            }}
+          >
             Xóa lọc
           </GovBtn>
         </div>

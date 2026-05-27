@@ -17,6 +17,7 @@ import ExpiryAlerts from '@/components/dashboard/ExpiryAlerts';
 import { thongKeApi, DashboardSummary } from '@/api/api';
 import { ketQuaKiemNghiemApi } from '@/api/ketquakiemnghiem';
 import { mauKiemNghiemApi } from '@/api/maukiemnghiem';
+import { nhiemVuApi, type NhiemVuDashboardResponse } from '@/api/nhiemvu';
 import { getAccessToken } from '@/utils/storage';
 
 const GovBadge = ({ variant }: { variant: string }) => {
@@ -189,17 +190,62 @@ function AuthorityDashboard() {
 }
 
 function InspectorDashboard() {
+  const [data, setData] = useState<NhiemVuDashboardResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+
+    setLoading(true);
+    nhiemVuApi.getDashboard(5)
+      .then((res) => {
+        if (mounted) setData(res);
+      })
+      .catch(() => {
+        if (mounted) setData(null);
+      })
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
+
+    return () => { mounted = false; };
+  }, []);
+
+  const lichTuanToi = data?.lichTuanToi ?? 0;
+  const thanhTraThangNay = data?.thanhTraThangNay ?? 0;
+  const daHoanThanh = data?.daHoanThanhThangNay ?? 0;
+  const dangLenLich = data?.dangLenLichThangNay ?? 0;
+  const quaHan = data?.quaHanThangNay ?? 0;
+  const viPham = data?.viPhamPhatHienThangNay ?? 0;
+  const tyLeHoanThanh = thanhTraThangNay > 0 ? Math.round((daHoanThanh / thanhTraThangNay) * 1000) / 10 : 0;
+  const list = data?.nhiemVuGanNhat ?? [];
+
+  const formatDate = (value?: string) => {
+    if (!value) return '—';
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return value;
+    return new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(d);
+  };
+
+  const mapTrangThaiToBadge = (trangThai?: string) => {
+    const t = (trangThai || '').toLowerCase();
+    if (t.includes('hoàn thành') || t.includes('hoan thanh')) return 'resolved';
+    if (t.includes('đã nhận') || t.includes('da nhan') || t.includes('đang thực hiện') || t.includes('dang thuc hien')) return 'in-progress';
+    return 'open';
+  };
+
   return (
     <>
       <AlertBox type="info">
-        <strong>ℹ Lịch thanh tra:</strong> Bạn có <strong>3 cuộc thanh tra định kỳ</strong> trong tuần tới.{' '}
+        <strong>ℹ Lịch thanh tra:</strong> Bạn có{' '}
+        <strong>{loading ? '…' : lichTuanToi} cuộc thanh tra</strong> trong tuần tới.{' '}
         <Link href="/thanh-tra-kiem-dinh/nhiem-vu" style={{ color: '#005A9E', fontWeight: 600, textDecoration: 'underline' }}>Xem nhiệm vụ</Link>
       </AlertBox>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '10px', marginBottom: '14px' }}>
-        <StatCard label="Thanh tra tháng này" value="24" color="blue" trend="+3 so với T3" trendUp />
-        <StatCard label="Đã hoàn thành" value="19" color="green" progress={79} trend="79,2% tỷ lệ" trendUp />
-        <StatCard label="Đang lên lịch" value="5" color="orange" trend="2 quá hạn" />
-        <StatCard label="Vi phạm phát hiện" value="8" color="red" trend="+2 tháng này" />
+        <StatCard label="Thanh tra tháng này" value={loading ? '…' : thanhTraThangNay} color="blue" trend="Trong tháng hiện tại" />
+        <StatCard label="Đã hoàn thành" value={loading ? '…' : daHoanThanh} color="green" trend={`${tyLeHoanThanh}% tỷ lệ`} />
+        <StatCard label="Đang lên lịch" value={loading ? '…' : dangLenLich} color="orange" trend={`${quaHan} quá hạn`} />
+        <StatCard label="Vi phạm phát hiện" value={loading ? '…' : viPham} color="red" trend="Tháng này" />
       </div>
       <TableCard title="Nhiệm vụ thanh tra được phân công" actions={
         <Link href="/thanh-tra-kiem-dinh/nhiem-vu" className="gov-btn gov-btn-primary" style={{ fontSize: '12px', height: '26px' }}>Xem tất cả nhiệm vụ</Link>
@@ -207,20 +253,30 @@ function InspectorDashboard() {
         <table className="gov-table">
           <thead><tr>{['Mã nhiệm vụ', 'Cơ sở', 'Loại thanh tra', 'Ngày dự kiến', 'Trạng thái', 'Thao tác'].map(h => <TH key={h}>{h}</TH>)}</tr></thead>
           <tbody>
-            {[
-              { id: 'NV-001', biz: 'Nhà hàng Phở Ba Miền', type: 'Định kỳ', date: '20/05/2026', status: 'open' },
-              { id: 'NV-002', biz: 'Chợ Tươi Đà Nẵng', type: 'Đột xuất', date: '22/05/2026', status: 'in-progress' },
-              { id: 'NV-003', biz: 'Cà Phê Thu Hiền', type: 'Định kỳ', date: '25/05/2026', status: 'open' },
-            ].map((r, i) => (
-              <tr key={i}>
-                <TD><span style={{ color: '#005A9E', fontWeight: 500 }}>{r.id}</span></TD>
-                <TD>{r.biz}</TD>
-                <TD>{r.type}</TD>
-                <TD mono>{r.date}</TD>
-                <TD><GovBadge variant={r.status} /></TD>
-                <TD><button className="gov-btn gov-btn-primary" style={{ height: '22px', fontSize: '11px', padding: '0 8px' }}>Thực hiện</button></TD>
+            {loading ? (
+              <tr>
+                <td colSpan={6} style={{ textAlign: 'center', padding: '20px', color: '#888' }}>Đang tải...</td>
               </tr>
-            ))}
+            ) : list.length === 0 ? (
+              <tr>
+                <td colSpan={6} style={{ textAlign: 'center', padding: '20px', color: '#888' }}>Không có nhiệm vụ nào trong tháng.</td>
+              </tr>
+            ) : (
+              list.map((r, i) => (
+                <tr key={i}>
+                  <TD><span style={{ color: '#005A9E', fontWeight: 500 }}>{r.maThanhTra}</span></TD>
+                  <TD>{r.tenCoSo}</TD>
+                  <TD>{r.loaiThanhTra}</TD>
+                  <TD mono>{formatDate(r.thoiGianTT)}</TD>
+                  <TD><GovBadge variant={mapTrangThaiToBadge(r.trangThai)} /></TD>
+                  <TD>
+                    <Link href="/thanh-tra-kiem-dinh/nhiem-vu">
+                      <button className="gov-btn gov-btn-primary" style={{ height: '22px', fontSize: '11px', padding: '0 8px' }}>Thực hiện</button>
+                    </Link>
+                  </TD>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </TableCard>

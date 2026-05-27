@@ -2,6 +2,7 @@ package com.danang.safefood.controller.ThanhTra;
 
 import com.danang.safefood.config.security.jwt.JwtPrincipal;
 import com.danang.safefood.dto.request.CapNhatTienDoRequest;
+import com.danang.safefood.dto.response.NhiemVuDashboardResponse;
 import com.danang.safefood.dto.response.NhiemVuDetailResponse;
 import com.danang.safefood.dto.response.NhiemVuListResponse;
 import com.danang.safefood.dto.response.ThongKeNhiemVuResponse;
@@ -25,6 +26,14 @@ public class NhiemVuController {
     public ResponseEntity<ThongKeNhiemVuResponse> getThongKeNhiemVu(
             @AuthenticationPrincipal JwtPrincipal jwtPrincipal) {
         return ResponseEntity.ok(nhiemVuService.getThongKeNhiemVu(jwtPrincipal));
+    }
+
+    /** Dashboard cho CB_THANH_TRA: thong ke thang hien tai + danh sach nhiem vu gan nhat. */
+    @GetMapping("/dashboard")
+    public ResponseEntity<NhiemVuDashboardResponse> getDashboard(
+            @AuthenticationPrincipal JwtPrincipal jwtPrincipal,
+            @RequestParam(defaultValue = "5") int limit) {
+        return ResponseEntity.ok(nhiemVuService.getDashboard(jwtPrincipal, limit));
     }
 
     @GetMapping

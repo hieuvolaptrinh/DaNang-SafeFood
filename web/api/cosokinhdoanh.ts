@@ -13,8 +13,11 @@ export interface CoSoKinhDoanhItem {
   trangThai: string;
   maPX: string;
   tenPhuongXa: string;
-  maChuSoHuu: string;
-  tenChuSoHuu: string;
+  maChuSoHuu?: string;
+  tenChuSoHuu?: string;
+  anhBia?: string;
+  soViPham?: number;
+  loaiHinhKinhDoanh?: string[];
 }
 
 export interface CoSoKinhDoanhPageResponse {
@@ -42,6 +45,30 @@ export interface GiayChungNhanItem {
 const CSKD_BASE = "/v1/cosokinhdoanh";
 
 export const coSoKinhDoanhApi = {
+  /**
+   * Backward-compatible alias.
+   * Some screens expect `coSoKinhDoanhApi.search(keyword, page, size)` returning a page shape.
+   *
+   * Use the user search endpoint to avoid role-name mismatch between modules
+   * (`/api/v1/cosokinhdoanh` currently checks CAN_BO_THANH_TRA vs JWT role CB_THANH_TRA).
+   */
+  async search(
+    keyword: string = "",
+    page: number = 0,
+    size: number = 20,
+  ): Promise<CoSoKinhDoanhPageResponse> {
+    const qs = new URLSearchParams();
+    if (keyword.trim()) qs.append("keyword", keyword.trim());
+    qs.append("page", String(page));
+    qs.append("size", String(size));
+
+    // Note: response content items follow `CoSoKinhDoanhSearchResponse` from BE.
+    const res = await api.get<CoSoKinhDoanhPageResponse>(`/user/co-so-kinh-doanh/search?${qs.toString()}`);
+
+    // Ensure optional fields exist on item type for consumers like thanh-tra-kiem-dinh.
+    return res;
+  },
+
   getList(
     params: {
       trangThai?: string;

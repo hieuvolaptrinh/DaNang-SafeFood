@@ -41,18 +41,18 @@ const BAO_CAO_BASE = "/v1/bao-cao";
 
 export const baoCaoApi = {
   getStats(): Promise<BaoCaoStatsResponse> {
-    return api.get(`${BAO_CAO_BASE}/stats`);
+    return api.get(`${BAO_CAO_BASE}/thong-ke`);
   },
 
   search(
     keyword: string = "",
-    ketQua: string = "",
+    resultFilter: string = "",
     page: number = 0,
     size: number = 20,
   ): Promise<{ content: BaoCaoResponse[]; totalElements: number; totalPages: number; number: number }> {
     const qs = new URLSearchParams();
     if (keyword) qs.append("keyword", keyword);
-    if (ketQua) qs.append("ketQua", ketQua);
+    if (resultFilter) qs.append("resultFilter", resultFilter);
     qs.append("page", String(page));
     qs.append("size", String(size));
     return api.get(`${BAO_CAO_BASE}?${qs.toString()}`);

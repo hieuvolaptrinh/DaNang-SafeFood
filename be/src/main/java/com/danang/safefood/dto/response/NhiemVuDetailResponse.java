@@ -15,6 +15,7 @@ public class NhiemVuDetailResponse {
     private String maThanhTra;
     private String trangThai;  // personal status
     private String ghiChu;     // personal notes
+    private String lyDoTuChoi; // personal reject reason
     private String noiDung;
     private LocalDateTime thoiGianTT;
     private String maCoSo;

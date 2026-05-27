@@ -294,7 +294,9 @@ const EMPTY_STATS: KetQuaKiemNghiemStatsResponse = {
 
 export default function KetQuaPage() {
   const router = useRouter();
-  const [search, setSearch] = useState('');
+  const [maKetQua, setMaKetQua] = useState('');
+  const [coSo, setCoSo] = useState('');
+  const [tenMau, setTenMau] = useState('');
   const [resultFilter, setResultFilter] = useState('');
   const [mode, setMode] = useState<'list' | 'view'>('list');
   const [results, setResults] = useState<TestResult[]>([]);
@@ -328,15 +330,19 @@ export default function KetQuaPage() {
   const filtered = useMemo(
     () =>
       results.filter((result) => {
-        const matchSearch =
-          !search ||
-          result.business.toLowerCase().includes(search.toLowerCase()) ||
-          result.id.toLowerCase().includes(search.toLowerCase()) ||
-          result.sampleName.toLowerCase().includes(search.toLowerCase());
+        const matchMaKetQua =
+          !maKetQua || result.id.toLowerCase().includes(maKetQua.toLowerCase());
+
+        const matchCoSo =
+          !coSo || result.business.toLowerCase().includes(coSo.toLowerCase());
+
+        const matchTenMau =
+          !tenMau || result.sampleName.toLowerCase().includes(tenMau.toLowerCase());
+
         const matchResult = !resultFilter || result.result === resultFilter;
-        return matchSearch && matchResult;
+        return matchMaKetQua && matchCoSo && matchTenMau && matchResult;
       }),
-    [resultFilter, results, search]
+    [resultFilter, results, maKetQua, coSo, tenMau]
   );
 
   const columns: Column<TestResult>[] = [
@@ -455,7 +461,9 @@ export default function KetQuaPage() {
             title="Kết quả kiểm nghiệm"
             controls={
               <>
-                <SearchInput placeholder="Tìm cơ sở, mã kết quả..." onChange={setSearch} />
+                <SearchInput placeholder="Mã kết quả" onChange={setMaKetQua} />
+                <SearchInput placeholder="Cơ sở" onChange={setCoSo} />
+                <SearchInput placeholder="Tên mẫu" onChange={setTenMau} />
                 <FilterSelect
                   options={[
                     { value: '', label: 'Tất cả kết quả' },

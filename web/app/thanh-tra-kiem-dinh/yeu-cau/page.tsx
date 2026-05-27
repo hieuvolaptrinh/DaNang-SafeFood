@@ -133,7 +133,9 @@ function mapTesterOptions(
 export default function YeuCauPage() {
   const { role } = useRole();
   const [mode, setMode] = useState<PageMode>('list');
-  const [search, setSearch] = useState('');
+  const [maYeuCau, setMaYeuCau] = useState('');
+  const [coSo, setCoSo] = useState('');
+  const [maMau, setMaMau] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [data, setData] = useState<TestRequest[]>([]);
   const [stats, setStats] = useState<YeuCauKiemNghiemStatsResponse>(EMPTY_STATS);
@@ -270,14 +272,19 @@ export default function YeuCauPage() {
   const filtered = useMemo(
     () =>
       data.filter((request) => {
-        const matchSearch =
-          !search ||
-          request.business.toLowerCase().includes(search.toLowerCase()) ||
-          request.id.toLowerCase().includes(search.toLowerCase());
+        const matchMaYeuCau =
+          !maYeuCau || request.id.toLowerCase().includes(maYeuCau.toLowerCase());
+
+        const matchCoSo =
+          !coSo || request.business.toLowerCase().includes(coSo.toLowerCase());
+
+        const matchMaMau =
+          !maMau || (request.sampleId || '').toLowerCase().includes(maMau.toLowerCase());
+
         const matchStatus = !statusFilter || request.status === statusFilter;
-        return matchSearch && matchStatus;
+        return matchMaYeuCau && matchCoSo && matchMaMau && matchStatus;
       }),
-    [data, search, statusFilter]
+    [data, maYeuCau, coSo, maMau, statusFilter]
   );
 
   const columns: Column<TestRequest>[] = [
@@ -396,8 +403,14 @@ export default function YeuCauPage() {
           </div>
 
           <FilterBar>
-            <FilterField label="Tìm kiếm">
-              <GovInput placeholder="Mã yêu cầu, tên cơ sở..." value={search} onChange={setSearch} width={240} />
+            <FilterField label="Mã yêu cầu">
+              <GovInput placeholder="VD: YC001" value={maYeuCau} onChange={setMaYeuCau} width={160} />
+            </FilterField>
+            <FilterField label="Cơ sở">
+              <GovInput placeholder="Tên cơ sở" value={coSo} onChange={setCoSo} width={220} />
+            </FilterField>
+            <FilterField label="Mã mẫu">
+              <GovInput placeholder="VD: M-2025-001" value={maMau} onChange={setMaMau} width={160} />
             </FilterField>
             <FilterField label="Trạng thái">
               <GovSelect value={statusFilter} onChange={setStatusFilter} options={[
@@ -409,7 +422,17 @@ export default function YeuCauPage() {
             </FilterField>
             <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px' }}>
               <GovBtn variant="primary">Tìm kiếm</GovBtn>
-              <GovBtn variant="secondary" onClick={() => { setSearch(''); setStatusFilter(''); }}>Xóa lọc</GovBtn>
+              <GovBtn
+                variant="secondary"
+                onClick={() => {
+                  setMaYeuCau('');
+                  setCoSo('');
+                  setMaMau('');
+                  setStatusFilter('');
+                }}
+              >
+                Xóa lọc
+              </GovBtn>
             </div>
           </FilterBar>
 
