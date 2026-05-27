@@ -13,8 +13,11 @@ export interface CoSoKinhDoanhItem {
   trangThai: string;
   maPX: string;
   tenPhuongXa: string;
-  maChuSoHuu: string;
-  tenChuSoHuu: string;
+  maChuSoHuu?: string;
+  tenChuSoHuu?: string;
+  anhBia?: string;
+  soViPham?: number;
+  loaiHinhKinhDoanh?: string[];
 }
 
 export interface CoSoKinhDoanhPageResponse {
@@ -46,38 +49,24 @@ export const coSoKinhDoanhApi = {
    * Backward-compatible alias.
    * Some screens expect `coSoKinhDoanhApi.search(keyword, page, size)` returning a page shape.
    *
-   * If `keyword` is provided, we use `/dropdown` then wrap to a page-like response.
-   * Otherwise we call the normal paged `getList` endpoint.
+   * Use the user search endpoint to avoid role-name mismatch between modules
+   * (`/api/v1/cosokinhdoanh` currently checks CAN_BO_THANH_TRA vs JWT role CB_THANH_TRA).
    */
   async search(
     keyword: string = "",
     page: number = 0,
     size: number = 20,
   ): Promise<CoSoKinhDoanhPageResponse> {
-    const trimmed = keyword.trim();
+    const qs = new URLSearchParams();
+    if (keyword.trim()) qs.append("keyword", keyword.trim());
+    qs.append("page", String(page));
+    qs.append("size", String(size));
 
-    if (!trimmed) {
-      return coSoKinhDoanhApi.getList({ page, size });
-    }
+    // Note: response content items follow `CoSoKinhDoanhSearchResponse` from BE.
+    const res = await api.get<CoSoKinhDoanhPageResponse>(`/user/co-so-kinh-doanh/search?${qs.toString()}`);
 
-    const list = await coSoKinhDoanhApi.getDropdown({ keyword: trimmed });
-    const totalElements = list.length;
-    const totalPages = size > 0 ? Math.max(1, Math.ceil(totalElements / size)) : 1;
-    const start = Math.max(0, page) * (size > 0 ? size : totalElements);
-    const end = size > 0 ? start + size : totalElements;
-    const content = list.slice(start, end);
-
-    return {
-      totalPages,
-      totalElements,
-      size,
-      content,
-      number: page,
-      first: page <= 0,
-      last: page >= totalPages - 1,
-      numberOfElements: content.length,
-      empty: content.length === 0,
-    };
+    // Ensure optional fields exist on item type for consumers like thanh-tra-kiem-dinh.
+    return res;
   },
 
   getList(
