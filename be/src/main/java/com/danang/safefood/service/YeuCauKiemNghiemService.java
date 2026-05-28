@@ -76,9 +76,20 @@ public class YeuCauKiemNghiemService {
         mau.setNoiDung(req.noidungYeuCau());
         mau.setChiTieuKiemDinh(req.chiTieuKiemDinh());
         mau.setTrangThai(toStoredStatus(UI_PENDING));
+
+        // Reset previous test results when a new request is created for a sample.
+        // Otherwise, UI may immediately show Pass/Fail from the previous workflow.
+        mau.setNgayKiemNghiem(null);
+        mau.setKetQuaKiemNghiem(null);
+        mau.setLyDoKhongDat(null);
+        mau.setFileCoDauMoc(null);
+
         mau.setNgayTao(LocalDate.now());
         mau.setMaNguoiTao(resolveCurrentNguoiDungId(jwtPrincipal));
         mauRepository.save(mau);
+
+        // Clear old criteria results and re-initialize selected criteria for this request.
+        mauChiTieuRepository.deleteByMaMau(mau.getMaMau());
 
         // Bridge thanh-tra -> kiem-nghiem:
         // FE page /kiem-nghiem/mau/{maMau} reads from table mau_chi_tieu.
