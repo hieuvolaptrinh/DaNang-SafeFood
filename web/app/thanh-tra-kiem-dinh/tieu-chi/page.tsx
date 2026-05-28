@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { tieuChiDanhGiaApi } from '@/api/api';
 import { Plus, Eye, Pencil, RefreshCw, FileSpreadsheet } from 'lucide-react';
 import {
@@ -134,6 +134,9 @@ function DetailField({
 
 export default function TieuChiDanhGiaPage() {
   const [data, setData] = useState<TieuChi[]>(mockTieuChi);
+  const [nhomOptions, setNhomOptions] = useState<string[]>([]);
+  const [loadingNhomOptions, setLoadingNhomOptions] = useState(false);
+  const [loadingFromDb, setLoadingFromDb] = useState(false);
   const [maTieuChi, setMaTieuChi] = useState('');
   const [tenTieuChi, setTenTieuChi] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -182,6 +185,46 @@ export default function TieuChiDanhGiaPage() {
     });
     setViewMode('create');
   };
+
+  const loadNhomOptions = async () => {
+    setLoadingNhomOptions(true);
+    try {
+      const res = await tieuChiDanhGiaApi.getNhomOptions();
+      setNhomOptions((res || []).filter(Boolean));
+    } catch {
+      setNhomOptions([]);
+    } finally {
+      setLoadingNhomOptions(false);
+    }
+  };
+
+  const loadFromDb = async () => {
+    setLoadingFromDb(true);
+    try {
+      const res = await tieuChiDanhGiaApi.getList({ page: 0, size: 200 });
+      const mapped: TieuChi[] = (res.content || []).map((item) => ({
+        id: item.maTieuChi,
+        name: item.tenTieuChi,
+        category: item.nhom ?? '',
+        maxScore: item.thuTu ?? 0,
+        weight: '',
+        status: 'active',
+        issuedDate: '',
+        issuedBy: '',
+        description: '',
+      }));
+      setData(mapped.length > 0 ? mapped : mockTieuChi);
+    } catch {
+      // keep mock
+    } finally {
+      setLoadingFromDb(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadNhomOptions();
+    void loadFromDb();
+  }, []);
 
   const closeView = () => {
     setSelectedId(null);
@@ -237,6 +280,13 @@ export default function TieuChiDanhGiaPage() {
       alert((err as Error)?.message || 'Tạo tiêu chí thất bại');
     }
   };
+
+  const effectiveNhomOptions = useMemo(() => {
+    // combine DB options with whatever appears in the current dataset
+    const fromData = data.map((x) => x.category).filter(Boolean);
+    const all = [...nhomOptions, ...fromData];
+    return Array.from(new Set(all)).sort((a, b) => a.localeCompare(b, 'vi'));
+  }, [data, nhomOptions]);
 
   const columns: Column<TieuChi>[] = [
     {
@@ -381,7 +431,32 @@ export default function TieuChiDanhGiaPage() {
               </div>
               <div>
                 <p style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#64748B', marginBottom: '6px' }}>Nhóm tiêu chí</p>
-                <GovInput value={editForm.category} onChange={(value) => setEditForm((current) => (current ? { ...current, category: value } : current))} width="100%" />
+                <input
+                  list="nhom-tieu-chi-options"
+                  value={editForm.category}
+                  onChange={(event) =>
+                    setEditForm((current) =>
+                      current ? { ...current, category: event.target.value } : current
+                    )
+                  }
+                  style={{
+                    width: '100%',
+                    height: 30,
+                    border: '1px solid #D6D6D6',
+                    borderRadius: 2,
+                    padding: '0 10px',
+                    background: '#fff',
+                    fontSize: 13,
+                    color: '#222',
+                    outline: 'none',
+                  }}
+                  placeholder={loadingNhomOptions ? 'Đang tải nhóm...' : 'Chọn hoặc nhập nhóm tiêu chí'}
+                />
+                <datalist id="nhom-tieu-chi-options">
+                  {effectiveNhomOptions.map((opt) => (
+                    <option key={opt} value={opt} />
+                  ))}
+                </datalist>
               </div>
               <div>
                 <p style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#64748B', marginBottom: '6px' }}>Điểm tối đa</p>
@@ -473,7 +548,7 @@ export default function TieuChiDanhGiaPage() {
             onChange={setCategoryFilter}
             options={[
               { value: '', label: '-- Tất cả --' },
-              ...Object.keys(categoryColors).map((category) => ({ value: category, label: category })),
+              ...effectiveNhomOptions.map((category) => ({ value: category, label: category })),
             ]}
             width={180}
           />
