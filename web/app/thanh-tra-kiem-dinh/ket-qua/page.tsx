@@ -33,7 +33,7 @@ interface TestResult {
   lab: string;
   result: 'pass' | 'fail' | 'pending';
   parameters: ResultParameter[];
-  score: number;
+  score: number | null;
   fileName?: string;
 }
 
@@ -105,7 +105,7 @@ function mapItem(item: KetQuaKiemNghiemItemResponse): TestResult {
         allowedLimit: 'Chưa có',
         conclusion: normalizeResult(item.ketQua),
       })),
-    score: item.diem ?? 0,
+    score: item.diem ?? null,
     fileName: item.fileKetQua || undefined,
   };
 }
@@ -120,7 +120,7 @@ function mapDetail(item: KetQuaKiemNghiemDetailResponse): TestResult {
     lab: item.phongLab || 'Chưa có',
     result: normalizeResult(item.ketQua),
     parameters: item.chiTietChiTieu.map(mapChiTieu),
-    score: item.diem ?? 0,
+    score: item.diem ?? null,
     fileName: item.fileKetQua || undefined,
   };
 }
@@ -377,15 +377,18 @@ export default function KetQuaPage() {
     {
       key: 'score',
       header: 'Điểm',
-      render: (result) => (
-        <span
-          className={`font-bold ${
-            result.score >= 80 ? 'text-emerald-600' : result.score >= 60 ? 'text-amber-600' : 'text-red-600'
-          }`}
-        >
-          {result.score}/100
-        </span>
-      ),
+      render: (result) =>
+        result.score == null ? (
+          <span className="text-slate-400 text-sm">—</span>
+        ) : (
+          <span
+            className={`font-bold ${
+              result.score >= 80 ? 'text-emerald-600' : result.score >= 60 ? 'text-amber-600' : 'text-red-600'
+            }`}
+          >
+            {result.score}/100
+          </span>
+        ),
     },
     {
       key: 'actions',
