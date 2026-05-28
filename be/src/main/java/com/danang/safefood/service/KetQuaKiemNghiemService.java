@@ -60,7 +60,7 @@ public class KetQuaKiemNghiemService {
                 .orElseThrow(() -> new RuntimeException("Khong tim thay ket qua kiem nghiem: " + maKetQua));
 
         List<KetQuaKiemNghiemChiTieuResponse> chiTietChiTieu = getChiTieuResponses(maMau);
-        String ketQua = resolveOverallResult(chiTietChiTieu);
+        String ketQua = resolveOverallResult(mau, chiTietChiTieu);
 
         return new KetQuaKiemNghiemDetailResponse(
                 buildKetQuaId(mau.getMaMau()),
@@ -90,7 +90,7 @@ public class KetQuaKiemNghiemService {
 
     private KetQuaKiemNghiemItemResponse toItemResponse(MauKiemNghiem mau) {
         List<KetQuaKiemNghiemChiTieuResponse> chiTietChiTieu = getChiTieuResponses(mau.getMaMau());
-        String ketQua = resolveOverallResult(chiTietChiTieu);
+        String ketQua = resolveOverallResult(mau, chiTietChiTieu);
         return new KetQuaKiemNghiemItemResponse(
                 buildKetQuaId(mau.getMaMau()),
                 mau.getMaMau(),
@@ -159,28 +159,49 @@ public class KetQuaKiemNghiemService {
             return null;
         }
 
-        return switch (resultFilter.trim().toLowerCase(Locale.ROOT)) {
-            case RESULT_PASS, RESULT_FAIL, RESULT_PENDING -> resultFilter.trim().toLowerCase(Locale.ROOT);
+        return switch (normalizeText(resultFilter)) {
+            case "pass", "dat", "đat" -> RESULT_PASS;
+            case "fail", "khong dat", "khong đat" -> RESULT_FAIL;
+            case "pending", "cho ket qua", "dang kiem nghiem" -> RESULT_PENDING;
             default -> throw new RuntimeException("Bo loc ket qua khong hop le: " + resultFilter);
         };
     }
 
-    private String  resolveOverallResult(List<KetQuaKiemNghiemChiTieuResponse> chiTietChiTieu) {
-        if (chiTietChiTieu.isEmpty()) {
+    private String resolveOverallResult(MauKiemNghiem mau, List<KetQuaKiemNghiemChiTieuResponse> chiTietChiTieu) {
+        // Preferred: determine by each criterion (if exists).
+        if (!chiTietChiTieu.isEmpty()) {
+            boolean hasPending = false;
+            for (KetQuaKiemNghiemChiTieuResponse item : chiTietChiTieu) {
+                if (RESULT_FAIL.equals(item.ketLuan())) {
+                    return RESULT_FAIL;
+                }
+                if (!RESULT_PASS.equals(item.ketLuan())) {
+                    hasPending = true;
+                }
+            }
+            return hasPending ? RESULT_PENDING : RESULT_PASS;
+        }
+
+        // Fallback: screens currently submit only overall result fields (ketQuaKiemNghiem/lyDoKhongDat).
+        if (mau == null) {
             return RESULT_PENDING;
         }
 
-        boolean hasPending = false;
-        for (KetQuaKiemNghiemChiTieuResponse item : chiTietChiTieu) {
-            if (RESULT_FAIL.equals(item.ketLuan())) {
+        if (!isBlank(mau.getLyDoKhongDat())) {
+            return RESULT_FAIL;
+        }
+
+        if (!isBlank(mau.getKetQuaKiemNghiem())) {
+            String normalized = normalizeText(mau.getKetQuaKiemNghiem());
+            if (normalized.contains("khong dat") || normalized.contains("fail")) {
                 return RESULT_FAIL;
             }
-            if (!RESULT_PASS.equals(item.ketLuan())) {
-                hasPending = true;
+            if (normalized.contains("dat") || normalized.contains("pass")) {
+                return RESULT_PASS;
             }
         }
 
-        return hasPending ? RESULT_PENDING : RESULT_PASS;
+        return RESULT_PENDING;
     }
 
     private String resolveChiTieuConclusion(String ketQua) {
@@ -199,8 +220,13 @@ public class KetQuaKiemNghiemService {
     }
 
     private Integer computeScore(String overallResult, List<KetQuaKiemNghiemChiTieuResponse> chiTietChiTieu) {
-        if (RESULT_PENDING.equals(overallResult) || chiTietChiTieu.isEmpty()) {
+        if (RESULT_PENDING.equals(overallResult)) {
             return null;
+        }
+
+        // If no criteria details, return a simple score for list display.
+        if (chiTietChiTieu.isEmpty()) {
+            return RESULT_PASS.equals(overallResult) ? 100 : 0;
         }
 
         long passCount = chiTietChiTieu.stream()
