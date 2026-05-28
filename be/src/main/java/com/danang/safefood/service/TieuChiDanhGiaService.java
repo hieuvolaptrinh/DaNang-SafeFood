@@ -71,6 +71,10 @@ public class TieuChiDanhGiaService {
         return TieuChiDanhGiaResponse.from(entity);
     }
 
+    public List<String> getNhomOptions() {
+        return tieuChiDanhGiaRepository.findDistinctNhom();
+    }
+
     private boolean matchesKeyword(TieuChiDanhGiaResponse item, String keyword) {
         if (keyword == null || keyword.isBlank()) {
             return true;
