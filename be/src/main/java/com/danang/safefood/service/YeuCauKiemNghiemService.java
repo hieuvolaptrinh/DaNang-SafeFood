@@ -10,10 +10,13 @@ import com.danang.safefood.dto.response.YeuCauKiemNghiemStatsResponse;
 import com.danang.safefood.entity.CoSoKinhDoanh;
 import com.danang.safefood.entity.DamNhanKiemNghiem;
 import com.danang.safefood.entity.DamNhanKiemNghiemId;
+import com.danang.safefood.entity.MauChiTieu;
 import com.danang.safefood.entity.MauKiemNghiem;
 import com.danang.safefood.entity.NguoiDung;
 import com.danang.safefood.repository.CoSoKinhDoanhRepository;
+import com.danang.safefood.repository.ChiTieuKiemNghiemRepository;
 import com.danang.safefood.repository.DamNhanKiemNghiemRepository;
+import com.danang.safefood.repository.MauChiTieuRepository;
 import com.danang.safefood.repository.MauKiemNghiemRepository;
 import com.danang.safefood.repository.NguoiDungRepository;
 import lombok.RequiredArgsConstructor;
@@ -22,9 +25,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.text.Normalizer;
 import java.time.LocalDate;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -36,6 +42,8 @@ public class YeuCauKiemNghiemService {
 
     private final DamNhanKiemNghiemRepository damNhanRepository;
     private final MauKiemNghiemRepository mauRepository;
+    private final MauChiTieuRepository mauChiTieuRepository;
+    private final ChiTieuKiemNghiemRepository chiTieuRepository;
     private final CoSoKinhDoanhRepository coSoRepository;
     private final NguoiDungRepository nguoiDungRepository;
 
@@ -55,9 +63,10 @@ public class YeuCauKiemNghiemService {
         NguoiDung nguoiKiemNghiem = nguoiDungRepository.findById(req.maNguoiKiemNghiem())
                 .orElseThrow(() -> new RuntimeException("Khong tim thay nguoi kiem nghiem: " + req.maNguoiKiemNghiem()));
 
-        if (damNhanRepository.existsByIdMaNguoiKiemNghiemAndIdMaMau(req.maNguoiKiemNghiem(), req.maMauLienQuan())) {
-            throw new RuntimeException("Yeu cau kiem nghiem cho mau va kiem nghiem vien nay da ton tai");
-        }
+        DamNhanKiemNghiemId damNhanId = new DamNhanKiemNghiemId(req.maNguoiKiemNghiem(), req.maMauLienQuan());
+        // Make create idempotent for the same (mau, kiem nghiem vien):
+        // if UI submits again, we update the request info on the sample and return the existing assignment.
+        DamNhanKiemNghiem existing = damNhanRepository.findById(damNhanId).orElse(null);
 
         mau.setCoSoKinhDoanh(coSo);
         mau.setLoaiMau(req.loaiMau());
@@ -67,18 +76,117 @@ public class YeuCauKiemNghiemService {
         mau.setNoiDung(req.noidungYeuCau());
         mau.setChiTieuKiemDinh(req.chiTieuKiemDinh());
         mau.setTrangThai(toStoredStatus(UI_PENDING));
+
+        // Reset previous test results when a new request is created for a sample.
+        // Otherwise, UI may immediately show Pass/Fail from the previous workflow.
+        mau.setNgayKiemNghiem(null);
+        mau.setKetQuaKiemNghiem(null);
+        mau.setLyDoKhongDat(null);
+        mau.setFileCoDauMoc(null);
+
         mau.setNgayTao(LocalDate.now());
         mau.setMaNguoiTao(resolveCurrentNguoiDungId(jwtPrincipal));
         mauRepository.save(mau);
 
+        // Clear old criteria results and re-initialize selected criteria for this request.
+        mauChiTieuRepository.deleteByMaMau(mau.getMaMau());
+
+        // Bridge thanh-tra -> kiem-nghiem:
+        // FE page /kiem-nghiem/mau/{maMau} reads from table mau_chi_tieu.
+        // When thanh tra creates a request, we initialize the criteria rows (blank results)
+        // based on req.chiTieuKiemDinh so kiem dinh vien can start filling in results.
+        ensureMauChiTieuInitialized(mau);
+
+        if (existing != null) {
+            // Keep assignment, just reflect latest sample info.
+            return toResponse(existing);
+        }
+
         DamNhanKiemNghiem damNhan = DamNhanKiemNghiem.builder()
-                .id(new DamNhanKiemNghiemId(req.maNguoiKiemNghiem(), req.maMauLienQuan()))
+                .id(damNhanId)
                 .nguoiKiemNghiem(nguoiKiemNghiem)
                 .mauKiemNghiem(mau)
                 .build();
         damNhanRepository.save(damNhan);
 
         return toResponse(damNhan);
+    }
+
+    private void ensureMauChiTieuInitialized(MauKiemNghiem mau) {
+        if (mau == null || mau.getMaMau() == null || mau.getMaMau().isBlank()) {
+            return;
+        }
+        String raw = mau.getChiTieuKiemDinh();
+        if (raw == null || raw.isBlank()) {
+            return;
+        }
+
+        Set<String> maChiTieus = resolveMaChiTieuFromRequested(raw);
+        if (maChiTieus.isEmpty()) {
+            return;
+        }
+
+        for (String maChiTieu : maChiTieus) {
+            if (maChiTieu == null || maChiTieu.isBlank()) continue;
+            if (!chiTieuRepository.existsById(maChiTieu)) continue;
+            MauChiTieu.MauChiTieuId id = new MauChiTieu.MauChiTieuId(mau.getMaMau(), maChiTieu);
+            if (mauChiTieuRepository.existsById(id)) continue;
+            MauChiTieu entity = MauChiTieu.builder()
+                    .maMau(mau.getMaMau())
+                    .maChiTieu(maChiTieu)
+                    .build();
+            mauChiTieuRepository.save(entity);
+        }
+    }
+
+    /**
+     * UI sends broad categories from CreateInspectionRequestForm:
+     * - "Vi sinh" -> CT001..CT004 (microbiology-related)
+     * - "Kim loại nặng" -> CT005
+     * Also try best-effort matching for free-text "Khác" against danh muc chi tieu.
+     */
+    private Set<String> resolveMaChiTieuFromRequested(String raw) {
+        Set<String> result = new LinkedHashSet<>();
+        for (String token : raw.split(",")) {
+            String t = token == null ? "" : token.trim();
+            if (t.isBlank()) continue;
+
+            String norm = normalizeVi(t);
+            if ("vi sinh".equals(norm)) {
+                result.add("CT001");
+                result.add("CT002");
+                result.add("CT003");
+                result.add("CT004");
+                continue;
+            }
+            if ("kim loai nang".equals(norm)) {
+                result.add("CT005");
+                continue;
+            }
+
+            // Best-effort: match token to chi_tieu_kiem_nghiem.tenChiTieu (ignore accents/case/spaces).
+            String normToken = norm;
+            chiTieuRepository.findAll().forEach(item -> {
+                String ten = item.getTenChiTieu();
+                if (ten == null) return;
+                String normTen = normalizeVi(ten);
+                if (normTen.equals(normToken) || normTen.contains(normToken) || normToken.contains(normTen)) {
+                    result.add(item.getMaChiTieu());
+                }
+            });
+        }
+        return result;
+    }
+
+    private static String normalizeVi(String value) {
+        if (value == null) return "";
+        String normalized = Normalizer.normalize(value, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}+", "");
+        return normalized
+                .toLowerCase(Locale.ROOT)
+                .replace('đ', 'd')
+                .replaceAll("\\s+", " ")
+                .trim();
     }
 
     @Transactional(readOnly = true)

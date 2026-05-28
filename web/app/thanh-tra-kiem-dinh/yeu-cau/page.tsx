@@ -170,7 +170,13 @@ export default function YeuCauPage() {
         yeuCauKiemNghiemApi.getKiemNghiemVienOptions(),
       ]);
       setStats(statsData);
-      setData(pageData.content.map(mapRequest));
+      const sorted = [...(pageData.content || [])].sort((a, b) => {
+        const aKey = (a.ngayTao || a.ngayYeuCau || '').toString();
+        const bKey = (b.ngayTao || b.ngayYeuCau || '').toString();
+        if (aKey !== bKey) return bKey.localeCompare(aKey);
+        return (b.maYeuCau || '').localeCompare(a.maYeuCau || '');
+      });
+      setData(sorted.map(mapRequest));
       setSampleOptions(mapSampleOptions(mauOptions));
       setTesterOptions(mapTesterOptions(kiemNghiemVienOptions));
     } catch (error) {

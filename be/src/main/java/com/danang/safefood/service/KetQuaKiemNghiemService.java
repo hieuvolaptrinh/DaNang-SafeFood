@@ -60,7 +60,7 @@ public class KetQuaKiemNghiemService {
                 .orElseThrow(() -> new RuntimeException("Khong tim thay ket qua kiem nghiem: " + maKetQua));
 
         List<KetQuaKiemNghiemChiTieuResponse> chiTietChiTieu = getChiTieuResponses(maMau);
-        String ketQua = resolveOverallResult(chiTietChiTieu);
+        String ketQua = resolveOverallResult(mau, chiTietChiTieu);
 
         return new KetQuaKiemNghiemDetailResponse(
                 buildKetQuaId(mau.getMaMau()),
@@ -90,7 +90,7 @@ public class KetQuaKiemNghiemService {
 
     private KetQuaKiemNghiemItemResponse toItemResponse(MauKiemNghiem mau) {
         List<KetQuaKiemNghiemChiTieuResponse> chiTietChiTieu = getChiTieuResponses(mau.getMaMau());
-        String ketQua = resolveOverallResult(chiTietChiTieu);
+        String ketQua = resolveOverallResult(mau, chiTietChiTieu);
         return new KetQuaKiemNghiemItemResponse(
                 buildKetQuaId(mau.getMaMau()),
                 mau.getMaMau(),
@@ -159,28 +159,65 @@ public class KetQuaKiemNghiemService {
             return null;
         }
 
-        return switch (resultFilter.trim().toLowerCase(Locale.ROOT)) {
-            case RESULT_PASS, RESULT_FAIL, RESULT_PENDING -> resultFilter.trim().toLowerCase(Locale.ROOT);
+        return switch (normalizeText(resultFilter)) {
+            case "pass", "dat" -> RESULT_PASS;
+            case "fail", "khong dat" -> RESULT_FAIL;
+            case "pending", "cho ket qua", "dang kiem nghiem" -> RESULT_PENDING;
             default -> throw new RuntimeException("Bo loc ket qua khong hop le: " + resultFilter);
         };
     }
 
-    private String  resolveOverallResult(List<KetQuaKiemNghiemChiTieuResponse> chiTietChiTieu) {
-        if (chiTietChiTieu.isEmpty()) {
+    private String resolveOverallResult(MauKiemNghiem mau, List<KetQuaKiemNghiemChiTieuResponse> chiTietChiTieu) {
+        // Preferred: determine by each criterion (if exists).
+        if (!chiTietChiTieu.isEmpty()) {
+            // If criteria exist but all are still pending/blank, fall back to the overall result fields
+            // (ketQuaKiemNghiem/lyDoKhongDat) so inspector-submitted results are reflected on UI.
+            boolean hasAnyNonPending = chiTietChiTieu.stream()
+                    .anyMatch(item -> !RESULT_PENDING.equals(item.ketLuan()));
+            if (!hasAnyNonPending) {
+                return resolveOverallFromFields(mau);
+            }
+
+            boolean hasPending = false;
+            for (KetQuaKiemNghiemChiTieuResponse item : chiTietChiTieu) {
+                if (RESULT_FAIL.equals(item.ketLuan())) {
+                    return RESULT_FAIL;
+                }
+                if (!RESULT_PASS.equals(item.ketLuan())) {
+                    hasPending = true;
+                }
+            }
+            return hasPending ? RESULT_PENDING : RESULT_PASS;
+        }
+
+        // Fallback: screens currently submit only overall result fields (ketQuaKiemNghiem/lyDoKhongDat).
+        if (mau == null) {
             return RESULT_PENDING;
         }
 
-        boolean hasPending = false;
-        for (KetQuaKiemNghiemChiTieuResponse item : chiTietChiTieu) {
-            if (RESULT_FAIL.equals(item.ketLuan())) {
+        return resolveOverallFromFields(mau);
+    }
+
+    private String resolveOverallFromFields(MauKiemNghiem mau) {
+        if (mau == null) {
+            return RESULT_PENDING;
+        }
+
+        if (!isBlank(mau.getLyDoKhongDat())) {
+            return RESULT_FAIL;
+        }
+
+        if (!isBlank(mau.getKetQuaKiemNghiem())) {
+            String normalized = normalizeText(mau.getKetQuaKiemNghiem());
+            if (normalized.contains("khong dat") || normalized.contains("fail")) {
                 return RESULT_FAIL;
             }
-            if (!RESULT_PASS.equals(item.ketLuan())) {
-                hasPending = true;
+            if (normalized.contains("dat") || normalized.contains("pass")) {
+                return RESULT_PASS;
             }
         }
 
-        return hasPending ? RESULT_PENDING : RESULT_PASS;
+        return RESULT_PENDING;
     }
 
     private String resolveChiTieuConclusion(String ketQua) {
@@ -189,18 +226,29 @@ public class KetQuaKiemNghiemService {
         }
 
         String normalized = normalizeText(ketQua);
-        if (normalized.contains("khong đat") || normalized.contains("fail")) {
+        if (normalized.contains("khong dat") || normalized.contains("fail")) {
             return RESULT_FAIL;
         }
-        if (normalized.contains("đat") || normalized.contains("pass")) {
+        if (normalized.contains("dat") || normalized.contains("pass")) {
             return RESULT_PASS;
         }
         return RESULT_PENDING;
     }
 
     private Integer computeScore(String overallResult, List<KetQuaKiemNghiemChiTieuResponse> chiTietChiTieu) {
-        if (RESULT_PENDING.equals(overallResult) || chiTietChiTieu.isEmpty()) {
+        if (RESULT_PENDING.equals(overallResult)) {
             return null;
+        }
+
+        // If criteria rows exist but nothing has been concluded yet, don't show a misleading score.
+        if (!chiTietChiTieu.isEmpty()
+                && chiTietChiTieu.stream().allMatch(item -> RESULT_PENDING.equals(item.ketLuan()))) {
+            return null;
+        }
+
+        // If no criteria details, return a simple score for list display.
+        if (chiTietChiTieu.isEmpty()) {
+            return RESULT_PASS.equals(overallResult) ? 100 : 0;
         }
 
         long passCount = chiTietChiTieu.stream()
@@ -281,6 +329,7 @@ public class KetQuaKiemNghiemService {
         return Normalizer.normalize(value, Normalizer.Form.NFD)
                 .replaceAll("\\p{M}+", "")
                 .toLowerCase(Locale.ROOT)
+                .replace('đ', 'd')
                 .trim();
     }
 

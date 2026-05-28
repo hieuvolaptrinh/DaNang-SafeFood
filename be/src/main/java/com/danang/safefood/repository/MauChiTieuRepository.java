@@ -14,6 +14,13 @@ public interface MauChiTieuRepository extends JpaRepository<MauChiTieu, MauChiTi
 
     @Modifying
     @Query("""
+            DELETE FROM MauChiTieu m
+            WHERE m.maMau = :maMau
+            """)
+    int deleteByMaMau(@Param("maMau") String maMau);
+
+    @Modifying
+    @Query("""
             UPDATE MauChiTieu m
             SET m.giaTriDo = :giaTriDo,
                 m.gioiHanChoPhep = :gioiHanChoPhep,

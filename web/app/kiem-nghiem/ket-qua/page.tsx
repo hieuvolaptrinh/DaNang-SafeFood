@@ -11,6 +11,19 @@ import DataTable, { Column } from '@/components/DataTable';
 import AlertBanner from '@/components/AlertBanner';
 import { ketQuaKiemNghiemApi, KetQuaKiemNghiemItemResponse } from '@/api/ketquakiemnghiem';
 
+function normalizeResult(value?: string | null): 'pass' | 'fail' | 'pending' {
+  const normalized = (value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/đ/g, 'd')
+    .trim();
+
+  if (normalized.includes('khong dat') || normalized.includes('fail')) return 'fail';
+  if (normalized.includes('dat') || normalized.includes('pass')) return 'pass';
+  return 'pending';
+}
+
 export default function KetQuaKiemNghiemPage() {
   // Separate search inputs for code, business/sample name
   const [searchMa, setSearchMa] = useState('');
@@ -88,6 +101,8 @@ export default function KetQuaKiemNghiemPage() {
 
   const passCount = items.filter(kq => kq.ketQua === 'pass' || kq.ketQua === 'Đạt' || kq.ketQua === 'DAT').length;
   const failCount = items.filter(kq => kq.ketQua === 'fail' || kq.ketQua === 'Không đạt' || kq.ketQua === 'KHONG_DAT').length;
+  const passCountNormalized = items.filter(kq => normalizeResult(kq.ketQua) === 'pass').length;
+  const failCountNormalized = items.filter(kq => normalizeResult(kq.ketQua) === 'fail').length;
 
   const columns: Column<KetQuaKiemNghiemItemResponse>[] = [
     {
@@ -131,6 +146,11 @@ export default function KetQuaKiemNghiemPage() {
       key: 'ketQua',
       header: 'Kết quả',
       render: r => {
+        const res = normalizeResult(r.ketQua);
+        if (res === 'pass') return <StatusBadge variant="pass" label="Đạt" />;
+        if (res === 'fail') return <StatusBadge variant="fail" label="Không đạt" />;
+        return <StatusBadge variant="pending" label="Chờ kết quả" />;
+
         const isDat = r.ketQua === 'pass' || r.ketQua === 'Đạt' || r.ketQua === 'DAT';
         return <StatusBadge variant={isDat ? 'active' : 'expired'} label={isDat ? 'Đạt' : 'Không đạt'} />;
       },
@@ -180,8 +200,8 @@ export default function KetQuaKiemNghiemPage() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '10px', marginBottom: '12px' }}>
         <MiniStat label="Tổng kết quả (Trang hiện tại)" value={items.length} color="neutral" />
         <MiniStat label="Tổng số bản ghi" value={totalElements} color="blue" />
-        <MiniStat label="Đạt yêu cầu (Trang hiện tại)" value={passCount} color="green" />
-        <MiniStat label="Không đạt (Trang hiện tại)" value={failCount} color="red" />
+        <MiniStat label="Đạt yêu cầu (Trang hiện tại)" value={passCountNormalized} color="green" />
+        <MiniStat label="Không đạt (Trang hiện tại)" value={failCountNormalized} color="red" />
       </div>
 
       {/* Segmented Filters */}
@@ -231,10 +251,10 @@ export default function KetQuaKiemNghiemPage() {
       </SectionCard>
 
       {/* Mẫu không đạt */}
-      {failCount > 0 && (
+      {failCountNormalized > 0 && (
         <SectionCard title="Chi tiết mẫu không đạt yêu cầu (Trong trang hiện tại)">
           <div style={{ padding: '0' }}>
-            {items.filter(kq => kq.ketQua === 'fail' || kq.ketQua === 'Không đạt' || kq.ketQua === 'KHONG_DAT').map((kq, i) => (
+            {items.filter(kq => normalizeResult(kq.ketQua) === 'fail').map((kq, i) => (
               <div key={i} style={{ padding: '10px 12px', borderBottom: '1px solid #F0F0F0', borderLeft: '3px solid #CC0000' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <div>

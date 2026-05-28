@@ -112,6 +112,111 @@ export default function BaoCaoPage() {
     [reports, resultFilter, maBaoCao, coSo, thanhTraVien]
   );
 
+  const handleExportExcel = () => {
+    const now = new Date();
+    const pad2 = (n: number) => String(n).padStart(2, '0');
+    const exportedAt = `${pad2(now.getDate())}/${pad2(now.getMonth() + 1)}/${now.getFullYear()} ${pad2(now.getHours())}:${pad2(now.getMinutes())}`;
+
+    const escapeHtml = (value: unknown) =>
+      String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+
+    const ketQuaLabel = (value?: string | null) => {
+      const v = (value || '').toLowerCase().trim();
+      if (v === 'pass') return 'Đạt';
+      if (v === 'fail') return 'Không đạt';
+      if (v === 'scheduled') return 'Đã lên lịch';
+      return value || '';
+    };
+
+    const filterParts = [
+      maBaoCao ? `Mã báo cáo: ${maBaoCao}` : null,
+      coSo ? `Cơ sở: ${coSo}` : null,
+      thanhTraVien ? `Thanh tra viên: ${thanhTraVien}` : null,
+      resultFilter ? `Kết quả: ${ketQuaLabel(resultFilter)}` : null,
+    ].filter(Boolean);
+
+    const title = 'DANH SÁCH BÁO CÁO THANH TRA AN TOÀN THỰC PHẨM';
+    const orgLine1 = 'CHI CỤC AN TOÀN THỰC PHẨM TP. ĐÀ NẴNG';
+    const orgLine2 = 'PHẦN MỀM QUẢN LÝ VSATTP THÀNH PHỐ ĐÀ NẴNG';
+
+    const rowsHtml = filtered.map((r, idx) => {
+      const diem = r.diem ?? 0;
+      return `
+        <tr>
+          <td style="text-align:center;">${idx + 1}</td>
+          <td style="font-family:monospace;">${escapeHtml(r.id)}</td>
+          <td>${escapeHtml(r.tenCoSo ?? '')}</td>
+          <td>${escapeHtml(r.thanhTraVien ?? '')}</td>
+          <td style="font-family:monospace;">${escapeHtml(r.ngay ?? '')}</td>
+          <td>${escapeHtml(ketQuaLabel(r.ketQua))}</td>
+          <td style="text-align:center;">${escapeHtml(diem)}${Number.isFinite(diem) ? '/100' : ''}</td>
+          <td>${escapeHtml(r.loaiThanhTra ?? '')}</td>
+        </tr>
+      `;
+    }).join('');
+
+    const html = `\ufeff
+      <html>
+        <head>
+          <meta charset="UTF-8" />
+          <style>
+            body { font-family: Arial, sans-serif; }
+            table { border-collapse: collapse; width: 100%; }
+            th, td { border: 1px solid #333; padding: 6px 8px; font-size: 12px; }
+            th { background: #EAF7EA; font-weight: 700; text-align: left; }
+            .center { text-align: center; }
+            .muted { color: #555; font-size: 11px; }
+            .title { font-size: 16px; font-weight: 800; text-align: center; }
+            .org { font-size: 12px; font-weight: 700; text-align: center; text-transform: uppercase; }
+          </style>
+        </head>
+        <body>
+          <div class="org">${escapeHtml(orgLine1)}</div>
+          <div class="org" style="font-weight:600; font-size:11px;">${escapeHtml(orgLine2)}</div>
+          <div class="title">${escapeHtml(title)}</div>
+          <div class="muted center">Ngày xuất: ${escapeHtml(exportedAt)}</div>
+          ${filterParts.length ? `<div class="muted">Bộ lọc: ${escapeHtml(filterParts.join(' | '))}</div>` : ''}
+          <br />
+          <table>
+            <thead>
+              <tr>
+                <th class="center" style="width:40px;">STT</th>
+                <th style="width:110px;">Mã báo cáo</th>
+                <th style="width:240px;">Cơ sở</th>
+                <th style="width:160px;">Thanh tra viên</th>
+                <th style="width:110px;">Ngày kiểm tra</th>
+                <th style="width:110px;">Kết quả</th>
+                <th class="center" style="width:80px;">Điểm</th>
+                <th style="width:220px;">Loại thanh tra</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rowsHtml || `<tr><td colspan="8" class="center muted">Không có dữ liệu</td></tr>`}
+            </tbody>
+          </table>
+        </body>
+      </html>
+    `;
+
+    const fileStamp = `${now.getFullYear()}${pad2(now.getMonth() + 1)}${pad2(now.getDate())}_${pad2(now.getHours())}${pad2(now.getMinutes())}`;
+    const filename = `BaoCaoThanhTra_${fileStamp}.xls`;
+
+    const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  };
+
   const handleCreateClick = () => {
     setSuccessMessage('');
     setErrorMessage('');
@@ -216,7 +321,9 @@ export default function BaoCaoPage() {
             <GovBtn variant="secondary" onClick={() => void refreshData()} disabled={isLoading}>
               <RefreshCw style={{ width: 12, height: 12 }} /> Làm mới
             </GovBtn>
-            <GovBtn variant="secondary"><FileSpreadsheet style={{ width: 12, height: 12 }} /> Xuất Excel</GovBtn>
+            <GovBtn variant="secondary" onClick={handleExportExcel} disabled={isLoading}>
+              <FileSpreadsheet style={{ width: 12, height: 12 }} /> Xuất Excel
+            </GovBtn>
             <GovBtn variant="primary" onClick={handleCreateClick}><Plus style={{ width: 12, height: 12 }} /> Tạo báo cáo</GovBtn>
           </>
         }
