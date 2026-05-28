@@ -76,14 +76,79 @@ public class KiemDinhVienService {
 
     @Transactional(readOnly = true)
     public List<MauChiTieuResponse> getChiTieuCuaMau(String maMau) {
-        // Xác nhận mẫu tồn tại
-        mauKiemNghiemRepo.findById(maMau)
+        MauKiemNghiem mau = mauKiemNghiemRepo.findById(maMau)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy mẫu kiểm định: " + maMau));
 
-        return mauChiTieuRepo.findByMaMau(maMau)
-                .stream()
+        List<MauChiTieu> existing = mauChiTieuRepo.findByMaMau(maMau);
+        if (existing.isEmpty()) {
+            // Backfill for older requests: thanh-tra previously only stored chiTieuKiemDinh string in mau_kiem_nghiem.
+            // If detail page asks for criteria and mau_chi_tieu is empty, initialize it from mau.chiTieuKiemDinh.
+            ensureMauChiTieuInitializedFromRequested(mau);
+            existing = mauChiTieuRepo.findByMaMau(maMau);
+        }
+
+        return existing.stream()
                 .map(MauChiTieuResponse::from)
                 .collect(Collectors.toList());
+    }
+
+    private void ensureMauChiTieuInitializedFromRequested(MauKiemNghiem mau) {
+        String raw = mau.getChiTieuKiemDinh();
+        if (raw == null || raw.isBlank()) return;
+
+        // Same mapping as ThanhTra create request:
+        // "Vi sinh" -> CT001..CT004, "Kim loại nặng" -> CT005, plus best-effort name matching.
+        List<ChiTieuKiemNghiem> catalog = chiTieuRepo.findAll();
+
+        for (String token : raw.split(",")) {
+            String t = token == null ? "" : token.trim();
+            if (t.isBlank()) continue;
+
+            String norm = normalize(t);
+            if ("vi sinh".equals(norm)) {
+                upsertBlankChiTieu(mau.getMaMau(), "CT001");
+                upsertBlankChiTieu(mau.getMaMau(), "CT002");
+                upsertBlankChiTieu(mau.getMaMau(), "CT003");
+                upsertBlankChiTieu(mau.getMaMau(), "CT004");
+                continue;
+            }
+            if ("kim loai nang".equals(norm)) {
+                upsertBlankChiTieu(mau.getMaMau(), "CT005");
+                continue;
+            }
+
+            for (ChiTieuKiemNghiem item : catalog) {
+                if (item.getTenChiTieu() == null) continue;
+                String normTen = normalize(item.getTenChiTieu());
+                if (normTen.equals(norm) || normTen.contains(norm) || norm.contains(normTen)) {
+                    upsertBlankChiTieu(mau.getMaMau(), item.getMaChiTieu());
+                }
+            }
+        }
+    }
+
+    private void upsertBlankChiTieu(String maMau, String maChiTieu) {
+        if (maMau == null || maMau.isBlank() || maChiTieu == null || maChiTieu.isBlank()) return;
+        if (!chiTieuRepo.existsById(maChiTieu)) return;
+
+        MauChiTieu.MauChiTieuId id = new MauChiTieu.MauChiTieuId(maMau, maChiTieu);
+        if (mauChiTieuRepo.existsById(id)) return;
+
+        MauChiTieu entity = MauChiTieu.builder()
+                .maMau(maMau)
+                .maChiTieu(maChiTieu)
+                .build();
+        mauChiTieuRepo.save(entity);
+    }
+
+    private String normalize(String input) {
+        String normalized = Normalizer.normalize(input, Normalizer.Form.NFD);
+        normalized = normalized.replaceAll("\\p{M}+", ""); // Remove diacritics
+        normalized = normalized.toLowerCase(Locale.ROOT)
+                .replace('đ', 'd')
+                .replaceAll("\\s+", " ")
+                .trim();
+        return normalized;
     }
 
     @Transactional
