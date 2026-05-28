@@ -16,6 +16,7 @@ function normalizeResult(value?: string | null): 'pass' | 'fail' | 'pending' {
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
+    .replace(/đ/g, 'd')
     .trim();
 
   if (normalized.includes('khong dat') || normalized.includes('fail')) return 'fail';
