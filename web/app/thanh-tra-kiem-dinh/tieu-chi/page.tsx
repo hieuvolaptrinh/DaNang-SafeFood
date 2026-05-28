@@ -424,7 +424,7 @@ export default function TieuChiDanhGiaPage() {
                 <p style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#64748B', marginBottom: '6px' }}>Mã tiêu chí</p>
                 <GovInput
                   value={editForm.id}
-                  placeholder={isCreate ? 'Há»‡ thá»‘ng tá»± Ä‘á»™ng sinh' : undefined}
+                  placeholder={isCreate ? 'Tu dong sinh' : undefined}
                   disabled={true}
                   width="100%"
                 />
