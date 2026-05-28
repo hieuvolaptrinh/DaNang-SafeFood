@@ -160,8 +160,8 @@ public class KetQuaKiemNghiemService {
         }
 
         return switch (normalizeText(resultFilter)) {
-            case "pass", "dat", "đat" -> RESULT_PASS;
-            case "fail", "khong dat", "khong đat" -> RESULT_FAIL;
+            case "pass", "dat" -> RESULT_PASS;
+            case "fail", "khong dat" -> RESULT_FAIL;
             case "pending", "cho ket qua", "dang kiem nghiem" -> RESULT_PENDING;
             default -> throw new RuntimeException("Bo loc ket qua khong hop le: " + resultFilter);
         };
@@ -226,10 +226,10 @@ public class KetQuaKiemNghiemService {
         }
 
         String normalized = normalizeText(ketQua);
-        if (normalized.contains("khong đat") || normalized.contains("fail")) {
+        if (normalized.contains("khong dat") || normalized.contains("fail")) {
             return RESULT_FAIL;
         }
-        if (normalized.contains("đat") || normalized.contains("pass")) {
+        if (normalized.contains("dat") || normalized.contains("pass")) {
             return RESULT_PASS;
         }
         return RESULT_PENDING;
@@ -329,6 +329,7 @@ public class KetQuaKiemNghiemService {
         return Normalizer.normalize(value, Normalizer.Form.NFD)
                 .replaceAll("\\p{M}+", "")
                 .toLowerCase(Locale.ROOT)
+                .replace('đ', 'd')
                 .trim();
     }
 
