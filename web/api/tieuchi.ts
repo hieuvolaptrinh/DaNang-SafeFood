@@ -13,7 +13,7 @@ export interface TieuChiDanhGiaResponse {
 }
 
 export interface CreateTieuChiRequest {
-  maTieuChi: string;
+  maTieuChi?: string;
   tenTieuChi: string;
   nhom?: string;
   thuTu?: number;

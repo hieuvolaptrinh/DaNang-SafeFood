@@ -247,7 +247,6 @@ export default function TieuChiDanhGiaPage() {
 
     try {
       const req = {
-        maTieuChi: editForm.id,
         tenTieuChi: editForm.name,
         nhom: editForm.category,
         thuTu: editForm.maxScore ?? 0,
@@ -423,7 +422,12 @@ export default function TieuChiDanhGiaPage() {
             <div style={{ display: 'grid', gap: '12px', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}>
               <div>
                 <p style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#64748B', marginBottom: '6px' }}>Mã tiêu chí</p>
-                <GovInput value={editForm.id} onChange={(value) => setEditForm((current) => (current ? { ...current, id: value } : current))} width="100%" />
+                <GovInput
+                  value={editForm.id}
+                  placeholder={isCreate ? 'Há»‡ thá»‘ng tá»± Ä‘á»™ng sinh' : undefined}
+                  disabled={true}
+                  width="100%"
+                />
               </div>
               <div>
                 <p style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#64748B', marginBottom: '6px' }}>Tên tiêu chí</p>
