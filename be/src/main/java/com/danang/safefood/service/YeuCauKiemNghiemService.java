@@ -63,9 +63,10 @@ public class YeuCauKiemNghiemService {
         NguoiDung nguoiKiemNghiem = nguoiDungRepository.findById(req.maNguoiKiemNghiem())
                 .orElseThrow(() -> new RuntimeException("Khong tim thay nguoi kiem nghiem: " + req.maNguoiKiemNghiem()));
 
-        if (damNhanRepository.existsByIdMaNguoiKiemNghiemAndIdMaMau(req.maNguoiKiemNghiem(), req.maMauLienQuan())) {
-            throw new RuntimeException("Yeu cau kiem nghiem cho mau va kiem nghiem vien nay da ton tai");
-        }
+        DamNhanKiemNghiemId damNhanId = new DamNhanKiemNghiemId(req.maNguoiKiemNghiem(), req.maMauLienQuan());
+        // Make create idempotent for the same (mau, kiem nghiem vien):
+        // if UI submits again, we update the request info on the sample and return the existing assignment.
+        DamNhanKiemNghiem existing = damNhanRepository.findById(damNhanId).orElse(null);
 
         mau.setCoSoKinhDoanh(coSo);
         mau.setLoaiMau(req.loaiMau());
@@ -85,8 +86,13 @@ public class YeuCauKiemNghiemService {
         // based on req.chiTieuKiemDinh so kiem dinh vien can start filling in results.
         ensureMauChiTieuInitialized(mau);
 
+        if (existing != null) {
+            // Keep assignment, just reflect latest sample info.
+            return toResponse(existing);
+        }
+
         DamNhanKiemNghiem damNhan = DamNhanKiemNghiem.builder()
-                .id(new DamNhanKiemNghiemId(req.maNguoiKiemNghiem(), req.maMauLienQuan()))
+                .id(damNhanId)
                 .nguoiKiemNghiem(nguoiKiemNghiem)
                 .mauKiemNghiem(mau)
                 .build();
@@ -104,10 +110,6 @@ public class YeuCauKiemNghiemService {
             return;
         }
 
-        if (!mauChiTieuRepository.findByMaMau(mau.getMaMau()).isEmpty()) {
-            return; // already initialized
-        }
-
         Set<String> maChiTieus = resolveMaChiTieuFromRequested(raw);
         if (maChiTieus.isEmpty()) {
             return;
@@ -116,6 +118,8 @@ public class YeuCauKiemNghiemService {
         for (String maChiTieu : maChiTieus) {
             if (maChiTieu == null || maChiTieu.isBlank()) continue;
             if (!chiTieuRepository.existsById(maChiTieu)) continue;
+            MauChiTieu.MauChiTieuId id = new MauChiTieu.MauChiTieuId(mau.getMaMau(), maChiTieu);
+            if (mauChiTieuRepository.existsById(id)) continue;
             MauChiTieu entity = MauChiTieu.builder()
                     .maMau(mau.getMaMau())
                     .maChiTieu(maChiTieu)
