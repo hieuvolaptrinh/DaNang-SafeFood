@@ -74,7 +74,7 @@ public class KiemDinhVienService {
     // 2. Cập nhật kết quả chỉ tiêu mẫu
     // =========================================================
 
-    @Transactional(readOnly = true)
+    @Transactional
     public List<MauChiTieuResponse> getChiTieuCuaMau(String maMau) {
         MauKiemNghiem mau = mauKiemNghiemRepo.findById(maMau)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy mẫu kiểm định: " + maMau));
