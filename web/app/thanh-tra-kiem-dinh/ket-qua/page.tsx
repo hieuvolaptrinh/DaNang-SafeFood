@@ -315,7 +315,13 @@ export default function KetQuaPage() {
         ketQuaKiemNghiemApi.search('', '', 0, 100),
       ]);
       setStats(statsData);
-      setResults(pageData.content.map(mapItem));
+      const sorted = [...(pageData.content || [])].sort((a, b) => {
+        const aKey = (a.ngayKiemNghiem || '').toString();
+        const bKey = (b.ngayKiemNghiem || '').toString();
+        if (aKey !== bKey) return bKey.localeCompare(aKey);
+        return (b.maKetQua || '').localeCompare(a.maKetQua || '');
+      });
+      setResults(sorted.map(mapItem));
     } catch (error) {
       setErrorMessage(normalizeError(error, 'Không thể tải dữ liệu kết quả kiểm nghiệm'));
     } finally {
