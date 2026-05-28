@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { tieuChiDanhGiaApi } from '@/api/api';
 import { Plus, Eye, Pencil, RefreshCw, FileSpreadsheet } from 'lucide-react';
 import {
@@ -21,7 +21,7 @@ interface TieuChi {
   description: string;
 }
 
-type ViewMode = 'list' | 'detail' | 'edit';
+type ViewMode = 'list' | 'detail' | 'edit' | 'create';
 
 const mockTieuChi: TieuChi[] = [
   {
@@ -113,6 +113,11 @@ const statusLabel: Record<TieuChi['status'], string> = {
   archived: 'Lưu trữ',
 };
 
+const issuedByLabel: Record<string, string> = {
+  CAN_BO_THANH_TRA: 'Cán bộ Thanh tra',
+  LD_ATVSTP: 'Ban lãnh đạo VSATTP',
+};
+
 function DetailField({
   label,
   value,
@@ -134,6 +139,9 @@ function DetailField({
 
 export default function TieuChiDanhGiaPage() {
   const [data, setData] = useState<TieuChi[]>(mockTieuChi);
+  const [nhomOptions, setNhomOptions] = useState<string[]>([]);
+  const [loadingNhomOptions, setLoadingNhomOptions] = useState(false);
+  const [loadingFromDb, setLoadingFromDb] = useState(false);
   const [maTieuChi, setMaTieuChi] = useState('');
   const [tenTieuChi, setTenTieuChi] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -154,7 +162,7 @@ export default function TieuChiDanhGiaPage() {
 
   const selectedTieuChi = selectedId ? data.find((item) => item.id === selectedId) ?? null : null;
   const activeCount = data.filter((tc) => tc.status === 'active').length;
-  const totalScore = data.filter((tc) => tc.status === 'active').reduce((sum, tc) => sum + tc.maxScore, 0);
+  const maxThuTu = data.filter((tc) => tc.status === 'active').reduce((max, tc) => Math.max(max, tc.maxScore || 0), 0);
 
   const openDetail = (item: TieuChi) => {
     setSelectedId(item.id);
@@ -169,6 +177,12 @@ export default function TieuChiDanhGiaPage() {
   };
 
   const openCreate = () => {
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    const today = `${yyyy}-${mm}-${dd}`;
+
     setEditForm({
       id: '',
       name: '',
@@ -176,12 +190,52 @@ export default function TieuChiDanhGiaPage() {
       maxScore: 0,
       weight: '',
       status: 'draft',
-      issuedDate: '',
-      issuedBy: '',
+      issuedDate: today,
+      issuedBy: 'CAN_BO_THANH_TRA',
       description: '',
     });
     setViewMode('create');
   };
+
+  const loadNhomOptions = async () => {
+    setLoadingNhomOptions(true);
+    try {
+      const res = await tieuChiDanhGiaApi.getNhomOptions();
+      setNhomOptions((res || []).filter(Boolean));
+    } catch {
+      setNhomOptions([]);
+    } finally {
+      setLoadingNhomOptions(false);
+    }
+  };
+
+  const loadFromDb = async () => {
+    setLoadingFromDb(true);
+    try {
+      const res = await tieuChiDanhGiaApi.getList({ page: 0, size: 200 });
+      const mapped: TieuChi[] = (res.content || []).map((item) => ({
+        id: item.maTieuChi,
+        name: item.tenTieuChi,
+        category: item.nhom ?? '',
+        maxScore: item.thuTu ?? 0,
+        weight: '',
+        status: 'active',
+        issuedDate: '',
+        issuedBy: '',
+        description: '',
+      }));
+      setData(mapped.length > 0 ? mapped : mockTieuChi);
+    } catch {
+      // keep mock
+    } finally {
+      setLoadingFromDb(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadNhomOptions();
+    void loadFromDb();
+  }, []);
 
   const closeView = () => {
     setSelectedId(null);
@@ -203,10 +257,20 @@ export default function TieuChiDanhGiaPage() {
     if (!editForm) return;
 
     try {
+      const ten = editForm.name?.trim() ?? '';
+      const nhom = editForm.category?.trim() ?? '';
+      if (!ten) {
+        alert('Vui lòng nhập Tên tiêu chí');
+        return;
+      }
+      if (!nhom) {
+        alert('Vui lòng chọn Nhóm tiêu chí');
+        return;
+      }
+
       const req = {
-        maTieuChi: editForm.id,
-        tenTieuChi: editForm.name,
-        nhom: editForm.category,
+        tenTieuChi: ten,
+        nhom,
         thuTu: editForm.maxScore ?? 0,
       };
 
@@ -219,11 +283,11 @@ export default function TieuChiDanhGiaPage() {
           name: created.tenTieuChi,
           category: created.nhom ?? '',
           maxScore: created.thuTu ?? 0,
-          weight: '',
-          status: 'active',
-          issuedDate: '',
-          issuedBy: '',
-          description: '',
+          weight: editForm.weight ?? '',
+          status: editForm.status ?? 'active',
+          issuedDate: editForm.issuedDate ?? '',
+          issuedBy: editForm.issuedBy ?? '',
+          description: editForm.description ?? '',
         },
         ...current,
       ]);
@@ -237,6 +301,13 @@ export default function TieuChiDanhGiaPage() {
       alert((err as Error)?.message || 'Tạo tiêu chí thất bại');
     }
   };
+
+  const effectiveNhomOptions = useMemo(() => {
+    // combine DB options with whatever appears in the current dataset
+    const fromData = data.map((x) => x.category).filter(Boolean);
+    const all = [...nhomOptions, ...fromData];
+    return Array.from(new Set(all)).sort((a, b) => a.localeCompare(b, 'vi'));
+  }, [data, nhomOptions]);
 
   const columns: Column<TieuChi>[] = [
     {
@@ -279,13 +350,13 @@ export default function TieuChiDanhGiaPage() {
     },
     {
       key: 'maxScore',
-      header: 'Điểm tối đa',
+      header: 'Thứ tự',
       render: (row) => (
         <div style={{ textAlign: 'center' }}>
           <span style={{ fontSize: '16px', fontWeight: 700, color: row.status === 'active' ? '#006400' : '#888' }}>
             {row.status === 'active' ? row.maxScore : '—'}
           </span>
-          <p style={{ fontSize: '10px', color: '#888' }}>{row.weight}</p>
+          {/* weight is not stored in DB; keep UI minimal */}
         </div>
       ),
     },
@@ -338,10 +409,9 @@ export default function TieuChiDanhGiaPage() {
               <DetailField label="Trạng thái" value={<StatusBadge variant={statusVariant[selectedTieuChi.status]} label={statusLabel[selectedTieuChi.status]} />} />
               <DetailField label="Tên tiêu chí" value={selectedTieuChi.name} />
               <DetailField label="Nhóm tiêu chí" value={selectedTieuChi.category} />
-              <DetailField label="Điểm tối đa" value={selectedTieuChi.maxScore} />
-              <DetailField label="Trọng số" value={selectedTieuChi.weight} />
+              <DetailField label="Thứ tự" value={selectedTieuChi.maxScore} />
               <DetailField label="Ngày ban hành" value={selectedTieuChi.issuedDate} />
-              <DetailField label="Ban hành bởi" value={selectedTieuChi.issuedBy} />
+              <DetailField label="Ban hành bởi" value={issuedByLabel[selectedTieuChi.issuedBy] ?? selectedTieuChi.issuedBy} />
             </div>
 
             <DetailField label="Mô tả tiêu chí" value={selectedTieuChi.description} />
@@ -373,7 +443,12 @@ export default function TieuChiDanhGiaPage() {
             <div style={{ display: 'grid', gap: '12px', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}>
               <div>
                 <p style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#64748B', marginBottom: '6px' }}>Mã tiêu chí</p>
-                <GovInput value={editForm.id} onChange={(value) => setEditForm((current) => (current ? { ...current, id: value } : current))} width="100%" />
+                <GovInput
+                  value={editForm.id}
+                  placeholder={isCreate ? 'Tu dong sinh' : undefined}
+                  disabled={true}
+                  width="100%"
+                />
               </div>
               <div>
                 <p style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#64748B', marginBottom: '6px' }}>Tên tiêu chí</p>
@@ -381,15 +456,36 @@ export default function TieuChiDanhGiaPage() {
               </div>
               <div>
                 <p style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#64748B', marginBottom: '6px' }}>Nhóm tiêu chí</p>
-                <GovInput value={editForm.category} onChange={(value) => setEditForm((current) => (current ? { ...current, category: value } : current))} width="100%" />
+                <input
+                  list="nhom-tieu-chi-options"
+                  value={editForm.category}
+                  onChange={(event) =>
+                    setEditForm((current) =>
+                      current ? { ...current, category: event.target.value } : current
+                    )
+                  }
+                  style={{
+                    width: '100%',
+                    height: 30,
+                    border: '1px solid #D6D6D6',
+                    borderRadius: 2,
+                    padding: '0 10px',
+                    background: '#fff',
+                    fontSize: 13,
+                    color: '#222',
+                    outline: 'none',
+                  }}
+                  placeholder={loadingNhomOptions ? 'Đang tải nhóm...' : 'Chọn hoặc nhập nhóm tiêu chí'}
+                />
+                <datalist id="nhom-tieu-chi-options">
+                  {effectiveNhomOptions.map((opt) => (
+                    <option key={opt} value={opt} />
+                  ))}
+                </datalist>
               </div>
               <div>
-                <p style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#64748B', marginBottom: '6px' }}>Điểm tối đa</p>
+                <p style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#64748B', marginBottom: '6px' }}>Thứ tự</p>
                 <GovInput value={String(editForm.maxScore)} onChange={(value) => setEditForm((current) => (current ? { ...current, maxScore: Number(value) || 0 } : current))} width="100%" type="number" />
-              </div>
-              <div>
-                <p style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#64748B', marginBottom: '6px' }}>Trọng số</p>
-                <GovInput value={editForm.weight} onChange={(value) => setEditForm((current) => (current ? { ...current, weight: value } : current))} width="100%" />
               </div>
               <div>
                 <p style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#64748B', marginBottom: '6px' }}>Trạng thái</p>
@@ -406,11 +502,19 @@ export default function TieuChiDanhGiaPage() {
               </div>
               <div>
                 <p style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#64748B', marginBottom: '6px' }}>Ngày ban hành</p>
-                <GovInput value={editForm.issuedDate} onChange={(value) => setEditForm((current) => (current ? { ...current, issuedDate: value } : current))} width="100%" />
+                <GovInput value={editForm.issuedDate} onChange={(value) => setEditForm((current) => (current ? { ...current, issuedDate: value } : current))} width="100%" type="date" />
               </div>
               <div>
                 <p style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#64748B', marginBottom: '6px' }}>Ban hành bởi</p>
-                <GovInput value={editForm.issuedBy} onChange={(value) => setEditForm((current) => (current ? { ...current, issuedBy: value } : current))} width="100%" />
+                <GovSelect
+                  value={editForm.issuedBy}
+                  onChange={(value) => setEditForm((current) => (current ? { ...current, issuedBy: value } : current))}
+                  options={[
+                    { value: 'CAN_BO_THANH_TRA', label: 'Cán bộ Thanh tra' },
+                    { value: 'LD_ATVSTP', label: 'Ban lãnh đạo VSATTP' },
+                  ]}
+                  width="100%"
+                />
               </div>
             </div>
 
@@ -456,7 +560,7 @@ export default function TieuChiDanhGiaPage() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '10px', marginBottom: '12px' }}>
         <MiniStat label="Tổng tiêu chí" value={data.length} color="neutral" />
         <MiniStat label="Đang áp dụng" value={activeCount} color="green" />
-        <MiniStat label="Tổng điểm tối đa" value={`${totalScore}/100`} color="blue" />
+        <MiniStat label="Thứ tự lớn nhất" value={maxThuTu} color="blue" />
         <MiniStat label="Bản nháp" value={data.filter((tc) => tc.status === 'draft').length} color="orange" />
       </div>
 
@@ -473,7 +577,7 @@ export default function TieuChiDanhGiaPage() {
             onChange={setCategoryFilter}
             options={[
               { value: '', label: '-- Tất cả --' },
-              ...Object.keys(categoryColors).map((category) => ({ value: category, label: category })),
+              ...effectiveNhomOptions.map((category) => ({ value: category, label: category })),
             ]}
             width={180}
           />
@@ -506,35 +610,6 @@ export default function TieuChiDanhGiaPage() {
           </GovBtn>
         </div>
       </FilterBar>
-
-      <SectionCard title="Cơ cấu phân bổ điểm đánh giá hiện hành">
-        <div style={{ padding: '10px 12px' }}>
-          <div style={{ display: 'flex', height: '16px', borderRadius: '2px', overflow: 'hidden', gap: '2px', marginBottom: '10px' }}>
-            {data.filter((tc) => tc.status === 'active').map((tc, index) => {
-              const colors = ['#008000', '#005A9E', '#CC6600', '#6200CC', '#555'];
-              return (
-                <div
-                  key={tc.id}
-                  style={{ flex: tc.maxScore, background: colors[index % colors.length], height: '100%' }}
-                  title={`${tc.name}: ${tc.maxScore} điểm`}
-                />
-              );
-            })}
-          </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
-            {data.filter((tc) => tc.status === 'active').map((tc, index) => {
-              const colors = ['#008000', '#005A9E', '#CC6600', '#6200CC', '#555'];
-              return (
-                <div key={tc.id} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span style={{ width: 10, height: 10, borderRadius: '1px', background: colors[index % colors.length], flexShrink: 0 }} />
-                  <span style={{ fontSize: '12px', color: '#555' }}>{tc.name}</span>
-                  <span style={{ fontSize: '12px', fontWeight: 600, color: '#222' }}>{tc.maxScore} điểm</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </SectionCard>
 
       <SectionCard
         title={`Danh sách tiêu chí đánh giá (${filtered.length} tiêu chí)`}

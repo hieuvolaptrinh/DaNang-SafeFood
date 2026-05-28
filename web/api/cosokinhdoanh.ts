@@ -42,7 +42,29 @@ export interface GiayChungNhanItem {
   tenCoSo: string;
 }
 
+export interface GiayPhepItem {
+  maHoSo: string;
+  maLoaiGiayTo?: string | null;
+  tenLoaiGiayTo?: string | null;
+  trangThai: string;
+  ngayNop?: string | null;
+  ngayCap?: string | null;
+  ngayHetHan?: string | null;
+  maCoSo: string;
+  tenCoSo: string;
+}
+
+interface CoSoKinhDoanhUserDetailResponse {
+  coSo: CoSoKinhDoanhItem;
+  anhBia?: string | null;
+  soViPham?: number | null;
+  loaiHinhKinhDoanh?: string[] | null;
+  chungNhan?: GiayChungNhanItem[] | null;
+  giayPhep?: GiayPhepItem[] | null;
+}
+
 const CSKD_BASE = "/v1/cosokinhdoanh";
+const CSKD_USER_BASE = "/user/co-so-kinh-doanh";
 
 export const coSoKinhDoanhApi = {
   /**
@@ -89,7 +111,16 @@ export const coSoKinhDoanhApi = {
   },
 
   getById(id: string): Promise<CoSoKinhDoanhItem> {
-    return api.get(CSKD_BASE + "/" + id);
+    // Use user detail endpoint so both thanh-tra and lanh-dao accounts can view
+    // without depending on role-name mapping in /api/v1/cosokinhdoanh.
+    return api
+      .get<CoSoKinhDoanhUserDetailResponse>(`${CSKD_USER_BASE}/${id}`)
+      .then((detail) => ({
+        ...(detail.coSo as CoSoKinhDoanhItem),
+        anhBia: detail.anhBia ?? undefined,
+        soViPham: detail.soViPham ?? undefined,
+        loaiHinhKinhDoanh: detail.loaiHinhKinhDoanh ?? undefined,
+      }));
   },
 
   updateDangKy(
@@ -106,7 +137,10 @@ export const coSoKinhDoanhApi = {
   },
 
   getGiayChungNhan(id: string): Promise<GiayChungNhanItem[]> {
-    return api.get(CSKD_BASE + "/" + id + "/giaychungnhan");
+    // Prefer the user detail endpoint (includes certificates) to avoid 403 for CB_THANH_TRA / LD_ATVSTP.
+    return api
+      .get<CoSoKinhDoanhUserDetailResponse>(`${CSKD_USER_BASE}/${id}`)
+      .then((detail) => detail.chungNhan ?? []);
   },
 
   kiemTra(
