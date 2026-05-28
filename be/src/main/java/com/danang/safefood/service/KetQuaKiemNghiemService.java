@@ -170,6 +170,14 @@ public class KetQuaKiemNghiemService {
     private String resolveOverallResult(MauKiemNghiem mau, List<KetQuaKiemNghiemChiTieuResponse> chiTietChiTieu) {
         // Preferred: determine by each criterion (if exists).
         if (!chiTietChiTieu.isEmpty()) {
+            // If criteria exist but all are still pending/blank, fall back to the overall result fields
+            // (ketQuaKiemNghiem/lyDoKhongDat) so inspector-submitted results are reflected on UI.
+            boolean hasAnyNonPending = chiTietChiTieu.stream()
+                    .anyMatch(item -> !RESULT_PENDING.equals(item.ketLuan()));
+            if (!hasAnyNonPending) {
+                return resolveOverallFromFields(mau);
+            }
+
             boolean hasPending = false;
             for (KetQuaKiemNghiemChiTieuResponse item : chiTietChiTieu) {
                 if (RESULT_FAIL.equals(item.ketLuan())) {
@@ -183,6 +191,14 @@ public class KetQuaKiemNghiemService {
         }
 
         // Fallback: screens currently submit only overall result fields (ketQuaKiemNghiem/lyDoKhongDat).
+        if (mau == null) {
+            return RESULT_PENDING;
+        }
+
+        return resolveOverallFromFields(mau);
+    }
+
+    private String resolveOverallFromFields(MauKiemNghiem mau) {
         if (mau == null) {
             return RESULT_PENDING;
         }
@@ -221,6 +237,12 @@ public class KetQuaKiemNghiemService {
 
     private Integer computeScore(String overallResult, List<KetQuaKiemNghiemChiTieuResponse> chiTietChiTieu) {
         if (RESULT_PENDING.equals(overallResult)) {
+            return null;
+        }
+
+        // If criteria rows exist but nothing has been concluded yet, don't show a misleading score.
+        if (!chiTietChiTieu.isEmpty()
+                && chiTietChiTieu.stream().allMatch(item -> RESULT_PENDING.equals(item.ketLuan()))) {
             return null;
         }
 
