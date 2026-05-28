@@ -30,6 +30,7 @@ export interface CreateGiayChungNhanRequest {
 }
 
 const GCN_BASE = "/v1/giaychungnhan";
+const GCN_VIEW_BASE = "/user/giay-chung-nhan";
 
 export const giayChungNhanApi = {
   /** GET /api/v1/giaychungnhan */
@@ -40,7 +41,8 @@ export const giayChungNhanApi = {
     if (params.trangThai) qs.append("trangThai", params.trangThai);
     qs.append("page", String(params.page ?? 0));
     qs.append("size", String(params.size ?? 20));
-    return api.get(GCN_BASE + "?" + qs.toString());
+    // Use user read-only endpoint so both thanh-tra and lanh-dao can view.
+    return api.get(GCN_VIEW_BASE + "?" + qs.toString());
   },
 
   /** POST /api/v1/giaychungnhan */
@@ -50,7 +52,8 @@ export const giayChungNhanApi = {
 
   /** GET /api/v1/giaychungnhan/{maCN} */
   getById(maCN: string): Promise<GiayChungNhanItem> {
-    return api.get(GCN_BASE + "/" + maCN);
+    // Use user read-only endpoint so both thanh-tra and lanh-dao can view.
+    return api.get(GCN_VIEW_BASE + "/" + maCN);
   },
 
   /** PATCH /api/v1/giaychungnhan/{maCN}/pheduyet — approve */
