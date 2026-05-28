@@ -82,7 +82,10 @@ export const coSoKinhDoanhApi = {
     if (params.maPX) qs.append("maPX", params.maPX);
     qs.append("page", String(params.page ?? 0));
     qs.append("size", String(params.size ?? 20));
-    return api.get(CSKD_BASE + "?" + qs.toString());
+
+    // Use user search endpoint to avoid role-name mismatch between modules
+    // (`/api/v1/cosokinhdoanh` checks CAN_BO_THANH_TRA while JWT role is CB_THANH_TRA).
+    return api.get(`/user/co-so-kinh-doanh/search?${qs.toString()}`);
   },
 
   getById(id: string): Promise<CoSoKinhDoanhItem> {
