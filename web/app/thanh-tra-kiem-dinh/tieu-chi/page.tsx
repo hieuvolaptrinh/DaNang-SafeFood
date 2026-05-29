@@ -354,7 +354,7 @@ export default function TieuChiDanhGiaPage() {
       render: (row) => (
         <div style={{ textAlign: 'center' }}>
           <span style={{ fontSize: '16px', fontWeight: 700, color: row.status === 'active' ? '#006400' : '#888' }}>
-            {row.status === 'active' ? row.maxScore : '—'}
+            {typeof row.maxScore === 'number' ? row.maxScore : '—'}
           </span>
           {/* weight is not stored in DB; keep UI minimal */}
         </div>

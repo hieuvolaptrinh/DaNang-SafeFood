@@ -23,7 +23,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/thanhtra/tieu-chi")
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyRole('LD_ATVSTP','CAN_BO_THANH_TRA','QUAN_TRI_HE_THONG')")
+@PreAuthorize("hasAnyRole('LD_ATVSTP','CB_THANH_TRA','QTH')")
 public class TieuChiDanhGiaController {
 
     private final TieuChiDanhGiaService tieuChiDanhGiaService;
