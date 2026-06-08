@@ -18,9 +18,9 @@ class DashboardModel {
   factory DashboardModel.fromJson(Map<String, dynamic> json) {
     return DashboardModel(
       tongCoSoKinhDoanh: (json['tongCoSoKinhDoanh'] as num?)?.toInt() ?? 0,
-      coSoHoatDong: (json['coSoHoatDong'] as num?)?.toInt() ?? 0,
+      coSoHoatDong: (json['chungNhanHieuLuc'] as num?)?.toInt() ?? (json['coSoHoatDong'] as num?)?.toInt() ?? 0,
       phanAnhChuaXuLy: (json['phanAnhChuaXuLy'] as num?)?.toInt() ?? 0,
-      xuphatChoNop: (json['xuphatChoNop'] as num?)?.toInt() ?? 0,
+      xuphatChoNop: (json['tongViPham'] as num?)?.toInt() ?? (json['xuphatChoNop'] as num?)?.toInt() ?? 0,
       thanhTraDangXuLy: (json['thanhTraDangXuLy'] as num?)?.toInt() ?? 0,
     );
   }

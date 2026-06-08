@@ -10,7 +10,7 @@ class HomeRemoteDataSource {
 
   Future<DashboardModel> getDashboard() async {
     try {
-      final response = await dio.get('/api/v1/thongke/dashboard');
+      final response = await dio.get('/api/user/thongke/dashboard');
 
       final wrapper = ApiResponseWrapper<DashboardModel>.fromJson(
         response.data as Map<String, dynamic>,
