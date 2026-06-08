@@ -81,3 +81,10 @@ jwt:
   secret: "DaNangSafeFood2026SuperSecretKeyForJWTAuthentication1234567890"
   access-token-expiration-ms: 9000000 # 150 minutes
   refresh-token-expiration-ms: 604800000 # 7 days
+
+ai:
+  log:
+    # AI service phát hiện đăng nhập bất thường (đặt trong thư mục /AI).
+    # Khi chạy bằng docker-compose, đặt service `ai-log` cùng network với backend
+    # và override bằng biến môi trường AI_LOG_URL=http://ai-log:8000
+    url: ${AI_LOG_URL:http://localhost:8000}

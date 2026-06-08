@@ -1,20 +1,27 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { FiEye } from 'react-icons/fi';
-import DataTable, { Column } from '@/components/DataTable';
+import { FiArrowLeft, FiDownload, FiEye, FiRefreshCw } from 'react-icons/fi';
 import Badge from '@/components/Badge';
-import TableCard, { SearchInput, FilterSelect, Pagination } from '@/components/TableCard';
+import DataTable, { type Column } from '@/components/DataTable';
+import { GovBtn } from '@/components/GovUI';
 import StatCard from '@/components/StatCard';
-import { Input } from '@/components/ui/input';
+import TableCard, { FilterSelect, Pagination, SearchInput } from '@/components/TableCard';
+import {
+  ketQuaKiemNghiemApi,
+  type KetQuaKiemNghiemChiTieuResponse,
+  type KetQuaKiemNghiemDetailResponse,
+  type KetQuaKiemNghiemItemResponse,
+  type KetQuaKiemNghiemStatsResponse,
+} from '@/api/api';
 
 interface ResultParameter {
   id: string;
   name: string;
   measuredValue: string;
   allowedLimit: string;
-  conclusion: 'pass' | 'fail';
+  conclusion: 'pass' | 'fail' | 'pending';
 }
 
 interface TestResult {
@@ -26,93 +33,9 @@ interface TestResult {
   lab: string;
   result: 'pass' | 'fail' | 'pending';
   parameters: ResultParameter[];
-  score: number;
+  score: number | null;
   fileName?: string;
 }
-
-const mockTestResults: TestResult[] = [
-  {
-    id: 'KN-2025001',
-    business: 'Nhà hàng Hải Sản Biển Xanh',
-    sampleName: 'Mẫu nước rửa khu sơ chế',
-    sampleType: 'Mẫu nước rửa',
-    testDate: '21/03/2025',
-    lab: 'Trung tâm Kiểm nghiệm Đà Nẵng',
-    result: 'pass',
-    parameters: [
-      {
-        id: 'PARAM-001',
-        name: 'Coliform',
-        measuredValue: '1 CFU/100ml',
-        allowedLimit: '<= 3 CFU/100ml',
-        conclusion: 'pass',
-      },
-      {
-        id: 'PARAM-002',
-        name: 'E.coli',
-        measuredValue: 'Không phát hiện',
-        allowedLimit: 'Không phát hiện',
-        conclusion: 'pass',
-      },
-    ],
-    score: 95,
-    fileName: 'ket-qua-kn-2025001.pdf',
-  },
-  {
-    id: 'KN-2025002',
-    business: 'Quán Ăn Gia Đình Việt',
-    sampleName: 'Mẫu chả ram chiên sẵn',
-    sampleType: 'Mẫu thực phẩm',
-    testDate: '19/03/2025',
-    lab: 'Trung tâm Kiểm nghiệm Đà Nẵng',
-    result: 'fail',
-    parameters: [
-      {
-        id: 'PARAM-003',
-        name: 'Salmonella',
-        measuredValue: 'Phát hiện trong 25g',
-        allowedLimit: 'Không phát hiện trong 25g',
-        conclusion: 'fail',
-      },
-      {
-        id: 'PARAM-004',
-        name: 'Tổng số vi sinh vật hiếu khí',
-        measuredValue: '2.8 x 10^5 CFU/g',
-        allowedLimit: '<= 1 x 10^5 CFU/g',
-        conclusion: 'fail',
-      },
-    ],
-    score: 30,
-    fileName: 'ket-qua-kn-2025002.pdf',
-  },
-  {
-    id: 'KN-2025003',
-    business: 'Cửa hàng Thực phẩm Sạch Organic',
-    sampleName: 'Mẫu rau cải bó xôi',
-    sampleType: 'Mẫu rau củ',
-    testDate: '24/03/2025',
-    lab: 'Lab Việt Nam',
-    result: 'pass',
-    parameters: [
-      {
-        id: 'PARAM-005',
-        name: 'Chì (Pb)',
-        measuredValue: '0.02 mg/kg',
-        allowedLimit: '<= 0.10 mg/kg',
-        conclusion: 'pass',
-      },
-      {
-        id: 'PARAM-006',
-        name: 'Cadimi (Cd)',
-        measuredValue: '0.01 mg/kg',
-        allowedLimit: '<= 0.05 mg/kg',
-        conclusion: 'pass',
-      },
-    ],
-    score: 98,
-    fileName: 'ket-qua-kn-2025003.pdf',
-  },
-];
 
 const RESULT_CONFIG: Record<
   TestResult['result'],
@@ -122,6 +45,86 @@ const RESULT_CONFIG: Record<
   fail: { label: 'Không đạt', badgeVariant: 'fail' },
   pending: { label: 'Chờ kết quả', badgeVariant: 'pending' },
 };
+
+function normalizeResult(value?: string | null): TestResult['result'] {
+  const normalized = (value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/đ/g, 'd')
+    .trim();
+
+  if (normalized.includes('khong dat')) {
+    return 'fail';
+  }
+  if (normalized.includes('dat')) {
+    return 'pass';
+  }
+  return 'pending';
+}
+
+function formatDate(value?: string | null) {
+  if (!value) {
+    return 'Chưa có';
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat('vi-VN').format(date);
+}
+
+function mapChiTieu(item: KetQuaKiemNghiemChiTieuResponse): ResultParameter {
+  return {
+    id: item.maChiTieu,
+    name: item.tenChiTieu || 'Chỉ tiêu',
+    measuredValue: item.giaTriDo || 'Chưa có',
+    allowedLimit: item.gioiHanChoPhep || 'Chưa có',
+    conclusion: normalizeResult(item.ketLuan),
+  };
+}
+
+function mapItem(item: KetQuaKiemNghiemItemResponse): TestResult {
+  return {
+    id: item.maKetQua,
+    business: item.tenCoSo || 'Chưa rõ',
+    sampleName: item.tenMau || item.maMau,
+    sampleType: item.loaiMau || 'Chưa rõ',
+    testDate: formatDate(item.ngayKiemNghiem),
+    lab: item.phongLab || 'Chưa có',
+    result: normalizeResult(item.ketQua),
+    parameters: (item.chiTieu || '')
+      .split(',')
+      .map((name) => name.trim())
+      .filter(Boolean)
+      .map((name, index) => ({
+        id: `${item.maKetQua}-${index}`,
+        name,
+        measuredValue: 'Chưa có',
+        allowedLimit: 'Chưa có',
+        conclusion: normalizeResult(item.ketQua),
+      })),
+    score: item.diem ?? null,
+    fileName: item.fileKetQua || undefined,
+  };
+}
+
+function mapDetail(item: KetQuaKiemNghiemDetailResponse): TestResult {
+  return {
+    id: item.maKetQua,
+    business: item.tenCoSo || 'Chưa rõ',
+    sampleName: item.tenMau || item.maMau,
+    sampleType: item.loaiMau || 'Chưa rõ',
+    testDate: formatDate(item.ngayKiemNghiem),
+    lab: item.phongLab || 'Chưa có',
+    result: normalizeResult(item.ketQua),
+    parameters: item.chiTietChiTieu.map(mapChiTieu),
+    score: item.diem ?? null,
+    fileName: item.fileKetQua || undefined,
+  };
+}
 
 function FieldLabel({ htmlFor, children }: { htmlFor?: string; children: React.ReactNode }) {
   return (
@@ -143,8 +146,33 @@ function ReadOnlyField({
   return (
     <div className="space-y-2">
       <FieldLabel htmlFor={id}>{label}</FieldLabel>
-      <Input id={id} value={value} readOnly className="h-10 border-slate-200 bg-slate-50 px-3 text-slate-700" />
+      <div
+        id={id}
+        className="flex min-h-10 items-center border border-slate-300 bg-slate-50 px-3 py-2 text-[13px] font-medium text-slate-700"
+      >
+        {value}
+      </div>
     </div>
+  );
+}
+
+function DetailSection({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="space-y-4 border border-slate-300 bg-white p-5 shadow-sm">
+      <div>
+        <h2 className="text-[13px] font-bold uppercase tracking-[0.04em] text-emerald-800">{title}</h2>
+        <p className="mt-1 text-sm text-slate-600">{description}</p>
+      </div>
+      {children}
+    </section>
   );
 }
 
@@ -165,52 +193,42 @@ function ViewResultDetail({
         title="Chi tiết kết quả kiểm nghiệm"
         actions={
           <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={onRetest}
-              className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-700 transition-colors hover:bg-amber-100"
-            >
+            <GovBtn variant="warning" onClick={onRetest}>
+              <FiRefreshCw size={14} />
               Yêu cầu kiểm nghiệm lại
-            </button>
-            <button
-              type="button"
-              onClick={onBack}
-              className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
-            >
+            </GovBtn>
+            <GovBtn variant="secondary" onClick={onBack}>
+              <FiArrowLeft size={14} />
               Quay lại
-            </button>
+            </GovBtn>
           </div>
         }
       >
         <div className="space-y-6 p-5">
-          <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-5">
-            <div>
-              <h2 className="text-base font-bold text-slate-900">1. Thông tin mẫu</h2>
-              <p className="mt-1 text-sm text-slate-500">Thông tin mẫu và cơ sở được hiển thị ở chế độ chỉ đọc.</p>
-            </div>
-
+          <DetailSection
+            title="1. Thông tin mẫu"
+            description="Thông tin mẫu và cơ sở được hiển thị ở chế độ chỉ đọc."
+          >
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               <ReadOnlyField id="sampleName" label="Tên mẫu" value={data.sampleName} />
               <ReadOnlyField id="sampleType" label="Loại mẫu" value={data.sampleType} />
               <ReadOnlyField id="business" label="Cơ sở" value={data.business} />
               <ReadOnlyField id="testDate" label="Ngày kiểm nghiệm" value={data.testDate} />
             </div>
-          </section>
+          </DetailSection>
 
-          <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-5">
-            <div>
-              <h2 className="text-base font-bold text-slate-900">2. Kết quả kiểm nghiệm</h2>
-              <p className="mt-1 text-sm text-slate-500">Danh sách chỉ tiêu đo lường và kết luận cho từng chỉ tiêu.</p>
-            </div>
-
-            <div className="overflow-hidden rounded-xl border border-slate-200">
-              <div className="grid grid-cols-[1.3fr_1fr_1fr_120px] bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700">
+          <DetailSection
+            title="2. Kết quả kiểm nghiệm"
+            description="Danh sách chỉ tiêu đo lường và kết luận cho từng chỉ tiêu."
+          >
+            <div className="overflow-hidden border border-slate-300">
+              <div className="grid grid-cols-[1.3fr_1fr_1fr_120px] border-b border-slate-300 bg-slate-100 px-4 py-3 text-sm font-semibold text-slate-700">
                 <span>Tên chỉ tiêu</span>
                 <span>Giá trị đo</span>
                 <span>Giới hạn cho phép</span>
                 <span>Kết luận</span>
               </div>
-              <div className="divide-y divide-slate-200">
+              <div className="divide-y divide-slate-300">
                 {data.parameters.map((parameter) => (
                   <div
                     key={parameter.id}
@@ -222,45 +240,41 @@ function ViewResultDetail({
                     <span>
                       <Badge
                         variant={parameter.conclusion}
-                        label={parameter.conclusion === 'pass' ? 'Đạt' : 'Không đạt'}
+                        label={parameter.conclusion === 'pass' ? 'Đạt' : parameter.conclusion === 'fail' ? 'Không đạt' : 'Chờ kết quả'}
                       />
                     </span>
                   </div>
                 ))}
               </div>
             </div>
-          </section>
+          </DetailSection>
 
           <section className="grid gap-6 xl:grid-cols-[1fr_320px]">
-            <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-5">
-              <div>
-                <h2 className="text-base font-bold text-slate-900">3. Kết luận chung</h2>
-                <p className="mt-1 text-sm text-slate-500">Kết luận tổng hợp cho toàn bộ mẫu kiểm nghiệm.</p>
-              </div>
-
+            <DetailSection
+              title="3. Kết luận chung"
+              description="Kết luận tổng hợp cho toàn bộ mẫu kiểm nghiệm."
+            >
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <FieldLabel>Kết luận</FieldLabel>
-                  <div className="flex h-10 items-center rounded-lg border border-slate-200 bg-slate-50 px-3">
+                  <div className="flex h-10 items-center border border-slate-300 bg-slate-50 px-3">
                     <Badge variant={resultConfig.badgeVariant} label={resultConfig.label} />
                   </div>
                 </div>
                 <ReadOnlyField id="lab" label="Phòng lab" value={data.lab} />
               </div>
-            </div>
+            </DetailSection>
 
-            <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-5">
-              <div>
-                <h2 className="text-base font-bold text-slate-900">4. File kết quả</h2>
-                <p className="mt-1 text-sm text-slate-500">Hiển thị tệp PDF hoặc tên file kết quả.</p>
-              </div>
-
+            <DetailSection
+              title="4. File kết quả"
+              description="Hiển thị tệp PDF hoặc tên file kết quả."
+            >
               <ReadOnlyField
                 id="fileName"
                 label="Tên file"
                 value={data.fileName ?? 'Chưa có file kết quả'}
               />
-            </div>
+            </DetailSection>
           </section>
         </div>
       </TableCard>
@@ -268,22 +282,75 @@ function ViewResultDetail({
   );
 }
 
+function normalizeError(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
+}
+
+const EMPTY_STATS: KetQuaKiemNghiemStatsResponse = {
+  tongMau: 0,
+  datChuan: 0,
+  khongDat: 0,
+  choKetQua: 0,
+};
+
 export default function KetQuaPage() {
   const router = useRouter();
-  const [search, setSearch] = useState('');
+  const [maKetQua, setMaKetQua] = useState('');
+  const [coSo, setCoSo] = useState('');
+  const [tenMau, setTenMau] = useState('');
   const [resultFilter, setResultFilter] = useState('');
   const [mode, setMode] = useState<'list' | 'view'>('list');
+  const [results, setResults] = useState<TestResult[]>([]);
+  const [stats, setStats] = useState<KetQuaKiemNghiemStatsResponse>(EMPTY_STATS);
   const [selectedResult, setSelectedResult] = useState<TestResult | null>(null);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
 
-  const filtered = mockTestResults.filter((result) => {
-    const matchSearch =
-      !search ||
-      result.business.toLowerCase().includes(search.toLowerCase()) ||
-      result.id.toLowerCase().includes(search.toLowerCase()) ||
-      result.sampleName.toLowerCase().includes(search.toLowerCase());
-    const matchResult = !resultFilter || result.result === resultFilter;
-    return matchSearch && matchResult;
-  });
+  const loadData = async () => {
+    setIsLoading(true);
+    setErrorMessage('');
+
+    try {
+      const [statsData, pageData] = await Promise.all([
+        ketQuaKiemNghiemApi.getStats(),
+        ketQuaKiemNghiemApi.search('', '', 0, 100),
+      ]);
+      setStats(statsData);
+      const sorted = [...(pageData.content || [])].sort((a, b) => {
+        const aKey = (a.ngayKiemNghiem || '').toString();
+        const bKey = (b.ngayKiemNghiem || '').toString();
+        if (aKey !== bKey) return bKey.localeCompare(aKey);
+        return (b.maKetQua || '').localeCompare(a.maKetQua || '');
+      });
+      setResults(sorted.map(mapItem));
+    } catch (error) {
+      setErrorMessage(normalizeError(error, 'Không thể tải dữ liệu kết quả kiểm nghiệm'));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadData();
+  }, []);
+
+  const filtered = useMemo(
+    () =>
+      results.filter((result) => {
+        const matchMaKetQua =
+          !maKetQua || result.id.toLowerCase().includes(maKetQua.toLowerCase());
+
+        const matchCoSo =
+          !coSo || result.business.toLowerCase().includes(coSo.toLowerCase());
+
+        const matchTenMau =
+          !tenMau || result.sampleName.toLowerCase().includes(tenMau.toLowerCase());
+
+        const matchResult = !resultFilter || result.result === resultFilter;
+        return matchMaKetQua && matchCoSo && matchTenMau && matchResult;
+      }),
+    [resultFilter, results, maKetQua, coSo, tenMau]
+  );
 
   const columns: Column<TestResult>[] = [
     {
@@ -317,15 +384,18 @@ export default function KetQuaPage() {
     {
       key: 'score',
       header: 'Điểm',
-      render: (result) => (
-        <span
-          className={`font-bold ${
-            result.score >= 80 ? 'text-emerald-600' : result.score >= 60 ? 'text-amber-600' : 'text-red-600'
-          }`}
-        >
-          {result.score}/100
-        </span>
-      ),
+      render: (result) =>
+        result.score == null ? (
+          <span className="text-slate-400 text-sm">—</span>
+        ) : (
+          <span
+            className={`font-bold ${
+              result.score >= 80 ? 'text-emerald-600' : result.score >= 60 ? 'text-amber-600' : 'text-red-600'
+            }`}
+          >
+            {result.score}/100
+          </span>
+        ),
     },
     {
       key: 'actions',
@@ -334,9 +404,14 @@ export default function KetQuaPage() {
         <div className="flex gap-1.5">
           <button
             type="button"
-            onClick={() => {
-              setSelectedResult(result);
-              setMode('view');
+            onClick={async () => {
+              try {
+                const detail = await ketQuaKiemNghiemApi.getById(result.id);
+                setSelectedResult(mapDetail(detail));
+                setMode('view');
+              } catch (error) {
+                setErrorMessage(normalizeError(error, 'Không thể tải chi tiết kết quả'));
+              }
             }}
             className="h-7 w-7 rounded-md border border-slate-200 bg-white text-sm transition-colors hover:bg-slate-50"
             title="Xem chi tiết"
@@ -348,11 +423,6 @@ export default function KetQuaPage() {
     },
   ];
 
-  const total = mockTestResults.length;
-  const passed = mockTestResults.filter((result) => result.result === 'pass').length;
-  const failed = mockTestResults.filter((result) => result.result === 'fail').length;
-  const pending = mockTestResults.filter((result) => result.result === 'pending').length;
-
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
@@ -362,12 +432,22 @@ export default function KetQuaPage() {
         </div>
         {mode === 'list' && (
           <div className="flex gap-2">
+            <button
+              className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-[13px] font-semibold text-slate-600 hover:bg-slate-50"
+              onClick={() => void loadData()}
+            >
+              <FiRefreshCw size={14} />
+              Làm mới
+            </button>
             <button className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-[13px] font-semibold text-slate-600 hover:bg-slate-50">
-              📥 Xuất Excel
+              <FiDownload size={14} />
+              Xuất Excel
             </button>
           </div>
         )}
       </div>
+
+      {errorMessage && <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{errorMessage}</div>}
 
       {mode === 'view' && selectedResult ? (
         <ViewResultDetail
@@ -381,17 +461,19 @@ export default function KetQuaPage() {
       ) : (
         <div className="result-view-transition space-y-6">
           <div className="grid grid-cols-4 gap-4">
-            <StatCard label="Tổng mẫu" value={total} color="blue" />
-            <StatCard label="Đạt chuẩn" value={passed} color="green" />
-            <StatCard label="Không đạt" value={failed} color="red" />
-            <StatCard label="Chờ kết quả" value={pending} color="orange" />
+            <StatCard label="Tổng mẫu" value={stats.tongMau} color="blue" />
+            <StatCard label="Đạt chuẩn" value={stats.datChuan} color="green" />
+            <StatCard label="Không đạt" value={stats.khongDat} color="red" />
+            <StatCard label="Chờ kết quả" value={stats.choKetQua} color="orange" />
           </div>
 
           <TableCard
             title="Kết quả kiểm nghiệm"
             controls={
               <>
-                <SearchInput placeholder="Tìm cơ sở, mã kết quả..." onChange={setSearch} />
+                <SearchInput placeholder="Mã kết quả" onChange={setMaKetQua} />
+                <SearchInput placeholder="Cơ sở" onChange={setCoSo} />
+                <SearchInput placeholder="Tên mẫu" onChange={setTenMau} />
                 <FilterSelect
                   options={[
                     { value: '', label: 'Tất cả kết quả' },
@@ -403,9 +485,13 @@ export default function KetQuaPage() {
                 />
               </>
             }
-            footer={<Pagination info={`Hiển thị ${filtered.length} trong tổng số ${mockTestResults.length} kết quả`} />}
+            footer={<Pagination info={`Hiển thị ${filtered.length} trong tổng số ${results.length} kết quả`} />}
           >
-            <DataTable columns={columns} data={filtered} emptyMessage="Không tìm thấy kết quả nào" />
+            <DataTable
+              columns={columns}
+              data={filtered}
+              emptyMessage={isLoading ? 'Đang tải dữ liệu kết quả...' : 'Không tìm thấy kết quả nào'}
+            />
           </TableCard>
         </div>
       )}

@@ -25,4 +25,8 @@ class BusinessRepository {
   Future<BusinessDetailModel> getBusinessDetail(String maCoSo) {
     return remoteDataSource.getBusinessDetail(maCoSo);
   }
+
+  Future<List<BusinessSearchModel>> fetchAllBusinessesForAI() {
+    return remoteDataSource.fetchAllBusinessesForAI();
+  }
 }

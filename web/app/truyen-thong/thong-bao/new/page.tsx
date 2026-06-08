@@ -2,183 +2,149 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { ArrowLeft, Send } from 'lucide-react';
+import { thongBaoApi, CreateThongBaoRequest } from '@/api/thongbao';
+import {
+  PageHeader, GovBtn, SectionCard, ActionButtons,
+  FormSection, FormField, GovInput, GovSelect,
+} from '@/components/GovUI';
+import AlertBanner from '@/components/AlertBanner';
 
-interface Notification {
-  id: string;
-  title: string;
-  content: string;
-  type: string;
-  target: string;
-  sendDate?: string;
-  status: 'sent' | 'scheduled';
-  recipientCount: number;
-}
+const LOAI_OPTIONS = [
+  { value: 'THONG_BAO', label: 'Thông báo' },
+  { value: 'KHAN_CAP',  label: 'Khẩn cấp' },
+  { value: 'HUONG_DAN', label: 'Hướng dẫn' },
+];
 
-export default function CreateNotificationPage() {
+const CONG_DONG_OPTIONS = [
+  { value: 'true',  label: 'Cộng đồng (hiển thị công khai)' },
+  { value: 'false', label: 'Nội bộ (chỉ cán bộ)' },
+];
+
+export default function TaoThongBaoPage() {
   const router = useRouter();
 
-  const [form, setForm] = useState({
-    title: '',
-    content: '',
-    type: '',
-    target: '',
-    sendDate: '',
-  });
+  const [tieuDe, setTieuDe]           = useState('');
+  const [noiDung, setNoiDung]         = useState('');
+  const [loai, setLoai]               = useState('THONG_BAO');
+  const [isCongDong, setIsCongDong]   = useState('true');
 
-  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting]   = useState(false);
+  const [error, setError]             = useState<string | null>(null);
+  const [success, setSuccess]         = useState(false);
+
+  const isValid = tieuDe.trim() && noiDung.trim() && loai;
 
   const handleSubmit = async () => {
-    if (!form.title.trim()) {
-      alert('Vui lòng nhập tiêu đề');
-      return;
+    if (!isValid) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      const body: CreateThongBaoRequest = {
+        tieuDe:       tieuDe.trim(),
+        noiDung:      noiDung.trim(),
+        loaiThongBao: loai,
+        isCongDong:   isCongDong === 'true',
+      };
+      await thongBaoApi.create(body);
+      setSuccess(true);
+      setTimeout(() => router.push('/truyen-thong/thong-bao'), 1200);
+    } catch (err: any) {
+      setError(err.message || 'Không thể tạo thông báo. Vui lòng thử lại.');
+    } finally {
+      setSubmitting(false);
     }
-
-    if (!form.content.trim()) {
-      alert('Vui lòng nhập nội dung');
-      return;
-    }
-
-    if (!form.target) {
-      alert('Vui lòng chọn đối tượng');
-      return;
-    }
-
-    setLoading(true);
-
-    const status = form.sendDate ? 'scheduled' : 'sent';
-
-    const newNotification: Notification = {
-      id: `TB-${Math.floor(1000 + Math.random() * 9000)}`,
-      title: form.title,
-      content: form.content,
-      type: form.type,
-      target: form.target,
-      sendDate: form.sendDate || new Date().toLocaleDateString('vi-VN'),
-      status,
-      recipientCount: Math.floor(100 + Math.random() * 2000),
-    };
-
-    console.log('Notification:', newNotification);
-
-    console.log('Sending push notification...');
-
-    setTimeout(() => {
-      alert('Gửi thông báo thành công');
-      router.push('/thong-bao');
-    }, 800);
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f6fa]">
-      <div className="max-w-[800px] mx-auto px-6 py-8">
+    <div>
+      <PageHeader
+        title="Tạo thông báo mới"
+        subtitle="Chi cục An toàn Thực phẩm TP. Đà Nẵng — Soạn và gửi thông báo đến cộng đồng hoặc nội bộ"
+        actions={
+          <ActionButtons>
+            <GovBtn variant="secondary" onClick={() => router.push('/truyen-thong/thong-bao')}>
+              <ArrowLeft style={{ width: 12, height: 12 }} /> Quay lại
+            </GovBtn>
+            <GovBtn variant="primary" onClick={handleSubmit} disabled={submitting || !isValid}>
+              <Send style={{ width: 12, height: 12 }} />
+              {submitting ? 'Đang gửi...' : 'Gửi thông báo'}
+            </GovBtn>
+          </ActionButtons>
+        }
+      />
 
-        {/* HEADER */}
-        <div className="mb-8">
-          <h1 className="text-[28px] font-black text-slate-900">
-            Thông báo
-          </h1>
-          <p className="text-[13px] text-slate-400 mt-1">
-            Tạo và gửi thông báo đến người dùng
-          </p>
-        </div>
+      {success && <AlertBanner type="success" title="Tạo thông báo thành công! Đang chuyển về danh sách..." />}
+      {error   && <AlertBanner type="danger"   title={error} />}
 
-        {/* FORM */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 space-y-5">
-
-          {/* Tiêu đề */}
-          <div>
-            <label className="text-[13px] font-medium text-slate-700 mb-1 block">
-              Tiêu đề
-            </label>
-            <input
-              type="text"
-              value={form.title}
-              onChange={(e) => setForm({ ...form, title: e.target.value })}
-              className="w-full bg-slate-50 p-3 rounded-xl text-[13px] outline-none"
-              placeholder="Nhập tiêu đề thông báo"
-            />
-          </div>
-
-          {/* Nội dung */}
-          <div>
-            <label className="text-[13px] font-medium text-slate-700 mb-1 block">
-              Nội dung cảnh báo
-            </label>
-            <textarea
-              rows={4}
-              value={form.content}
-              onChange={(e) => setForm({ ...form, content: e.target.value })}
-              className="w-full bg-slate-50 p-3 rounded-xl text-[13px] outline-none"
-              placeholder="Nhập nội dung..."
-            />
-          </div>
-
-          {/* Loại thông báo */}
-          <div>
-            <label className="text-[13px] font-medium text-slate-700 mb-1 block">
-              Loại thông báo
-            </label>
-            <select
-              value={form.type}
-              onChange={(e) => setForm({ ...form, type: e.target.value })}
-              className="w-full bg-slate-50 p-3 rounded-xl text-[13px]"
-            >
-              <option value="">Chọn loại</option>
-              <option value="Khẩn cấp">Khẩn cấp</option>
-              <option value="Thông báo">Thông báo</option>
-              <option value="Mời tham gia">Mời tham gia</option>
-            </select>
-          </div>
-
-          {/* Đối tượng */}
-          <div>
-            <label className="text-[13px] font-medium text-slate-700 mb-1 block">
-              Nhóm đối tượng nhận
-            </label>
-            <select
-              value={form.target}
-              onChange={(e) => setForm({ ...form, target: e.target.value })}
-              className="w-full bg-slate-50 p-3 rounded-xl text-[13px]"
-            >
-              <option value="">Chọn đối tượng</option>
-              <option value="Tất cả cơ sở kinh doanh">Tất cả cơ sở kinh doanh</option>
-              <option value="Cơ sở kinh doanh thực phẩm">Cơ sở kinh doanh thực phẩm</option>
-              <option value="Quản lý cơ sở">Quản lý cơ sở</option>
-            </select>
-          </div>
-
-          {/* Ngày gửi */}
-          <div>
-            <label className="text-[13px] font-medium text-slate-700 mb-1 block">
-              Ngày gửi (tùy chọn)
-            </label>
-            <input
-              type="date"
-              value={form.sendDate}
-              onChange={(e) => setForm({ ...form, sendDate: e.target.value })}
-              className="w-full bg-slate-50 p-3 rounded-xl text-[13px]"
-            />
-          </div>
-
-          {/* Buttons */}
-          <div className="flex gap-3 pt-4">
-            <button
-              onClick={handleSubmit}
-              disabled={loading}
-              className="flex-1 bg-violet-600 hover:bg-violet-700 text-white py-3 rounded-xl text-[13px] font-semibold disabled:opacity-60"
-            >
-              {loading ? 'Đang gửi...' : 'Gửi thông báo'}
-            </button>
-
-            <button
-              onClick={() => router.push('/thong-bao')}
-              className="flex-1 border border-slate-200 py-3 rounded-xl text-[13px] font-semibold text-slate-600 hover:bg-slate-50"
-            >
+      <SectionCard
+        title="Nội dung thông báo"
+        footer={
+          <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
+            <GovBtn variant="secondary" onClick={() => router.push('/truyen-thong/thong-bao')} disabled={submitting}>
               Hủy
-            </button>
+            </GovBtn>
+            <GovBtn variant="primary" onClick={handleSubmit} disabled={submitting || !isValid}>
+              <Send style={{ width: 12, height: 12 }} />
+              {submitting ? 'Đang gửi...' : 'Gửi thông báo'}
+            </GovBtn>
           </div>
+        }
+      >
+        <div style={{ padding: '14px 16px' }}>
+          <FormSection title="Thông tin thông báo">
+            <FormField label="Tiêu đề" required fullWidth>
+              <GovInput
+                placeholder="Nhập tiêu đề thông báo..."
+                value={tieuDe}
+                onChange={setTieuDe}
+                disabled={submitting}
+              />
+            </FormField>
+
+            <FormField label="Loại thông báo" required>
+              <GovSelect
+                value={loai}
+                onChange={setLoai}
+                options={LOAI_OPTIONS}
+                width={220}
+              />
+            </FormField>
+
+            <FormField label="Phạm vi" required>
+              <GovSelect
+                value={isCongDong}
+                onChange={setIsCongDong}
+                options={CONG_DONG_OPTIONS}
+                width={280}
+              />
+            </FormField>
+
+            <FormField label="Nội dung thông báo" required fullWidth>
+              <textarea
+                value={noiDung}
+                onChange={e => setNoiDung(e.target.value)}
+                placeholder="Nhập nội dung chi tiết của thông báo..."
+                rows={10}
+                disabled={submitting}
+                style={{
+                  width: '100%',
+                  border: '1px solid #D6D6D6',
+                  borderRadius: '2px',
+                  padding: '8px',
+                  fontSize: '13px',
+                  fontFamily: 'inherit',
+                  color: '#222',
+                  resize: 'vertical',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                  lineHeight: 1.7,
+                }}
+              />
+            </FormField>
+          </FormSection>
         </div>
-      </div>
+      </SectionCard>
     </div>
   );
 }

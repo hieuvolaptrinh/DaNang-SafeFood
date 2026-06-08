@@ -24,6 +24,8 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Cho phep ung dung su dung camera de gui phan anh.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Cho phep ung dung lay vi tri de ghi nhat ky dang nhap.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Cho phep ung dung truy cap thu vien anh de tai len phan anh.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>

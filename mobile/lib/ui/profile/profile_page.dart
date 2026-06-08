@@ -51,10 +51,8 @@ class ProfilePage extends StatelessWidget {
                     children: [
                       // Avatar — tap để chỉnh sửa
                       GestureDetector(
-                        onTap: () => Navigator.pushNamed(
-                          context,
-                          Routes.editProfile,
-                        ),
+                        onTap: () =>
+                            Navigator.pushNamed(context, Routes.editProfile),
                         child: Stack(
                           children: [
                             Container(
@@ -218,10 +216,15 @@ class ProfilePage extends StatelessWidget {
                         icon: Icons.feedback_outlined,
                         title: 'Phản ánh ATVSTP của tôi',
                         subtitle: '$complaintCount phản ánh',
-                        onTap: () => Navigator.pushNamed(
-                          context,
-                          Routes.myComplaints,
-                        ),
+                        onTap: () =>
+                            Navigator.pushNamed(context, Routes.myComplaints),
+                      ),
+                      _MenuItem(
+                        icon: Icons.history_rounded,
+                        title: 'Lịch sử đăng nhập',
+                        subtitle: 'Xem các phiên đăng nhập',
+                        onTap: () =>
+                            Navigator.pushNamed(context, Routes.loginHistory),
                       ),
                       _MenuItem(
                         icon: Icons.bookmark_border_rounded,
@@ -243,10 +246,8 @@ class ProfilePage extends StatelessWidget {
                       _MenuItem(
                         icon: Icons.lock_outline_rounded,
                         title: 'Đổi mật khẩu',
-                        onTap: () => Navigator.pushNamed(
-                          context,
-                          Routes.changePassword,
-                        ),
+                        onTap: () =>
+                            Navigator.pushNamed(context, Routes.changePassword),
                       ),
                       _MenuItem(
                         icon: Icons.language_rounded,

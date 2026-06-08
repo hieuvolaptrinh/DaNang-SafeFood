@@ -12,6 +12,9 @@ import com.danang.safefood.repository.HoSoThanhTraRepository;
 import com.danang.safefood.repository.LichThanhTraRepository;
 import com.danang.safefood.repository.NguoiDungRepository;
 import com.danang.safefood.util.IdGenerator;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -20,10 +23,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
 public class HoSoThanhTraService {
+
+    private static final String CHECKLIST_MARKER = "\n__SAFEFOOD_CHECKLIST__=";
+    private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
 
     private final HoSoThanhTraRepository hoSoThanhTraRepository;
     private final LichThanhTraRepository lichThanhTraRepository;
@@ -76,7 +84,7 @@ public class HoSoThanhTraService {
         lich.setMaThanhTra(IdGenerator.generate("TT"));
         lich.setCoSoKinhDoanh(coSo);
         lich.setNguoiPhuTrach(currentUser);
-        lich.setTrangThai("Đã hoàn thành");
+        lich.setTrangThai("Hoàn thành");
         lich.setNoiDung("Kiểm tra ATVSTP");
         lich = lichThanhTraRepository.save(lich);
 
@@ -90,7 +98,7 @@ public class HoSoThanhTraService {
             hs.setThoiGianKiemTra(LocalDateTime.now());
         }
         hs.setKetLuan(req.conclusion());
-        hs.setNhanXetChung(req.generalComment());
+        hs.setNhanXetChung(encodeGeneralComment(req.generalComment(), req.checklist()));
         hs.setBienPhapXuLy(req.actionMeasure());
         hs.setKienNghi(req.recommendation());
         
@@ -113,7 +121,7 @@ public class HoSoThanhTraService {
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy hồ sơ: " + id));
 
         hs.setKetLuan(req.conclusion());
-        hs.setNhanXetChung(req.generalComment());
+        hs.setNhanXetChung(encodeGeneralComment(req.generalComment(), req.checklist()));
         hs.setBienPhapXuLy(req.actionMeasure());
         hs.setKienNghi(req.recommendation());
         try {
@@ -129,5 +137,47 @@ public class HoSoThanhTraService {
         hs.setTinhTrangViPham(req.violationDescription() != null ? req.violationDescription() : req.violationStatus());
 
         return HoSoThanhTraResponse.from(hoSoThanhTraRepository.save(hs));
+    }
+
+    private String encodeGeneralComment(String generalComment, Map<String, String> checklist) {
+        String cleanedComment = generalComment == null ? "" : generalComment.trim();
+        if (checklist == null || checklist.isEmpty()) {
+            return cleanedComment;
+        }
+
+        try {
+            String checklistJson = JSON_MAPPER.writeValueAsString(checklist);
+            return cleanedComment + CHECKLIST_MARKER + checklistJson;
+        } catch (JsonProcessingException e) {
+            return cleanedComment;
+        }
+    }
+
+    public static String stripChecklistMarker(String generalComment) {
+        if (generalComment == null || !generalComment.contains(CHECKLIST_MARKER)) {
+            return generalComment == null ? "" : generalComment;
+        }
+
+        int markerIndex = generalComment.indexOf(CHECKLIST_MARKER);
+        return generalComment.substring(0, markerIndex).trim();
+    }
+
+    public static Map<String, String> extractChecklist(String generalComment) {
+        if (generalComment == null || !generalComment.contains(CHECKLIST_MARKER)) {
+            return Map.of();
+        }
+
+        int markerIndex = generalComment.indexOf(CHECKLIST_MARKER);
+        String json = generalComment.substring(markerIndex + CHECKLIST_MARKER.length()).trim();
+        if (json.isEmpty()) {
+            return Map.of();
+        }
+
+        try {
+            Map<String, String> checklist = JSON_MAPPER.readValue(json, new TypeReference<Map<String, String>>() {});
+            return checklist == null ? Map.of() : new LinkedHashMap<>(checklist);
+        } catch (Exception e) {
+            return Map.of();
+        }
     }
 }

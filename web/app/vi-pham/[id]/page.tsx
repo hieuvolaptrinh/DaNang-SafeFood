@@ -1,221 +1,284 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
+import { ArrowLeft, Printer, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
+import {
+  PageHeader, GovBtn, SectionCard, StatusBadge, ActionButtons, FormSection, FormField,
+} from '@/components/GovUI';
+import AlertBanner from '@/components/AlertBanner';
+import { viPhamApi, type ViPhamItem } from '@/api/vipham';
 
-interface Violation {
-  id: string;
-  businessName: string;
-  violationType: string;
-  severity: 'nhẹ' | 'trung bình' | 'nghiêm trọng';
-  detectedDate: string;
-  status: 'pending' | 'processing' | 'resolved';
-  district: string;
+const MUC_DO_VARIANT: Record<string, string> = {
+  'Nghiêm trọng': 'expired',
+  'Trung bình': 'pending',
+  'Nhẹ': 'processing',
+};
+
+const TRANG_THAI_VARIANT: Record<string, string> = {
+  'Đã Duyệt': 'active',
+  'Chờ Duyệt': 'pending',
+  'Từ Chối': 'expired',
+};
+
+function formatCurrency(amount: number) {
+  if (!amount) return '—';
+  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
 }
 
-const mockViolations: Violation[] = [
-  {
-    id: 'VP-2025001',
-    businessName: 'Nhà hàng Hải Sản Biển Xanh',
-    violationType: 'Vi phạm vệ sinh an toàn thực phẩm',
-    severity: 'nghiêm trọng',
-    detectedDate: '18/03/2025',
-    status: 'processing',
-    district: 'Hải Châu',
-  },
-  {
-    id: 'VP-2025002',
-    businessName: 'Quán Ăn Gia Đình Việt',
-    violationType: 'Không niêm yết giá bán',
-    severity: 'nhẹ',
-    detectedDate: '15/03/2025',
-    status: 'resolved',
-    district: 'Thanh Khê',
-  },
-  {
-    id: 'VP-2025003',
-    businessName: 'Cửa hàng Thực phẩm Sạch Organic',
-    violationType: 'Sử dụng chất cấm trong thực phẩm',
-    severity: 'nghiêm trọng',
-    detectedDate: '22/03/2025',
-    status: 'pending',
-    district: 'Ngũ Hành Sơn',
-  },
-  {
-    id: 'VP-2025004',
-    businessName: 'Siêu thị Mini Mart Đà Nẵng',
-    violationType: 'Bán hàng hết hạn sử dụng',
-    severity: 'trung bình',
-    detectedDate: '20/03/2025',
-    status: 'processing',
-    district: 'Sơn Trà',
-  },
-];
+function InfoCard({ label, value, mono = false }: { label: string; value: React.ReactNode; mono?: boolean }) {
+  return (
+    <div style={{ background: '#fff', border: '1px solid #D6D6D6', padding: '10px 14px' }}>
+      <p style={{ fontSize: '10.5px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#555', marginBottom: '4px' }}>
+        {label}
+      </p>
+      <div style={{ fontSize: '14px', fontWeight: 700, color: '#222', fontFamily: mono ? 'monospace' : 'inherit' }}>
+        {value}
+      </div>
+    </div>
+  );
+}
 
-const SEVERITY_CONFIG = {
-  'nghiêm trọng': { label: 'Nghiêm trọng', bg: 'bg-red-50',   text: 'text-red-700',   dot: 'bg-red-500',   border: 'border-red-200', icon: '🚨' },
-  'trung bình':   { label: 'Trung bình',   bg: 'bg-amber-50', text: 'text-amber-700', dot: 'bg-amber-400', border: 'border-amber-200', icon: '⚠️' },
-  'nhẹ':          { label: 'Nhẹ',          bg: 'bg-sky-50',   text: 'text-sky-700',   dot: 'bg-sky-400',   border: 'border-sky-200', icon: '⚡' },
-};
-
-const STATUS_CONFIG = {
-  pending:    { label: 'Chưa xử lý', bg: 'bg-slate-50',   text: 'text-slate-600',   icon: '⏸', dot: 'bg-slate-400',   border: 'border-slate-200' },
-  processing: { label: 'Đang xử lý', bg: 'bg-blue-50',    text: 'text-blue-700',    icon: '🔄', dot: 'bg-blue-500',    border: 'border-blue-200' },
-  resolved:   { label: 'Đã xử lý',   bg: 'bg-emerald-50', text: 'text-emerald-700', icon: '✓',  dot: 'bg-emerald-500', border: 'border-emerald-200' },
-};
-
-export default function DanhSachViPhamDetailPage() {
+export default function ViPhamDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const id = params.id as string;
+  const maViPham = params.id as string;
 
-  const [violation, setViolation] = useState<Violation | null>(null);
+  const [item, setItem] = useState<ViPhamItem | null>(null);
   const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
-    const found = mockViolations.find(v => v.id === id);
-    setViolation(found || null);
-    setLoading(false);
-  }, [id]);
+    let mounted = true;
+    setLoading(true);
+    viPhamApi.getById(maViPham)
+      .then(data => { if (mounted) { setItem(data); setLoading(false); } })
+      .catch(() => { if (mounted) { setNotFound(true); setLoading(false); } });
+    return () => { mounted = false; };
+  }, [maViPham]);
 
+  const handleDecision = async (trangThai: 'Đã Duyệt' | 'Từ Chối') => {
+    if (!item) return;
+    setActionLoading(true);
+    setSuccessMessage('');
+    setErrorMessage('');
+    try {
+      const updated = await viPhamApi.pheDuyet(item.maViPham, trangThai);
+      setItem(updated);
+      setSuccessMessage(
+        trangThai === 'Đã Duyệt'
+          ? `Đã phê duyệt vi phạm ${item.maViPham} thành công`
+          : `Đã từ chối vi phạm ${item.maViPham}`,
+      );
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Không thể cập nhật trạng thái');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  /* ──── Loading ──── */
   if (loading) {
-    return <div className="min-h-screen bg-[#f5f6fa] flex items-center justify-center">Đang tải...</div>;
-  }
-
-  if (!violation) {
     return (
-      <div className="min-h-screen bg-[#f5f6fa] flex flex-col items-center justify-center py-20">
-        <div className="text-7xl mb-6">😕</div>
-        <h2 className="text-2xl font-bold text-slate-900">Không tìm thấy vi phạm</h2>
-        <p className="text-slate-500 mt-2 mb-8">Vi phạm mã <span className="font-mono">{id}</span> không tồn tại.</p>
-        <Link
-          href="/danh-sach-vi-pham"
-          className="px-6 py-3 bg-violet-600 text-white rounded-2xl font-medium hover:bg-violet-700 transition"
-        >
-          Quay về danh sách vi phạm
-        </Link>
+      <div style={{ padding: '40px', textAlign: 'center', color: '#888', fontSize: '13px' }}>
+        Đang tải thông tin vi phạm...
       </div>
     );
   }
 
-  const sevCfg = SEVERITY_CONFIG[violation.severity];
-  const statCfg = STATUS_CONFIG[violation.status];
+  /* ──── Not found ──── */
+  if (notFound || !item) {
+    return (
+      <div>
+        <PageHeader
+          title="Không tìm thấy vi phạm"
+          subtitle={`Không tìm thấy hồ sơ vi phạm mã: ${maViPham}`}
+          actions={
+            <GovBtn variant="secondary" onClick={() => router.push('/vi-pham')}>
+              <ArrowLeft style={{ width: 13, height: 13 }} /> Quay lại danh sách
+            </GovBtn>
+          }
+        />
+      </div>
+    );
+  }
+
+  const isPending = item.trangThaiPheDuyet === 'Chờ Duyệt';
 
   return (
-    <div className="min-h-screen bg-[#f5f6fa] font-sans">
-      <div className="h-1 w-full bg-gradient-to-r from-violet-600 via-purple-500 to-pink-400" />
+    <div>
+      <PageHeader
+        title={`Chi tiết vi phạm — ${item.maViPham}`}
+        subtitle="Chi cục An toàn Thực phẩm TP. Đà Nẵng — Hồ sơ vi phạm cơ sở kinh doanh thực phẩm"
+        actions={
+          <ActionButtons>
+            <GovBtn variant="secondary" onClick={() => router.push('/vi-pham')}>
+              <ArrowLeft style={{ width: 13, height: 13 }} /> Quay lại
+            </GovBtn>
+            <GovBtn variant="secondary" onClick={() => window.print()}>
+              <Printer style={{ width: 13, height: 13 }} /> In biên bản
+            </GovBtn>
+            {isPending && (
+              <>
+                <GovBtn
+                  variant="secondary"
+                  onClick={() => void handleDecision('Từ Chối')}
+                  disabled={actionLoading}
+                >
+                  <XCircle style={{ width: 13, height: 13 }} /> Từ chối
+                </GovBtn>
+                <GovBtn
+                  variant="primary"
+                  onClick={() => void handleDecision('Đã Duyệt')}
+                  disabled={actionLoading}
+                >
+                  <CheckCircle style={{ width: 13, height: 13 }} />
+                  {actionLoading ? 'Đang xử lý...' : 'Phê duyệt'}
+                </GovBtn>
+              </>
+            )}
+          </ActionButtons>
+        }
+      />
 
-      <div className="max-w-[1100px] mx-auto px-6 py-8">
-        {/* Breadcrumb */}
-        <div className="flex items-center gap-3 mb-8">
-          <button
-            onClick={() => router.back()}
-            className="text-slate-500 hover:text-slate-700 flex items-center gap-2 text-sm font-medium"
-          >
-            ← Quay lại danh sách
-          </button>
-          <div className="h-4 w-px bg-slate-200 mx-2" />
-          <span className="text-[11px] font-bold tracking-widest uppercase text-violet-500">
-            SỞ AN TOÀN THỰC PHẨM • ĐÀ NẴNG
-          </span>
-        </div>
+      {successMessage && <AlertBanner type="success" title={successMessage} />}
+      {errorMessage && <AlertBanner type="danger" title={errorMessage} />}
 
-        <div className="flex flex-col lg:flex-row justify-between items-start gap-6 mb-8">
-          <div>
-            <div className="flex items-center gap-3 mb-3">
-              <span className="font-mono text-sm bg-slate-100 text-slate-500 px-3 py-1 rounded-lg font-semibold">
-                {violation.id}
-              </span>
-              <span className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-2xl text-sm font-semibold border ${statCfg.bg} ${statCfg.text} ${statCfg.border}`}>
-                <span>{statCfg.icon}</span> {statCfg.label}
-              </span>
-            </div>
-            <h1 className="text-3xl font-black tracking-tight text-slate-900">
-              {violation.businessName}
-            </h1>
-          </div>
-
-          <div className="flex gap-3">
-            <button className="px-5 py-3 border border-slate-300 rounded-2xl text-sm font-medium hover:bg-white transition">
-              📄 In biên bản vi phạm
-            </button>
-            <button className="px-6 py-3 bg-violet-600 hover:bg-violet-700 text-white rounded-2xl text-sm font-semibold transition">
-              Cập nhật xử lý
-            </button>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Main Content */}
-          <div className="lg:col-span-8 space-y-6">
-            <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100">
-              <h2 className="text-lg font-bold text-slate-800 mb-6">Thông tin vi phạm</h2>
-              <div className="space-y-6">
-                <div>
-                  <p className="text-xs uppercase tracking-widest text-slate-400 mb-1">Loại vi phạm</p>
-                  <p className="text-[17px] leading-relaxed text-slate-700">{violation.violationType}</p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <p className="text-xs uppercase tracking-widest text-slate-400 mb-1">Mức độ</p>
-                    <span className={`inline-flex items-center gap-2 px-5 py-3 rounded-2xl text-base font-semibold border ${sevCfg.bg} ${sevCfg.text} ${sevCfg.border}`}>
-                      <span className={`w-3 h-3 rounded-full ${sevCfg.dot}`} />
-                      {sevCfg.label}
-                    </span>
-                  </div>
-                  <div>
-                    <p className="text-xs uppercase tracking-widest text-slate-400 mb-1">Ngày phát hiện</p>
-                    <p className="text-2xl font-semibold text-slate-900">{violation.detectedDate}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs uppercase tracking-widest text-slate-400 mb-1">Quận/Huyện</p>
-                    <span className="inline-flex px-4 py-2 rounded-2xl text-sm font-semibold bg-slate-100 text-slate-700">
-                      {violation.district}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100">
-              <h2 className="text-lg font-bold text-slate-800 mb-5">Mô tả chi tiết</h2>
-              <div className="prose text-[15.5px] text-slate-700 leading-relaxed">
-                Vi phạm được ghi nhận tại cơ sở {violation.businessName} vào ngày {violation.detectedDate}. 
-                Đây là vi phạm thuộc mức độ <span className="font-semibold">{sevCfg.label.toLowerCase()}</span>.
-              </div>
-            </div>
-          </div>
-
-          {/* Sidebar */}
-          <div className="lg:col-span-4 space-y-6">
-            <div className="bg-white rounded-3xl p-7 shadow-sm border border-slate-100">
-              <h3 className="font-bold text-slate-700 mb-5">Trạng thái xử lý</h3>
-              <div className={`p-6 rounded-3xl ${statCfg.bg} ${statCfg.text} border ${statCfg.border}`}>
-                <div className="flex items-center gap-4 text-4xl mb-3">
-                  {statCfg.icon}
-                </div>
-                <p className="text-2xl font-semibold">{statCfg.label}</p>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-3xl p-7 shadow-sm border border-slate-100">
-              <h3 className="font-bold text-slate-700 mb-5">Thông tin cơ sở</h3>
-              <div className="space-y-4 text-sm">
-                <div>
-                  <p className="text-slate-400 text-xs uppercase tracking-widest">Tên cơ sở</p>
-                  <p className="font-medium text-slate-900">{violation.businessName}</p>
-                </div>
-                <div>
-                  <p className="text-slate-400 text-xs uppercase tracking-widest">Địa chỉ</p>
-                  <p className="text-slate-700">123 Nguyễn Thị Minh Khai, {violation.district}, Đà Nẵng</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+      {/* ── Stat cards ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', marginBottom: '12px' }}>
+        <InfoCard label="Mã vi phạm" value={item.maViPham} mono />
+        <InfoCard label="Mã hồ sơ" value={item.maHoSo} mono />
+        <InfoCard label="Tổng tiền phạt" value={
+          <span style={{ color: '#CC0000' }}>{formatCurrency(item.tongTienPhat)}</span>
+        } />
+        <InfoCard label="Trạng thái phê duyệt" value={
+          <StatusBadge variant={TRANG_THAI_VARIANT[item.trangThaiPheDuyet] ?? 'pending'} label={item.trangThaiPheDuyet} />
+        } />
       </div>
+
+      {/* ── Status + Severity ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+        <SectionCard title="Trạng thái phê duyệt">
+          <div style={{ padding: '14px 12px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <StatusBadge
+              variant={TRANG_THAI_VARIANT[item.trangThaiPheDuyet] ?? 'pending'}
+              label={item.trangThaiPheDuyet}
+            />
+            <span style={{ fontSize: '12px', color: '#555' }}>
+              {item.trangThaiPheDuyet === 'Chờ Duyệt'
+                ? 'Hồ sơ đang chờ lãnh đạo xem xét và phê duyệt.'
+                : item.trangThaiPheDuyet === 'Đã Duyệt'
+                ? 'Hồ sơ đã được phê duyệt và có hiệu lực.'
+                : 'Hồ sơ đã bị từ chối, cần xem xét lại.'}
+            </span>
+          </div>
+        </SectionCard>
+
+        <SectionCard title="Mức độ vi phạm">
+          <div style={{ padding: '14px 12px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <StatusBadge variant={MUC_DO_VARIANT[item.mucDo] ?? 'pending'} label={item.mucDo} />
+            <span style={{ fontSize: '12px', color: '#555' }}>
+              {item.mucDo === 'Nghiêm trọng'
+                ? 'Vi phạm cần xử lý khẩn cấp và áp dụng mức phạt cao nhất.'
+                : item.mucDo === 'Trung bình'
+                ? 'Vi phạm ở mức trung bình, cần khắc phục trong thời gian sớm.'
+                : 'Vi phạm nhẹ, yêu cầu nhắc nhở và chấn chỉnh.'}
+            </span>
+          </div>
+        </SectionCard>
+      </div>
+
+      {/* ── Detail ── */}
+      <SectionCard title="Thông tin chi tiết vi phạm">
+        <div style={{ padding: '14px 12px' }}>
+          <FormSection title="Thông tin cơ sở kinh doanh">
+            <FormField label="Tên cơ sở">
+              <div style={{ padding: '6px 10px', background: '#F5F5F5', border: '1px solid #D6D6D6', fontSize: '13px', fontWeight: 600 }}>
+                {item.tenCoSo}
+              </div>
+            </FormField>
+            <FormField label="Mã cơ sở">
+              <div style={{ padding: '6px 10px', background: '#F5F5F5', border: '1px solid #D6D6D6', fontSize: '13px', fontFamily: 'monospace', color: '#005A9E' }}>
+                {item.maCoSo}
+              </div>
+            </FormField>
+          </FormSection>
+
+          <FormSection title="Nội dung vi phạm">
+            <FormField label="Loại vi phạm" fullWidth>
+              <div style={{ padding: '6px 10px', background: '#FFF4F4', border: '1px solid #FCA5A5', fontSize: '13px', fontWeight: 600, color: '#CC0000' }}>
+                {item.tenLoaiViPham}
+              </div>
+            </FormField>
+
+            {item.moTaThem && (
+              <FormField label="Mô tả thêm" fullWidth>
+                <div style={{ padding: '8px 10px', background: '#F5F5F5', border: '1px solid #D6D6D6', fontSize: '13px', lineHeight: 1.7, minHeight: '60px' }}>
+                  {item.moTaThem}
+                </div>
+              </FormField>
+            )}
+          </FormSection>
+
+          <FormSection title="Yêu cầu & Khắc phục">
+            {item.yeuCauKhacPhuc && (
+              <FormField label="Yêu cầu khắc phục" fullWidth>
+                <div style={{ padding: '8px 10px', background: '#FFF9F0', border: '1px solid #FCD34D', fontSize: '13px', lineHeight: 1.7 }}>
+                  {item.yeuCauKhacPhuc}
+                </div>
+              </FormField>
+            )}
+            {item.khacPhuc && (
+              <FormField label="Kết quả khắc phục" fullWidth>
+                <div style={{ padding: '8px 10px', background: '#F0FDF4', border: '1px solid #86EFAC', fontSize: '13px', lineHeight: 1.7 }}>
+                  {item.khacPhuc}
+                </div>
+              </FormField>
+            )}
+            {item.lyDo && (
+              <FormField label="Lý do" fullWidth>
+                <div style={{ padding: '8px 10px', background: '#F5F5F5', border: '1px solid #D6D6D6', fontSize: '13px', lineHeight: 1.7 }}>
+                  {item.lyDo}
+                </div>
+              </FormField>
+            )}
+          </FormSection>
+        </div>
+      </SectionCard>
+
+      {/* ── Bottom approval bar (nếu còn pending) ── */}
+      {isPending && (
+        <div style={{
+          marginTop: '16px',
+          background: '#FFFBEB',
+          border: '1px solid #FCD34D',
+          borderRadius: '2px',
+          padding: '14px 18px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '12px',
+        }}>
+          <div>
+            <p style={{ fontSize: '13px', fontWeight: 700, color: '#92400E' }}>Hồ sơ đang chờ phê duyệt</p>
+            <p style={{ fontSize: '12px', color: '#B45309', marginTop: '2px' }}>
+              Vui lòng xem xét thông tin và quyết định phê duyệt hoặc từ chối hồ sơ vi phạm này.
+            </p>
+          </div>
+          <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+            <GovBtn variant="secondary" onClick={() => void handleDecision('Từ Chối')} disabled={actionLoading}>
+              <XCircle style={{ width: 13, height: 13 }} /> Từ chối
+            </GovBtn>
+            <GovBtn variant="primary" onClick={() => void handleDecision('Đã Duyệt')} disabled={actionLoading}>
+              <CheckCircle style={{ width: 13, height: 13 }} />
+              {actionLoading ? 'Đang xử lý...' : 'Phê duyệt hồ sơ'}
+            </GovBtn>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -13,8 +13,16 @@ class AppConfig {
   //   // Mặc định: Android emulator
   //   return 'http://10.0.2.2:8080';
   // }
+
   static String get baseUrl {
     // ip lấy qua wifi
     return 'http://192.168.1.6:8080';
   }
+
+  // ── AI API Config ──
+  static String get aiApiKey => dotenv.env['AI_API_KEY'] ?? '';
+
+  static String get aiApiUrl =>
+      dotenv.env['AI_API_URL'] ??
+      'https://api.chatanywhere.tech/v1/chat/completions';
 }

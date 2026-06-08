@@ -48,4 +48,14 @@ public class GiayChungNhanService {
                 : chungNhanRepo.findAllByOrderByNgayBanHanhDesc(pageable);
         return page.map(GiayChungNhanResponse::from);
     }
+
+    @Transactional(readOnly = true)
+    public GiayChungNhanResponse getDetail(String maCN) {
+
+        ChungNhanATVSTP entity = chungNhanRepo.findById(maCN)
+                .orElseThrow(() ->
+                        new RuntimeException("Không tìm thấy giấy chứng nhận: " + maCN));
+
+        return GiayChungNhanResponse.from(entity);
+    }
 }

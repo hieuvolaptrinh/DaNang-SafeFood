@@ -1,152 +1,244 @@
 'use client';
 
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { baoCaoApi, type BaoCaoResponse } from '@/api/api';
+import { PageHeader, SectionCard, StatusBadge, GovBtn, ActionButtons, FormLayout, FormSection, FormField } from '@/components/GovUI';
 import AlertBanner from '@/components/AlertBanner';
-import Badge from '@/components/Badge';
-import TableCard from '@/components/TableCard';
-import { mockInspectionReports } from '@/data/mockData';
 
-function mockUpdateInspectionReport() {
-  return new Promise<void>((resolve) => {
-    window.setTimeout(() => resolve(), 1200);
-  });
+function normalizeError(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
 }
 
 export default function BaoCaoChinhSuaPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const id = params.id;
-  const report = mockInspectionReports.find((item) => item.id === id);
-  const [content, setContent] = useState(report?.noiDung ?? '');
-  const [comment, setComment] = useState(report?.nhanXet ?? '');
+  const [report, setReport] = useState<BaoCaoResponse | null>(null);
+  const [content, setContent] = useState('');
+  const [comment, setComment] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadData = async () => {
+      setIsLoading(true);
+      setErrorMessage('');
+
+      try {
+        const data = await baoCaoApi.getById(id);
+        if (!isMounted) {
+          return;
+        }
+
+        setReport(data);
+        setContent(data.noiDung ?? '');
+        setComment(data.nhanXet ?? '');
+      } catch (error) {
+        if (isMounted) {
+          setErrorMessage(normalizeError(error, `Không tìm thấy báo cáo ${id}`));
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    void loadData();
+    return () => {
+      isMounted = false;
+    };
+  }, [id]);
 
   const isFormValid = content.trim().length > 0 && comment.trim().length > 0;
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-
-    if (!report || !isFormValid || isSubmitting) {
+    if (!report || !isFormValid || isSubmitting) return;
+    if (!report.facilityId) {
+      setErrorMessage('Không xác định được cơ sở gốc của báo cáo để cập nhật');
       return;
     }
 
     setIsSubmitting(true);
+    setErrorMessage('');
 
     try {
-      await mockUpdateInspectionReport();
-      console.log('Updating report:', id);
+      await baoCaoApi.update(id, {
+        facilityId: report.facilityId,
+        inspectionDate: report.ngay,
+        inspectionType: report.loaiThanhTra,
+        content: content.trim(),
+        comment: comment.trim(),
+        result: report.ketQua,
+        score: report.diem,
+        fileName: report.tepDinhKem,
+        hasInspectionRecord: true,
+      });
       router.push(`/thanh-tra-kiem-dinh/bao-cao?updated=${encodeURIComponent(id)}`);
+    } catch (error) {
+      setErrorMessage(normalizeError(error, 'Không thể cập nhật báo cáo lúc này'));
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  if (isLoading) {
+    return (
+      <div>
+        <PageHeader
+          title="Đang tải báo cáo"
+          subtitle="Đang lấy dữ liệu để chỉnh sửa"
+        />
+        <SectionCard title="Chỉnh sửa báo cáo">
+          <p style={{ padding: '12px', fontSize: '13px', color: '#555' }}>Đang tải dữ liệu...</p>
+        </SectionCard>
+      </div>
+    );
+  }
+
   if (!report) {
     return (
       <div>
-        <AlertBanner type="danger" title={`Không tìm thấy báo cáo ${id}`} />
-        <button
-          type="button"
-          onClick={() => router.push('/thanh-tra-kiem-dinh/bao-cao')}
-          className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
-        >
-          Quay lại
-        </button>
+        <AlertBanner type="danger" title={errorMessage || `Không tìm thấy báo cáo ${id}`} />
+        <GovBtn variant="secondary" onClick={() => router.push('/thanh-tra-kiem-dinh/bao-cao')}>
+          ← Quay lại danh sách
+        </GovBtn>
       </div>
     );
   }
 
   return (
     <div>
-      <div className="mb-6 flex items-start justify-between gap-3">
-        <div>
-          <h1 className="font-display text-[22px] font-extrabold text-slate-900">Chỉnh sửa báo cáo thanh tra</h1>
-          <p className="mt-0.5 text-[13px] text-slate-500">
-            Cập nhật nội dung báo cáo bằng dữ liệu mock hiện tại.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={() => router.push(`/thanh-tra-kiem-dinh/bao-cao/${report.id}`)}
-          disabled={isSubmitting}
-          className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          Hủy
-        </button>
+      <PageHeader
+        title={`Chỉnh sửa báo cáo — ${report.id}`}
+        subtitle="Chi cục An toàn Thực phẩm TP. Đà Nẵng — Cập nhật nội dung báo cáo thanh tra"
+        actions={
+          <ActionButtons>
+            <GovBtn
+              variant="secondary"
+              onClick={() => router.push(`/thanh-tra-kiem-dinh/bao-cao/${report.id}`)}
+              disabled={isSubmitting}
+            >
+              ← Hủy
+            </GovBtn>
+          </ActionButtons>
+        }
+      />
+
+      {errorMessage && <AlertBanner type="danger" title={errorMessage} />}
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '10px', marginBottom: '12px' }}>
+        {[
+          { label: 'Mã báo cáo', value: report.id, mono: true },
+          { label: 'Ngày kiểm tra', value: report.ngay, mono: true },
+          { label: 'Quận/Huyện', value: report.quanHuyen },
+          { label: 'Thanh tra viên', value: report.thanhTraVien },
+        ].map((item) => (
+          <div key={item.label} style={{ background: '#fff', border: '1px solid #D6D6D6', borderRadius: '1px', padding: '10px 14px' }}>
+            <p style={{ fontSize: '10.5px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#555', marginBottom: '4px' }}>
+              {item.label}
+            </p>
+            <p style={{ fontSize: '13px', fontWeight: 700, color: '#222', fontFamily: item.mono ? 'monospace' : 'inherit' }}>
+              {item.value}
+            </p>
+          </div>
+        ))}
       </div>
 
-      <TableCard title="Thông tin báo cáo">
-        <div className="grid gap-5 border-b border-slate-100 p-5 md:grid-cols-2">
-          <div className="space-y-1">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Mã báo cáo</p>
-            <p className="font-mono text-sm text-slate-800">{report.id}</p>
-          </div>
+      <SectionCard title="Thông tin báo cáo (chỉ đọc)">
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <tbody>
+            {[
+              { label: 'Tên cơ sở', value: report.tenCoSo },
+              { label: 'Loại hình thanh tra', value: report.loaiThanhTra },
+              { label: 'Kết quả', value: <StatusBadge variant={report.ketQua} /> },
+              { label: 'Điểm', value: report.diem > 0 ? `${report.diem} / 100` : 'Chưa có' },
+            ].map((row, index) => (
+              <tr key={index} style={{ borderBottom: '1px solid #F0F0F0' }}>
+                <td style={{ padding: '8px 12px', fontSize: '12px', fontWeight: 600, color: '#555', width: '200px', background: '#FAFAFA', whiteSpace: 'nowrap' }}>
+                  {row.label}
+                </td>
+                <td style={{ padding: '8px 12px', fontSize: '13px', color: '#222' }}>
+                  {row.value}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </SectionCard>
 
-          <div className="space-y-1">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Tên cơ sở</p>
-            <p className="text-sm text-slate-800">{report.tenCoSo}</p>
-          </div>
+      <form onSubmit={handleSubmit}>
+        <FormLayout>
+          <FormSection title="Nội dung có thể chỉnh sửa">
+            <FormField label="Nội dung báo cáo" required fullWidth>
+              <textarea
+                id="edit-content"
+                rows={6}
+                value={content}
+                onChange={(event) => setContent(event.target.value)}
+                disabled={isSubmitting}
+                style={{
+                  width: '100%',
+                  border: '1px solid #D6D6D6',
+                  borderRadius: '2px',
+                  padding: '8px',
+                  fontSize: '13px',
+                  fontFamily: 'inherit',
+                  color: '#222',
+                  resize: 'vertical',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                }}
+              />
+            </FormField>
 
-          <div className="space-y-1">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Ngày kiểm tra</p>
-            <p className="text-sm text-slate-800">{report.ngay}</p>
-          </div>
+            <FormField label="Nhận xét & Kiến nghị" required fullWidth>
+              <textarea
+                id="edit-comment"
+                rows={4}
+                value={comment}
+                onChange={(event) => setComment(event.target.value)}
+                disabled={isSubmitting}
+                style={{
+                  width: '100%',
+                  border: '1px solid #D6D6D6',
+                  borderRadius: '2px',
+                  padding: '8px',
+                  fontSize: '13px',
+                  fontFamily: 'inherit',
+                  color: '#222',
+                  resize: 'vertical',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                }}
+              />
+            </FormField>
+          </FormSection>
 
-          <div className="space-y-1">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Kết quả</p>
-            <div>
-              <Badge variant={report.ketQua} />
-            </div>
-          </div>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-5 p-5">
-          <div className="space-y-2">
-            <label htmlFor="edit-content" className="text-sm font-semibold text-slate-800">
-              Nội dung báo cáo
-            </label>
-            <textarea
-              id="edit-content"
-              rows={6}
-              value={content}
-              onChange={(event) => setContent(event.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-blue-500"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label htmlFor="edit-comment" className="text-sm font-semibold text-slate-800">
-              Nhận xét
-            </label>
-            <textarea
-              id="edit-comment"
-              rows={4}
-              value={comment}
-              onChange={(event) => setComment(event.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-blue-500"
-            />
-          </div>
-
-          <div className="flex items-center justify-end gap-3 border-t border-slate-100 pt-4">
-            <button
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #D6D6D6' }}>
+            <GovBtn
+              variant="secondary"
               type="button"
               onClick={() => router.push(`/thanh-tra-kiem-dinh/bao-cao/${report.id}`)}
               disabled={isSubmitting}
-              className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Hủy
-            </button>
-            <button
+              Hủy bỏ
+            </GovBtn>
+            <GovBtn
+              variant="primary"
               type="submit"
               disabled={!isFormValid || isSubmitting}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300"
             >
-              {isSubmitting ? 'Đang cập nhật...' : 'Cập nhật'}
-            </button>
+              {isSubmitting ? 'Đang lưu...' : 'Lưu thay đổi'}
+            </GovBtn>
           </div>
-        </form>
-      </TableCard>
+        </FormLayout>
+      </form>
     </div>
   );
 }

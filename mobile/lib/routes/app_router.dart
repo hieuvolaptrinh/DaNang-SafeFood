@@ -55,6 +55,10 @@ import 'package:mobile_ui/data/remote/repository/my_business_repository.dart';
 import 'package:mobile_ui/ui/profile/edit_profile_page.dart';
 import 'package:mobile_ui/ui/profile/change_password_page.dart';
 import 'package:mobile_ui/ui/profile/my_complaints_page.dart';
+import 'package:mobile_ui/ui/(user)/log/log_page.dart';
+import 'package:mobile_ui/data/remote/datasource/log_remote_datasource.dart';
+import 'package:mobile_ui/data/remote/repository/log_repository.dart';
+import 'package:mobile_ui/viewmodel/log/log_cubit.dart';
 
 class AppRouter {
   static final _dio = DioClient().dio;
@@ -79,6 +83,10 @@ class AppRouter {
 
   static final ProfileRepository _profileRepository = ProfileRepository(
     remoteDataSource: ProfileRemoteDataSource(dio: _dio),
+  );
+
+  static final LogRepository _logRepository = LogRepository(
+    remoteDataSource: LogRemoteDataSource(dio: _dio),
   );
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
@@ -309,6 +317,14 @@ class AppRouter {
               complaintRepository: _complaintRepository,
             )..loadMyComplaints(),
             child: const MyComplaintsPage(),
+          ),
+        );
+
+      case Routes.loginHistory:
+        return MaterialPageRoute(
+          builder: (_) => BlocProvider(
+            create: (_) => LogCubit(repository: _logRepository)..loadLogs(),
+            child: const LogPage(),
           ),
         );
 

@@ -5,6 +5,7 @@ import com.danang.safefood.util.TrangThaiViPhamConverter;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,8 +37,15 @@ public class ViPham {
     private String mucDo = "Trung binh";
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "maHoSo", nullable = false)
+    @JoinColumn(name = "maHoSo", nullable = true)
     private HoSoThanhTra hoSoThanhTra;
+
+    @Column(name ="soTienPhat")
+    private BigDecimal soTienPhat;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "maMau", nullable = true)
+    private MauKiemNghiem mauKiemNghiem;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "maLoaiViPham", nullable = false)

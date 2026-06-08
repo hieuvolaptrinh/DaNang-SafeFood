@@ -1,8 +1,9 @@
 import Badge from '@/components/Badge';
+import {
+  getInspectionTaskStatusBadge,
+  type NhiemVuStatus,
+} from '@/components/inspectionTaskStatus';
 import { cn } from '@/lib/utils';
-
-export type InspectionTaskAssignmentStatus = 'pending' | 'accepted';
-export type InspectionTaskProgressStatus = 'idle' | 'in-progress' | 'completed';
 
 export interface InspectionTaskRecord {
   id: string;
@@ -10,31 +11,15 @@ export interface InspectionTaskRecord {
   address: string;
   inspectionTime: string;
   inspectionContent: string;
-  assignmentStatus: InspectionTaskAssignmentStatus;
-  progressStatus: InspectionTaskProgressStatus;
-  progressNote: string;
+  trangThai: NhiemVuStatus;
+  ghiChu: string;
+  lyDoTuChoi?: string;
 }
 
 interface InspectionTaskListProps {
   tasks: InspectionTaskRecord[];
   selectedTaskId: string | null;
   onSelect: (taskId: string) => void;
-}
-
-function getStatusBadge(task: InspectionTaskRecord) {
-  if (task.progressStatus === 'completed') {
-    return { variant: 'active', label: 'Hoàn thành' };
-  }
-
-  if (task.progressStatus === 'in-progress') {
-    return { variant: 'pending', label: 'Đang kiểm tra' };
-  }
-
-  if (task.assignmentStatus === 'accepted') {
-    return { variant: 'open', label: 'Đã nhận' };
-  }
-
-  return { variant: 'pending', label: 'Chưa nhận' };
 }
 
 export default function InspectionTaskList({
@@ -46,7 +31,9 @@ export default function InspectionTaskList({
     <div className="space-y-3">
       {tasks.map((task) => {
         const isSelected = task.id === selectedTaskId;
-        const badge = getStatusBadge(task);
+        const badge = task.lyDoTuChoi
+          ? { variant: 'pending' as const, label: 'Từ chối' }
+          : getInspectionTaskStatusBadge(task.trangThai);
 
         return (
           <button
@@ -55,9 +42,9 @@ export default function InspectionTaskList({
             onClick={() => onSelect(task.id)}
             aria-pressed={isSelected}
             className={cn(
-              'w-full rounded-xl border bg-white p-4 text-left shadow-sm transition-all',
-              'hover:border-blue-300 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500/30',
-              isSelected ? 'border-blue-500 ring-2 ring-blue-100' : 'border-slate-200'
+              'w-full border bg-white p-4 text-left shadow-sm transition-all',
+              'hover:border-sky-400 hover:bg-sky-50/40 focus:outline-none focus:ring-2 focus:ring-sky-200',
+              isSelected ? 'border-sky-600 ring-2 ring-sky-100' : 'border-slate-300'
             )}
           >
             <div className="flex items-start justify-between gap-3">
@@ -70,13 +57,13 @@ export default function InspectionTaskList({
 
             <dl className="mt-4 space-y-2 text-sm text-slate-600">
               <div>
-                <dt className="text-[11px] font-bold uppercase tracking-wide text-slate-400">
+                <dt className="text-[11px] font-bold uppercase tracking-wide text-slate-500">
                   Địa chỉ
                 </dt>
                 <dd className="mt-0.5">{task.address}</dd>
               </div>
               <div>
-                <dt className="text-[11px] font-bold uppercase tracking-wide text-slate-400">
+                <dt className="text-[11px] font-bold uppercase tracking-wide text-slate-500">
                   Thời gian kiểm tra
                 </dt>
                 <dd className="mt-0.5">{task.inspectionTime}</dd>

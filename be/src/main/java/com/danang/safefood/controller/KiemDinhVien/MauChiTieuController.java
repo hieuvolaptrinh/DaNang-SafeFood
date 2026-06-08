@@ -39,7 +39,7 @@ public class MauChiTieuController {
     /**
      * Cập nhật kết quả nhiều chỉ tiêu của một mẫu (upsert).
      * PUT /api/mau-kiem-nghiem/{maMau}/chi-tieu
-     * Body: { "chiTieus": [ { "maChiTieu": "CT001", "ketQua": "Đạt" }, ... ] }
+     * Body: { "chiTieus": [ { "maChiTieu": "CT001", "ketQua": "Đạt"  ... ] }
      */
     @PutMapping
     public ResponseEntity<ApiResponse<List<MauChiTieuResponse>>> capNhatKetQuaChiTieu(

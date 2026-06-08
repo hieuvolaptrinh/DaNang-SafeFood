@@ -1,179 +1,235 @@
 'use client';
 
-import { useState } from 'react';
-import { FiEdit, FiEye } from 'react-icons/fi';
-import { mockInspections, type Inspection } from '@/data/mockData';
+import { useEffect, useMemo, useState } from 'react';
+import { Eye, Pencil, FileSpreadsheet, Plus, RefreshCw } from 'lucide-react';
 import AlertBanner from '@/components/AlertBanner';
-import Badge from '@/components/Badge';
-import CreateInspectionForm, { type InspectionFormResult } from '@/components/CreateInspectionForm';
+import CreateInspectionForm, {
+  createInitialChecklist,
+  type InspectionFacilityOption,
+  type InspectionFormResult,
+} from '@/components/CreateInspectionForm';
 import DataTable, { type Column } from '@/components/DataTable';
-import StatCard from '@/components/StatCard';
-import TableCard, { FilterSelect, Pagination, SearchInput } from '@/components/TableCard';
+import {
+  PageHeader,
+  FilterBar,
+  FilterField,
+  GovInput,
+  GovSelect,
+  GovBtn,
+  SectionCard,
+  GovPagination,
+  StatusBadge,
+  MiniStat,
+} from '@/components/GovUI';
+import {
+  coSoKinhDoanhApi,
+  hoSoThanhTraApi,
+  type HoSoThanhTraRequest,
+  type HoSoThanhTraResponse,
+  type HoSoThanhTraStatsResponse,
+} from '@/api/api';
 
 type RecordMode = 'list' | 'create' | 'view' | 'edit';
 
-type ChecklistResult = 'pass' | 'fail' | '';
-
-type DetailedInspection = InspectionFormResult;
-
-const standardChecklist: Record<string, 'pass' | 'fail'> = {
-  cleanProcessingArea: 'pass',
-  separateRawCookedArea: 'pass',
-  drainageSystem: 'pass',
-  noInsects: 'pass',
-  cleanUtensils: 'pass',
-  storageCabinet: 'pass',
-  coveredFood: 'pass',
-  separateUtensils: 'pass',
-  clearOrigin: 'pass',
-  hasInvoice: 'pass',
-  notExpired: 'pass',
-  hasSampleStorage: 'pass',
-  healthCheck: 'pass',
-  foodSafetyTraining: 'pass',
-  wearProtection: 'pass',
-  noInfectiousDisease: 'pass',
-  properProcessing: 'pass',
-  properStorage: 'pass',
-  noCrossContamination: 'pass',
-  postProcessingCleanup: 'pass',
+const EMPTY_STATS: HoSoThanhTraStatsResponse = {
+  total: 0,
+  completed: 0,
+  scheduled: 0,
+  failed: 0,
 };
 
-function createChecklistData(isFail: boolean): Record<string, 'pass' | 'fail'> {
-  const allPass: Record<string, 'pass' | 'fail'> = { ...standardChecklist };
+function normalizeError(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
+}
 
-  if (!isFail) {
-    return allPass;
+function getStatusVariant(status?: string | null) {
+  switch ((status || '').toLowerCase()) {
+    case 'pass':
+      return 'success';
+    case 'fail':
+      return 'danger';
+    case 'scheduled':
+      return 'warning';
+    default:
+      return 'default';
+  }
+}
+
+function getStatusLabel(status?: string | null) {
+  switch ((status || '').toLowerCase()) {
+    case 'pass':
+      return 'Đạt';
+    case 'fail':
+      return 'Không đạt';
+    case 'scheduled':
+      return 'Đã lên lịch';
+    default:
+      return status || 'Chưa có';
+  }
+}
+
+function mapBusinessOptions(
+  pageData: Awaited<ReturnType<typeof coSoKinhDoanhApi.search>>
+): InspectionFacilityOption[] {
+  return pageData.content.map((item) => ({
+    id: item.maCoSo,
+    name: item.tenCoSo,
+    address: item.tenPhuongXa || '',
+    owner: '',
+    phone: '',
+    businessType: item.loaiHinhKinhDoanh?.join(', ') || '',
+    businessLicense: item.soGiayPhep || '',
+  }));
+}
+
+function mapRecordToFormData(record: HoSoThanhTraResponse): InspectionFormResult {
+  const checklist = createInitialChecklist();
+  if (record.checklist) {
+    for (const [key, value] of Object.entries(record.checklist)) {
+      if (key in checklist) {
+        checklist[key] = value === 'pass' ? 'pass' : value === 'fail' ? 'fail' : '';
+      }
+    }
   }
 
   return {
-    ...allPass,
-    noInsects: 'fail',
-    notExpired: 'fail',
-    noCrossContamination: 'fail',
+    facilityId: record.facilityId || '',
+    businessName: record.businessName || record.business || '',
+    address: record.address || '',
+    phone: record.phone || '',
+    owner: record.owner || '',
+    businessType: record.businessType || '',
+    inspectionTime: record.inspectionTime || '',
+    businessLicense: record.businessLicense || '',
+    foodSafetyCertificate: record.foodSafetyCertificate || '',
+    healthCertificate: record.healthCertificate || '',
+    trainingCertificate: record.trainingCertificate || '',
+    checklist,
+    violationStatus: record.violationStatus === 'has' ? 'has' : 'none',
+    violationDescription: record.violationDescription || '',
+    conclusion: record.conclusion === 'fail' ? 'fail' : 'pass',
+    generalComment: record.generalComment || '',
+    actionMeasure: record.actionMeasure || '',
+    recommendation: record.recommendation || '',
   };
 }
 
-const defaultDetailedInspections: DetailedInspection[] = mockInspections.map((inspection) => {
-  const [day, month, year] = inspection.date.split('/');
-  const isFail = inspection.result === 'fail';
+function mapFormToRequest(form: InspectionFormResult): HoSoThanhTraRequest {
   return {
-    ...inspection,
-    result: inspection.result === 'pass' ? 'pass' : 'fail',
-    businessName: inspection.business,
-    address: '123 Nguyễn Văn Linh, Hải Châu, Đà Nẵng',
-    phone: '0903 123 456',
-    owner: 'Nguyễn Thị Ánh',
-    businessType: 'Nhà hàng',
-    inspectionTime: `${year}-${month}-${day}T09:30`,
-    businessLicense: 'Hợp lệ',
-    foodSafetyCertificate: 'Hợp lệ',
-    healthCertificate: 'Hợp lệ',
-    trainingCertificate: 'Hợp lệ',
-    checklist: createChecklistData(isFail),
-    violationStatus: isFail ? 'has' : 'none',
-    violationDescription: isFail
-      ? 'Phát hiện một số lỗi trong bảo quản nguyên liệu và hồ sơ không đầy đủ.'
-      : 'Không phát hiện vi phạm.',
-    conclusion: inspection.result === 'pass' ? 'pass' : 'fail',
-    generalComment: inspection.result === 'pass'
-      ? 'Cơ sở đáp ứng yêu cầu an toàn thực phẩm.'
-      : 'Cần khắc phục ngay các lỗi đã xác định.',
-    actionMeasure: inspection.result === 'pass'
-      ? 'Duy trì quy trình hiện tại và kiểm tra định kỳ.'
-      : 'Xử lý khắc phục tại chỗ và cập nhật hồ sơ pháp lý.',
-    recommendation: inspection.result === 'pass'
-      ? 'Tiếp tục giám sát định kỳ.'
-      : 'Đào tạo lại nhân viên và hoàn thiện hồ sơ pháp lý.',
+    facilityId: form.facilityId,
+    inspectionTime: form.inspectionTime,
+    businessLicense: form.businessLicense,
+    foodSafetyCertificate: form.foodSafetyCertificate,
+    healthCertificate: form.healthCertificate,
+    trainingCertificate: form.trainingCertificate,
+    checklist: form.checklist,
+    violationStatus: form.violationStatus,
+    violationDescription: form.violationDescription.trim(),
+    conclusion: form.conclusion,
+    generalComment: form.generalComment.trim(),
+    actionMeasure: form.actionMeasure.trim(),
+    recommendation: form.recommendation.trim(),
   };
-});
+}
 
-export default function ThanhTraKiemDinhPage() {
+export default function HoSoThanhTraPage() {
   const [mode, setMode] = useState<RecordMode>('list');
-  const [inspections, setInspections] = useState<DetailedInspection[]>(defaultDetailedInspections);
-  const [selectedRecord, setSelectedRecord] = useState<DetailedInspection | null>(null);
-  const [search, setSearch] = useState('');
+  const [records, setRecords] = useState<HoSoThanhTraResponse[]>([]);
+  const [selectedRecord, setSelectedRecord] = useState<HoSoThanhTraResponse | null>(null);
+  const [businessOptions, setBusinessOptions] = useState<InspectionFacilityOption[]>([]);
+  const [stats, setStats] = useState<HoSoThanhTraStatsResponse>(EMPTY_STATS);
+  const [maHoSo, setMaHoSo] = useState('');
+  const [coSo, setCoSo] = useState('');
+  const [thanhTraVien, setThanhTraVien] = useState('');
   const [resultFilter, setResultFilter] = useState('');
-  const [feedbackMessage, setFeedbackMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
 
-  const filtered = inspections.filter((inspection) => {
-    const matchSearch =
-      !search ||
-      inspection.business.toLowerCase().includes(search.toLowerCase()) ||
-      inspection.id.toLowerCase().includes(search.toLowerCase());
-    const matchResult = !resultFilter || inspection.result === resultFilter;
-    return matchSearch && matchResult;
-  });
+  const loadData = async () => {
+    setIsLoading(true);
+    setErrorMessage('');
 
-  const columns: Column<DetailedInspection>[] = [
-    {
-      key: 'id',
-      header: 'Mã hồ sơ',
-      render: (inspection) => (
-        <span className="font-mono text-[12px] text-slate-500">{inspection.id}</span>
-      ),
-    },
-    {
-      key: 'business',
-      header: 'Cơ sở',
-      render: (inspection) => <strong className="text-slate-800">{inspection.business}</strong>,
-    },
-    { key: 'type', header: 'Loại thanh tra' },
+    try {
+      const [recordPage, statsData, businessPage] = await Promise.all([
+        hoSoThanhTraApi.search('', '', '', 0, 100),
+        hoSoThanhTraApi.getStats(),
+        coSoKinhDoanhApi.search('', 0, 100),
+      ]);
+
+      setRecords(recordPage.content);
+      setStats(statsData);
+      setBusinessOptions(mapBusinessOptions(businessPage));
+    } catch (error) {
+      setErrorMessage(normalizeError(error, 'Không thể tải dữ liệu hồ sơ thanh tra'));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadData();
+  }, []);
+
+  const filtered = useMemo(() => {
+    return records.filter((record) => {
+      const matchMaHoSo =
+        !maHoSo ||
+        (record.id || '').toLowerCase().includes(maHoSo.toLowerCase());
+
+      const matchCoSo =
+        !coSo ||
+        (record.business || '').toLowerCase().includes(coSo.toLowerCase());
+
+      const matchThanhTraVien =
+        !thanhTraVien ||
+        (record.inspector || '').toLowerCase().includes(thanhTraVien.toLowerCase());
+
+      const matchResult = !resultFilter || (record.result || '').toLowerCase() === resultFilter.toLowerCase();
+      return matchMaHoSo && matchCoSo && matchThanhTraVien && matchResult;
+    });
+  }, [records, resultFilter, maHoSo, coSo, thanhTraVien]);
+
+  const columns: Column<HoSoThanhTraResponse>[] = [
+    { key: 'id', header: 'Mã hồ sơ' },
+    { key: 'business', header: 'Cơ sở' },
     { key: 'inspector', header: 'Thanh tra viên' },
-    { key: 'date', header: 'Ngày' },
+    {
+      key: 'date',
+      header: 'Ngày kiểm tra',
+      render: (record) => record.date || 'Chưa có',
+    },
     {
       key: 'result',
-      header: 'Kết quả',
-      render: (inspection) => <Badge variant={inspection.result} />,
+      header: 'Kết luận',
+      render: (record) => (
+        <StatusBadge variant={getStatusVariant(record.result)} label={getStatusLabel(record.result)} />
+      ),
     },
     {
       key: 'score',
       header: 'Điểm',
-      render: (inspection) => (
-        <span
-          className={`font-bold ${
-            inspection.score >= 80
-              ? 'text-emerald-600'
-              : inspection.score >= 60
-                ? 'text-amber-600'
-                : 'text-red-600'
-          }`}
-        >
-          {inspection.score}/100
-        </span>
-      ),
+      render: (record) => (record.score ?? 0).toFixed(0),
     },
     {
       key: 'actions',
       header: 'Thao tác',
-      render: (inspection) => (
-        <div className="flex gap-1.5">
-          <button
-            type="button"
-            onClick={() => handleViewInspection(inspection)}
-            className="h-7 w-7 rounded-md border border-slate-200 bg-white text-sm transition-colors hover:bg-slate-50"
-          >
-            <FiEye size={16} className="mx-auto" />
-          </button>
-          <button
-            type="button"
-            onClick={() => handleEditInspection(inspection)}
-            className="h-7 w-7 rounded-md border border-slate-200 bg-white text-sm transition-colors hover:bg-slate-50"
-          >
-            <FiEdit size={16} className="mx-auto" />
-          </button>
+      render: (record) => (
+        <div style={{ display: 'flex', gap: '3px' }}>
+          <GovBtn variant="secondary" size="sm" onClick={() => void handleView(record.id)} title="Xem">
+            <Eye style={{ width: 12, height: 12 }} />
+          </GovBtn>
+          <GovBtn variant="outline" size="sm" onClick={() => void handleEdit(record.id)} title="Sửa">
+            <Pencil style={{ width: 12, height: 12 }} />
+          </GovBtn>
         </div>
       ),
     },
   ];
 
-  const total = inspections.length;
-  const completed = inspections.filter((inspection) => inspection.result === 'pass' || inspection.result === 'fail').length;
-  const failed = inspections.filter((inspection) => inspection.result === 'fail').length;
-
   const handleCreateClick = () => {
-    setFeedbackMessage('');
     setSelectedRecord(null);
+    setSuccessMessage('');
     setMode('create');
   };
 
@@ -182,126 +238,159 @@ export default function ThanhTraKiemDinhPage() {
     setMode('list');
   };
 
-  const handleCreateSuccess = (record: DetailedInspection) => {
-    setInspections((current) => [record, ...current]);
-    setSelectedRecord(null);
+  const handleCreateSuccess = async (form: InspectionFormResult) => {
+    const created = await hoSoThanhTraApi.create(mapFormToRequest(form));
+    setRecords((current) => [created, ...current]);
+    setSelectedRecord(created);
+    setSuccessMessage(`Đã tạo hồ sơ ${created.id}`);
     setMode('list');
-    setFeedbackMessage('Lưu biên bản thành công. Hồ sơ kiểm tra mới đã được thêm vào danh sách.');
+    void loadData();
   };
 
-  const handleUpdateSuccess = (record: DetailedInspection) => {
-    setInspections((current) => current.map((item) => (item.id === record.id ? record : item)));
-    setSelectedRecord(null);
+  const handleUpdateSuccess = async (form: InspectionFormResult) => {
+    if (!selectedRecord) {
+      return;
+    }
+
+    const updated = await hoSoThanhTraApi.update(selectedRecord.id, mapFormToRequest(form));
+    setRecords((current) => current.map((item) => (item.id === updated.id ? updated : item)));
+    setSelectedRecord(updated);
+    setSuccessMessage(`Đã cập nhật hồ sơ ${updated.id}`);
     setMode('list');
-    setFeedbackMessage('Cập nhật thành công');
+    void loadData();
   };
 
-  const handleViewInspection = (inspection: DetailedInspection) => {
-    setFeedbackMessage('');
-    setSelectedRecord(inspection);
-    setMode('view');
+  const handleView = async (id: string) => {
+    setErrorMessage('');
+    try {
+      const detail = await hoSoThanhTraApi.getById(id);
+      console.log('[DEBUG] API response:', JSON.stringify(detail, null, 2));
+      console.log('[DEBUG] API checklist:', detail.checklist);
+      const mapped = mapRecordToFormData(detail);
+      console.log('[DEBUG] Mapped checklist:', mapped.checklist);
+      setSelectedRecord(detail);
+      setMode('view');
+    } catch (error) {
+      setErrorMessage(normalizeError(error, `Không thể tải hồ sơ ${id}`));
+    }
   };
 
-  const handleEditInspection = (inspection: DetailedInspection) => {
-    setFeedbackMessage('');
-    setSelectedRecord(inspection);
-    setMode('edit');
+  const handleEdit = async (id: string) => {
+    setErrorMessage('');
+    try {
+      const detail = await hoSoThanhTraApi.getById(id);
+      setSelectedRecord(detail);
+      setMode('edit');
+    } catch (error) {
+      setErrorMessage(normalizeError(error, `Không thể tải hồ sơ ${id}`));
+    }
   };
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="font-display text-[22px] font-extrabold text-slate-900">
-            Thanh tra & Kiểm định
-          </h1>
-          <p className="mt-0.5 text-[13px] text-slate-500">
-            Theo dõi tất cả lịch và kết quả thanh tra an toàn thực phẩm
-          </p>
-        </div>
+      <PageHeader
+        title="Hồ sơ thanh tra"
+        subtitle="Quản lý hồ sơ thanh tra an toàn thực phẩm"
+        actions={
+          mode === 'list' ? (
+            <>
+              <GovBtn variant="secondary" onClick={() => void loadData()}>
+                <RefreshCw style={{ width: 12, height: 12 }} /> Làm mới
+              </GovBtn>
+              <GovBtn variant="secondary">
+                <FileSpreadsheet style={{ width: 12, height: 12 }} /> Xuất Excel
+              </GovBtn>
+              <GovBtn variant="primary" onClick={handleCreateClick}>
+                <Plus style={{ width: 12, height: 12 }} /> Tạo hồ sơ
+              </GovBtn>
+            </>
+          ) : undefined
+        }
+      />
 
-        {mode === 'list' && (
-          <div className="flex gap-2">
-            <button className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-[13px] font-semibold text-slate-600 hover:bg-slate-50">
-              📥 Xuất
-            </button>
-            <button
-              type="button"
-              onClick={handleCreateClick}
-              className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-2 text-[13px] font-semibold text-white hover:bg-blue-700"
-            >
-              + Tạo hồ sơ thanh tra
-            </button>
-          </div>
-        )}
-      </div>
+      {successMessage && mode === 'list' && <AlertBanner type="success" title={successMessage} />}
+      {errorMessage && <AlertBanner type="danger" title={errorMessage} />}
 
       {mode === 'create' ? (
-        <CreateInspectionForm onCancel={handleCancelForm} onSuccess={handleCreateSuccess} />
+        <CreateInspectionForm
+          businessOptions={businessOptions}
+          onCancel={handleCancelForm}
+          onSuccess={handleCreateSuccess}
+        />
       ) : mode === 'edit' ? (
         <CreateInspectionForm
           mode="edit"
-          data={selectedRecord ?? undefined}
-          recordId={selectedRecord?.id}
+          data={selectedRecord ? mapRecordToFormData(selectedRecord) : undefined}
+          businessOptions={businessOptions}
           onCancel={handleCancelForm}
           onSuccess={handleUpdateSuccess}
         />
       ) : mode === 'view' ? (
         <CreateInspectionForm
           mode="view"
-          data={selectedRecord ?? undefined}
+          data={selectedRecord ? mapRecordToFormData(selectedRecord) : undefined}
+          businessOptions={businessOptions}
           onCancel={handleCancelForm}
-          onSuccess={() => {}}
+          onSuccess={async () => {}}
         />
       ) : (
         <>
-          {feedbackMessage && <AlertBanner type="success" title={feedbackMessage} />}
-
-          <AlertBanner
-            type="warning"
-            title="8 cuộc thanh tra đến hạn tuần này"
-            message="Vui lòng xem xét và hoàn thành tất cả các cuộc thanh tra quá hạn trước thứ Sáu, ngày 17/01."
-          />
-
-          <div className="mb-6 grid grid-cols-4 gap-4">
-            <StatCard label="Tổng số" value={total} color="blue" />
-            <StatCard label="Hoàn thành" value={completed} color="green" />
-            <StatCard label="Đã lên lịch" value={56} color="orange" />
-            <StatCard label="Không đạt" value={failed} color="red" />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '10px', marginBottom: '12px' }}>
+            <MiniStat label="Tổng hồ sơ" value={stats.total} color="blue" />
+            <MiniStat label="Hoàn thành" value={stats.completed} color="green" />
+            <MiniStat label="Đã lên lịch" value={stats.scheduled} color="orange" />
+            <MiniStat label="Không đạt" value={stats.failed} color="red" />
           </div>
 
-          <TableCard
-            title="Hồ sơ thanh tra"
-            controls={
-              <>
-                <SearchInput placeholder="Tìm cơ sở..." onChange={setSearch} />
-                <FilterSelect
-                  options={[
-                    { value: '', label: 'Tất cả kết quả' },
-                    { value: 'pass', label: 'Đạt' },
-                    { value: 'fail', label: 'Không đạt' },
-                    { value: 'scheduled', label: 'Đã lên lịch' },
-                  ]}
-                  onChange={setResultFilter}
-                />
-                <FilterSelect
-                  options={[
-                    { value: '', label: 'Tất cả thanh tra viên' },
-                    { value: 'Nguyễn Văn Trần', label: 'Nguyễn Văn Trần' },
-                    { value: 'Lê Thị Mai', label: 'Lê Thị Mai' },
-                    { value: 'Phạm Văn Đức', label: 'Phạm Văn Đức' },
-                  ]}
-                />
-              </>
-            }
-            footer={<Pagination info={`Hiển thị 1–${filtered.length} trong tổng số ${total} hồ sơ`} />}
+           <FilterBar>
+            <FilterField label="Mã hồ sơ">
+              <GovInput placeholder="VD: HS001" value={maHoSo} onChange={setMaHoSo} width={160} />
+            </FilterField>
+            <FilterField label="Cơ sở">
+              <GovInput placeholder="Tên cơ sở" value={coSo} onChange={setCoSo} width={220} />
+            </FilterField>
+            <FilterField label="Thanh tra viên">
+              <GovInput placeholder="Họ tên" value={thanhTraVien} onChange={setThanhTraVien} width={200} />
+            </FilterField>
+            <FilterField label="Kết luận">
+              <GovSelect
+                value={resultFilter}
+                onChange={setResultFilter}
+                options={[
+                  { value: '', label: '-- Tất cả --' },
+                  { value: 'pass', label: 'Đạt' },
+                  { value: 'fail', label: 'Không đạt' },
+                  { value: 'scheduled', label: 'Đã lên lịch' },
+                ]}
+                width={180}
+              />
+            </FilterField>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px' }}>
+              <GovBtn variant="primary">Tìm kiếm</GovBtn>
+              <GovBtn
+                variant="secondary"
+                onClick={() => {
+                  setMaHoSo('');
+                  setCoSo('');
+                  setThanhTraVien('');
+                  setResultFilter('');
+                }}
+              >
+                Xóa lọc
+              </GovBtn>
+            </div>
+          </FilterBar>
+
+          <SectionCard
+            title={`Danh sách hồ sơ thanh tra (${filtered.length} hồ sơ)`}
+            footer={<GovPagination info={`Hiển thị ${filtered.length} / ${records.length} hồ sơ`} />}
           >
             <DataTable
               columns={columns}
               data={filtered}
-              emptyMessage="Không tìm thấy hồ sơ nào"
+              emptyMessage={isLoading ? 'Đang tải hồ sơ thanh tra...' : 'Không tìm thấy hồ sơ thanh tra nào.'}
             />
-          </TableCard>
+          </SectionCard>
         </>
       )}
     </div>

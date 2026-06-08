@@ -27,6 +27,9 @@ public class HinhThucKhacPhuc {
     @Builder.Default
     private TrangThaiKhacPhuc tinhTrangKhacPhuc = TrangThaiKhacPhuc.CHUA_KHAC_PHUC;
 
+    @Column(name ="noiDungKhacPhuc")
+    private String noiDungKhacPhuc;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "maViPham")
     private ViPham viPham;

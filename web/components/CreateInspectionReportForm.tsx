@@ -4,7 +4,7 @@ import { ChangeEvent, FormEvent, ReactNode, RefObject, useMemo, useRef, useState
 import { FiCheckCircle, FiFileText, FiPaperclip, FiTrash2 } from 'react-icons/fi';
 import AlertBanner from '@/components/AlertBanner';
 import Badge from '@/components/Badge';
-import { mockBusinesses, type InspectionReportResult } from '@/data/mockData';
+import type { InspectionReportResult } from '@/data/mockData';
 import { cn } from '@/lib/utils';
 
 type InspectionTypeValue = 'Định kỳ' | 'Đột xuất' | 'Theo phản ánh';
@@ -41,8 +41,15 @@ export interface CreateInspectionReportPayload {
   hasInspectionRecord: boolean;
 }
 
+export interface InspectionReportBusinessOption {
+  id: string;
+  name: string;
+  district: string;
+}
+
 interface CreateInspectionReportFormProps {
   reportId: string;
+  businessOptions: InspectionReportBusinessOption[];
   onCancel: () => void;
   onSubmit?: (values: CreateInspectionReportPayload) => Promise<void> | void;
 }
@@ -120,12 +127,6 @@ const initialFormState: ReportFormState = {
   attachment: null,
   hasInspectionRecord: true,
 };
-
-function mockSaveInspectionReport() {
-  return new Promise<void>((resolve) => {
-    window.setTimeout(() => resolve(), 1200);
-  });
-}
 
 function formatFileSize(bytes: number) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
@@ -230,8 +231,8 @@ function validateForm(form: ReportFormState, fileError: string): ReportFormError
 
 function FormSectionCard({ title, description, children }: FormSectionCardProps) {
   return (
-    <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-      <div className="border-b border-slate-200 px-5 py-4">
+    <section className="overflow-hidden border border-slate-300 bg-white shadow-sm">
+      <div className="border-b border-slate-300 px-5 py-4">
         <h2 className="text-sm font-bold text-slate-800">{title}</h2>
         {description && <p className="mt-1 text-[13px] text-slate-500">{description}</p>}
       </div>
@@ -258,6 +259,7 @@ function FormField({ label, htmlFor, required, hint, error, children }: FieldPro
 
 function ReportInfoSection({
   reportId,
+  businessOptions,
   form,
   errors,
   showError,
@@ -265,6 +267,7 @@ function ReportInfoSection({
   onFieldChange,
 }: {
   reportId: string;
+  businessOptions: InspectionReportBusinessOption[];
   form: ReportFormState;
   errors: ReportFormErrors;
   showError: (field: ReportFormField) => boolean;
@@ -282,7 +285,7 @@ function ReportInfoSection({
             id="report-id"
             readOnly
             value={reportId}
-            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 font-mono text-sm text-slate-700 outline-none"
+            className="w-full border border-slate-300 bg-slate-50 px-3 py-2.5 font-mono text-sm text-slate-700 outline-none"
           />
         </FormField>
 
@@ -298,13 +301,13 @@ function ReportInfoSection({
             onChange={(event) => onFieldChange('facilityId', event.target.value)}
             onBlur={() => onFieldBlur('facilityId')}
             className={cn(
-              'w-full cursor-pointer appearance-none rounded-xl border bg-slate-50 px-3 py-2.5 pr-9 text-sm text-slate-800 outline-none transition',
+              'w-full cursor-pointer appearance-none border bg-slate-50 px-3 py-2.5 pr-9 text-sm text-slate-800 outline-none transition',
               'bg-[url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'12\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%2364748b\' stroke-width=\'2\'%3E%3Cpath d=\'M6 9l6 6 6-6\'/%3E%3C/svg%3E")] bg-[right_12px_center] bg-no-repeat',
-              showError('facilityId') && errors.facilityId ? 'border-red-300 focus:border-red-500' : 'border-slate-200 focus:border-blue-500'
+              showError('facilityId') && errors.facilityId ? 'border-red-300 focus:border-red-500' : 'border-slate-300 focus:border-sky-600'
             )}
           >
             <option value="">Chọn cơ sở kinh doanh</option>
-            {mockBusinesses.map((business) => (
+            {businessOptions.map((business) => (
               <option key={business.id} value={business.id}>
                 {business.name} • {business.district}
               </option>
@@ -325,10 +328,10 @@ function ReportInfoSection({
             onChange={(event) => onFieldChange('inspectionDate', event.target.value)}
             onBlur={() => onFieldBlur('inspectionDate')}
             className={cn(
-              'w-full rounded-xl border bg-slate-50 px-3 py-2.5 text-sm text-slate-800 outline-none transition',
+              'w-full border bg-slate-50 px-3 py-2.5 text-sm text-slate-800 outline-none transition',
               showError('inspectionDate') && errors.inspectionDate
                 ? 'border-red-300 focus:border-red-500'
-                : 'border-slate-200 focus:border-blue-500'
+                : 'border-slate-300 focus:border-sky-600'
             )}
           />
         </FormField>
@@ -345,11 +348,11 @@ function ReportInfoSection({
             onChange={(event) => onFieldChange('inspectionType', event.target.value as InspectionTypeValue | '')}
             onBlur={() => onFieldBlur('inspectionType')}
             className={cn(
-              'w-full cursor-pointer appearance-none rounded-xl border bg-slate-50 px-3 py-2.5 pr-9 text-sm text-slate-800 outline-none transition',
+              'w-full cursor-pointer appearance-none border bg-slate-50 px-3 py-2.5 pr-9 text-sm text-slate-800 outline-none transition',
               'bg-[url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'12\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%2364748b\' stroke-width=\'2\'%3E%3Cpath d=\'M6 9l6 6 6-6\'/%3E%3C/svg%3E")] bg-[right_12px_center] bg-no-repeat',
               showError('inspectionType') && errors.inspectionType
                 ? 'border-red-300 focus:border-red-500'
-                : 'border-slate-200 focus:border-blue-500'
+                : 'border-slate-300 focus:border-sky-600'
             )}
           >
             <option value="">Chọn loại thanh tra</option>
@@ -398,8 +401,8 @@ function ReportContentSection({
           onBlur={() => onFieldBlur('content')}
           placeholder="Ví dụ: Đã kiểm tra khu sơ chế, kho bảo quản, hồ sơ nguồn gốc nguyên liệu và quy trình vệ sinh dụng cụ..."
           className={cn(
-            'w-full rounded-xl border bg-slate-50 px-3 py-2.5 text-sm leading-6 text-slate-800 outline-none transition placeholder:text-slate-400',
-            showError('content') && errors.content ? 'border-red-300 focus:border-red-500' : 'border-slate-200 focus:border-blue-500'
+            'w-full border bg-slate-50 px-3 py-2.5 text-sm leading-6 text-slate-800 outline-none transition placeholder:text-slate-400',
+            showError('content') && errors.content ? 'border-red-300 focus:border-red-500' : 'border-slate-300 focus:border-sky-600'
           )}
         />
       </FormField>
@@ -440,8 +443,8 @@ function ReportCommentSection({
           onBlur={() => onFieldBlur('comment')}
           placeholder="Ví dụ: Cơ sở đáp ứng cơ bản các yêu cầu, cần bổ sung nhật ký vệ sinh định kỳ và duy trì lưu mẫu đúng quy định..."
           className={cn(
-            'w-full rounded-xl border bg-slate-50 px-3 py-2.5 text-sm leading-6 text-slate-800 outline-none transition placeholder:text-slate-400',
-            showError('comment') && errors.comment ? 'border-red-300 focus:border-red-500' : 'border-slate-200 focus:border-blue-500'
+            'w-full border bg-slate-50 px-3 py-2.5 text-sm leading-6 text-slate-800 outline-none transition placeholder:text-slate-400',
+            showError('comment') && errors.comment ? 'border-red-300 focus:border-red-500' : 'border-slate-300 focus:border-sky-600'
           )}
         />
       </FormField>
@@ -484,10 +487,10 @@ function ResultSection({
                 <label
                   key={option.value}
                   className={cn(
-                    'cursor-pointer rounded-xl border p-4 transition-all',
+                    'cursor-pointer border p-4 transition-all',
                     isSelected
-                      ? 'border-blue-200 bg-blue-50 shadow-sm'
-                      : 'border-slate-200 bg-slate-50 hover:border-slate-300'
+                      ? 'border-sky-300 bg-sky-50 shadow-sm'
+                      : 'border-slate-300 bg-slate-50 hover:border-slate-400'
                   )}
                 >
                   <input
@@ -519,7 +522,7 @@ function ResultSection({
           {showError('result') && errors.result && <p className="text-sm font-medium text-red-600">{errors.result}</p>}
         </div>
 
-        <div className="space-y-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+        <div className="space-y-4 border border-slate-300 bg-slate-50 p-4">
           <FormField
             label="Điểm đánh giá"
             htmlFor="report-score"
@@ -537,14 +540,14 @@ function ResultSection({
               onBlur={() => onFieldBlur('score')}
               placeholder="Nhập điểm"
               className={cn(
-                'w-full rounded-xl border bg-white px-3 py-2.5 text-sm outline-none transition',
+                'w-full border bg-white px-3 py-2.5 text-sm outline-none transition',
                 scoreFeedback.inputClassName,
                 showError('score') && errors.score ? 'border-red-300 focus:border-red-500' : ''
               )}
             />
           </FormField>
 
-          <div className={cn('rounded-xl border px-4 py-3 text-sm font-semibold', scoreFeedback.badgeClassName)}>
+          <div className={cn('border px-4 py-3 text-sm font-semibold', scoreFeedback.badgeClassName)}>
             {form.score === '' ? 'Chưa nhập điểm' : `${form.score}/100`}
           </div>
 
@@ -593,17 +596,17 @@ function AttachmentSection({
             onChange={onFileChange}
             onBlur={() => onFieldBlur('attachment')}
             className={cn(
-              'w-full rounded-xl border bg-slate-50 px-3 py-2 text-sm text-slate-700 outline-none transition file:mr-3 file:rounded-lg file:border-0 file:bg-white file:px-3 file:py-2 file:text-sm file:font-semibold file:text-slate-700',
-              showError('attachment') && errors.attachment ? 'border-red-300 focus:border-red-500' : 'border-slate-200 focus:border-blue-500'
+              'w-full border bg-slate-50 px-3 py-2 text-sm text-slate-700 outline-none transition file:mr-3 file:border-0 file:bg-white file:px-3 file:py-2 file:text-sm file:font-semibold file:text-slate-700',
+              showError('attachment') && errors.attachment ? 'border-red-300 focus:border-red-500' : 'border-slate-300 focus:border-sky-600'
             )}
           />
         </FormField>
 
         {form.attachment && (
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+          <div className="border border-slate-300 bg-slate-50 p-4">
             <div className="flex items-center justify-between gap-4">
               <div className="flex min-w-0 items-center gap-3">
-                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center border border-sky-200 bg-sky-50 text-sky-600">
                   <FiPaperclip size={18} />
                 </div>
                 <div className="min-w-0">
@@ -615,7 +618,7 @@ function AttachmentSection({
               <button
                 type="button"
                 onClick={onRemoveFile}
-                className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+                className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center border border-slate-300 bg-white text-slate-500 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600"
                 aria-label="Xóa tệp đính kèm"
               >
                 <FiTrash2 size={16} />
@@ -648,8 +651,8 @@ function ConfirmationSection({
     >
       <label
         className={cn(
-          'flex cursor-pointer items-start justify-between gap-4 rounded-xl border p-4 transition-all',
-          checked ? 'border-emerald-200 bg-emerald-50' : 'border-slate-200 bg-slate-50'
+          'flex cursor-pointer items-start justify-between gap-4 border p-4 transition-all',
+          checked ? 'border-emerald-200 bg-emerald-50' : 'border-slate-300 bg-slate-50'
         )}
       >
         <div className="flex items-start gap-3">
@@ -670,7 +673,7 @@ function ConfirmationSection({
 
         <div
           className={cn(
-            'flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl border',
+            'flex h-9 w-9 flex-shrink-0 items-center justify-center border',
             checked ? 'border-emerald-200 bg-white text-emerald-600' : 'border-slate-200 bg-white text-slate-400'
           )}
         >
@@ -685,6 +688,7 @@ function ConfirmationSection({
 
 export default function CreateInspectionReportForm({
   reportId,
+  businessOptions,
   onCancel,
   onSubmit,
 }: CreateInspectionReportFormProps) {
@@ -696,8 +700,8 @@ export default function CreateInspectionReportForm({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const selectedFacility = useMemo(
-    () => mockBusinesses.find((business) => business.id === form.facilityId),
-    [form.facilityId]
+    () => businessOptions.find((business) => business.id === form.facilityId),
+    [businessOptions, form.facilityId]
   );
 
   const errors = useMemo(() => validateForm(form, fileError), [fileError, form]);
@@ -762,7 +766,6 @@ export default function CreateInspectionReportForm({
     setSubmitError('');
 
     try {
-      await mockSaveInspectionReport();
       await onSubmit?.({
         facilityId: selectedFacility.id,
         facilityName: selectedFacility.name,
@@ -797,7 +800,7 @@ export default function CreateInspectionReportForm({
           type="button"
           onClick={onCancel}
           disabled={isSubmitting}
-          className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+          className="border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
         >
           Hủy
         </button>
@@ -816,6 +819,7 @@ export default function CreateInspectionReportForm({
       <form onSubmit={handleSubmit} className="space-y-5">
         <ReportInfoSection
           reportId={reportId}
+          businessOptions={businessOptions}
           form={form}
           errors={errors}
           showError={showError}
@@ -867,10 +871,10 @@ export default function CreateInspectionReportForm({
           />
         </div>
 
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-          <div className="flex flex-col gap-4 border-t border-slate-100 px-5 py-4 md:flex-row md:items-center md:justify-between">
+        <div className="overflow-hidden border border-slate-300 bg-white shadow-sm">
+          <div className="flex flex-col gap-4 border-t border-slate-300 px-5 py-4 md:flex-row md:items-center md:justify-between">
             <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center border border-sky-200 bg-sky-50 text-sky-600">
                 <FiFileText size={18} />
               </div>
               <div>
@@ -888,14 +892,14 @@ export default function CreateInspectionReportForm({
                 type="button"
                 onClick={onCancel}
                 disabled={isSubmitting}
-                className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                className="border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Hủy
               </button>
               <button
                 type="submit"
                 disabled={!isFormValid || isSubmitting}
-                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                className="border border-sky-700 bg-sky-700 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-sky-800 disabled:cursor-not-allowed disabled:border-slate-300 disabled:bg-slate-300"
               >
                 {isSubmitting ? 'Đang gửi...' : 'Gửi báo cáo'}
               </button>

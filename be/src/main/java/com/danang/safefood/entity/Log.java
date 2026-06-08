@@ -23,8 +23,14 @@ public class Log {
     @Column(name = "time", nullable = false)
     private LocalDateTime time;
 
+    private String location;
+
+    private String device;
+
+    private Boolean isAbnormal; // trạng thái phiên đăng nhập này có bất thường ko
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "maNguoiDung", nullable = false)
     private NguoiDung nguoiDung;
-}
 
+}

@@ -44,16 +44,27 @@ class AuthCubit extends Cubit<AuthState> {
   /// để tránh lỗi khi JWT không chứa đủ claims.
   void onLoginSuccess(AuthResponse response) {
     final user = response.user;
-    emit(AuthState(
-      status: AuthStatus.authenticated,
-      accessToken: response.accessToken,
-      username: user.username,
-      userId: user.id,
-      fullName: user.fullName,
-      email: user.email,
-      phone: user.phone,
-      roles: user.role,
-    ));
+    emit(
+      AuthState(
+        status: AuthStatus.authenticated,
+        accessToken: response.accessToken,
+        username: user.username,
+        userId: user.id,
+        fullName: user.fullName,
+        email: user.email,
+        phone: user.phone,
+        roles: user.role,
+        lastLogin: response.loginLog,
+      ),
+    );
+  }
+
+  /// Xoá thông tin phiên đăng nhập cuối — gọi sau khi đã hiển thị banner
+  /// để tránh hiển thị lặp lại khi rebuild trang chủ.
+  void acknowledgeLastLogin() {
+    if (state.lastLogin != null) {
+      emit(state.copyWith(clearLastLogin: true));
+    }
   }
 
   /// Đăng xuất — xóa token và reset state
@@ -71,16 +82,18 @@ class AuthCubit extends Cubit<AuthState> {
           .map((e) => e.toString())
           .toList();
 
-      emit(AuthState(
-        status: AuthStatus.authenticated,
-        accessToken: accessToken,
-        username: payload['sub'] as String?,
-        userId: (payload['userId'] as num?)?.toInt(),
-        fullName: payload['fullName'] as String?,
-        email: payload['email'] as String?,
-        phone: payload['phone'] as String?,
-        roles: roles,
-      ));
+      emit(
+        AuthState(
+          status: AuthStatus.authenticated,
+          accessToken: accessToken,
+          username: payload['sub'] as String?,
+          userId: (payload['userId'] as num?)?.toInt(),
+          fullName: payload['fullName'] as String?,
+          email: payload['email'] as String?,
+          phone: payload['phone'] as String?,
+          roles: roles,
+        ),
+      );
     } catch (_) {
       emit(const AuthState(status: AuthStatus.unauthenticated));
     }

@@ -1,397 +1,486 @@
 'use client';
 
-import { useState } from 'react';
-import { useRole } from '@/lib/RoleContext';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-// Giả sử bạn đã có RoleContext
+import { Eye, FileSpreadsheet, RefreshCw, Plus, Check } from 'lucide-react';
+import { useRole } from '@/lib/RoleContext';
+import DataTable, { Column } from '@/components/DataTable';
+import { PageHeader, FilterBar, FilterField, GovInput, GovSelect, GovBtn, SectionCard, StatusBadge, MiniStat } from '@/components/GovUI';
+import { giayChungNhanApi, coSoKinhDoanhApi, type GiayChungNhanItem, type CoSoKinhDoanhItem } from '@/api/api';
 
-interface Certificate {
-  id: string;
-  businessName: string;
-  type: string;
-  issueDate: string;
-  expiryDate: string;
-  status: 'pending' | 'approved' | 'rejected';
-  approver: string;
+function formatDate(dateStr?: string) {
+  if (!dateStr) return '—';
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}/${month}/${year}`;
+  } catch {
+    return dateStr;
+  }
 }
 
-const mockCertificates: Certificate[] = [
-  {
-    id: 'CN-2025001',
-    businessName: 'Nhà hàng Hải Sản Biển  Xanh',
-    type: 'Chứng nhận ATTP',
-    issueDate: '15/01/2025',
-    expiryDate: '14/01/2026',
-    status: 'approved',
-    approver: 'Nguyễn Văn A',
-  },
-  {
-    id: 'CN-2025002',
-    businessName: 'Quán Ăn Gia Đình Việt',
-    type: 'Chứng nhận VSATTP',
-    issueDate: '20/02/2025',
-    expiryDate: '19/02/2026',
-    status: 'pending',
-    approver: '',
-  },
-  {
-    id: 'CN-2025003',
-    businessName: 'Cửa hàng Thực phẩm Sạch Organic',
-    type: 'Chứng nhận ATTP',
-    issueDate: '05/03/2025',
-    expiryDate: '04/03/2026',
-    status: 'rejected',
-    approver: 'Trần Thị B',
-  },
-  {
-    id: 'CN-2025004',
-    businessName: 'Siêu thị Mini Mart Đà Nẵng',
-    type: 'Chứng nhận ATTP',
-    issueDate: '10/01/2025',
-    expiryDate: '09/01/2026',
-    status: 'approved',
-    approver: 'Lê Văn C',
-  },
-];
-
-const STATUS_CONFIG = {
-  approved: { label: 'Đã phê duyệt', bg: 'bg-emerald-50', text: 'text-emerald-700', dot: 'bg-emerald-500', border: 'border-emerald-200' },
-  pending: { label: 'Chờ duyệt', bg: 'bg-amber-50', text: 'text-amber-700', dot: 'bg-amber-400', border: 'border-amber-200' },
-  rejected: { label: 'Từ chối', bg: 'bg-red-50', text: 'text-red-700', dot: 'bg-red-500', border: 'border-red-200' },
+const mapStatusToVariant = (status: string) => {
+  const s = String(status || '').trim().toLowerCase();
+  if (s === 'còn hiệu lực' || s === 'cap moi' || s === 'gia han' || s === 'hoat_dong') return 'pass'; 
+  if (s === 'hết hạn' || s === 'expired') return 'expired'; 
+  if (s === 'thu hoi' || s === 'suspended' || s === 'dinh_chi') return 'fail'; 
+  return 'pending'; 
 };
 
-function StatusBadge({ status }: { status: keyof typeof STATUS_CONFIG }) {
-  const cfg = STATUS_CONFIG[status];
-  return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold tracking-wide border ${cfg.bg} ${cfg.text} ${cfg.border}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
-      {cfg.label}
-    </span>
-  );
-}
+const mapStatusToLabel = (status: string) => {
+  const s = String(status || '').trim();
+  if (s === 'Cap moi') return 'Cấp mới';
+  if (s === 'Gia han') return 'Gia hạn';
+  if (s === 'Thu hoi') return 'Thu hồi';
+  return s;
+};
 
 export default function PheDuyetChungNhanPage() {
-  const { role } = useRole(); // Giả sử approver lấy từ role hoặc user hiện tại
-  const [search, setSearch] = useState('');
+  const { role } = useRole();
+  const [certs, setCerts] = useState<GiayChungNhanItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  
+  // Search and Filter State
+  const [searchMa, setSearchMa] = useState('');
+  const [searchCoSo, setSearchCoSo] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [data, setData] = useState(mockCertificates);
+  
+  // Pagination State
+  const [totalElements, setTotalElements] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [currentPage, setCurrentPage] = useState(0);
+  const pageSize = 10;
 
-  // Modal state
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedCert, setSelectedCert] = useState<Certificate | null>(null);
-  const [actionType, setActionType] = useState<'approved' | 'rejected' | null>(null);
-  const [rejectReason, setRejectReason] = useState('');
+  // Stats State
+  const [statTotal, setStatTotal] = useState(0);
+  const [statActive, setStatActive] = useState(0);
+  const [statExpired, setStatExpired] = useState(0);
+  const [statRevoked, setStatRevoked] = useState(0);
 
-  const filtered = data.filter((c) => {
-    const matchSearch = !search ||
-      c.id.toLowerCase().includes(search.toLowerCase()) ||
-      c.businessName.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = !statusFilter || c.status === statusFilter;
-    return matchSearch && matchStatus;
+  // Create Modal State
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [businesses, setBusinesses] = useState<CoSoKinhDoanhItem[]>([]);
+  const [loadingBiz, setLoadingBiz] = useState(false);
+
+  // Form Field State
+  const [selectedCoSo, setSelectedCoSo] = useState('');
+  const [tenChungNhan, setTenChungNhan] = useState('Chứng nhận đủ điều kiện an toàn thực phẩm');
+  const [ngayBanHanh, setNgayBanHanh] = useState('');
+  const [ngayHetHan, setNgayHetHan] = useState('');
+  const [trangThai, setTrangThai] = useState('Cap moi');
+  
+  const [formError, setFormError] = useState('');
+  const [formSuccess, setFormSuccess] = useState('');
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      // Load current page list
+      const res = await giayChungNhanApi.getList({
+        trangThai: statusFilter || undefined,
+        page: currentPage,
+        size: pageSize
+      });
+      setCerts(res.content || []);
+      setTotalElements(res.totalElements || 0);
+      setTotalPages(res.totalPages || 1);
+
+      // Load stats in parallel
+      const [resAll, resActive, resExpired, resRevoked] = await Promise.all([
+        giayChungNhanApi.getList({ size: 1 }),
+        giayChungNhanApi.getList({ trangThai: 'Còn hiệu lực', size: 1 }),
+        giayChungNhanApi.getList({ trangThai: 'Hết hạn', size: 1 }),
+        giayChungNhanApi.getList({ trangThai: 'Thu hoi', size: 1 }),
+      ]);
+      setStatTotal(resAll.totalElements || 0);
+      setStatActive(resActive.totalElements || 0);
+      setStatExpired(resExpired.totalElements || 0);
+      setStatRevoked(resRevoked.totalElements || 0);
+    } catch (err) {
+      console.error('Lỗi tải danh sách chứng nhận:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, [currentPage, statusFilter]);
+
+  // Load business establishments dropdown list on modal open
+  useEffect(() => {
+    if (isCreateModalOpen) {
+      setLoadingBiz(true);
+      coSoKinhDoanhApi.getDropdown()
+        .then(setBusinesses)
+        .catch(err => console.error('Lỗi tải danh sách cơ sở:', err))
+        .finally(() => setLoadingBiz(false));
+      
+      const today = new Date();
+      const threeYearsLater = new Date();
+      threeYearsLater.setFullYear(today.getFullYear() + 3);
+
+      const formatDateInput = (d: Date) => {
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      };
+
+      setNgayBanHanh(formatDateInput(today));
+      setNgayHetHan(formatDateInput(threeYearsLater));
+      setSelectedCoSo('');
+      setFormError('');
+      setFormSuccess('');
+    }
+  }, [isCreateModalOpen]);
+
+  const handleCreateCertificate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormError('');
+    setFormSuccess('');
+
+    if (!selectedCoSo) {
+      setFormError('Vui lòng chọn cơ sở kinh doanh');
+      return;
+    }
+    if (!tenChungNhan.trim()) {
+      setFormError('Vui lòng nhập tên chứng nhận');
+      return;
+    }
+    if (!ngayBanHanh || !ngayHetHan) {
+      setFormError('Vui lòng nhập đầy đủ ngày ban hành và ngày hết hạn');
+      return;
+    }
+
+    const start = new Date(ngayBanHanh);
+    const end = new Date(ngayHetHan);
+    if (start > end) {
+      setFormError('Ngày ban hành phải trước ngày hết hạn');
+      return;
+    }
+
+    try {
+      await giayChungNhanApi.create({
+        maCoSo: selectedCoSo,
+        tenChungNhan,
+        ngayBanHanh,
+        ngayHetHan,
+        trangThai,
+      });
+
+      setFormSuccess('Cấp chứng nhận thành công!');
+      loadData();
+      setTimeout(() => {
+        setIsCreateModalOpen(false);
+      }, 1500);
+    } catch (err: any) {
+      console.error(err);
+      setFormError(err.message || 'Có lỗi xảy ra khi cấp chứng nhận. Vui lòng kiểm tra lại.');
+    }
+  };
+
+  const filteredCerts = certs.filter((c) => {
+    const termMa = searchMa.toLowerCase().trim();
+    const termCoSo = searchCoSo.toLowerCase().trim();
+
+    if (termMa && (!c.maCN || !c.maCN.toLowerCase().includes(termMa))) return false;
+    if (termCoSo && (!c.tenCoSo || !c.tenCoSo.toLowerCase().includes(termCoSo))) return false;
+
+    return true;
   });
 
-  const openActionModal = (cert: Certificate, type: 'approved' | 'rejected') => {
-    setSelectedCert(cert);
-    setActionType(type);
-    setRejectReason('');
-    setIsModalOpen(true);
-  };
-
-  const handleApproveReject = () => {
-    if (!selectedCert || !actionType) return;
-
-    const currentUser = role === 'AUTHORITY' ? 'Trần Thị Thẩm Quyền' : 'Nguyễn Văn Trần'; // Có thể lấy từ context user thật sau
-
-    setData(prev => prev.map(item =>
-      item.id === selectedCert.id
-        ? {
-          ...item,
-          status: actionType,
-          approver: currentUser
-        }
-        : item
-    ));
-
-    setIsModalOpen(false);
-    setSelectedCert(null);
-    setActionType(null);
-    setRejectReason('');
-  };
-
-  const columns = [
+  const columns: Column<GiayChungNhanItem>[] = [
     {
-      key: 'id',
+      key: 'maCN',
       header: 'Mã chứng nhận',
-      render: (c: Certificate) => (
-        <span className="font-mono text-[12px] text-slate-400 font-semibold bg-slate-100 px-2 py-0.5 rounded-md">
-          {c.id}
-        </span>
-      ),
+      render: r => <span style={{ fontFamily: 'monospace', fontWeight: 600, color: '#005A9E' }}>{r.maCN}</span>,
     },
     {
-      key: 'businessName',
+      key: 'tenCoSo',
       header: 'Tên cơ sở',
-      render: (c: Certificate) => (
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-100 to-cyan-200 flex items-center justify-center text-sm font-black text-blue-600 flex-shrink-0">
-            {c.businessName.charAt(0)}
-          </div>
-          <span className="font-semibold text-[13px] text-slate-800">{c.businessName}</span>
-        </div>
-      ),
+      render: r => <span style={{ fontWeight: 600 }}>{r.tenCoSo || '—'}</span>,
     },
-    { key: 'type', header: 'Loại chứng nhận', render: (c: Certificate) => <span className="text-slate-600">{c.type}</span> },
-    { key: 'issueDate', header: 'Ngày cấp' },
-    { key: 'expiryDate', header: 'Ngày hết hạn' },
+    { key: 'tenChungNhan', header: 'Loại chứng nhận' },
     {
-      key: 'status',
+      key: 'ngayBanHanh',
+      header: 'Ngày cấp',
+      render: r => <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>{formatDate(r.ngayBanHanh)}</span>,
+    },
+    {
+      key: 'ngayHetHan',
+      header: 'Ngày hết hạn',
+      render: r => <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>{formatDate(r.ngayHetHan)}</span>,
+    },
+    {
+      key: 'trangThai',
       header: 'Trạng thái',
-      render: (c: Certificate) => <StatusBadge status={c.status} />,
-    },
-    {
-      key: 'approver',
-      header: 'Người duyệt',
-      render: (c: Certificate) => (
-        <span className="text-[13px] text-slate-600">
-          {c.approver || <span className="text-slate-300 italic">—</span>}
-        </span>
-      ),
+      render: r => <StatusBadge variant={mapStatusToVariant(r.trangThai)} label={mapStatusToLabel(r.trangThai)} />,
     },
     {
       key: 'actions',
       header: 'Thao tác',
-      render: (c: Certificate) => {
-        const isPending = c.status === 'pending';
-
-        return (
-          <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-            <Link
-              href={`/co-so-kinh-doanh/chung-nhan/${c.id}`}
-              className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 bg-white hover:bg-blue-50 hover:border-blue-300 text-base transition-all"
-              title="Xem chi tiết"
-            >
-              👁
-            </Link>
-
-            {isPending && (
-              <>
-                <button
-                  onClick={() => openActionModal(c, 'approved')}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 hover:border-emerald-400 text-base transition-all"
-                  title="Phê duyệt"
-                >
-                  ✅
-                </button>
-                <button
-                  onClick={() => openActionModal(c, 'rejected')}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 hover:border-red-400 text-base transition-all"
-                  title="Từ chối"
-                >
-                  ❌
-                </button>
-              </>
-            )}
-          </div>
-        );
-      },
+      render: r => (
+        <div style={{ display: 'flex', gap: '3px' }}>
+          <Link href={`/co-so-kinh-doanh/chung-nhan/${r.maCN}`}>
+            <GovBtn variant="secondary" size="sm" title="Xem chi tiết">
+              <Eye style={{ width: 12, height: 12 }} />
+            </GovBtn>
+          </Link>
+        </div>
+      ),
     },
   ];
 
+  const canIssue = role === 'LD_ATVSTP' || role === 'ADMIN';
+
+  const paginationFooter = (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+      <span style={{ fontSize: '12px', color: '#555' }}>
+        Hiển thị {filteredCerts.length} / {totalElements} chứng nhận (Trang {currentPage + 1}/{totalPages})
+      </span>
+      <nav style={{ display: 'flex', gap: '3px' }}>
+        <button
+          type="button"
+          disabled={currentPage === 0}
+          onClick={() => setCurrentPage(prev => Math.max(0, prev - 1))}
+          style={{
+            minWidth: '26px',
+            height: '24px',
+            borderRadius: '2px',
+            border: '1px solid #D6D6D6',
+            background: '#fff',
+            color: currentPage === 0 ? '#999' : '#333',
+            fontSize: '12px',
+            cursor: currentPage === 0 ? 'not-allowed' : 'pointer',
+          }}
+        >
+          «
+        </button>
+        {Array.from({ length: totalPages }, (_, idx) => (
+          <button
+            key={idx}
+            type="button"
+            onClick={() => setCurrentPage(idx)}
+            style={{
+              minWidth: '26px',
+              height: '24px',
+              borderRadius: '2px',
+              border: currentPage === idx ? '1px solid #008000' : '1px solid #D6D6D6',
+              background: currentPage === idx ? '#008000' : '#fff',
+              color: currentPage === idx ? '#fff' : '#333',
+              fontSize: '12px',
+              cursor: 'pointer',
+              fontWeight: currentPage === idx ? 600 : 400,
+            }}
+          >
+            {idx + 1}
+          </button>
+        ))}
+        <button
+          type="button"
+          disabled={currentPage >= totalPages - 1}
+          onClick={() => setCurrentPage(prev => Math.min(totalPages - 1, prev + 1))}
+          style={{
+            minWidth: '26px',
+            height: '24px',
+            borderRadius: '2px',
+            border: '1px solid #D6D6D6',
+            background: '#fff',
+            color: currentPage >= totalPages - 1 ? '#999' : '#333',
+            fontSize: '12px',
+            cursor: currentPage >= totalPages - 1 ? 'not-allowed' : 'pointer',
+          }}
+        >
+          »
+        </button>
+      </nav>
+    </div>
+  );
+
   return (
-    <div className="min-h-screen bg-[#f5f6fa] font-sans">
-      <div className="h-1 w-full bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-400" />
+    <div>
+      <PageHeader
+        title="Phê duyệt chứng nhận an toàn thực phẩm"
+        subtitle="Chi cục An toàn Thực phẩm TP. Đà Nẵng — Quản lý và phê duyệt chứng nhận ATTP"
+        actions={
+          <>
+            {canIssue && (
+              <GovBtn variant="primary" onClick={() => setIsCreateModalOpen(true)}>
+                <Plus style={{ width: 12, height: 12 }} /> Cấp mới chứng nhận
+              </GovBtn>
+            )}
+            <GovBtn variant="secondary" onClick={() => loadData()}>
+              <RefreshCw style={{ width: 12, height: 12 }} /> Làm mới
+            </GovBtn>
+            <GovBtn variant="secondary">
+              <FileSpreadsheet style={{ width: 12, height: 12 }} /> Xuất Excel
+            </GovBtn>
+          </>
+        }
+      />
 
-      <div className="max-w-[1200px] mx-auto px-6 py-8">
-        {/* Header */}
-        <div className="flex items-start justify-between mb-8">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-[11px] font-bold tracking-[0.12em] uppercase text-blue-500">
-                SỞ AN TOÀN THỰC PHẨM • ĐÀ NẴNG
-              </span>
-            </div>
-            <h1 className="text-[28px] font-black text-slate-900 tracking-tight leading-tight">
-              Phê duyệt Chứng nhận
-            </h1>
-            <p className="text-[13px] text-slate-400 mt-1 font-medium">
-              Quản lý và phê duyệt các chứng nhận cho cơ sở kinh doanh
-            </p>
-          </div>
-
-          <div className="flex gap-3 pt-1">
-            <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-[13px] font-semibold text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm">
-              📥 Xuất CSV
-            </button>
-            {/* Không có nút "Thêm chứng nhận" như yêu cầu */}
-          </div>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-4 gap-4 mb-8">
-          {[
-            { label: 'Tổng chứng nhận', value: '1.284', icon: '📋', color: 'from-blue-600 to-blue-700' },
-            { label: 'Đã phê duyệt', value: '987', icon: '✅', color: 'from-emerald-500 to-emerald-600' },
-            { label: 'Chờ duyệt', value: '156', icon: '⏳', color: 'from-amber-500 to-orange-500' },
-            { label: 'Từ chối', value: '141', icon: '🚫', color: 'from-red-500 to-red-600' },
-          ].map((s) => (
-            <div key={s.label} className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-[12px] font-semibold text-slate-400 uppercase tracking-wide mb-2">{s.label}</p>
-                  <p className="text-[30px] font-black text-slate-900 leading-none">{s.value}</p>
-                </div>
-                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${s.color} flex items-center justify-center text-xl shadow-sm`}>
-                  {s.icon}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Table */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <h2 className="text-[15px] font-bold text-slate-800">Tất cả chứng nhận</h2>
-              <span className="px-2 py-0.5 rounded-md bg-slate-100 text-[12px] font-bold text-slate-500">
-                {filtered.length}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="relative">
-                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-                <input
-                  type="text"
-                  placeholder="Tìm mã, tên cơ sở..."
-                  className="pl-9 pr-4 py-2 rounded-xl border border-slate-200 bg-slate-50 text-[13px] text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 w-[240px]"
-                  onChange={(e) => setSearch(e.target.value)}
-                />
-              </div>
-              <select
-                className="px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-[13px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                onChange={(e) => setStatusFilter(e.target.value)}
-              >
-                <option value="">Tất cả trạng thái</option>
-                <option value="pending">Chờ duyệt</option>
-                <option value="approved">Đã phê duyệt</option>
-                <option value="rejected">Từ chối</option>
-              </select>
-            </div>
-          </div>
-
-          <table className="w-full">
-            <thead>
-              <tr className="bg-slate-50 border-b border-slate-100">
-                {['Mã chứng nhận', 'Tên cơ sở', 'Loại chứng nhận', 'Ngày cấp', 'Ngày hết hạn', 'Trạng thái', 'Người duyệt', 'Thao tác'].map((h) => (
-                  <th key={h} className="px-5 py-3 text-left text-[11px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
-              {filtered.map((c) => (
-                <tr key={c.id} className="hover:bg-blue-50/30 group transition-colors">
-                  {/* Các cột render giống code cũ, nhưng dùng columns để dễ quản lý hơn nếu cần */}
-                  <td className="px-5 py-3.5">
-                    <span className="font-mono text-[12px] text-slate-400 font-semibold bg-slate-100 px-2 py-0.5 rounded-md">
-                      {c.id}
-                    </span>
-                  </td>
-                  <td className="px-5 py-3.5">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-100 to-cyan-200 flex items-center justify-center text-sm font-black text-blue-600 flex-shrink-0">
-                        {c.businessName.charAt(0)}
-                      </div>
-                      <span className="font-semibold text-[13px] text-slate-800">{c.businessName}</span>
-                    </div>
-                  </td>
-                  <td className="px-5 py-3.5 text-[13px] text-slate-600">{c.type}</td>
-                  <td className="px-5 py-3.5 text-[13px] text-slate-500 font-mono">{c.issueDate}</td>
-                  <td className="px-5 py-3.5 text-[13px] text-slate-500 font-mono">{c.expiryDate}</td>
-                  <td className="px-5 py-3.5"><StatusBadge status={c.status} /></td>
-                  <td className="px-5 py-3.5 text-[13px] text-slate-600">
-                    {c.approver || <span className="text-slate-300 italic">—</span>}
-                  </td>
-                  <td className="px-5 py-3.5">
-                    <div className="flex gap-1.5">
-                      {/* Render actions từ columns logic */}
-                      {columns[7].render(c)}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          <div className="px-5 py-3.5 border-t border-slate-100 flex items-center justify-between bg-slate-50/50">
-            <span className="text-[12px] text-slate-400 font-medium">
-              Hiển thị <strong className="text-slate-600">{filtered.length}</strong> trong tổng số{' '}
-              <strong className="text-slate-600">{mockCertificates.length}</strong> chứng nhận
-            </span>
-          </div>
-        </div>
+      {/* Stats */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '10px', marginBottom: '12px' }}>
+        <MiniStat label="Tổng chứng nhận" value={statTotal} color="neutral" />
+        <MiniStat label="Còn hiệu lực" value={statActive} color="green" />
+        <MiniStat label="Đã hết hạn" value={statExpired} color="orange" />
+        <MiniStat label="Đã thu hồi" value={statRevoked} color="red" />
       </div>
 
-      {/* Modal Phê duyệt / Từ chối */}
-      {isModalOpen && selectedCert && actionType && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 overflow-hidden">
-            <div className="px-6 py-5 border-b flex items-center justify-between">
-              <h3 className="text-lg font-semibold">
-                {actionType === 'approved' ? 'Phê duyệt chứng nhận' : 'Từ chối chứng nhận'}
+      {/* Filter */}
+      <FilterBar>
+        <FilterField label="Mã chứng nhận">
+          <GovInput placeholder="Ví dụ: CN-2026" value={searchMa} onChange={setSearchMa} width={150} />
+        </FilterField>
+        <FilterField label="Tên cơ sở">
+          <GovInput placeholder="Ví dụ: Biển Xanh" value={searchCoSo} onChange={setSearchCoSo} width={180} />
+        </FilterField>
+        <FilterField label="Trạng thái hiệu lực">
+          <GovSelect value={statusFilter} onChange={(val) => { setStatusFilter(val); setCurrentPage(0); }} options={[
+            { value: '', label: '-- Tất cả --' },
+            { value: 'Còn hiệu lực',  label: 'Còn hiệu lực' },
+            { value: 'Hết hạn', label: 'Đã hết hạn' },
+            { value: 'Thu hoi', label: 'Đã thu hồi' },
+          ]} width={160} />
+        </FilterField>
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px' }}>
+          <GovBtn variant="secondary" onClick={() => { setSearchMa(''); setSearchCoSo(''); setStatusFilter(''); setCurrentPage(0); }}>Xóa lọc</GovBtn>
+        </div>
+      </FilterBar>
+
+      {/* Table */}
+      <SectionCard
+        title={`Danh sách chứng nhận ATTP (${filteredCerts.length} bản ghi)`}
+        footer={paginationFooter}
+      >
+        {loading ? (
+          <div style={{ padding: '30px', textAlign: 'center', color: '#888' }}>
+            <RefreshCw style={{ width: 20, height: 20, display: 'inline-block', animation: 'spin 1.5s linear infinite', marginRight: '6px' }} />
+            Đang tải dữ liệu từ server...
+          </div>
+        ) : (
+          <DataTable
+            columns={columns}
+            data={filteredCerts}
+            emptyMessage="Không tìm thấy chứng nhận nào phù hợp."
+          />
+        )}
+      </SectionCard>
+
+      {/* Issuance Modal Form */}
+      {isCreateModalOpen && (
+        <div
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999,
+          }}
+        >
+          <div style={{ background: '#fff', border: '1px solid #D6D6D6', borderRadius: '2px', width: '500px', overflow: 'hidden', boxShadow: '0 4px 16px rgba(0,0,0,0.2)' }}>
+            {/* Modal header */}
+            <div style={{ background: '#008000', padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ color: '#fff', fontSize: '13px', fontWeight: 700, textTransform: 'uppercase', margin: 0 }}>
+                Cấp mới & Phê duyệt chứng nhận ATTP
               </h3>
-              <button onClick={() => setIsModalOpen(false)} className="text-3xl text-slate-400 hover:text-slate-600">×</button>
+              <button onClick={() => setIsCreateModalOpen(false)} style={{ color: '#fff', background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px', lineHeight: 1 }}>×</button>
             </div>
 
-            <div className="p-6 space-y-5">
-              <div>
-                <p className="text-sm text-slate-500">Cơ sở</p>
-                <p className="font-semibold text-slate-800">{selectedCert.businessName}</p>
-              </div>
-              <div>
-                <p className="text-sm text-slate-500">Loại chứng nhận</p>
-                <p className="font-medium">{selectedCert.type}</p>
-              </div>
-
-              {actionType === 'rejected' && (
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Lý do từ chối <span className="text-red-500">*</span>
-                  </label>
-                  <textarea
-                    value={rejectReason}
-                    onChange={(e) => setRejectReason(e.target.value)}
-                    placeholder="Nhập lý do từ chối..."
-                    className="w-full h-28 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500"
-                  />
+            {/* Modal body */}
+            <form onSubmit={handleCreateCertificate} style={{ padding: '16px' }}>
+              {formError && (
+                <div style={{ background: '#FFF4E5', border: '1px solid #FFCC80', borderLeft: '4px solid #CC6600', padding: '8px 10px', fontSize: '12px', color: '#7a3e00', marginBottom: '12px' }}>
+                  {formError}
                 </div>
               )}
-            </div>
+              {formSuccess && (
+                <div style={{ background: '#EAF7EA', border: '1px solid #94C994', borderLeft: '4px solid #008000', padding: '8px 10px', fontSize: '12px', color: '#006400', marginBottom: '12px' }}>
+                  {formSuccess}
+                </div>
+              )}
 
-            <div className="px-6 py-4 border-t bg-slate-50 flex gap-3 justify-end">
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="px-5 py-2.5 text-slate-600 hover:bg-slate-100 rounded-xl font-medium"
-              >
-                Hủy
-              </button>
-              <button
-                onClick={handleApproveReject}
-                disabled={actionType === 'rejected' && !rejectReason.trim()}
-                className={`px-6 py-2.5 font-semibold rounded-xl transition-colors ${actionType === 'approved'
-                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                    : 'bg-red-600 hover:bg-red-700 text-white'
-                  } disabled:opacity-50`}
-              >
-                {actionType === 'approved' ? 'Xác nhận phê duyệt' : 'Xác nhận từ chối'}
-              </button>
-            </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '12.5px' }}>
+                <div>
+                  <label style={{ display: 'block', fontWeight: 600, marginBottom: '4px' }}>Cơ sở kinh doanh <span style={{ color: '#CC0000' }}>*</span></label>
+                  {loadingBiz ? (
+                    <div style={{ color: '#888' }}>Đang tải danh sách cơ sở...</div>
+                  ) : (
+                    <select
+                      value={selectedCoSo}
+                      onChange={e => setSelectedCoSo(e.target.value)}
+                      style={{ width: '100%', height: '30px', border: '1px solid #D6D6D6', borderRadius: '2px', padding: '0 8px', outline: 'none' }}
+                      required
+                    >
+                      <option value="">-- Chọn cơ sở kinh doanh --</option>
+                      {businesses.map(b => (
+                        <option key={b.maCoSo} value={b.maCoSo}>{b.tenCoSo} ({b.maCoSo})</option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontWeight: 600, marginBottom: '4px' }}>Tên/Loại chứng nhận <span style={{ color: '#CC0000' }}>*</span></label>
+                  <input
+                    type="text"
+                    value={tenChungNhan}
+                    onChange={e => setTenChungNhan(e.target.value)}
+                    style={{ width: '100%', height: '30px', border: '1px solid #D6D6D6', borderRadius: '2px', padding: '0 8px', outline: 'none', boxSizing: 'border-box' }}
+                    required
+                  />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontWeight: 600, marginBottom: '4px' }}>Ngày ban hành <span style={{ color: '#CC0000' }}>*</span></label>
+                    <input
+                      type="date"
+                      value={ngayBanHanh}
+                      onChange={e => setNgayBanHanh(e.target.value)}
+                      style={{ width: '100%', height: '30px', border: '1px solid #D6D6D6', borderRadius: '2px', padding: '0 8px', outline: 'none', boxSizing: 'border-box' }}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontWeight: 600, marginBottom: '4px' }}>Ngày hết hạn <span style={{ color: '#CC0000' }}>*</span></label>
+                    <input
+                      type="date"
+                      value={ngayHetHan}
+                      onChange={e => setNgayHetHan(e.target.value)}
+                      style={{ width: '100%', height: '30px', border: '1px solid #D6D6D6', borderRadius: '2px', padding: '0 8px', outline: 'none', boxSizing: 'border-box' }}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontWeight: 600, marginBottom: '4px' }}>Trạng thái cấp <span style={{ color: '#CC0000' }}>*</span></label>
+                  <select
+                    value={trangThai}
+                    onChange={e => setTrangThai(e.target.value)}
+                    style={{ width: '100%', height: '30px', border: '1px solid #D6D6D6', borderRadius: '2px', padding: '0 8px', outline: 'none' }}
+                    required
+                  >
+                    <option value="Cap moi">Cấp mới</option>
+                    <option value="Gia han">Gia hạn</option>
+                    <option value="Thu hoi">Thu hồi</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Modal footer */}
+              <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                <GovBtn variant="secondary" onClick={() => setIsCreateModalOpen(false)}>Hủy</GovBtn>
+                <GovBtn variant="primary" type="submit">
+                  Xác nhận cấp mới
+                </GovBtn>
+              </div>
+            </form>
           </div>
         </div>
       )}
     </div>
   );
-}
+}

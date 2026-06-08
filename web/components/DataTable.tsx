@@ -1,11 +1,11 @@
 import { ReactNode } from 'react';
-import { cn } from '@/lib/utils';
 
 export interface Column<T extends object> {
   key: string;
   header: string;
   className?: string;
-  render?: (row: T) => ReactNode;
+  align?: 'left' | 'center' | 'right';
+  render?: (row: T, index: number) => ReactNode;
 }
 
 interface DataTableProps<T extends object> {
@@ -15,8 +15,28 @@ interface DataTableProps<T extends object> {
   className?: string;
   rowKey?: (row: T, index: number) => string;
   onRowClick?: (row: T) => void;
-  rowClassName?: (row: T, index: number) => string;
+  sttStart?: number;
+  loading?: boolean;
 }
+
+const TH_STYLE: React.CSSProperties = {
+  background: '#E8E8E8',
+  border: '1px solid #D6D6D6',
+  padding: '5px 10px',
+  fontSize: '12px',
+  fontWeight: 600,
+  color: '#333',
+  textAlign: 'left',
+  whiteSpace: 'nowrap',
+};
+
+const TD_STYLE: React.CSSProperties = {
+  border: '1px solid #D6D6D6',
+  padding: '4px 10px',
+  fontSize: '12.5px',
+  color: '#222',
+  verticalAlign: 'middle',
+};
 
 export default function DataTable<T extends object>({
   columns,
@@ -25,21 +45,22 @@ export default function DataTable<T extends object>({
   className,
   rowKey,
   onRowClick,
-  rowClassName,
+  sttStart = 1,
+  loading = false,
 }: DataTableProps<T>) {
   return (
-    <div className={cn('overflow-x-auto', className)}>
-      <table className="w-full border-collapse">
+    <div style={{ overflowX: 'auto' }} className={className}>
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12.5px' }}>
         <thead>
           <tr>
+            <th style={{ ...TH_STYLE, textAlign: 'center', width: '36px' }}>STT</th>
             {columns.map((col) => (
               <th
                 key={col.key}
-                className={cn(
-                  'bg-slate-50 px-4 py-2.5 text-left text-[11px] font-bold text-slate-500',
-                  'uppercase tracking-wide border-b border-slate-200 whitespace-nowrap',
-                  col.className
-                )}
+                style={{
+                  ...TH_STYLE,
+                  textAlign: col.align ?? 'left',
+                }}
               >
                 {col.header}
               </th>
@@ -47,38 +68,68 @@ export default function DataTable<T extends object>({
           </tr>
         </thead>
         <tbody>
-          {data.length === 0 ? (
+          {loading ? (
             <tr>
               <td
-                colSpan={columns.length}
-                className="px-4 py-12 text-center text-sm text-slate-400"
+                colSpan={columns.length + 1}
+                style={{
+                  ...TD_STYLE,
+                  textAlign: 'center',
+                  padding: '24px',
+                  color: '#666',
+                }}
+              >
+                Đang tải dữ liệu...
+              </td>
+            </tr>
+          ) : data.length === 0 ? (
+            <tr>
+              <td
+                colSpan={columns.length + 1}
+                style={{
+                  ...TD_STYLE,
+                  textAlign: 'center',
+                  padding: '20px',
+                  color: '#888',
+                }}
               >
                 {emptyMessage}
               </td>
             </tr>
           ) : (
-            data.map((row, i) => (
-              <tr
-                key={rowKey ? rowKey(row, i) : i}
-                onClick={() => onRowClick?.(row)}
-                className={cn(
-                  'border-b border-slate-100 transition-colors last:border-0',
-                  onRowClick ? 'cursor-pointer hover:bg-slate-50/60' : 'hover:bg-slate-50/60',
-                  rowClassName?.(row, i)
-                )}
-              >
-                {columns.map((col) => (
-                  <td
-                    key={col.key}
-                    className={cn('px-4 py-3 text-sm text-slate-800 align-middle', col.className)}
-                  >
-                    {col.render
-                      ? col.render(row)
-                      : ((row as Record<string, unknown>)[col.key] as ReactNode)}
+            data.map((row, i) => {
+              const key = rowKey ? rowKey(row, i) : String(i);
+              const isEven = i % 2 === 1;
+              return (
+                <tr
+                  key={key}
+                  onClick={() => onRowClick?.(row)}
+                  style={{
+                    backgroundColor: isEven ? '#FAFAFA' : '#FFF',
+                    cursor: onRowClick ? 'pointer' : undefined,
+                  }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLTableRowElement).style.backgroundColor = '#F0F8F0'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLTableRowElement).style.backgroundColor = isEven ? '#FAFAFA' : '#FFF'; }}
+                >
+                  <td style={{ ...TD_STYLE, textAlign: 'center', color: '#666' }}>
+                    {sttStart + i}
                   </td>
-                ))}
-              </tr>
-            ))
+                  {columns.map((col) => (
+                    <td
+                      key={col.key}
+                      style={{
+                        ...TD_STYLE,
+                        textAlign: col.align ?? 'left',
+                      }}
+                    >
+                      {col.render
+                        ? col.render(row, i)
+                        : ((row as Record<string, unknown>)[col.key] as ReactNode)}
+                    </td>
+                  ))}
+                </tr>
+              );
+            })
           )}
         </tbody>
       </table>

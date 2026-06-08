@@ -1,71 +1,225 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { FiEdit, FiEye } from 'react-icons/fi';
 import AlertBanner from '@/components/AlertBanner';
-import Badge from '@/components/Badge';
 import CreateInspectionReportForm, {
   type CreateInspectionReportPayload,
+  type InspectionReportBusinessOption,
 } from '@/components/CreateInspectionReportForm';
 import DataTable, { type Column } from '@/components/DataTable';
-import StatCard from '@/components/StatCard';
-import TableCard, { FilterSelect, Pagination, SearchInput } from '@/components/TableCard';
-import { mockInspectionReports, type InspectionReport } from '@/data/mockData';
-import { cn } from '@/lib/utils';
+import {
+  PageHeader, FilterBar, FilterField, GovInput, GovSelect, GovBtn,
+  SectionCard, GovPagination, StatusBadge, MiniStat,
+} from '@/components/GovUI';
+import {
+  baoCaoApi,
+  coSoKinhDoanhApi,
+  type BaoCaoResponse,
+  type BaoCaoStatsResponse,
+} from '@/api/api';
+import { Eye, Pencil, FileSpreadsheet, RefreshCw, Plus } from 'lucide-react';
 
 type PageMode = 'list' | 'create';
 
-const inspectionTypeLabels: Record<CreateInspectionReportPayload['inspectionType'], string> = {
-  'Định kỳ': 'Thanh tra định kỳ',
-  'Đột xuất': 'Thanh tra đột xuất',
-  'Theo phản ánh': 'Thanh tra theo phản ánh',
-};
-
-function getScoreClassName(score: number) {
-  if (score >= 80) {
-    return 'text-emerald-600';
-  }
-
-  if (score >= 50) {
-    return 'text-amber-600';
-  }
-
-  return 'text-red-600';
+function getScoreColor(score: number) {
+  if (score >= 80) return '#006400';
+  if (score >= 50) return '#CC6600';
+  return '#CC0000';
 }
+
+function normalizeError(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
+}
+
+const EMPTY_STATS: BaoCaoStatsResponse = {
+  total: 0,
+  completed: 0,
+  processing: 0,
+  failed: 0,
+};
 
 export default function BaoCaoPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [mode, setMode] = useState<PageMode>('list');
-  const [reports, setReports] = useState<InspectionReport[]>(mockInspectionReports);
-  const [search, setSearch] = useState('');
+  const [reports, setReports] = useState<BaoCaoResponse[]>([]);
+  const [stats, setStats] = useState<BaoCaoStatsResponse>(EMPTY_STATS);
+  const [businessOptions, setBusinessOptions] = useState<InspectionReportBusinessOption[]>([]);
+  const [maBaoCao, setMaBaoCao] = useState('');
+  const [coSo, setCoSo] = useState('');
+  const [thanhTraVien, setThanhTraVien] = useState('');
   const [resultFilter, setResultFilter] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
 
   const updatedId = searchParams.get('updated');
   const bannerMessage = updatedId ? `Cập nhật báo cáo ${updatedId} thành công` : successMessage;
-  const nextReportId = useMemo(() => `BC-${String(reports.length + 1).padStart(3, '0')}`, [reports.length]);
+
+  const fetchBusinesses = useCallback(async () => {
+    const pageData = await coSoKinhDoanhApi.search('', 0, 100);
+    setBusinessOptions(
+      pageData.content.map((item) => ({
+        id: item.maCoSo,
+        name: item.tenCoSo,
+        district: item.tenPhuongXa ?? 'Chưa rõ',
+      }))
+    );
+  }, []);
+
+  const fetchReports = useCallback(async () => {
+    const [reportPage, nextStats] = await Promise.all([
+      baoCaoApi.search('', '', 0, 100),
+      baoCaoApi.getStats(),
+    ]);
+    setReports(reportPage.content);
+    setStats(nextStats);
+  }, []);
+
+  const refreshData = useCallback(async () => {
+    setIsLoading(true);
+    setErrorMessage('');
+
+    try {
+      await Promise.all([fetchReports(), fetchBusinesses()]);
+    } catch (error) {
+      setErrorMessage(normalizeError(error, 'Không thể tải dữ liệu báo cáo'));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [fetchBusinesses, fetchReports]);
+
+  useEffect(() => {
+    void refreshData();
+  }, [refreshData]);
 
   const filtered = useMemo(
     () =>
       reports.filter((report) => {
-        const matchSearch =
-          !search ||
-          report.tenCoSo.toLowerCase().includes(search.toLowerCase()) ||
-          report.id.toLowerCase().includes(search.toLowerCase());
+        const matchMaBaoCao =
+          !maBaoCao || report.id.toLowerCase().includes(maBaoCao.toLowerCase());
+
+        const matchCoSo =
+          !coSo || (report.tenCoSo || '').toLowerCase().includes(coSo.toLowerCase());
+
+        const matchThanhTraVien =
+          !thanhTraVien || (report.thanhTraVien || '').toLowerCase().includes(thanhTraVien.toLowerCase());
+
         const matchResult = !resultFilter || report.ketQua === resultFilter;
-        return matchSearch && matchResult;
+        return matchMaBaoCao && matchCoSo && matchThanhTraVien && matchResult;
       }),
-    [reports, resultFilter, search]
+    [reports, resultFilter, maBaoCao, coSo, thanhTraVien]
   );
 
-  const total = reports.length;
-  const completed = reports.filter((report) => report.ketQua === 'pass' || report.ketQua === 'fail').length;
-  const failed = reports.filter((report) => report.ketQua === 'fail').length;
+  const handleExportExcel = () => {
+    const now = new Date();
+    const pad2 = (n: number) => String(n).padStart(2, '0');
+    const exportedAt = `${pad2(now.getDate())}/${pad2(now.getMonth() + 1)}/${now.getFullYear()} ${pad2(now.getHours())}:${pad2(now.getMinutes())}`;
+
+    const escapeHtml = (value: unknown) =>
+      String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+
+    const ketQuaLabel = (value?: string | null) => {
+      const v = (value || '').toLowerCase().trim();
+      if (v === 'pass') return 'Đạt';
+      if (v === 'fail') return 'Không đạt';
+      if (v === 'scheduled') return 'Đã lên lịch';
+      return value || '';
+    };
+
+    const filterParts = [
+      maBaoCao ? `Mã báo cáo: ${maBaoCao}` : null,
+      coSo ? `Cơ sở: ${coSo}` : null,
+      thanhTraVien ? `Thanh tra viên: ${thanhTraVien}` : null,
+      resultFilter ? `Kết quả: ${ketQuaLabel(resultFilter)}` : null,
+    ].filter(Boolean);
+
+    const title = 'DANH SÁCH BÁO CÁO THANH TRA AN TOÀN THỰC PHẨM';
+    const orgLine1 = 'CHI CỤC AN TOÀN THỰC PHẨM TP. ĐÀ NẴNG';
+    const orgLine2 = 'PHẦN MỀM QUẢN LÝ VSATTP THÀNH PHỐ ĐÀ NẴNG';
+
+    const rowsHtml = filtered.map((r, idx) => {
+      const diem = r.diem ?? 0;
+      return `
+        <tr>
+          <td style="text-align:center;">${idx + 1}</td>
+          <td style="font-family:monospace;">${escapeHtml(r.id)}</td>
+          <td>${escapeHtml(r.tenCoSo ?? '')}</td>
+          <td>${escapeHtml(r.thanhTraVien ?? '')}</td>
+          <td style="font-family:monospace;">${escapeHtml(r.ngay ?? '')}</td>
+          <td>${escapeHtml(ketQuaLabel(r.ketQua))}</td>
+          <td style="text-align:center;">${escapeHtml(diem)}${Number.isFinite(diem) ? '/100' : ''}</td>
+          <td>${escapeHtml(r.loaiThanhTra ?? '')}</td>
+        </tr>
+      `;
+    }).join('');
+
+    const html = `\ufeff
+      <html>
+        <head>
+          <meta charset="UTF-8" />
+          <style>
+            body { font-family: Arial, sans-serif; }
+            table { border-collapse: collapse; width: 100%; }
+            th, td { border: 1px solid #333; padding: 6px 8px; font-size: 12px; }
+            th { background: #EAF7EA; font-weight: 700; text-align: left; }
+            .center { text-align: center; }
+            .muted { color: #555; font-size: 11px; }
+            .title { font-size: 16px; font-weight: 800; text-align: center; }
+            .org { font-size: 12px; font-weight: 700; text-align: center; text-transform: uppercase; }
+          </style>
+        </head>
+        <body>
+          <div class="org">${escapeHtml(orgLine1)}</div>
+          <div class="org" style="font-weight:600; font-size:11px;">${escapeHtml(orgLine2)}</div>
+          <div class="title">${escapeHtml(title)}</div>
+          <div class="muted center">Ngày xuất: ${escapeHtml(exportedAt)}</div>
+          ${filterParts.length ? `<div class="muted">Bộ lọc: ${escapeHtml(filterParts.join(' | '))}</div>` : ''}
+          <br />
+          <table>
+            <thead>
+              <tr>
+                <th class="center" style="width:40px;">STT</th>
+                <th style="width:110px;">Mã báo cáo</th>
+                <th style="width:240px;">Cơ sở</th>
+                <th style="width:160px;">Thanh tra viên</th>
+                <th style="width:110px;">Ngày kiểm tra</th>
+                <th style="width:110px;">Kết quả</th>
+                <th class="center" style="width:80px;">Điểm</th>
+                <th style="width:220px;">Loại thanh tra</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rowsHtml || `<tr><td colspan="8" class="center muted">Không có dữ liệu</td></tr>`}
+            </tbody>
+          </table>
+        </body>
+      </html>
+    `;
+
+    const fileStamp = `${now.getFullYear()}${pad2(now.getMonth() + 1)}${pad2(now.getDate())}_${pad2(now.getHours())}${pad2(now.getMinutes())}`;
+    const filename = `BaoCaoThanhTra_${fileStamp}.xls`;
+
+    const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  };
 
   const handleCreateClick = () => {
     setSuccessMessage('');
+    setErrorMessage('');
     setMode('create');
   };
 
@@ -74,144 +228,172 @@ export default function BaoCaoPage() {
   };
 
   const handleCreateReport = async (values: CreateInspectionReportPayload) => {
-    const nextReport: InspectionReport = {
-      id: nextReportId,
-      tenCoSo: values.facilityName,
-      loaiThanhTra: inspectionTypeLabels[values.inspectionType],
-      thanhTraVien: 'Người dùng hiện tại',
-      ngay: values.inspectionDate,
-      ketQua: values.result,
-      diem: values.score,
-      quanHuyen: values.district,
-      noiDung: values.content,
-      nhanXet: values.comment,
-      tepDinhKem: values.fileName,
-    };
-
-    setReports((current) => [nextReport, ...current]);
-    setMode('list');
-    setSuccessMessage('Gửi báo cáo thành công. Báo cáo mới đã được lưu vào danh sách.');
+    try {
+      await baoCaoApi.create({
+        facilityId: values.facilityId,
+        inspectionDate: values.inspectionDate,
+        inspectionType: values.inspectionType,
+        content: values.content,
+        comment: values.comment,
+        result: values.result,
+        score: values.score,
+        fileName: values.fileName,
+        hasInspectionRecord: values.hasInspectionRecord,
+      });
+      await fetchReports();
+      setMode('list');
+      setSuccessMessage('Gửi báo cáo thành công. Báo cáo mới đã được lưu vào danh sách.');
+    } catch (error) {
+      throw new Error(normalizeError(error, 'Không thể tạo báo cáo lúc này'));
+    }
   };
 
-  const columns: Column<InspectionReport>[] = [
+  const columns: Column<BaoCaoResponse>[] = [
     {
       key: 'id',
       header: 'Mã báo cáo',
-      render: (report) => <span className="font-mono text-[12px] text-slate-500">{report.id}</span>,
+      render: (report) => <span style={{ fontFamily: 'monospace', fontSize: '12px', fontWeight: 600, color: '#005A9E' }}>{report.id}</span>,
     },
     {
       key: 'tenCoSo',
       header: 'Cơ sở',
-      render: (report) => <strong className="text-slate-800">{report.tenCoSo}</strong>,
+      render: (report) => <span style={{ fontWeight: 600 }}>{report.tenCoSo}</span>,
     },
     { key: 'loaiThanhTra', header: 'Loại thanh tra' },
     { key: 'thanhTraVien', header: 'Thanh tra viên' },
-    { key: 'ngay', header: 'Ngày kiểm tra' },
+    {
+      key: 'ngay',
+      header: 'Ngày kiểm tra',
+      render: (report) => <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>{report.ngay}</span>,
+    },
     {
       key: 'ketQua',
       header: 'Kết quả',
-      render: (report) => <Badge variant={report.ketQua} />,
+      render: (report) => <StatusBadge variant={report.ketQua} />,
     },
     {
       key: 'diem',
       header: 'Điểm',
-      render: (report) => <span className={cn('font-bold', getScoreClassName(report.diem))}>{report.diem}/100</span>,
+      render: (report) => <strong style={{ color: getScoreColor(report.diem ?? 0) }}>{report.diem ?? 0}/100</strong>,
     },
     {
       key: 'actions',
       header: 'Thao tác',
       render: (report) => (
-        <div className="flex gap-1.5">
-          <button
-            type="button"
-            onClick={(event) => {
-              event.stopPropagation();
-              router.push(`/thanh-tra-kiem-dinh/bao-cao/${report.id}`);
-            }}
-            className="rounded-md border border-slate-200 bg-white p-2 text-blue-500 transition hover:bg-gray-100"
-            aria-label={`Xem báo cáo ${report.id}`}
+        <div style={{ display: 'flex', gap: '3px' }}>
+          <GovBtn
+            variant="secondary" size="sm"
+            onClick={() => router.push(`/thanh-tra-kiem-dinh/bao-cao/${report.id}`)}
             title="Xem báo cáo"
           >
-            <FiEye size={18} />
-          </button>
-          <button
-            type="button"
-            onClick={(event) => {
-              event.stopPropagation();
-              router.push(`/thanh-tra-kiem-dinh/bao-cao/${report.id}/edit`);
-            }}
-            className="rounded-md border border-slate-200 bg-white p-2 text-amber-500 transition hover:bg-gray-100"
-            aria-label={`Chỉnh sửa báo cáo ${report.id}`}
+            <Eye style={{ width: 12, height: 12 }} />
+          </GovBtn>
+          <GovBtn
+            variant="outline" size="sm"
+            onClick={() => router.push(`/thanh-tra-kiem-dinh/bao-cao/${report.id}/edit`)}
             title="Chỉnh sửa báo cáo"
           >
-            <FiEdit size={18} />
-          </button>
+            <Pencil style={{ width: 12, height: 12 }} />
+          </GovBtn>
         </div>
       ),
     },
   ];
 
   if (mode === 'create') {
-    return <CreateInspectionReportForm reportId={nextReportId} onCancel={handleCancel} onSubmit={handleCreateReport} />;
+    return (
+      <CreateInspectionReportForm
+        reportId="Tự động sinh"
+        businessOptions={businessOptions}
+        onCancel={handleCancel}
+        onSubmit={handleCreateReport}
+      />
+    );
   }
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="font-display text-[22px] font-extrabold text-slate-900">Báo cáo Thanh tra</h1>
-          <p className="mt-0.5 text-[13px] text-slate-500">
-            Tổng hợp báo cáo và kết quả thanh tra an toàn thực phẩm
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <button className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-[13px] font-semibold text-slate-600 hover:bg-slate-50">
-            📥 Xuất PDF
-          </button>
-          <button
-            onClick={handleCreateClick}
-            className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-2 text-[13px] font-semibold text-white hover:bg-blue-700"
-          >
-            + Tạo báo cáo mới
-          </button>
-        </div>
-      </div>
-
-      {bannerMessage && <AlertBanner type="success" title={bannerMessage} className="mb-5" />}
-
-      <AlertBanner
-        type="warning"
-        title="3 báo cáo chưa hoàn tất"
-        message="Vui lòng kiểm tra và hoàn thiện báo cáo thanh tra trong tuần này."
-      />
-
-      <div className="mb-6 grid grid-cols-4 gap-4">
-        <StatCard label="Tổng số" value={total} color="blue" />
-        <StatCard label="Hoàn thành" value={completed} color="green" />
-        <StatCard label="Đang xử lý" value={12} color="orange" />
-        <StatCard label="Không đạt" value={failed} color="red" />
-      </div>
-
-      <TableCard
-        title="Báo cáo thanh tra"
-        controls={
+      <PageHeader
+        title="Báo cáo thanh tra an toàn thực phẩm"
+        subtitle="Chi cục An toàn Thực phẩm TP. Đà Nẵng — Tổng hợp báo cáo và kết quả thanh tra"
+        actions={
           <>
-            <SearchInput placeholder="Tìm cơ sở, mã báo cáo..." onChange={setSearch} />
-            <FilterSelect
-              options={[
-                { value: '', label: 'Tất cả kết quả' },
-                { value: 'pass', label: 'Đạt' },
-                { value: 'fail', label: 'Không đạt' },
-                { value: 'scheduled', label: 'Đã lên lịch' },
-              ]}
-              onChange={setResultFilter}
-            />
+            <GovBtn variant="secondary" onClick={() => void refreshData()} disabled={isLoading}>
+              <RefreshCw style={{ width: 12, height: 12 }} /> Làm mới
+            </GovBtn>
+            <GovBtn variant="secondary" onClick={handleExportExcel} disabled={isLoading}>
+              <FileSpreadsheet style={{ width: 12, height: 12 }} /> Xuất Excel
+            </GovBtn>
+            <GovBtn variant="primary" onClick={handleCreateClick}><Plus style={{ width: 12, height: 12 }} /> Tạo báo cáo</GovBtn>
           </>
         }
-        footer={<Pagination info={`Hiển thị 1–${filtered.length} trong tổng số ${reports.length} báo cáo`} />}
+      />
+
+      {bannerMessage && <AlertBanner type="success" title={bannerMessage} />}
+      {errorMessage && <AlertBanner type="danger" title={errorMessage} />}
+      {!errorMessage && !isLoading && stats.processing > 0 && (
+        <AlertBanner
+          type="warning"
+          title={`${stats.processing} báo cáo đang xử lý — Vui lòng kiểm tra và hoàn thiện báo cáo thanh tra trong tuần này.`}
+        />
+      )}
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '10px', marginBottom: '12px' }}>
+        <MiniStat label="Tổng số báo cáo" value={stats.total} color="blue" />
+        <MiniStat label="Hoàn thành" value={stats.completed} color="green" />
+        <MiniStat label="Đang xử lý" value={stats.processing} color="orange" />
+        <MiniStat label="Không đạt" value={stats.failed} color="red" />
+      </div>
+
+      <FilterBar>
+        <FilterField label="Mã báo cáo">
+          <GovInput placeholder="VD: BC001" value={maBaoCao} onChange={setMaBaoCao} width={160} />
+        </FilterField>
+        <FilterField label="Cơ sở">
+          <GovInput placeholder="Tên cơ sở" value={coSo} onChange={setCoSo} width={220} />
+        </FilterField>
+        <FilterField label="Thanh tra viên">
+          <GovInput placeholder="Họ tên" value={thanhTraVien} onChange={setThanhTraVien} width={200} />
+        </FilterField>
+        <FilterField label="Kết quả">
+          <GovSelect
+            value={resultFilter}
+            onChange={setResultFilter}
+            options={[
+              { value: '', label: '-- Tất cả --' },
+              { value: 'pass', label: 'Đạt' },
+              { value: 'fail', label: 'Không đạt' },
+              { value: 'scheduled', label: 'Đã lên lịch' },
+            ]}
+            width={150}
+          />
+        </FilterField>
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px' }}>
+          <GovBtn variant="primary">Tìm kiếm</GovBtn>
+          <GovBtn
+            variant="secondary"
+            onClick={() => {
+              setMaBaoCao('');
+              setCoSo('');
+              setThanhTraVien('');
+              setResultFilter('');
+            }}
+          >
+            Xóa lọc
+          </GovBtn>
+        </div>
+      </FilterBar>
+
+      <SectionCard
+        title={`Danh sách báo cáo thanh tra (${filtered.length} báo cáo)`}
+        footer={<GovPagination info={`Hiển thị ${filtered.length} / ${reports.length} báo cáo`} />}
       >
-        <DataTable columns={columns} data={filtered} emptyMessage="Không tìm thấy báo cáo nào" />
-      </TableCard>
+        <DataTable
+          columns={columns}
+          data={filtered}
+          emptyMessage={isLoading ? 'Đang tải dữ liệu báo cáo...' : 'Không tìm thấy báo cáo nào'}
+        />
+      </SectionCard>
     </div>
   );
 }

@@ -1,226 +1,254 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { ArrowLeft, ArrowUpRight, Printer } from 'lucide-react';
 import Link from 'next/link';
+import { khacPhucApi, KhacPhucItem } from '@/api/khacphuc';
+import {
+  PageHeader, GovBtn, SectionCard, StatusBadge, ActionButtons, FormSection, FormField,
+} from '@/components/GovUI';
+import AlertBanner from '@/components/AlertBanner';
 
-interface ViolationFix {
-  id: string;
-  businessName: string;
-  violationType: string;
-  severity: 'nhẹ' | 'trung bình' | 'nghiêm trọng';
-  fixStatus: 'pending' | 'in_progress' | 'completed';
-  deadline: string;
-  updatedDate: string;
+// ─── helpers ────────────────────────────────────────────────────
+const TINH_TRANG_VARIANT: Record<string, string> = {
+  CHUA_KHAC_PHUC: 'expired',
+  DANG_KHAC_PHUC: 'in-progress',
+  DA_KHAC_PHUC:   'active',
+};
+const TINH_TRANG_LABEL: Record<string, string> = {
+  CHUA_KHAC_PHUC: 'Chưa khắc phục',
+  DANG_KHAC_PHUC: 'Đang khắc phục',
+  DA_KHAC_PHUC:   'Đã khắc phục',
+};
+const TINH_TRANG_DESC: Record<string, string> = {
+  CHUA_KHAC_PHUC: 'Cơ sở chưa thực hiện bất kỳ biện pháp khắc phục nào. Cần đôn đốc và yêu cầu thực hiện ngay.',
+  DANG_KHAC_PHUC: 'Cơ sở đang trong quá trình thực hiện khắc phục. Cần tiếp tục giám sát và đánh giá kết quả.',
+  DA_KHAC_PHUC:   'Cơ sở đã hoàn thành việc khắc phục theo yêu cầu. Hình thức xử phạt được xem là hoàn tất.',
+};
+const TINH_TRANG_BG: Record<string, { bg: string; border: string; color: string }> = {
+  CHUA_KHAC_PHUC: { bg: '#FEF2F2', border: '#FECACA', color: '#991B1B' },
+  DANG_KHAC_PHUC: { bg: '#EFF6FF', border: '#BFDBFE', color: '#1E40AF' },
+  DA_KHAC_PHUC:   { bg: '#F0FDF4', border: '#BBF7D0', color: '#166534' },
+};
+
+function formatCurrency(amount: number) {
+  if (!amount && amount !== 0) return '—';
+  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
 }
 
-const mockViolationFixes: ViolationFix[] = [
-  {
-    id: 'VP-2025001',
-    businessName: 'Nhà hàng Hải Sản Biển Xanh',
-    violationType: 'Vi phạm vệ sinh an toàn thực phẩm',
-    severity: 'nghiêm trọng',
-    fixStatus: 'in_progress',
-    deadline: '15/04/2025',
-    updatedDate: '22/03/2025',
-  },
-  {
-    id: 'VP-2025002',
-    businessName: 'Quán Ăn Gia Đình Việt',
-    violationType: 'Không niêm yết giá',
-    severity: 'nhẹ',
-    fixStatus: 'completed',
-    deadline: '10/03/2025',
-    updatedDate: '08/03/2025',
-  },
-  {
-    id: 'VP-2025003',
-    businessName: 'Cửa hàng Thực phẩm Sạch Organic',
-    violationType: 'Sử dụng nguyên liệu hết hạn',
-    severity: 'trung bình',
-    fixStatus: 'pending',
-    deadline: '30/03/2025',
-    updatedDate: '25/03/2025',
-  },
-  {
-    id: 'VP-2025004',
-    businessName: 'Siêu thị Mini Mart Đà Nẵng',
-    violationType: 'Thiếu giấy phép kinh doanh',
-    severity: 'nghiêm trọng',
-    fixStatus: 'in_progress',
-    deadline: '20/04/2025',
-    updatedDate: '18/03/2025',
-  },
-];
+function InfoCard({ label, value, mono = false }: { label: string; value: React.ReactNode; mono?: boolean }) {
+  return (
+    <div style={{ background: '#fff', border: '1px solid #D6D6D6', padding: '10px 14px' }}>
+      <p style={{ fontSize: '10.5px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#555', marginBottom: '4px' }}>
+        {label}
+      </p>
+      <div style={{ fontSize: '14px', fontWeight: 700, color: '#222', fontFamily: mono ? 'monospace' : 'inherit' }}>
+        {value}
+      </div>
+    </div>
+  );
+}
 
-const SEVERITY_CONFIG = {
-  'nghiêm trọng': { label: 'Nghiêm trọng', bg: 'bg-red-50', text: 'text-red-700', dot: 'bg-red-500', border: 'border-red-200', icon: '🚨' },
-  'trung bình':   { label: 'Trung bình',   bg: 'bg-amber-50', text: 'text-amber-700', dot: 'bg-amber-400', border: 'border-amber-200', icon: '⚠️' },
-  'nhẹ':          { label: 'Nhẹ',          bg: 'bg-sky-50', text: 'text-sky-700', dot: 'bg-sky-400', border: 'border-sky-200', icon: '⚡' },
-};
-
-const FIX_STATUS_CONFIG = {
-  pending:     { label: 'Chờ khắc phục', bg: 'bg-slate-50',   text: 'text-slate-600',   icon: '⏸', dot: 'bg-slate-400',   border: 'border-slate-200' },
-  in_progress: { label: 'Đang khắc phục', bg: 'bg-blue-50',   text: 'text-blue-700',    icon: '🔄', dot: 'bg-blue-500',    border: 'border-blue-200' },
-  completed:   { label: 'Đã hoàn thành', bg: 'bg-emerald-50', text: 'text-emerald-700', icon: '✓',  dot: 'bg-emerald-500', border: 'border-emerald-200' },
-};
-
+// ─── component ──────────────────────────────────────────────────
 export default function KhacPhucViPhamDetailPage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
 
-  const [record, setRecord] = useState<ViolationFix | null>(null);
+  const [item, setItem]       = useState<KhacPhucItem | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError]     = useState<string | null>(null);
 
   useEffect(() => {
-    const found = mockViolationFixes.find(v => v.id === id);
-    setRecord(found || null);
-    setLoading(false);
+    if (!id) return;
+    let mounted = true;
+    setLoading(true);
+    setError(null);
+    khacPhucApi
+      .getById(id)
+      .then(data => { if (mounted) { setItem(data); setLoading(false); } })
+      .catch((err: any) => {
+        if (mounted) {
+          setError(err.message || 'Không thể tải thông tin khắc phục.');
+          setLoading(false);
+        }
+      });
+    return () => { mounted = false; };
   }, [id]);
 
+  // ── Loading ──
   if (loading) {
-    return <div className="min-h-screen bg-[#f5f6fa] flex items-center justify-center">Đang tải...</div>;
-  }
-
-  if (!record) {
     return (
-      <div className="min-h-screen bg-[#f5f6fa] flex flex-col items-center justify-center py-20">
-        <div className="text-7xl mb-6">😕</div>
-        <h2 className="text-2xl font-bold text-slate-900">Không tìm thấy hồ sơ khắc phục</h2>
-        <p className="text-slate-500 mt-2 mb-8">Hồ sơ mã <span className="font-mono">{id}</span> không tồn tại.</p>
-        <Link
-          href="/khac-phuc-vi-pham"
-          className="px-6 py-3 bg-violet-600 text-white rounded-2xl font-medium hover:bg-violet-700 transition"
-        >
-          Quay về danh sách khắc phục
-        </Link>
+      <div style={{ padding: '60px', textAlign: 'center', color: '#888', fontSize: '13px' }}>
+        Đang tải thông tin khắc phục...
       </div>
     );
   }
 
-  const sevCfg = SEVERITY_CONFIG[record.severity];
-  const fixCfg = FIX_STATUS_CONFIG[record.fixStatus];
+  // ── Error / Not found ──
+  if (error || !item) {
+    return (
+      <div>
+        <PageHeader
+          title="Không tìm thấy thông tin khắc phục"
+          subtitle={`Mã: ${id}`}
+          actions={
+            <GovBtn variant="secondary" onClick={() => router.push('/vi-pham/khac-phuc')}>
+              <ArrowLeft style={{ width: 12, height: 12 }} /> Quay lại danh sách
+            </GovBtn>
+          }
+        />
+        {error && <AlertBanner type="danger" title={error} />}
+      </div>
+    );
+  }
+
+  const tinhTrang = item.tinhTrangKhacPhuc;
+  const bgStyle   = TINH_TRANG_BG[tinhTrang] ?? { bg: '#F5F5F5', border: '#D6D6D6', color: '#333' };
 
   return (
-    <div className="min-h-screen bg-[#f5f6fa] font-sans">
-      <div className="h-1 w-full bg-gradient-to-r from-violet-600 via-purple-500 to-pink-400" />
+    <div>
+      <PageHeader
+        title={`Chi tiết khắc phục — ${item.maHinhThucKhacPhuc}`}
+        subtitle="Chi cục An toàn Thực phẩm TP. Đà Nẵng — Theo dõi tiến độ thực hiện khắc phục vi phạm"
+        actions={
+          <ActionButtons>
+            <GovBtn variant="secondary" onClick={() => router.push('/vi-pham/khac-phuc')}>
+              <ArrowLeft style={{ width: 12, height: 12 }} /> Quay lại
+            </GovBtn>
+            <GovBtn variant="secondary" onClick={() => window.print()}>
+              <Printer style={{ width: 12, height: 12 }} /> In biên bản
+            </GovBtn>
+            <Link href={`/vi-pham/${item.maViPham}`}>
+              <GovBtn variant="outline">
+                <ArrowUpRight style={{ width: 12, height: 12 }} /> Xem vi phạm
+              </GovBtn>
+            </Link>
+          </ActionButtons>
+        }
+      />
 
-      <div className="max-w-[1100px] mx-auto px-6 py-8">
-        {/* Breadcrumb */}
-        <div className="flex items-center gap-3 mb-8">
-          <button
-            onClick={() => router.back()}
-            className="text-slate-500 hover:text-slate-700 flex items-center gap-2 text-sm font-medium"
-          >
-            ← Quay lại danh sách
-          </button>
-          <div className="h-4 w-px bg-slate-200 mx-2" />
-          <span className="text-[11px] font-bold tracking-widest uppercase text-violet-500">
-            SỞ AN TOÀN THỰC PHẨM • ĐÀ NẴNG
-          </span>
-        </div>
-
-        <div className="flex flex-col lg:flex-row justify-between items-start gap-6 mb-8">
-          <div>
-            <div className="flex items-center gap-3 mb-3">
-              <span className="font-mono text-sm bg-slate-100 text-slate-500 px-3 py-1 rounded-lg font-semibold">
-                {record.id}
-              </span>
-              <span className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-2xl text-sm font-semibold border ${fixCfg.bg} ${fixCfg.text} ${fixCfg.border || ''}`}>
-                <span>{fixCfg.icon}</span> {fixCfg.label}
-              </span>
-            </div>
-            <h1 className="text-3xl font-black tracking-tight text-slate-900">
-              {record.businessName}
-            </h1>
-          </div>
-
-          <div className="flex gap-3">
-            <button className="px-5 py-3 border border-slate-300 rounded-2xl text-sm font-medium hover:bg-white transition">
-              📄 In biên bản khắc phục
-            </button>
-            <button className="px-6 py-3 bg-violet-600 hover:bg-violet-700 text-white rounded-2xl text-sm font-semibold transition">
-              Cập nhật tiến độ
-            </button>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Main Content */}
-          <div className="lg:col-span-8 space-y-6">
-            <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100">
-              <h2 className="text-lg font-bold text-slate-800 mb-6">Thông tin vi phạm & khắc phục</h2>
-              <div className="space-y-6">
-                <div>
-                  <p className="text-xs uppercase tracking-widest text-slate-400 mb-1">Loại vi phạm</p>
-                  <p className="text-[17px] leading-relaxed text-slate-700">{record.violationType}</p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div>
-                    <p className="text-xs uppercase tracking-widest text-slate-400 mb-1">Mức độ vi phạm</p>
-                    <span className={`inline-flex items-center gap-2 px-5 py-3 rounded-2xl text-base font-semibold border ${sevCfg.bg} ${sevCfg.text} ${sevCfg.border}`}>
-                      <span className={`w-3 h-3 rounded-full ${sevCfg.dot}`} />
-                      {sevCfg.label}
-                    </span>
-                  </div>
-                  <div>
-                    <p className="text-xs uppercase tracking-widest text-slate-400 mb-1">Hạn khắc phục</p>
-                    <p className="text-2xl font-semibold text-slate-900">{record.deadline}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs uppercase tracking-widest text-slate-400 mb-1">Ngày cập nhật</p>
-                    <p className="text-2xl font-semibold text-slate-900">{record.updatedDate}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100">
-              <h2 className="text-lg font-bold text-slate-800 mb-5">Tiến độ khắc phục</h2>
-              <div className="prose text-[15.5px] text-slate-700 leading-relaxed">
-                Cơ sở đang thực hiện khắc phục vi phạm {record.violationType.toLowerCase()}. 
-                Hiện tại đang ở trạng thái <span className="font-semibold">{fixCfg.label.toLowerCase()}</span>.
-              </div>
-            </div>
-          </div>
-
-          {/* Sidebar */}
-          <div className="lg:col-span-4 space-y-6">
-            <div className="bg-white rounded-3xl p-7 shadow-sm border border-slate-100">
-              <h3 className="font-bold text-slate-700 mb-5">Trạng thái khắc phục</h3>
-              <div className={`p-6 rounded-3xl ${fixCfg.bg} ${fixCfg.text} border ${fixCfg.border || ''}`}>
-                <div className="flex items-center gap-4">
-                  <span className="text-4xl">{fixCfg.icon}</span>
-                  <div>
-                    <p className="text-2xl font-semibold">{fixCfg.label}</p>
-                    <p className="text-sm mt-1">Cập nhật: {record.updatedDate}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-3xl p-7 shadow-sm border border-slate-100">
-              <h3 className="font-bold text-slate-700 mb-5">Thông tin cơ sở</h3>
-              <div className="space-y-4 text-sm">
-                <div>
-                  <p className="text-slate-400 text-xs uppercase tracking-widest">Tên cơ sở</p>
-                  <p className="font-medium text-slate-900">{record.businessName}</p>
-                </div>
-                <div>
-                  <p className="text-slate-400 text-xs uppercase tracking-widest">Địa chỉ</p>
-                  <p className="text-slate-700">123 Nguyễn Thị Minh Khai, Hải Châu, Đà Nẵng</p>
-                </div>
-                <div>
-                  <p className="text-slate-400 text-xs uppercase tracking-widest">Hạn chót</p>
-                  <p className="font-medium text-slate-800">{record.deadline}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+      {/* Summary cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', marginBottom: '12px' }}>
+        <InfoCard label="Mã khắc phục" value={item.maHinhThucKhacPhuc} mono />
+        <InfoCard
+          label="Mã vi phạm"
+          value={
+            <Link
+              href={`/vi-pham/${item.maViPham}`}
+              style={{ color: '#CC0000', fontFamily: 'monospace', textDecoration: 'none' }}
+            >
+              {item.maViPham}
+            </Link>
+          }
+        />
+        <InfoCard
+          label="Số tiền khắc phục"
+          value={
+            <span style={{ color: item.soTienKhacPhuc > 0 ? '#CC0000' : '#666' }}>
+              {formatCurrency(item.soTienKhacPhuc)}
+            </span>
+          }
+        />
+        <InfoCard
+          label="Tình trạng"
+          value={
+            <StatusBadge
+              variant={TINH_TRANG_VARIANT[tinhTrang] ?? 'pending'}
+              label={TINH_TRANG_LABEL[tinhTrang] ?? tinhTrang}
+            />
+          }
+        />
       </div>
+
+      {/* Tình trạng banner */}
+      <div style={{
+        background: bgStyle.bg,
+        border: `1px solid ${bgStyle.border}`,
+        borderRadius: '2px',
+        padding: '14px 18px',
+        marginBottom: '12px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '14px',
+      }}>
+        <StatusBadge
+          variant={TINH_TRANG_VARIANT[tinhTrang] ?? 'pending'}
+          label={TINH_TRANG_LABEL[tinhTrang] ?? tinhTrang}
+        />
+        <p style={{ fontSize: '13px', color: bgStyle.color, fontWeight: 500, margin: 0 }}>
+          {TINH_TRANG_DESC[tinhTrang] ?? 'Không có mô tả trạng thái.'}
+        </p>
+      </div>
+
+      {/* Chi tiết */}
+      <SectionCard title="Thông tin chi tiết hình thức khắc phục">
+        <div style={{ padding: '14px 16px' }}>
+          <FormSection title="Thông tin cơ bản">
+            <FormField label="Mã hình thức KP">
+              <div style={{ padding: '6px 8px', background: '#F5F5F5', border: '1px solid #D6D6D6', borderRadius: '2px', fontSize: '13px', fontFamily: 'monospace', fontWeight: 600, color: '#005A9E' }}>
+                {item.maHinhThucKhacPhuc}
+              </div>
+            </FormField>
+            <FormField label="Liên kết vi phạm">
+              <div style={{ padding: '6px 8px', background: '#F5F5F5', border: '1px solid #D6D6D6', borderRadius: '2px', fontSize: '13px' }}>
+                <Link href={`/vi-pham/${item.maViPham}`} style={{ color: '#CC0000', fontFamily: 'monospace', fontWeight: 700, textDecoration: 'none' }}>
+                  {item.maViPham} ↗
+                </Link>
+              </div>
+            </FormField>
+            <FormField label="Số tiền khắc phục">
+              <div style={{ padding: '6px 8px', background: '#F5F5F5', border: '1px solid #D6D6D6', borderRadius: '2px', fontSize: '13px', fontWeight: 700, color: item.soTienKhacPhuc > 0 ? '#CC0000' : '#666', fontFamily: 'monospace' }}>
+                {formatCurrency(item.soTienKhacPhuc)}
+              </div>
+            </FormField>
+            <FormField label="Tình trạng">
+              <div style={{ padding: '6px 8px' }}>
+                <StatusBadge
+                  variant={TINH_TRANG_VARIANT[tinhTrang] ?? 'pending'}
+                  label={TINH_TRANG_LABEL[tinhTrang] ?? tinhTrang}
+                />
+              </div>
+            </FormField>
+          </FormSection>
+
+          <FormSection title="Nội dung khắc phục">
+            <FormField label="Nội dung" fullWidth>
+              {item.noiDungKhacPhuc ? (
+                <div style={{
+                  padding: '10px 12px',
+                  background: '#F5F5F5',
+                  border: '1px solid #D6D6D6',
+                  borderRadius: '2px',
+                  fontSize: '13px',
+                  lineHeight: 1.8,
+                  minHeight: '60px',
+                  whiteSpace: 'pre-wrap',
+                }}>
+                  {item.noiDungKhacPhuc}
+                </div>
+              ) : (
+                <div style={{
+                  padding: '14px 16px',
+                  background: '#FFFBEA',
+                  border: '1px solid #FDE68A',
+                  borderRadius: '2px',
+                  fontSize: '13px',
+                  color: '#92400E',
+                  fontStyle: 'italic',
+                }}>
+                  Chưa có nội dung khắc phục được ghi nhận. Cán bộ phụ trách cần cập nhật sau khi kiểm tra thực tế.
+                </div>
+              )}
+            </FormField>
+          </FormSection>
+        </div>
+      </SectionCard>
+
+      <p style={{ fontSize: '11.5px', color: '#888', textAlign: 'center', marginTop: '8px' }}>
+        Hồ sơ khắc phục được lưu trữ theo Quy chế lưu trữ hồ sơ ATTP — Chi cục An toàn Thực phẩm TP. Đà Nẵng
+      </p>
     </div>
   );
 }

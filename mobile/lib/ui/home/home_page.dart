@@ -8,6 +8,7 @@ import 'package:mobile_ui/core/widgets/error_state_view.dart';
 import 'package:mobile_ui/data/remote/model/notification_model.dart';
 import 'package:mobile_ui/routes/routes.dart';
 import 'package:mobile_ui/viewmodel/auth/auth_cubit.dart';
+import 'package:mobile_ui/viewmodel/auth/auth_state.dart';
 import 'package:mobile_ui/viewmodel/home/home_cubit.dart';
 import 'package:mobile_ui/viewmodel/home/home_state.dart';
 
@@ -16,189 +17,233 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<HomeCubit, HomeState>(
-      builder: (context, state) {
-        if (state.status == HomeStatus.error) {
-          return ErrorStateView(
-            onRetry: () => context.read<HomeCubit>().loadData(),
+    return BlocListener<AuthCubit, AuthState>(
+      listenWhen: (prev, curr) => curr.lastLogin != null,
+      listener: (context, authState) {
+        final lastLogin = authState.lastLogin;
+        if (lastLogin == null) return;
+        // Show banner thông báo trạng thái phiên đăng nhập sau khi user đăng nhập
+        // thành công, rồi acknowledge để không hiển thị lại khi rebuild.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!context.mounted) return;
+          final messenger = ScaffoldMessenger.of(context);
+          messenger.hideCurrentSnackBar();
+          messenger.showSnackBar(
+            SnackBar(
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: lastLogin.abnormal
+                  ? AppTheme.error
+                  : AppTheme.success,
+              duration: const Duration(seconds: 5),
+              content: Text(
+                lastLogin.abnormal
+                    ? 'Phát hiện đăng nhập lạ. Hãy kiểm tra lịch sử đăng nhập.'
+                    : 'Đăng nhập thành công. Phiên đăng nhập an toàn.',
+                style: GoogleFonts.inter(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              action: lastLogin.abnormal
+                  ? SnackBarAction(
+                      label: 'Xem',
+                      textColor: Colors.white,
+                      onPressed: () =>
+                          Navigator.pushNamed(context, Routes.loginHistory),
+                    )
+                  : null,
+            ),
           );
-        }
+          context.read<AuthCubit>().acknowledgeLastLogin();
+        });
+      },
+      child: BlocBuilder<HomeCubit, HomeState>(
+        builder: (context, state) {
+          if (state.status == HomeStatus.error) {
+            return ErrorStateView(
+              onRetry: () => context.read<HomeCubit>().loadData(),
+            );
+          }
 
-        return RefreshIndicator(
-          onRefresh: () => context.read<HomeCubit>().refresh(),
-          color: AppTheme.primary,
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            child: SafeArea(
-              child: Builder(
-                builder: (context) {
-                  final authState = context.watch<AuthCubit>().state;
-                  final userName = authState.fullName ?? 'Bạn';
+          return RefreshIndicator(
+            onRefresh: () => context.read<HomeCubit>().refresh(),
+            color: AppTheme.primary,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: SafeArea(
+                child: Builder(
+                  builder: (context) {
+                    final authState = context.watch<AuthCubit>().state;
+                    final userName = authState.fullName ?? 'Bạn';
 
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // ── Header with gradient ──
-                      _GradientHeader(userName: userName),
-                      const SizedBox(height: 20),
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // ── Header with gradient ──
+                        _GradientHeader(userName: userName),
+                        const SizedBox(height: 20),
 
-                      // ── Summary stats ──
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: _StatCard(
-                                icon: Icons.shield_outlined,
-                                label: 'Cơ sở an toàn',
-                                value: '${state.inspectedPlaces}',
-                                gradient: const [
-                                  Color(0xFF2E7D32),
-                                  Color(0xFF66BB6A),
-                                ],
+                        // ── Summary stats ──
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: _StatCard(
+                                  icon: Icons.shield_outlined,
+                                  label: 'Cơ sở an toàn',
+                                  value: '${state.inspectedPlaces}',
+                                  gradient: const [
+                                    Color(0xFF2E7D32),
+                                    Color(0xFF66BB6A),
+                                  ],
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: _StatCard(
-                                icon: Icons.warning_amber_rounded,
-                                label: 'Vi phạm',
-                                value: '${state.recentViolations}',
-                                gradient: const [
-                                  Color(0xFFEF5350),
-                                  Color(0xFFFF8A80),
-                                ],
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: _StatCard(
+                                  icon: Icons.warning_amber_rounded,
+                                  label: 'Vi phạm',
+                                  value: '${state.recentViolations}',
+                                  gradient: const [
+                                    Color(0xFFEF5350),
+                                    Color(0xFFFF8A80),
+                                  ],
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: _StatCard(
-                                icon: Icons.campaign_outlined,
-                                label: 'Phản ánh',
-                                value: '${state.newComplaints}',
-                                gradient: const [
-                                  Color(0xFFF57C00),
-                                  Color(0xFFFFB74D),
-                                ],
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: _StatCard(
+                                  icon: Icons.campaign_outlined,
+                                  label: 'Phản ánh',
+                                  value: '${state.newComplaints}',
+                                  gradient: const [
+                                    Color(0xFFF57C00),
+                                    Color(0xFFFFB74D),
+                                  ],
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 24),
+                        const SizedBox(height: 24),
 
-                      // ── Quick Actions ──
-                      const SectionHeader(title: 'Chức năng chính'),
-                      const SizedBox(height: 12),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: _ActionCard(
-                                icon: Icons.search_rounded,
-                                label: 'Tra cứu\ncơ sở',
-                                color: const Color(0xFF2E7D32),
-                                onTap: () {},
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _ActionCard(
-                                icon: Icons.add_comment_rounded,
-                                label: 'Gửi\nphản ánh',
-                                color: const Color(0xFFF57C00),
-                                onTap: () => Navigator.pushNamed(
-                                  context,
-                                  Routes.complaintForm,
+                        // ── Quick Actions ──
+                        const SectionHeader(title: 'Chức năng chính'),
+                        const SizedBox(height: 12),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: _ActionCard(
+                                  icon: Icons.search_rounded,
+                                  label: 'Tra cứu\ncơ sở',
+                                  color: const Color(0xFF2E7D32),
+                                  onTap: () {},
                                 ),
                               ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _ActionCard(
-                                icon: Icons.qr_code_scanner_rounded,
-                                label: 'Quét\nmã QR',
-                                color: const Color(0xFF7B1FA2),
-                                onTap: () {},
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _ActionCard(
+                                  icon: Icons.add_comment_rounded,
+                                  label: 'Gửi\nphản ánh',
+                                  color: const Color(0xFFF57C00),
+                                  onTap: () => Navigator.pushNamed(
+                                    context,
+                                    Routes.complaintForm,
+                                  ),
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _ActionCard(
-                                icon: Icons.map_outlined,
-                                label: 'Bản đồ\nATTP',
-                                color: const Color(0xFF1565C0),
-                                onTap: () {},
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _ActionCard(
+                                  icon: Icons.qr_code_scanner_rounded,
+                                  label: 'Quét\nmã QR',
+                                  color: const Color(0xFF7B1FA2),
+                                  onTap: () {},
+                                ),
                               ),
-                            ),
-                          ],
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _ActionCard(
+                                  icon: Icons.map_outlined,
+                                  label: 'Bản đồ\nATTP',
+                                  color: const Color(0xFF1565C0),
+                                  onTap: () {},
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 24),
+                        const SizedBox(height: 24),
 
-                      // ── Alert Banner ──
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: _AlertBanner(item: state.banner),
-                      ),
-                      const SizedBox(height: 24),
+                        // ── Alert Banner ──
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: _AlertBanner(item: state.banner),
+                        ),
+                        const SizedBox(height: 24),
 
-                      // ── News section ──
-                      SectionHeader(
-                        title: 'Tin tức ATTP',
-                        actionText: 'Xem tất cả',
-                        onActionTap: () =>
-                            Navigator.pushNamed(context, Routes.notifications),
-                      ),
-                      const SizedBox(height: 8),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: state.news.isEmpty
-                            ? const _EmptySection(text: 'Chưa có tin tức mới')
-                            : Column(
-                                children: state.news
-                                    .map((item) => _NewsCard(item: item))
-                                    .toList(),
-                              ),
-                      ),
-                      const SizedBox(height: 24),
-
-                      // ── Food safety tips ──
-                      SectionHeader(
-                        title: 'Cảnh báo thực phẩm',
-                        actionText: 'Xem tất cả',
-                        onActionTap: () {},
-                      ),
-                      const SizedBox(height: 8),
-                      SizedBox(
-                        height: 150,
-                        child: state.alerts.isEmpty
-                            ? const Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 20),
-                                child: _EmptySection(
-                                  text: 'Chưa có cảnh báo mới',
+                        // ── News section ──
+                        SectionHeader(
+                          title: 'Tin tức ATTP',
+                          actionText: 'Xem tất cả',
+                          onActionTap: () => Navigator.pushNamed(
+                            context,
+                            Routes.notifications,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: state.news.isEmpty
+                              ? const _EmptySection(text: 'Chưa có tin tức mới')
+                              : Column(
+                                  children: state.news
+                                      .map((item) => _NewsCard(item: item))
+                                      .toList(),
                                 ),
-                              )
-                            : ListView(
-                                scrollDirection: Axis.horizontal,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 20,
+                        ),
+                        const SizedBox(height: 24),
+
+                        // ── Food safety tips ──
+                        SectionHeader(
+                          title: 'Cảnh báo thực phẩm',
+                          actionText: 'Xem tất cả',
+                          onActionTap: () {},
+                        ),
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          height: 150,
+                          child: state.alerts.isEmpty
+                              ? const Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: 20),
+                                  child: _EmptySection(
+                                    text: 'Chưa có cảnh báo mới',
+                                  ),
+                                )
+                              : ListView(
+                                  scrollDirection: Axis.horizontal,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                  ),
+                                  children: state.alerts
+                                      .map((item) => _AlertFoodCard(item: item))
+                                      .toList(),
                                 ),
-                                children: state.alerts
-                                    .map((item) => _AlertFoodCard(item: item))
-                                    .toList(),
-                              ),
-                      ),
-                      const SizedBox(height: 100),
-                    ],
-                  );
-                },
+                        ),
+                        const SizedBox(height: 100),
+                      ],
+                    );
+                  },
+                ),
               ),
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 }

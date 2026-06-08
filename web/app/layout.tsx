@@ -1,25 +1,24 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans, Sora } from "next/font/google";
+import { Roboto } from "next/font/google";
 import "./globals.css";
+import { AuthProvider } from "@/lib/AuthContext";
 import { RoleProvider } from "@/lib/RoleContext";
-import Sidebar from "@/components/Sidebar";
-import Header from "@/components/Header";
+import AppShell from "@/components/AppShell";
 
-const jakarta = Plus_Jakarta_Sans({
-  subsets: ["latin"],
-  variable: "--font-jakarta",
-  weight: ["300", "400", "500", "600", "700", "800"],
-});
-
-const sora = Sora({
-  subsets: ["latin"],
-  variable: "--font-sora",
-  weight: ["400", "600", "700"],
+const roboto = Roboto({
+  subsets: ["latin", "vietnamese"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "FSMS Đà Nẵng — Hệ thống Quản lý An toàn Thực phẩm",
-  description: "Hệ thống quản lý an toàn thực phẩm thành phố Đà Nẵng",
+  icons: {
+    icon: '/logo-attp.png',
+  },
+  title: "Hệ thống Quản lý ATTP — Chi cục An toàn Thực phẩm TP. Đà Nẵng",
+  description:
+    "Hệ thống phần mềm quản lý an toàn thực phẩm thành phố Đà Nẵng — Chi cục An toàn Thực phẩm, Sở Y tế",
+  keywords: "an toàn thực phẩm, đà nẵng, chi cục, quản lý, cơ sở kinh doanh",
 };
 
 export default function RootLayout({
@@ -28,18 +27,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="vi" className={`${jakarta.variable} ${sora.variable}`}>
-      <body className="bg-slate-50 font-sans antialiased">
-        <RoleProvider>
-          <div className="flex min-h-screen">
-            <Sidebar />
-            <div className="flex-1 ml-[260px] flex flex-col min-h-screen">
-              <Header />
-              <main className="flex-1 p-6">{children}</main>
-            </div>
-          </div>
-        </RoleProvider>
+    <html lang="vi" className={roboto.className}>
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+      </head>
+      <body style={{ fontFamily: "'Roboto', Arial, Helvetica, sans-serif" }}>
+        <AuthProvider>
+          <RoleProvider>
+            <AppShell>{children}</AppShell>
+          </RoleProvider>
+        </AuthProvider>
       </body>
     </html>
   );
 }
+

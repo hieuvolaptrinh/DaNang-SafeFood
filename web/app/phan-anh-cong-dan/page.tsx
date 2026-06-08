@@ -1,216 +1,301 @@
 'use client';
 
-import { useState } from 'react';
-import { FiEye } from 'react-icons/fi';
-import { mockFeedback, CitizenFeedback } from '@/data/mockData';
+import { useState, useEffect, useCallback } from 'react';
+import { Eye, FileSpreadsheet, RefreshCw, Printer } from 'lucide-react';
 import Link from 'next/link';
+import { phanAnhApi, PhanAnhItem, TrangThaiPhanAnh } from '@/api/phananh';
+import DataTable, { Column } from '@/components/DataTable';
+import {
+  PageHeader, FilterBar, FilterField, GovInput, GovSelect, GovBtn,
+  SectionCard, GovPagination, StatusBadge, MiniStat,
+} from '@/components/GovUI';
+import AlertBanner from '@/components/AlertBanner';
 
-const TYPE_CONFIG: Record<string, { bg: string; text: string; border: string; dot: string }> = {
-  'Khiếu nại vệ sinh': { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', dot: 'bg-red-400' },
-  'Hàng giả': { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200', dot: 'bg-purple-400' },
-  'Ngộ độc thực phẩm': { bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-200', dot: 'bg-orange-400' },
-  'Câu hỏi chung': { bg: 'bg-slate-50', text: 'text-slate-600', border: 'border-slate-200', dot: 'bg-slate-400' },
+// ─── helpers ────────────────────────────────────────────────────
+const TRANG_THAI_OPTIONS = [
+  { value: '',          label: '-- Tất cả --' },
+  { value: 'CHO_XU_LY',  label: 'Chờ xử lý' },
+  { value: 'DANG_XU_LY', label: 'Đang xử lý' },
+  { value: 'DA_XU_LY',   label: 'Đã xử lý' },
+  { value: 'TU_CHOI',    label: 'Từ chối' },
+];
+
+const trangThaiVariant: Record<string, string> = {
+  CHO_XU_LY:  'open',
+  DANG_XU_LY: 'in-progress',
+  DA_XU_LY:   'resolved',
+  TU_CHOI:    'rejected',
+};
+const trangThaiLabel: Record<string, string> = {
+  CHO_XU_LY:  'Chờ xử lý',
+  DANG_XU_LY: 'Đang xử lý',
+  DA_XU_LY:   'Đã xử lý',
+  TU_CHOI:    'Từ chối',
 };
 
-const PRIORITY_CONFIG: Record<string, { bg: string; text: string; border: string; dot: string; label: string }> = {
-  high: { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', dot: 'bg-red-500', label: 'Cao' },
-  medium: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', dot: 'bg-amber-400', label: 'Trung bình' },
-  low: { bg: 'bg-sky-50', text: 'text-sky-700', border: 'border-sky-200', dot: 'bg-sky-400', label: 'Thấp' },
-};
+function formatDate(iso: string) {
+  if (!iso) return '—';
+  try {
+    return new Date(iso).toLocaleDateString('vi-VN', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
+    });
+  } catch {
+    return iso;
+  }
+}
 
-const STATUS_CONFIG: Record<string, { bg: string; text: string; border: string; dot: string; icon: string; label: string }> = {
-  'open': { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', dot: 'bg-amber-400', icon: '📬', label: 'Đang mở' },
-  'in-progress': { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', dot: 'bg-blue-500', icon: '🔄', label: 'Đang xử lý' },
-  'resolved': { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', dot: 'bg-emerald-500', icon: '✓', label: 'Đã giải quyết' },
-};
+const PAGE_SIZE = 20;
 
+// ─── component ──────────────────────────────────────────────────
 export default function PhanAnhCongDanPage() {
-  const [search, setSearch] = useState('');
-  const [typeFilter, setTypeFilter] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
+  const [trangThai, setTrangThai]   = useState('');
+  const [fromDate, setFromDate]     = useState('');
+  const [toDate, setToDate]         = useState('');
+  const [page, setPage]             = useState(0);
 
-  const filtered = mockFeedback.filter((f: CitizenFeedback) => {
-    const matchSearch = !search || f.businessReported.toLowerCase().includes(search.toLowerCase()) || f.submitter.toLowerCase().includes(search.toLowerCase());
-    const matchType = !typeFilter || f.type === typeFilter;
-    const matchStatus = !statusFilter || f.status === statusFilter;
-    return matchSearch && matchType && matchStatus;
+  const [searchTieuDe, setSearchTieuDe] = useState('');
+  const [searchCoSo, setSearchCoSo] = useState('');
+  const [searchNguoiGui, setSearchNguoiGui] = useState('');
+
+  const [items, setItems]           = useState<PhanAnhItem[]>([]);
+  const [totalElements, setTotalElements] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [loading, setLoading]       = useState(false);
+  const [error, setError]           = useState<string | null>(null);
+
+  // Tổng hợp đếm theo trạng thái (từ danh sách trang hiện tại — backend nên cung cấp endpoint riêng nếu cần chính xác)
+  const choXuLy   = items.filter(i => i.trangThaiPhanAnh === 'CHO_XU_LY').length;
+  const dangXuLy  = items.filter(i => i.trangThaiPhanAnh === 'DANG_XU_LY').length;
+  const daXuLy    = items.filter(i => i.trangThaiPhanAnh === 'DA_XU_LY').length;
+
+  const fetchData = useCallback(async (currentPage = 0) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await phanAnhApi.search({
+        trangThai: trangThai || undefined,
+        from: fromDate ? new Date(fromDate).toISOString() : undefined,
+        to:   toDate   ? new Date(toDate).toISOString()   : undefined,
+        page: currentPage,
+        size: PAGE_SIZE,
+        sort: ['ngayGui,desc'],
+      });
+      setItems(res.content);
+      setTotalElements(res.totalElements);
+      setTotalPages(res.totalPages);
+    } catch (err: any) {
+      setError(err.message || 'Không thể tải danh sách phản ánh.');
+    } finally {
+      setLoading(false);
+    }
+  }, [trangThai, fromDate, toDate]);
+
+  // Tải lần đầu
+  useEffect(() => { fetchData(0); setPage(0); }, [fetchData]);
+
+  const handleSearch = () => { setPage(0); fetchData(0); };
+  const handleReset  = () => {
+    setTrangThai('');
+    setFromDate('');
+    setToDate('');
+    setSearchTieuDe('');
+    setSearchCoSo('');
+    setSearchNguoiGui('');
+  };
+  const handlePageChange = (newPage: number) => { setPage(newPage); fetchData(newPage); };
+
+  const filteredItems = items.filter(r => {
+    const termTieuDe = searchTieuDe.toLowerCase().trim();
+    const termCoSo = searchCoSo.toLowerCase().trim();
+    const termNguoiGui = searchNguoiGui.toLowerCase().trim();
+
+    if (termTieuDe && (!r.tieuDe || !r.tieuDe.toLowerCase().includes(termTieuDe))) return false;
+    if (termCoSo && (!r.tenCoSo || !r.tenCoSo.toLowerCase().includes(termCoSo))) return false;
+    if (termNguoiGui && (!r.tenNguoiPhanAnh || !r.tenNguoiPhanAnh.toLowerCase().includes(termNguoiGui))) return false;
+
+    return true;
   });
 
-  const STATS = [
-    { label: 'Tổng phản ánh', value: String(mockFeedback.length), icon: '📣', color: 'from-violet-600 to-purple-600' },
-    { label: 'Đang mở', value: String(mockFeedback.filter((f: CitizenFeedback) => f.status === 'open').length), icon: '📬', color: 'from-amber-500 to-orange-500' },
-    { label: 'Đang xử lý', value: String(mockFeedback.filter((f: CitizenFeedback) => f.status === 'in-progress').length), icon: '🔄', color: 'from-blue-500 to-cyan-600' },
-    { label: 'Đã giải quyết', value: String(mockFeedback.filter((f: CitizenFeedback) => f.status === 'resolved').length), icon: '✅', color: 'from-emerald-500 to-teal-500' },
+  const columns: Column<PhanAnhItem>[] = [
+    {
+      key: 'maPhanAnh',
+      header: 'Mã phản ánh',
+      render: r => (
+        <span style={{ fontFamily: 'monospace', fontWeight: 600, color: '#005A9E' }}>
+          {r.maPhanAnh}
+        </span>
+      ),
+    },
+    {
+      key: 'tieuDe',
+      header: 'Tiêu đề',
+      render: r => (
+        <span style={{ fontWeight: 500 }} title={r.lyDo}>
+          {r.tieuDe || '(Không có tiêu đề)'}
+        </span>
+      ),
+    },
+    {
+      key: 'tenNguoiPhanAnh',
+      header: 'Người gửi',
+      render: r => <span style={{ fontWeight: 500 }}>{r.tenNguoiPhanAnh}</span>,
+    },
+    {
+      key: 'tenCoSo',
+      header: 'Cơ sở bị phản ánh',
+      render: r => <span style={{ fontWeight: 600, color: '#333' }}>{r.tenCoSo || '—'}</span>,
+    },
+    {
+      key: 'diaDiem',
+      header: 'Địa điểm',
+      render: r => <span style={{ fontSize: '12px', color: '#555' }}>{r.diaDiem || '—'}</span>,
+    },
+    {
+      key: 'ngayGui',
+      header: 'Ngày gửi',
+      render: r => (
+        <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>{formatDate(r.ngayGui)}</span>
+      ),
+    },
+    {
+      key: 'trangThaiPhanAnh',
+      header: 'Trạng thái',
+      render: r => (
+        <StatusBadge
+          variant={trangThaiVariant[r.trangThaiPhanAnh] ?? 'default'}
+          label={trangThaiLabel[r.trangThaiPhanAnh] ?? r.trangThaiPhanAnh}
+        />
+      ),
+    },
+    {
+      key: 'actions',
+      header: 'Thao tác',
+      render: r => (
+        <Link href={`/phan-anh-cong-dan/${r.maPhanAnh}`}>
+          <GovBtn variant="secondary" size="sm" title="Xem chi tiết & xử lý">
+            <Eye style={{ width: 12, height: 12 }} />
+          </GovBtn>
+        </Link>
+      ),
+    },
   ];
 
   return (
-    <div className="min-h-screen bg-[#f5f6fa] font-sans">
-      <div className="h-1 w-full bg-gradient-to-r from-violet-600 via-purple-500 to-pink-400" />
-      <div className="max-w-[1200px] mx-auto px-6 py-8">
+    <div>
+      <PageHeader
+        title="Tiếp nhận và xử lý phản ánh công dân"
+        subtitle="Chi cục An toàn Thực phẩm TP. Đà Nẵng — Quản lý khiếu nại và phản ánh từ người dân"
+        actions={
+          <>
+            <GovBtn variant="secondary" onClick={() => fetchData(page)} disabled={loading}>
+              <RefreshCw style={{ width: 12, height: 12 }} /> Làm mới
+            </GovBtn>
+            <GovBtn variant="secondary">
+              <Printer style={{ width: 12, height: 12 }} /> In báo cáo
+            </GovBtn>
+            <GovBtn variant="secondary">
+              <FileSpreadsheet style={{ width: 12, height: 12 }} /> Xuất Excel
+            </GovBtn>
+          </>
+        }
+      />
 
-        <div className="flex items-start justify-between mb-8">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-[11px] font-bold tracking-[0.12em] uppercase text-violet-500">SỞ AN TOÀN THỰC PHẨM • ĐÀ NẴNG</span>
-            </div>
-            <h1 className="text-[28px] font-black text-slate-900 tracking-tight leading-tight">Phản ánh Công dân</h1>
-            <p className="text-[13px] text-slate-400 mt-1 font-medium">Báo cáo và khiếu nại từ người dân về các cơ sở kinh doanh thực phẩm</p>
-          </div>
-        </div>
+      {error && <AlertBanner type="danger" title={error} />}
 
-        {/* Alert banner */}
-        <div className="flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-2xl px-5 py-4 mb-6">
-          <span className="text-xl mt-0.5">ℹ️</span>
-          <div>
-            <p className="text-[13px] font-bold text-blue-800">23 phản ánh chờ xem xét</p>
-            <p className="text-[12px] text-blue-600 mt-0.5">Phản ánh mới cần được xem xét và phản hồi trong vòng 5 ngày làm việc.</p>
-          </div>
-        </div>
+      {choXuLy > 0 && (
+        <AlertBanner
+          type="info"
+          title={`${choXuLy} phản ánh đang chờ xử lý cần được xem xét và phản hồi trong vòng 5 ngày làm việc.`}
+        />
+      )}
 
-        <div className="grid grid-cols-4 gap-4 mb-8">
-          {STATS.map((s) => (
-            <div key={s.label} className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-[12px] font-semibold text-slate-400 uppercase tracking-wide mb-2">{s.label}</p>
-                  <p className="text-[30px] font-black text-slate-900 leading-none">{s.value}</p>
-                </div>
-                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${s.color} flex items-center justify-center text-lg shadow-sm`}>{s.icon}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="bg-white rounded-2xl p-5 mb-4 shadow-sm border border-slate-100">
-          <p className="text-[12px] font-bold text-slate-400 uppercase tracking-wider mb-3">Tỷ lệ theo trạng thái xử lý</p>
-          <div className="flex gap-2 h-2 rounded-full overflow-hidden">
-            <div className="bg-amber-400 rounded-full" style={{ flex: mockFeedback.filter((f: CitizenFeedback) => f.status === 'open').length }} />
-            <div className="bg-blue-500 rounded-full" style={{ flex: mockFeedback.filter((f: CitizenFeedback) => f.status === 'in-progress').length }} />
-            <div className="bg-emerald-500 rounded-full" style={{ flex: mockFeedback.filter((f: CitizenFeedback) => f.status === 'resolved').length }} />
-          </div>
-          <div className="flex gap-5 mt-2.5">
-            {[
-              { color: 'bg-amber-400', label: 'Đang mở', val: String(mockFeedback.filter((f: CitizenFeedback) => f.status === 'open').length) },
-              { color: 'bg-blue-500', label: 'Đang xử lý', val: String(mockFeedback.filter((f: CitizenFeedback) => f.status === 'in-progress').length) },
-              { color: 'bg-emerald-500', label: 'Đã giải quyết', val: String(mockFeedback.filter((f: CitizenFeedback) => f.status === 'resolved').length) },
-            ].map((item) => (
-              <div key={item.label} className="flex items-center gap-1.5">
-                <span className={`w-2 h-2 rounded-full ${item.color}`} />
-                <span className="text-[12px] text-slate-500 font-medium">{item.label}</span>
-                <span className="text-[12px] font-bold text-slate-700">{item.val} phản ánh</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between flex-wrap gap-3">
-            <div className="flex items-center gap-3">
-              <h2 className="text-[15px] font-bold text-slate-800">Tất cả phản ánh</h2>
-              <span className="px-2 py-0.5 rounded-md bg-slate-100 text-[12px] font-bold text-slate-500">{filtered.length}</span>
-            </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <div className="relative">
-                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-                <input
-                  type="text"
-                  placeholder="Tìm phản ánh..."
-                  className="pl-9 pr-4 py-2 rounded-xl border border-slate-200 bg-slate-50 text-[13px] text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent w-[200px] transition-all"
-                  onChange={(e) => setSearch(e.target.value)}
-                />
-              </div>
-              <select className="px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-[13px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-violet-500 cursor-pointer" onChange={(e) => setTypeFilter(e.target.value)}>
-                <option value="">Tất cả loại</option>
-                <option value="Khiếu nại vệ sinh">Khiếu nại vệ sinh</option>
-                <option value="Hàng giả">Hàng giả</option>
-                <option value="Ngộ độc thực phẩm">Ngộ độc thực phẩm</option>
-                <option value="Câu hỏi chung">Câu hỏi chung</option>
-              </select>
-              <select className="px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-[13px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-violet-500 cursor-pointer" onChange={(e) => setStatusFilter(e.target.value)}>
-                <option value="">Tất cả trạng thái</option>
-                <option value="open">Đang mở</option>
-                <option value="in-progress">Đang xử lý</option>
-                <option value="resolved">Đã giải quyết</option>
-              </select>
-            </div>
-          </div>
-
-          <table className="w-full">
-            <thead>
-              <tr className="bg-slate-50 border-b border-slate-100">
-                {['Mã phản ánh', 'Người gửi', 'Cơ sở bị phản ánh', 'Loại phản ánh', 'Ngày gửi', 'Ưu tiên', 'Trạng thái', 'Thao tác'].map((h) => (
-                  <th key={h} className="px-5 py-3 text-left text-[11px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
-              {filtered.length === 0 ? (
-                <tr><td colSpan={8} className="px-5 py-12 text-center text-[13px] text-slate-400">Không có phản ánh nào</td></tr>
-              ) : filtered.map((f: CitizenFeedback) => {
-                const typeCfg = TYPE_CONFIG[f.type] || { bg: 'bg-slate-50', text: 'text-slate-600', border: 'border-slate-200', dot: 'bg-slate-400' };
-                const prioCfg = PRIORITY_CONFIG[f.priority] || { bg: 'bg-slate-50', text: 'text-slate-600', border: 'border-slate-200', dot: 'bg-slate-400', label: f.priority };
-                const statCfg = STATUS_CONFIG[f.status] || { bg: 'bg-slate-50', text: 'text-slate-600', border: 'border-slate-200', dot: 'bg-slate-400', icon: '•', label: f.status };
-                return (
-                  <tr key={f.id} className="hover:bg-violet-50/30 transition-colors group">
-                    <td className="px-5 py-3.5">
-                      <span className="font-mono text-[12px] text-slate-400 font-semibold bg-slate-100 px-2 py-0.5 rounded-md">{f.id}</span>
-                    </td>
-                    <td className="px-5 py-3.5 text-[13px] text-slate-700 font-medium">{f.submitter}</td>
-                    <td className="px-5 py-3.5">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-100 to-purple-200 flex items-center justify-center text-[11px] font-black text-violet-600 flex-shrink-0">
-                          {f.businessReported.charAt(0)}
-                        </div>
-                        <span className="font-semibold text-[13px] text-slate-800">{f.businessReported}</span>
-                      </div>
-                    </td>
-                    <td className="px-5 py-3.5">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border ${typeCfg.bg} ${typeCfg.text} ${typeCfg.border}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${typeCfg.dot}`} />{f.type}
-                      </span>
-                    </td>
-                    <td className="px-5 py-3.5 text-[13px] text-slate-500 font-mono">{f.date}</td>
-                    <td className="px-5 py-3.5">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border ${prioCfg.bg} ${prioCfg.text} ${prioCfg.border}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${prioCfg.dot}`} />{prioCfg.label}
-                      </span>
-                    </td>
-                    <td className="px-5 py-3.5">
-                      <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold border ${statCfg.bg} ${statCfg.text} ${statCfg.border}`}>
-                        <span className="text-[10px]">{statCfg.icon}</span>{statCfg.label}
-                      </span>
-                    </td>
-                    <td className="px-5 py-3.5">
-                      <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Link href={`/phan-anh-cong-dan/${f.id}`}>
-                          <button className="w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-violet-50 hover:border-violet-300 text-sm transition-all shadow-sm">
-                            👁
-                          </button>
-                        </Link>
-                        <button className="w-7 h-7 rounded-lg border border-blue-200 bg-blue-600 hover:bg-blue-700 text-white text-sm transition-all shadow-sm" title="Phản hồi">💬</button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-
-          <div className="px-5 py-3.5 border-t border-slate-100 flex items-center justify-between bg-slate-50/50">
-            <span className="text-[12px] text-slate-400 font-medium">
-              Hiển thị <strong className="text-slate-600">{filtered.length}</strong> trong tổng số <strong className="text-slate-600">86</strong> phản ánh
-            </span>
-            <div className="flex gap-1">
-              {[1, 2, 3].map((p) => (
-                <button key={p} className={`w-7 h-7 rounded-lg text-[12px] font-semibold transition-all ${p === 1 ? 'bg-violet-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-100'}`}>{p}</button>
-              ))}
-            </div>
-          </div>
-        </div>
+      {/* Stats */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '10px', marginBottom: '12px' }}>
+        <MiniStat label="Tổng phản ánh"  value={totalElements}  color="neutral" />
+        <MiniStat label="Chờ xử lý"      value={choXuLy}        color="orange"  note="Cần xử lý" />
+        <MiniStat label="Đang xử lý"     value={dangXuLy}       color="blue"    />
+        <MiniStat label="Đã giải quyết"  value={daXuLy}         color="green"   />
       </div>
+
+      {/* Filter */}
+      <FilterBar>
+        <FilterField label="Tiêu đề phản ánh">
+          <GovInput
+            placeholder="Ví dụ: Vệ sinh..."
+            value={searchTieuDe}
+            onChange={setSearchTieuDe}
+            width={160}
+          />
+        </FilterField>
+        <FilterField label="Tên cơ sở">
+          <GovInput
+            placeholder="Ví dụ: Phở..."
+            value={searchCoSo}
+            onChange={setSearchCoSo}
+            width={160}
+          />
+        </FilterField>
+        <FilterField label="Người gửi">
+          <GovInput
+            placeholder="Ví dụ: Nguyễn..."
+            value={searchNguoiGui}
+            onChange={setSearchNguoiGui}
+            width={140}
+          />
+        </FilterField>
+        <FilterField label="Trạng thái">
+          <GovSelect
+            value={trangThai}
+            onChange={setTrangThai}
+            options={TRANG_THAI_OPTIONS}
+            width={150}
+          />
+        </FilterField>
+        <FilterField label="Từ ngày">
+          <GovInput
+            type="date"
+            value={fromDate}
+            onChange={setFromDate}
+            width={120}
+          />
+        </FilterField>
+        <FilterField label="Đến ngày">
+          <GovInput
+            type="date"
+            value={toDate}
+            onChange={setToDate}
+            width={120}
+          />
+        </FilterField>
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px' }}>
+          <GovBtn variant="primary" onClick={handleSearch} disabled={loading}>
+            Tìm
+          </GovBtn>
+          <GovBtn variant="secondary" onClick={handleReset} disabled={loading}>
+            Xóa lọc
+          </GovBtn>
+        </div>
+      </FilterBar>
+
+      {/* Table */}
+      <SectionCard
+        title={`Danh sách phản ánh (${filteredItems.length} bản ghi)`}
+        footer={
+          <GovPagination
+            info={`Trang ${page + 1} / ${totalPages || 1} — ${totalElements} phản ánh`}
+            page={page}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+          />
+        }
+      >
+        <DataTable
+          columns={columns}
+          data={filteredItems}
+          loading={loading}
+          emptyMessage="Không tìm thấy phản ánh nào phù hợp."
+        />
+      </SectionCard>
     </div>
   );
 }
-

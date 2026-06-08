@@ -2,244 +2,312 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { mockFeedback, CitizenFeedback } from '@/data/mockData';
+import { ArrowLeft, Printer, CheckCircle, XCircle, Clock, MapPin, User, Building2 } from 'lucide-react';
+import { phanAnhApi, PhanAnhItem, TrangThaiPhanAnh } from '@/api/phananh';
+import {
+  PageHeader, GovBtn, SectionCard, StatusBadge, ActionButtons,
+  FormSection, FormField, GovSelect, FilterField,
+} from '@/components/GovUI';
+import AlertBanner from '@/components/AlertBanner';
 
-const STATUS_CONFIG: Record<string, { bg: string; text: string; border: string; dot: string; icon: string; label: string }> = {
-  'open': { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', dot: 'bg-amber-400', icon: '📬', label: 'Đang mở' },
-  'in-progress': { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', dot: 'bg-blue-500', icon: '🔄', label: 'Đang xử lý' },
-  'resolved': { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', dot: 'bg-emerald-500', icon: '✓', label: 'Đã giải quyết' },
+// ─── helpers ────────────────────────────────────────────────────
+const TRANG_THAI_OPTIONS: { value: TrangThaiPhanAnh | string; label: string }[] = [
+  { value: 'CHO_XU_LY',  label: 'Chờ xử lý' },
+  { value: 'DANG_XU_LY', label: 'Đang xử lý' },
+  { value: 'DA_XU_LY',   label: 'Đã xử lý' },
+  { value: 'TU_CHOI',    label: 'Từ chối' },
+];
+
+const trangThaiVariant: Record<string, string> = {
+  CHO_XU_LY:  'open',
+  DANG_XU_LY: 'in-progress',
+  DA_XU_LY:   'resolved',
+  TU_CHOI:    'rejected',
+};
+const trangThaiLabel: Record<string, string> = {
+  CHO_XU_LY:  'Chờ xử lý',
+  DANG_XU_LY: 'Đang xử lý',
+  DA_XU_LY:   'Đã xử lý',
+  TU_CHOI:    'Từ chối',
 };
 
-const TYPE_CONFIG: Record<string, { bg: string; text: string; border: string; dot: string }> = {
-  'Khiếu nại vệ sinh': { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', dot: 'bg-red-400' },
-  'Hàng giả': { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200', dot: 'bg-purple-400' },
-  'Ngộ độc thực phẩm': { bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-200', dot: 'bg-orange-400' },
-  'Câu hỏi chung': { bg: 'bg-slate-50', text: 'text-slate-600', border: 'border-slate-200', dot: 'bg-slate-400' },
-};
+function formatDateTime(iso: string) {
+  if (!iso) return '—';
+  try {
+    return new Date(iso).toLocaleString('vi-VN', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit',
+    });
+  } catch {
+    return iso;
+  }
+}
 
+const InfoRow = ({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) => (
+  <div style={{ padding: '6px 0', borderBottom: '1px solid #F0F0F0', display: 'flex', gap: '12px' }}>
+    <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#666', width: 140, flexShrink: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+      {label}
+    </span>
+    <span style={{ fontSize: '13px', fontWeight: 500, color: '#222', fontFamily: mono ? 'monospace' : 'inherit', flex: 1 }}>
+      {value || '—'}
+    </span>
+  </div>
+);
+
+// ─── component ──────────────────────────────────────────────────
 export default function PhanAnhDetailPage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
 
-  const [feedback, setFeedback] = useState<CitizenFeedback | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [item, setItem]             = useState<PhanAnhItem | null>(null);
+  const [loading, setLoading]       = useState(true);
+  const [error, setError]           = useState<string | null>(null);
 
-  // Form state
-  const [status, setStatus] = useState('');
-  const [responseContent, setResponseContent] = useState('');
+  const [newStatus, setNewStatus]   = useState<string>('');
+  const [ghiChu, setGhiChu]         = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [success, setSuccess]       = useState(false);
 
+  // ── Fetch chi tiết ──
   useEffect(() => {
-    const found = mockFeedback.find(f => f.id === id);
-    if (found) {
-      setFeedback(found);
-      setStatus(found.status); // Khởi tạo trạng thái hiện tại
-    }
-    setLoading(false);
+    if (!id) return;
+    setLoading(true);
+    setError(null);
+    phanAnhApi
+      .getById(id)
+      .then((data) => {
+        setItem(data);
+        setNewStatus(data.trangThaiPhanAnh);
+        setGhiChu(data.ghiChu ?? '');
+      })
+      .catch((err: any) => {
+        setError(err.message || 'Không thể tải thông tin phản ánh.');
+      })
+      .finally(() => setLoading(false));
   }, [id]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#f5f6fa] flex items-center justify-center">
-        Đang tải...
-      </div>
-    );
-  }
-
-  if (!feedback) {
-    return (
-      <div className="min-h-screen bg-[#f5f6fa] flex flex-col items-center justify-center py-20">
-        <div className="text-7xl mb-6">😕</div>
-        <h2 className="text-2xl font-bold text-slate-900">Không tìm thấy phản ánh</h2>
-        <p className="text-slate-500 mt-2 mb-8">Phản ánh #{id} không tồn tại hoặc đã bị xóa.</p>
-        <button 
-          onClick={() => router.push('/phan-anh-cong-dan')}
-          className="px-6 py-3 bg-violet-600 text-white rounded-2xl font-medium hover:bg-violet-700"
-        >
-          Quay về danh sách phản ánh
-        </button>
-      </div>
-    );
-  }
-
-  const typeCfg = TYPE_CONFIG[feedback.type] || { bg: 'bg-slate-50', text: 'text-slate-600', border: 'border-slate-200', dot: 'bg-slate-400' };
-  const currentStatusCfg = STATUS_CONFIG[status] || STATUS_CONFIG[feedback.status];
-
+  // ── Submit cập nhật ──
   const handleUpdate = async () => {
-    if (!responseContent.trim()) {
-      alert('Vui lòng nhập nội dung phản hồi trước khi cập nhật.');
+    if (!ghiChu.trim()) {
+      alert('Vui lòng nhập ghi chú xử lý trước khi cập nhật.');
       return;
     }
-
-    setIsSubmitting(true);
-
+    setSubmitting(true);
+    setError(null);
     try {
-      // Giả lập gọi API lưu dữ liệu
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Cập nhật trạng thái trong state (thực tế sẽ gọi API)
-      setFeedback(prev => prev ? { ...prev, status } : null);
-
-      console.log('Cập nhật phản ánh:', {
-        id: feedback.id,
-        newStatus: status,
-        responseContent,
-        updatedAt: new Date().toISOString(),
+      const updated = await phanAnhApi.update(id, {
+        trangThaiPhanAnh: newStatus,
+        ghiChu: ghiChu.trim(),
       });
-
-      alert('✅ Cập nhật phản ánh thành công!\nThông báo đã được gửi đến người dân.');
-
-      // Quay về danh sách sau khi cập nhật thành công
-      router.push('/phan-anh-cong-dan');
-    } catch (error) {
-      alert('❌ Có lỗi xảy ra khi cập nhật.');
+      setItem(updated);
+      setSuccess(true);
+      setTimeout(() => router.push('/phan-anh-cong-dan'), 1500);
+    } catch (err: any) {
+      setError(err.message || 'Cập nhật thất bại. Vui lòng thử lại.');
     } finally {
-      setIsSubmitting(false);
+      setSubmitting(false);
     }
   };
 
+  // ── Loading / Error states ──
+  if (loading) {
+    return (
+      <div>
+        <PageHeader title="Đang tải..." subtitle="Phản ánh công dân" />
+        <div style={{ textAlign: 'center', padding: '60px', color: '#888', fontSize: '14px' }}>
+          Đang tải dữ liệu phản ánh...
+        </div>
+      </div>
+    );
+  }
+
+  if (error && !item) {
+    return (
+      <div>
+        <PageHeader
+          title="Lỗi tải dữ liệu"
+          subtitle={`Mã: ${id}`}
+          actions={
+            <GovBtn variant="secondary" onClick={() => router.push('/phan-anh-cong-dan')}>
+              <ArrowLeft style={{ width: 12, height: 12 }} /> Quay lại danh sách
+            </GovBtn>
+          }
+        />
+        <AlertBanner type="error" title={error} />
+      </div>
+    );
+  }
+
+  if (!item) {
+    return (
+      <div>
+        <PageHeader
+          title="Không tìm thấy phản ánh"
+          subtitle={`Mã: ${id}`}
+          actions={
+            <GovBtn variant="secondary" onClick={() => router.push('/phan-anh-cong-dan')}>
+              <ArrowLeft style={{ width: 12, height: 12 }} /> Quay lại danh sách
+            </GovBtn>
+          }
+        />
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-[#f5f6fa] font-sans">
-      <div className="h-1 w-full bg-gradient-to-r from-violet-600 via-purple-500 to-pink-400" />
+    <div>
+      <PageHeader
+        title={`Chi tiết phản ánh — ${item.maPhanAnh}`}
+        subtitle="Chi cục An toàn Thực phẩm TP. Đà Nẵng — Tiếp nhận và xử lý phản ánh từ người dân"
+        actions={
+          <ActionButtons>
+            <GovBtn variant="secondary" onClick={() => router.push('/phan-anh-cong-dan')}>
+              <ArrowLeft style={{ width: 12, height: 12 }} /> Quay lại
+            </GovBtn>
+            <GovBtn variant="secondary">
+              <Printer style={{ width: 12, height: 12 }} /> In phiếu
+            </GovBtn>
+          </ActionButtons>
+        }
+      />
 
-      <div className="max-w-[1100px] mx-auto px-6 py-8">
-        {/* Breadcrumb */}
-        <div className="flex items-center gap-3 mb-8">
-          <button
-            onClick={() => router.push('/phan-anh-cong-dan')}
-            className="text-slate-500 hover:text-slate-700 flex items-center gap-2 text-sm font-medium"
-          >
-            ← Quay lại danh sách
-          </button>
-          <div className="h-4 w-px bg-slate-200 mx-2" />
-          <span className="text-[11px] font-bold tracking-widest uppercase text-violet-500">
-            SỞ AN TOÀN THỰC PHẨM • ĐÀ NẴNG
-          </span>
+      {success && (
+        <AlertBanner type="success" title="Đã cập nhật phản ánh thành công! Đang chuyển về danh sách..." />
+      )}
+      {error && <AlertBanner type="error" title={error} />}
+
+      {/* Summary cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '10px', marginBottom: '12px' }}>
+        {[
+          { label: 'Mã phản ánh', value: item.maPhanAnh, mono: true },
+          { label: 'Ngày gửi',    value: formatDateTime(item.ngayGui), mono: true },
+          { label: 'Người gửi',   value: item.tenNguoiPhanAnh },
+          { label: 'Trạng thái',  value: trangThaiLabel[item.trangThaiPhanAnh] ?? item.trangThaiPhanAnh },
+        ].map((c) => (
+          <div key={c.label} style={{ background: '#fff', border: '1px solid #D6D6D6', borderRadius: '1px', padding: '10px 14px' }}>
+            <p style={{ fontSize: '10.5px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#555', marginBottom: '4px' }}>
+              {c.label}
+            </p>
+            <p style={{ fontSize: '13px', fontWeight: 700, color: '#222', fontFamily: c.mono ? 'monospace' : 'inherit' }}>
+              {c.value}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '12px' }}>
+        {/* ── Left: Chi tiết ── */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {/* Người phản ánh */}
+          <SectionCard title="Thông tin người gửi phản ánh">
+            <div style={{ padding: '12px 14px' }}>
+              <InfoRow label="Mã người dùng"  value={item.maNguoiPhanAnh} mono />
+              <InfoRow label="Họ và tên"       value={item.tenNguoiPhanAnh} />
+            </div>
+          </SectionCard>
+
+          {/* Nội dung phản ánh */}
+          <SectionCard title="Nội dung phản ánh">
+            <div style={{ padding: '12px 14px' }}>
+              <InfoRow label="Tiêu đề"  value={item.tieuDe} />
+              <InfoRow label="Lý do"    value={item.lyDo} />
+              <InfoRow label="Địa điểm" value={item.diaDiem} />
+              {item.ghiChu && (
+                <div style={{ marginTop: '8px', padding: '8px 10px', background: '#FFFBEA', border: '1px solid #FFE082', borderRadius: '2px' }}>
+                  <p style={{ fontSize: '11px', fontWeight: 600, color: '#7B6000', marginBottom: '4px' }}>GHI CHÚ CŨ</p>
+                  <p style={{ fontSize: '13px', color: '#333' }}>{item.ghiChu}</p>
+                </div>
+              )}
+            </div>
+          </SectionCard>
+
+          {/* Cơ sở bị phản ánh */}
+          <SectionCard title="Cơ sở bị phản ánh">
+            <div style={{ padding: '12px 14px' }}>
+              <InfoRow label="Mã cơ sở"  value={item.maCoSo} mono />
+              <InfoRow label="Tên cơ sở" value={item.tenCoSo} />
+            </div>
+          </SectionCard>
         </div>
 
-        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-8">
-          <div>
-            <div className="flex items-center gap-3 mb-3">
-              <span className="font-mono text-sm bg-slate-100 text-slate-500 px-3 py-1 rounded-lg font-semibold">
-                #{feedback.id}
-              </span>
-              <span className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-2xl text-sm font-semibold border ${currentStatusCfg.bg} ${currentStatusCfg.text} ${currentStatusCfg.border}`}>
-                <span>{currentStatusCfg.icon}</span> {currentStatusCfg.label}
-              </span>
-            </div>
-            <h1 className="text-3xl font-black tracking-tight text-slate-900">Chi tiết phản ánh</h1>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Nội dung chính */}
-          <div className="lg:col-span-8 space-y-6">
-            {/* Thông tin người gửi */}
-            <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100">
-              <h2 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
-                👤 Thông tin người gửi phản ánh
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <p className="text-xs uppercase tracking-widest text-slate-400 mb-1">Họ và tên</p>
-                  <p className="text-xl font-semibold text-slate-900">{feedback.submitter}</p>
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-widest text-slate-400 mb-1">Số điện thoại</p>
-                  <p className="font-medium text-slate-800">0987 654 321</p>
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-widest text-slate-400 mb-1">Ngày gửi</p>
-                  <p className="font-medium text-slate-800">{feedback.date}</p>
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-widest text-slate-400 mb-1">Loại phản ánh</p>
-                  <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-2xl text-sm font-medium border ${typeCfg.bg} ${typeCfg.text} ${typeCfg.border}`}>
-                    <span className={`w-2.5 h-2.5 rounded-full ${typeCfg.dot}`} />
-                    {feedback.type}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Nội dung phản ánh */}
-            <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100">
-              <h2 className="text-lg font-bold text-slate-800 mb-5">Nội dung phản ánh</h2>
-              <div className="text-[15.5px] leading-relaxed text-slate-700 whitespace-pre-line">
-                {feedback.content}
-              </div>
-            </div>
-          </div>
-
-          {/* Sidebar - Form cập nhật */}
-          <div className="lg:col-span-4 space-y-6">
-            <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100">
-              <h3 className="font-bold text-slate-800 mb-6">Cập nhật xử lý phản ánh</h3>
-
-              {/* Thay đổi trạng thái */}
-              <div className="mb-6">
-                <label className="block text-[13px] font-semibold text-slate-700 mb-2">
-                  Trạng thái mới
-                </label>
-                <select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                  className="w-full px-4 py-3 border border-slate-200 rounded-2xl text-[13px] focus:outline-none focus:ring-2 focus:ring-violet-500"
-                  disabled={isSubmitting}
+        {/* ── Right: Xử lý ── */}
+        <div>
+          <SectionCard
+            title="Cập nhật xử lý phản ánh"
+            footer={
+              <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
+                <GovBtn
+                  variant="secondary"
+                  onClick={() => router.push('/phan-anh-cong-dan')}
+                  disabled={submitting}
                 >
-                  <option value="open">Đang mở</option>
-                  <option value="in-progress">Đang xử lý</option>
-                  <option value="resolved">Đã giải quyết</option>
-                </select>
+                  Hủy
+                </GovBtn>
+                <GovBtn
+                  variant="primary"
+                  onClick={handleUpdate}
+                  disabled={submitting || !ghiChu.trim()}
+                >
+                  <CheckCircle style={{ width: 12, height: 12 }} />
+                  {submitting ? 'Đang cập nhật...' : 'Lưu cập nhật'}
+                </GovBtn>
               </div>
-
-              {/* Nội dung phản hồi */}
-              <div className="mb-6">
-                <label className="block text-[13px] font-semibold text-slate-700 mb-2">
-                  Nội dung phản hồi <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  value={responseContent}
-                  onChange={(e) => setResponseContent(e.target.value)}
-                  placeholder="Nhập nội dung phản hồi, hướng dẫn hoặc kết quả xử lý cho người dân..."
-                  rows={7}
-                  className="w-full px-4 py-3 border border-slate-200 rounded-2xl text-[13px] focus:outline-none focus:ring-2 focus:ring-violet-500 resize-y"
-                  disabled={isSubmitting}
+            }
+          >
+            <div style={{ padding: '12px' }}>
+              {/* Trạng thái hiện tại */}
+              <div style={{ marginBottom: '12px' }}>
+                <p style={{ fontSize: '11.5px', fontWeight: 600, color: '#444', marginBottom: '4px' }}>
+                  TRẠNG THÁI HIỆN TẠI
+                </p>
+                <StatusBadge
+                  variant={trangThaiVariant[item.trangThaiPhanAnh] ?? 'default'}
+                  label={trangThaiLabel[item.trangThaiPhanAnh] ?? item.trangThaiPhanAnh}
                 />
               </div>
 
-              {/* Nút hành động */}
-              <div className="flex gap-3">
-                <button
-                  onClick={() => router.push('/phan-anh-cong-dan')}
-                  disabled={isSubmitting}
-                  className="flex-1 py-3 text-slate-600 font-semibold border border-slate-200 rounded-2xl hover:bg-slate-50 transition-all"
-                >
-                  Hủy
-                </button>
+              {/* Chọn trạng thái mới */}
+              <FilterField label="Trạng thái mới">
+                <GovSelect
+                  value={newStatus}
+                  onChange={setNewStatus}
+                  options={TRANG_THAI_OPTIONS}
+                  width="100%"
+                />
+              </FilterField>
 
-                <button
-                  onClick={handleUpdate}
-                  disabled={isSubmitting || !responseContent.trim()}
-                  className="flex-1 py-3 bg-violet-600 hover:bg-violet-700 disabled:bg-violet-400 text-white font-semibold rounded-2xl transition-all flex items-center justify-center gap-2"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <span className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
-                      Đang cập nhật...
-                    </>
-                  ) : (
-                    'Cập nhật & Gửi thông báo'
-                  )}
-                </button>
+              {/* Ghi chú xử lý */}
+              <div style={{ marginTop: '10px' }}>
+                <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 600, color: '#444', marginBottom: '4px' }}>
+                  GHI CHÚ XỬ LÝ <span style={{ color: '#CC0000' }}>*</span>
+                </label>
+                <textarea
+                  value={ghiChu}
+                  onChange={e => setGhiChu(e.target.value)}
+                  placeholder="Nhập kết quả xử lý, lý do từ chối hoặc hướng dẫn gửi đến người dân..."
+                  rows={6}
+                  disabled={submitting}
+                  style={{
+                    width: '100%',
+                    border: '1px solid #D6D6D6',
+                    borderRadius: '2px',
+                    padding: '8px',
+                    fontSize: '13px',
+                    fontFamily: 'inherit',
+                    color: '#222',
+                    resize: 'vertical',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
+                />
               </div>
 
-              <p className="text-[11px] text-slate-400 text-center mt-4">
-                Thông báo thay đổi sẽ được gửi đến người dân qua ứng dụng/Zalo/SMS
+              <p style={{ fontSize: '11px', color: '#888', marginTop: '8px' }}>
+                Ghi chú sẽ được lưu vào hồ sơ phản ánh và thông báo đến người dân.
               </p>
             </div>
-          </div>
+          </SectionCard>
         </div>
       </div>
     </div>

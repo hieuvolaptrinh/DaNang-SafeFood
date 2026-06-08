@@ -35,4 +35,14 @@ public class GiayChungNhanController {
             @PageableDefault(size = 20) Pageable pageable) {
         return ResponseEntity.ok(ApiResponse.success(giayChungNhanService.getAll(trangThai, pageable)));
     }
+
+    @GetMapping("/{maCN}")
+    public ResponseEntity<ApiResponse<GiayChungNhanResponse>> getDetail(
+            @PathVariable String maCN
+    ) {
+        return ResponseEntity.ok(
+                ApiResponse.success(giayChungNhanService.getDetail(maCN))
+        );
+    }
+
 }

@@ -19,6 +19,13 @@ public record CapNhatKetQuaChiTieuRequest(
             @NotBlank(message = "Mã chỉ tiêu không được trống")
             String maChiTieu,
 
+            @NotBlank(message = "Gia tri do khong duoc de trong")
+            String giaTriDo,
+
+            @NotBlank(message = "Gioi han cho phep khong duoc de trong")
+            String gioiHanChoPhep,
+
+            @NotBlank(message = "Ket qua khong duoc de trong")
             String ketQua
     ) {}
 }

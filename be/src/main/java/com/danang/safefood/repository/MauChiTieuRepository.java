@@ -13,8 +13,23 @@ public interface MauChiTieuRepository extends JpaRepository<MauChiTieu, MauChiTi
     List<MauChiTieu> findByMaMau(String maMau);
 
     @Modifying
-    @Query("UPDATE MauChiTieu m SET m.ketQua = :ketQua WHERE m.maMau = :maMau AND m.maChiTieu = :maChiTieu")
+    @Query("""
+            DELETE FROM MauChiTieu m
+            WHERE m.maMau = :maMau
+            """)
+    int deleteByMaMau(@Param("maMau") String maMau);
+
+    @Modifying
+    @Query("""
+            UPDATE MauChiTieu m
+            SET m.giaTriDo = :giaTriDo,
+                m.gioiHanChoPhep = :gioiHanChoPhep,
+                m.ketQua = :ketQua
+            WHERE m.maMau = :maMau AND m.maChiTieu = :maChiTieu
+            """)
     int updateKetQua(@Param("maMau") String maMau,
                      @Param("maChiTieu") String maChiTieu,
+                     @Param("giaTriDo") String giaTriDo,
+                     @Param("gioiHanChoPhep") String gioiHanChoPhep,
                      @Param("ketQua") String ketQua);
 }

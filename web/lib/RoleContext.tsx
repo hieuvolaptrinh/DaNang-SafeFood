@@ -1,7 +1,8 @@
 'use client';
 
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, ReactNode } from 'react';
 import { Role } from '@/data/mockData';
+import { useAuth } from '@/lib/AuthContext';
 
 interface RoleContextType {
   role: Role;
@@ -9,14 +10,16 @@ interface RoleContextType {
 }
 
 const RoleContext = createContext<RoleContextType>({
-  role: 'ADMIN',
+  role: 'INSPECTOR',
   setRole: () => {},
 });
 
 export function RoleProvider({ children }: { children: ReactNode }) {
-  const [role, setRole] = useState<Role>('ADMIN');
+  const { user } = useAuth();
+  const role: Role = user?.mappedRole ?? 'INSPECTOR';
+
   return (
-    <RoleContext.Provider value={{ role, setRole }}>
+    <RoleContext.Provider value={{ role, setRole: () => {} }}>
       {children}
     </RoleContext.Provider>
   );
@@ -25,3 +28,4 @@ export function RoleProvider({ children }: { children: ReactNode }) {
 export function useRole() {
   return useContext(RoleContext);
 }
+

@@ -1,15 +1,21 @@
+import { GovBtn } from '@/components/GovUI';
+import {
+  getAvailableInspectionTaskStatuses,
+  getInspectionTaskStatusKey,
+  getInspectionTaskStatusLabel,
+  type NhiemVuStatus,
+} from '@/components/inspectionTaskStatus';
 import { cn } from '@/lib/utils';
-import type { InspectionTaskProgressStatus } from '@/components/InspectionTaskList';
 
 export type InspectionTaskUpdateState = 'idle' | 'loading' | 'error' | 'success';
 
 export interface InspectionTaskProgressFormValue {
-  status: '' | Exclude<InspectionTaskProgressStatus, 'idle'>;
+  status: '' | NhiemVuStatus;
   note: string;
 }
 
 interface InspectionTaskProgressFormProps {
-  currentStatus: InspectionTaskProgressStatus;
+  currentStatus: NhiemVuStatus;
   formValue: InspectionTaskProgressFormValue;
   updateState: InspectionTaskUpdateState;
   errorMessage: string;
@@ -17,12 +23,6 @@ interface InspectionTaskProgressFormProps {
   onNoteChange: (note: string) => void;
   onSubmit: () => void;
 }
-
-const statusOptions = [
-  { value: '', label: 'Chọn trạng thái' },
-  { value: 'in-progress', label: 'Đang kiểm tra' },
-  { value: 'completed', label: 'Hoàn thành' },
-] satisfies Array<{ value: InspectionTaskProgressFormValue['status']; label: string }>;
 
 export default function InspectionTaskProgressForm({
   currentStatus,
@@ -35,17 +35,16 @@ export default function InspectionTaskProgressForm({
 }: InspectionTaskProgressFormProps) {
   const isSubmitting = updateState === 'loading';
   const hasSelectedStatus = formValue.status !== '';
-  const isSameStatus =
-    formValue.status !== '' &&
-    (currentStatus === formValue.status ||
-      (currentStatus === 'idle' ? false : currentStatus === formValue.status));
+  const isSameStatus = formValue.status !== '' && formValue.status === currentStatus;
   const disableSubmit = !hasSelectedStatus || isSubmitting || isSameStatus;
+  const availableStatuses = getAvailableInspectionTaskStatuses(currentStatus);
+  const currentStatusKey = getInspectionTaskStatusKey(currentStatus);
 
   return (
-    <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
+    <div className="border border-slate-300 bg-slate-50 p-4">
       <div className="grid gap-4">
         <div>
-          <label className="mb-1.5 block text-[12px] font-bold text-slate-600">
+          <label className="mb-1.5 block text-[12px] font-bold uppercase tracking-[0.04em] text-slate-600">
             Trạng thái kiểm tra
           </label>
           <select
@@ -53,18 +52,19 @@ export default function InspectionTaskProgressForm({
             onChange={(event) =>
               onStatusChange(event.target.value as InspectionTaskProgressFormValue['status'])
             }
-            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition-colors focus:border-blue-500"
+            className="h-10 w-full border border-slate-300 bg-white px-3 text-sm text-slate-700 outline-none transition-colors focus:border-sky-600"
           >
-            {statusOptions.map((option) => (
-              <option key={option.value || 'placeholder'} value={option.value}>
-                {option.label}
+            <option value="">Chọn trạng thái</option>
+            {availableStatuses.map((status) => (
+              <option key={status} value={status}>
+                {getInspectionTaskStatusLabel(status)}
               </option>
             ))}
           </select>
         </div>
 
         <div>
-          <label className="mb-1.5 block text-[12px] font-bold text-slate-600">
+          <label className="mb-1.5 block text-[12px] font-bold uppercase tracking-[0.04em] text-slate-600">
             Ghi chú
           </label>
           <textarea
@@ -72,36 +72,36 @@ export default function InspectionTaskProgressForm({
             onChange={(event) => onNoteChange(event.target.value)}
             rows={4}
             placeholder="Nhập ghi chú"
-            className="w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition-colors focus:border-blue-500"
+            className="w-full resize-none border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition-colors focus:border-sky-600"
           />
         </div>
 
-        {errorMessage && (
-          <p className="text-sm font-medium text-red-600">{errorMessage}</p>
-        )}
+        {errorMessage && <p className="text-sm font-medium text-red-600">{errorMessage}</p>}
 
-        {currentStatus !== 'idle' && (
+        {currentStatusKey !== 'pending' && (
           <p className="text-xs text-slate-500">
             Trạng thái hiện tại:{' '}
             <span className="font-semibold text-slate-700">
-              {currentStatus === 'in-progress' ? 'Đang kiểm tra' : 'Hoàn thành'}
+              {getInspectionTaskStatusLabel(currentStatus)}
             </span>
           </p>
         )}
 
-        <button
-          type="button"
-          onClick={onSubmit}
-          disabled={disableSubmit}
-          className={cn(
-            'inline-flex w-full items-center justify-center rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors',
-            disableSubmit
-              ? 'cursor-not-allowed bg-slate-200 text-slate-500'
-              : 'bg-blue-600 text-white hover:bg-blue-700'
-          )}
-        >
-          {isSubmitting ? 'Đang cập nhật...' : 'Cập nhật'}
-        </button>
+        {disableSubmit ? (
+          <button
+            type="button"
+            disabled
+            className={cn(
+              'inline-flex w-full items-center justify-center border border-slate-300 bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-500'
+            )}
+          >
+            {isSubmitting ? 'Đang cập nhật...' : 'Cập nhật'}
+          </button>
+        ) : (
+          <GovBtn variant="primary" onClick={onSubmit}>
+            {isSubmitting ? 'Đang cập nhật...' : 'Cập nhật'}
+          </GovBtn>
+        )}
       </div>
     </div>
   );

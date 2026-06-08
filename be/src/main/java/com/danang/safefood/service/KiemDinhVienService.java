@@ -3,9 +3,7 @@ package com.danang.safefood.service;
 import com.danang.safefood.dto.request.CapNhatKetQuaChiTieuRequest;
 import com.danang.safefood.dto.request.CapNhatTrangThaiMauRequest;
 import com.danang.safefood.dto.request.ViPhamRequest;
-import com.danang.safefood.dto.response.MauChiTieuResponse;
-import com.danang.safefood.dto.response.MauKiemNghiemResponse;
-import com.danang.safefood.dto.response.ViPhamResponse;
+import com.danang.safefood.dto.response.*;
 import com.danang.safefood.entity.*;
 import com.danang.safefood.repository.*;
 import com.danang.safefood.util.IdGenerator;
@@ -16,7 +14,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.text.Normalizer;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 @Service
@@ -74,16 +74,81 @@ public class KiemDinhVienService {
     // 2. Cập nhật kết quả chỉ tiêu mẫu
     // =========================================================
 
-    @Transactional(readOnly = true)
+    @Transactional
     public List<MauChiTieuResponse> getChiTieuCuaMau(String maMau) {
-        // Xác nhận mẫu tồn tại
-        mauKiemNghiemRepo.findById(maMau)
+        MauKiemNghiem mau = mauKiemNghiemRepo.findById(maMau)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy mẫu kiểm định: " + maMau));
 
-        return mauChiTieuRepo.findByMaMau(maMau)
-                .stream()
+        List<MauChiTieu> existing = mauChiTieuRepo.findByMaMau(maMau);
+        if (existing.isEmpty()) {
+            // Backfill for older requests: thanh-tra previously only stored chiTieuKiemDinh string in mau_kiem_nghiem.
+            // If detail page asks for criteria and mau_chi_tieu is empty, initialize it from mau.chiTieuKiemDinh.
+            ensureMauChiTieuInitializedFromRequested(mau);
+            existing = mauChiTieuRepo.findByMaMau(maMau);
+        }
+
+        return existing.stream()
                 .map(MauChiTieuResponse::from)
                 .collect(Collectors.toList());
+    }
+
+    private void ensureMauChiTieuInitializedFromRequested(MauKiemNghiem mau) {
+        String raw = mau.getChiTieuKiemDinh();
+        if (raw == null || raw.isBlank()) return;
+
+        // Same mapping as ThanhTra create request:
+        // "Vi sinh" -> CT001..CT004, "Kim loại nặng" -> CT005, plus best-effort name matching.
+        List<ChiTieuKiemNghiem> catalog = chiTieuRepo.findAll();
+
+        for (String token : raw.split(",")) {
+            String t = token == null ? "" : token.trim();
+            if (t.isBlank()) continue;
+
+            String norm = normalize(t);
+            if ("vi sinh".equals(norm)) {
+                upsertBlankChiTieu(mau.getMaMau(), "CT001");
+                upsertBlankChiTieu(mau.getMaMau(), "CT002");
+                upsertBlankChiTieu(mau.getMaMau(), "CT003");
+                upsertBlankChiTieu(mau.getMaMau(), "CT004");
+                continue;
+            }
+            if ("kim loai nang".equals(norm)) {
+                upsertBlankChiTieu(mau.getMaMau(), "CT005");
+                continue;
+            }
+
+            for (ChiTieuKiemNghiem item : catalog) {
+                if (item.getTenChiTieu() == null) continue;
+                String normTen = normalize(item.getTenChiTieu());
+                if (normTen.equals(norm) || normTen.contains(norm) || norm.contains(normTen)) {
+                    upsertBlankChiTieu(mau.getMaMau(), item.getMaChiTieu());
+                }
+            }
+        }
+    }
+
+    private void upsertBlankChiTieu(String maMau, String maChiTieu) {
+        if (maMau == null || maMau.isBlank() || maChiTieu == null || maChiTieu.isBlank()) return;
+        if (!chiTieuRepo.existsById(maChiTieu)) return;
+
+        MauChiTieu.MauChiTieuId id = new MauChiTieu.MauChiTieuId(maMau, maChiTieu);
+        if (mauChiTieuRepo.existsById(id)) return;
+
+        MauChiTieu entity = MauChiTieu.builder()
+                .maMau(maMau)
+                .maChiTieu(maChiTieu)
+                .build();
+        mauChiTieuRepo.save(entity);
+    }
+
+    private String normalize(String input) {
+        String normalized = Normalizer.normalize(input, Normalizer.Form.NFD);
+        normalized = normalized.replaceAll("\\p{M}+", ""); // Remove diacritics
+        normalized = normalized.toLowerCase(Locale.ROOT)
+                .replace('đ', 'd')
+                .replaceAll("\\s+", " ")
+                .trim();
+        return normalized;
     }
 
     @Transactional
@@ -102,16 +167,24 @@ public class KiemDinhVienService {
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy chỉ tiêu: " + item.maChiTieu()));
 
             MauChiTieu.MauChiTieuId id = new MauChiTieu.MauChiTieuId(maMau, item.maChiTieu());
+            String ketQua = normalizeKetQuaChiTieu(item.ketQua());
 
             if (mauChiTieuRepo.existsById(id)) {
                 // Cập nhật bản ghi đã có
-                mauChiTieuRepo.updateKetQua(maMau, item.maChiTieu(), item.ketQua());
+                mauChiTieuRepo.updateKetQua(
+                        maMau,
+                        item.maChiTieu(),
+                        item.giaTriDo().trim(),
+                        item.gioiHanChoPhep().trim(),
+                        ketQua);
             } else {
                 // Tạo mới nếu chưa có
                 MauChiTieu mauChiTieu = MauChiTieu.builder()
                         .maMau(maMau)
                         .maChiTieu(item.maChiTieu())
-                        .ketQua(item.ketQua())
+                        .giaTriDo(item.giaTriDo().trim())
+                        .gioiHanChoPhep(item.gioiHanChoPhep().trim())
+                        .ketQua(ketQua)
                         .build();
                 mauChiTieuRepo.save(mauChiTieu);
             }
@@ -129,17 +202,15 @@ public class KiemDinhVienService {
 
     @Transactional
     public ViPhamResponse taoViPham(ViPhamRequest req) {
-        HoSoThanhTra hoSo = hoSoThanhTraRepo.findById(req.maHoSo())
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy hồ sơ thanh tra: " + req.maHoSo()));
+        MauKiemNghiem mauKiemNghiem = mauKiemNghiemRepo.findById(req.maMau())
+                .orElseThrow(()-> new RuntimeException("không tìm thấy mã mẫu"));
 
         LoaiViPham loaiViPham = loaiViPhamRepo.findById(req.maLoaiViPham())
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy loại vi phạm: " + req.maLoaiViPham()));
 
         String mucDo = (req.mucDo() != null && !req.mucDo().isBlank()) ? req.mucDo() : "Trung bình";
 
-        CoSoKinhDoanh coSoKinhDoanh = hoSo.getLichThanhTra() != null
-                ? hoSo.getLichThanhTra().getCoSoKinhDoanh()
-                : null;
+        CoSoKinhDoanh coSoKinhDoanh = mauKiemNghiem.getCoSoKinhDoanh();
 
         ViPham viPham = ViPham.builder()
                 .maViPham(IdGenerator.generate("VP"))
@@ -147,7 +218,8 @@ public class KiemDinhVienService {
                 .khacPhuc(req.khacPhuc())
                 .trangThaiPheDuyet(TrangThaiViPham.CHO_DUYET)
                 .mucDo(mucDo)
-                .hoSoThanhTra(hoSo)
+                .soTienPhat(req.soTienPhat())
+                .mauKiemNghiem(mauKiemNghiem)
                 .loaiViPham(loaiViPham)
                 .coSoKinhDoanh(coSoKinhDoanh)
                 .build();
@@ -177,6 +249,62 @@ public class KiemDinhVienService {
                 .collect(Collectors.toList());
     }
 
+
+    @Transactional
+    public ViPhamResponse capNhatTrangThaiViPham(String maViPham, String trangThai) {
+        ViPham viPham = viPhamRepo.findById(maViPham)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy vi phạm: " + maViPham));
+
+        TrangThaiViPham trangThaiMoi;
+        try {
+            trangThaiMoi = TrangThaiViPham.fromValue(trangThai);
+        } catch (IllegalArgumentException ex) {
+            throw new RuntimeException("Trạng thái vi phạm không hợp lệ: " + trangThai, ex);
+        }
+
+        if (viPham.getTrangThaiPheDuyet() == TrangThaiViPham.DA_DUYET) {
+            throw new RuntimeException("Đơn vi phạm đã được duyệt, không thể cập nhật");
+        }
+
+        viPham.setTrangThaiPheDuyet(trangThaiMoi);
+        return ViPhamResponse.from(viPhamRepo.save(viPham));
+    }
+
+
+    @Transactional
+    public List<ChiTieuResponse> getAllMauChiTieu(){
+        return chiTieuRepo.findAll()
+                .stream().map(x -> new ChiTieuResponse(
+                        x.getMaChiTieu(),
+                        x.getTenChiTieu()
+                )).collect(Collectors.toList());
+    }
+    /**
+     * Lấy chi tiết một vi phạm theo mã
+     */
+    @Transactional(readOnly = true)
+    public ViPhamResponse getViPhamById(String maViPham) {
+        ViPham viPham = viPhamRepo.findById(maViPham)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy vi phạm: " + maViPham));
+
+        return ViPhamResponse.from(viPham);
+    }
+
+    @Transactional
+    public List<LoaiViPhamResponse> getAllLoaiViPham() {
+        return loaiViPhamRepo.findAll()
+                .stream()
+                .map(loaiViPham -> LoaiViPhamResponse.builder()
+                        .maLoaiViPham(loaiViPham.getMaLoaiViPham())
+                        .tenLoaiViPham(loaiViPham.getTenLoaiViPham())
+                        .moTaThem(loaiViPham.getMoTaThem())
+                        .build())
+                .toList();
+    }
+
+    public List<MauSelectResponse> getMauSelect(){
+        return mauKiemNghiemRepo.findMauKhongDat();
+    }
     // =========================================================
     // Private helpers
     // =========================================================
@@ -201,5 +329,22 @@ public class KiemDinhVienService {
             throw new RuntimeException(
                     String.format("Không thể chuyển trạng thái từ '%s' sang '%s'", hienTai, moi));
         }
+    }
+
+    private String normalizeKetQuaChiTieu(String value) {
+        if (value == null || value.isBlank()) {
+            throw new RuntimeException("Ket qua chi tieu khong duoc de trong");
+        }
+
+        String normalized = Normalizer.normalize(value, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}+", "")
+                .toLowerCase(Locale.ROOT)
+                .trim();
+
+        return switch (normalized) {
+            case "đat", "pass" -> "Đạt";
+            case "khong đat", "fail" -> "Không đạt";
+            default -> throw new RuntimeException("Ket qua chi tieu khong hop le: " + value);
+        };
     }
 }
