@@ -9,6 +9,7 @@ class BusinessSearchModel {
   final String? anhBia;
   final int soViPham;
   final List<String> loaiHinhKinhDoanh;
+  final List<String> diaChiChiNhanh;
 
   const BusinessSearchModel({
     required this.maCoSo,
@@ -21,6 +22,7 @@ class BusinessSearchModel {
     this.anhBia,
     required this.soViPham,
     required this.loaiHinhKinhDoanh,
+    this.diaChiChiNhanh = const [],
   });
 
   factory BusinessSearchModel.fromJson(Map<String, dynamic> json) {
@@ -39,6 +41,11 @@ class BusinessSearchModel {
               ?.map((e) => e as String)
               .toList() ??
           [],
+      diaChiChiNhanh:
+          (json['diaChiChiNhanh'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
     );
   }
 }
@@ -50,6 +57,9 @@ class BusinessDetailModel {
   final List<String> loaiHinhKinhDoanh;
   final List<CertificateModel> chungNhan;
   final List<LicenseModel> giayPhep;
+  final List<ChiNhanhModel> chiNhanhs;
+  final List<KhieuNaiModel> khieuNais;
+  final List<ViPhamModel> viPhams;
 
   const BusinessDetailModel({
     required this.coSo,
@@ -58,6 +68,9 @@ class BusinessDetailModel {
     required this.loaiHinhKinhDoanh,
     required this.chungNhan,
     required this.giayPhep,
+    this.chiNhanhs = const [],
+    this.khieuNais = const [],
+    this.viPhams = const [],
   });
 
   factory BusinessDetailModel.fromJson(Map<String, dynamic> json) {
@@ -78,6 +91,21 @@ class BusinessDetailModel {
       giayPhep:
           (json['giayPhep'] as List<dynamic>?)
               ?.map((e) => LicenseModel.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
+      chiNhanhs:
+          (json['chiNhanhs'] as List<dynamic>?)
+              ?.map((e) => ChiNhanhModel.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
+      khieuNais:
+          (json['khieuNais'] as List<dynamic>?)
+              ?.map((e) => KhieuNaiModel.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
+      viPhams:
+          (json['viPhams'] as List<dynamic>?)
+              ?.map((e) => ViPhamModel.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
     );
@@ -125,15 +153,15 @@ class BusinessInfoModel {
 class CertificateModel {
   final String maCN;
   final String tenChungNhan;
-  final String ngayBanHanh;
-  final String ngayHetHan;
+  final String? ngayBanHanh;
+  final String? ngayHetHan;
   final String? trangThai;
 
   const CertificateModel({
     required this.maCN,
     required this.tenChungNhan,
-    required this.ngayBanHanh,
-    required this.ngayHetHan,
+    this.ngayBanHanh,
+    this.ngayHetHan,
     this.trangThai,
   });
 
@@ -141,8 +169,8 @@ class CertificateModel {
     return CertificateModel(
       maCN: json['maCN'] as String,
       tenChungNhan: json['tenChungNhan'] as String,
-      ngayBanHanh: json['ngayBanHanh'] as String,
-      ngayHetHan: json['ngayHetHan'] as String,
+      ngayBanHanh: json['ngayBanHanh'] as String?,
+      ngayHetHan: json['ngayHetHan'] as String?,
       trangThai: json['trangThai'] as String?,
     );
   }
@@ -152,15 +180,15 @@ class LicenseModel {
   final String maGiayPhep;
   final String loaiGiayPhep;
   final String? trangThai;
-  final String ngayCap;
-  final String ngayHetHan;
+  final String? ngayCap;
+  final String? ngayHetHan;
 
   const LicenseModel({
     required this.maGiayPhep,
     required this.loaiGiayPhep,
     this.trangThai,
-    required this.ngayCap,
-    required this.ngayHetHan,
+    this.ngayCap,
+    this.ngayHetHan,
   });
 
   factory LicenseModel.fromJson(Map<String, dynamic> json) {
@@ -168,8 +196,8 @@ class LicenseModel {
       maGiayPhep: json['maGiayPhep'] as String,
       loaiGiayPhep: json['loaiGiayPhep'] as String,
       trangThai: json['trangThai'] as String?,
-      ngayCap: json['ngayCap'] as String,
-      ngayHetHan: json['ngayHetHan'] as String,
+      ngayCap: json['ngayCap'] as String?,
+      ngayHetHan: json['ngayHetHan'] as String?,
     );
   }
 }
@@ -201,6 +229,81 @@ class PagedResponse<T> {
       totalPages: (json['totalPages'] as num).toInt(),
       number: (json['number'] as num).toInt(),
       size: (json['size'] as num).toInt(),
+    );
+  }
+}
+
+class ChiNhanhModel {
+  final String? diaChi;
+  final String? soDienThoai;
+
+  const ChiNhanhModel({this.diaChi, this.soDienThoai});
+
+  factory ChiNhanhModel.fromJson(Map<String, dynamic> json) {
+    return ChiNhanhModel(
+      diaChi: json['diaChi'] as String?,
+      soDienThoai: json['soDienThoai'] as String?,
+    );
+  }
+}
+
+class KhieuNaiModel {
+  final String maKhieuNai;
+  final String? tieuDe;
+  final String? moTaChiTiet;
+  final String? ketQuaXuLy;
+  final String? trangThai;
+  final String? thoiGianKhieuNai;
+
+  const KhieuNaiModel({
+    required this.maKhieuNai,
+    this.tieuDe,
+    this.moTaChiTiet,
+    this.ketQuaXuLy,
+    this.trangThai,
+    this.thoiGianKhieuNai,
+  });
+
+  factory KhieuNaiModel.fromJson(Map<String, dynamic> json) {
+    return KhieuNaiModel(
+      maKhieuNai: json['maKhieuNai'] as String,
+      tieuDe: json['tieuDe'] as String?,
+      moTaChiTiet: json['moTaChiTiet'] as String?,
+      ketQuaXuLy: json['ketQuaXuLy'] as String?,
+      trangThai: json['trangThai'] as String?,
+      thoiGianKhieuNai: json['thoiGianKhieuNai'] as String?,
+    );
+  }
+}
+
+class ViPhamModel {
+  final String maViPham;
+  final String? moTaThem;
+  final String? khacPhuc;
+  final String? mucDo;
+  final double? soTienPhat;
+  final String? trangThaiPheDuyet;
+  final String? loaiViPham;
+
+  const ViPhamModel({
+    required this.maViPham,
+    this.moTaThem,
+    this.khacPhuc,
+    this.mucDo,
+    this.soTienPhat,
+    this.trangThaiPheDuyet,
+    this.loaiViPham,
+  });
+
+  factory ViPhamModel.fromJson(Map<String, dynamic> json) {
+    return ViPhamModel(
+      maViPham: json['maViPham'] as String,
+      moTaThem: json['moTaThem'] as String?,
+      khacPhuc: json['khacPhuc'] as String?,
+      mucDo: json['mucDo'] as String?,
+      soTienPhat: (json['soTienPhat'] as num?)?.toDouble(),
+      trangThaiPheDuyet: json['trangThaiPheDuyet'] as String?,
+      loaiViPham: json['loaiViPham'] as String?,
     );
   }
 }

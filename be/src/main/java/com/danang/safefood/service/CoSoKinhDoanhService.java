@@ -38,6 +38,7 @@ public class CoSoKinhDoanhService {
     private final NguoiDungRepository nguoiDungRepository;
     private final ViPhamRepository viPhamRepo;
     private final CoSoLoaiHinhRepository coSoLoaiHinhRepo;
+    private final com.danang.safefood.repository.ChiNhanhRepository chiNhanhRepo;
 
     @Transactional(readOnly = true)
     public Page<CoSoKinhDoanhResponse> getAll(String trangThai, String maPX, Pageable pageable) {
@@ -51,7 +52,8 @@ public class CoSoKinhDoanhService {
         return page.map(coSo -> {
             Integer soViPham = viPhamRepo.countByCoSoKinhDoanh_MaCoSo(coSo.getMaCoSo());
             List<String> loaiHinh = coSoLoaiHinhRepo.findLoaiHinhByMaCoSo(coSo.getMaCoSo());
-            return CoSoKinhDoanhSearchResponse.from(coSo, soViPham, loaiHinh);
+            List<String> diaChiChiNhanh = chiNhanhRepo.findDiaChiByMaCoSo(coSo.getMaCoSo());
+            return CoSoKinhDoanhSearchResponse.from(coSo, soViPham, loaiHinh, diaChiChiNhanh);
         });
     }
 
@@ -61,6 +63,8 @@ public class CoSoKinhDoanhService {
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy cơ sở kinh doanh: " + id));
         return CoSoKinhDoanhResponse.from(entity);
     }
+
+    private final com.danang.safefood.repository.KhieuNaiRepository khieuNaiRepo;
 
     @Transactional(readOnly = true)
     public CoSoKinhDoanhDetailResponse getDetailById(String id) {
@@ -76,7 +80,14 @@ public class CoSoKinhDoanhService {
                 .findByCoSoKinhDoanh_MaCoSoOrderByNgayNopDesc(id)
                 .stream().map(GiayPhepResponse::from).toList();
         
-        return new CoSoKinhDoanhDetailResponse(coSoResponse, entity.getAnhBia(), soViPham, loaiHinh, chungNhan, giayPhep);
+        List<com.danang.safefood.dto.response.ChiNhanhResponse> chiNhanhs = chiNhanhRepo.findByCoSoKinhDoanh_MaCoSo(id)
+                .stream().map(com.danang.safefood.dto.response.ChiNhanhResponse::from).toList();
+        List<com.danang.safefood.dto.response.KhieuNaiResponse> khieuNais = khieuNaiRepo.findByCoSoKinhDoanh_MaCoSo(id)
+                .stream().map(com.danang.safefood.dto.response.KhieuNaiResponse::from).toList();
+        List<com.danang.safefood.dto.response.ViPhamResponse> viPhams = viPhamRepo.findByCoSoKinhDoanh_MaCoSo(id)
+                .stream().map(com.danang.safefood.dto.response.ViPhamResponse::from).toList();
+        
+        return new CoSoKinhDoanhDetailResponse(coSoResponse, entity.getAnhBia(), soViPham, loaiHinh, chungNhan, giayPhep, chiNhanhs, khieuNais, viPhams);
     }
 
     @Transactional(readOnly = true)

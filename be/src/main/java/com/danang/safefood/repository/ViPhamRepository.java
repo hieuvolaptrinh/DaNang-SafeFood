@@ -20,6 +20,9 @@ public interface ViPhamRepository extends JpaRepository<ViPham, String> {
     Page<ViPham> findAllByOrderByMaViPhamDesc(Pageable pageable);
 
     Integer countByCoSoKinhDoanh_MaCoSo(String maCoSo);
+    
+    List<ViPham> findByCoSoKinhDoanh_MaCoSo(String maCoSo);
+    
     /** Fetch vi phạm + hình thức khắc phục (tránh LazyInitializationException) */
     @Query("SELECT DISTINCT v FROM ViPham v LEFT JOIN FETCH v.hinhThucKhacPhucList LEFT JOIN FETCH v.loaiViPham LEFT JOIN FETCH v.coSoKinhDoanh LEFT JOIN FETCH v.hoSoThanhTra WHERE v.coSoKinhDoanh.maCoSo IN :coSoIds")
     List<ViPham> findByCoSoIdsWithDetails(@Param("coSoIds") List<String> coSoIds);

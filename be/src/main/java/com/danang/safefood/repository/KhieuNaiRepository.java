@@ -25,4 +25,6 @@ public interface KhieuNaiRepository extends JpaRepository<KhieuNai, String> {
             @Param("trangThai") String trangThai,
             Pageable pageable
     );
+
+    java.util.List<KhieuNai> findByCoSoKinhDoanh_MaCoSo(String maCoSo);
 }

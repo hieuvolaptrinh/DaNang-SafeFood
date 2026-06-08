@@ -364,6 +364,45 @@ class BusinessDetailPage extends StatelessWidget {
                         ),
                       ],
 
+                      // Branches Section
+                      if (detail.chiNhanhs.isNotEmpty) ...[
+                        SectionHeader(
+                          title: 'Chi nhánh',
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          actionText: '${detail.chiNhanhs.length} chi nhánh',
+                        ),
+                        ...detail.chiNhanhs.map(
+                          (cn) => _BranchCard(branch: cn),
+                        ),
+                        const SizedBox(height: 20),
+                      ],
+
+                      // Complaints Section
+                      if (detail.khieuNais.isNotEmpty) ...[
+                        SectionHeader(
+                          title: 'Khiếu nại / Phản ánh',
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          actionText: '${detail.khieuNais.length} lượt',
+                        ),
+                        ...detail.khieuNais.map(
+                          (kn) => _ComplaintCard(complaint: kn),
+                        ),
+                        const SizedBox(height: 20),
+                      ],
+
+                      // Violations Section
+                      if (detail.viPhams.isNotEmpty) ...[
+                        SectionHeader(
+                          title: 'Vi phạm',
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          actionText: '${detail.viPhams.length} vi phạm',
+                        ),
+                        ...detail.viPhams.map(
+                          (vp) => _ViolationCard(violation: vp),
+                        ),
+                        const SizedBox(height: 20),
+                      ],
+
                       const SizedBox(height: 40),
                     ],
                   ),
@@ -498,8 +537,9 @@ class _CertificateCard extends StatelessWidget {
   const _CertificateCard({required this.certificate});
 
   bool get _isExpired {
+    if (certificate.ngayHetHan == null || certificate.ngayHetHan!.isEmpty) return false;
     try {
-      final parts = certificate.ngayHetHan.split('-');
+      final parts = certificate.ngayHetHan!.split('-');
       if (parts.length == 3) {
         final date = DateTime(
           int.parse(parts[0]),
@@ -568,7 +608,7 @@ class _CertificateCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${certificate.ngayBanHanh} → ${certificate.ngayHetHan}',
+                  '${certificate.ngayBanHanh ?? "Chưa rõ"} → ${certificate.ngayHetHan ?? "Chưa rõ"}',
                   style: GoogleFonts.inter(
                     color: AppTheme.textSecondary,
                     fontSize: 12,
@@ -594,8 +634,9 @@ class _LicenseCard extends StatelessWidget {
   const _LicenseCard({required this.license});
 
   bool get _isExpired {
+    if (license.ngayHetHan == null || license.ngayHetHan!.isEmpty) return false;
     try {
-      final parts = license.ngayHetHan.split('-');
+      final parts = license.ngayHetHan!.split('-');
       if (parts.length == 3) {
         final date = DateTime(
           int.parse(parts[0]),
@@ -664,7 +705,7 @@ class _LicenseCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${license.ngayCap} → ${license.ngayHetHan}',
+                  '${license.ngayCap ?? "Chưa rõ"} → ${license.ngayHetHan ?? "Chưa rõ"}',
                   style: GoogleFonts.inter(
                     color: AppTheme.textSecondary,
                     fontSize: 12,
@@ -677,6 +718,274 @@ class _LicenseCard extends StatelessWidget {
           StatusBadge(
             status: expired ? SafetyStatus.violated : SafetyStatus.safe,
             customLabel: expired ? 'Hết hạn' : (license.trangThai ?? 'Hiệu lực'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BranchCard extends StatelessWidget {
+  final ChiNhanhModel branch;
+
+  const _BranchCard({required this.branch});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppTheme.cardColor,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppTheme.dividerColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.storefront_rounded, color: AppTheme.primary, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  branch.diaChi ?? 'Chưa cập nhật địa chỉ',
+                  style: GoogleFonts.inter(
+                    color: AppTheme.textPrimary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (branch.soDienThoai != null && branch.soDienThoai!.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Icon(Icons.phone_rounded, color: AppTheme.textSecondary, size: 16),
+                const SizedBox(width: 8),
+                Text(
+                  branch.soDienThoai!,
+                  style: GoogleFonts.inter(
+                    color: AppTheme.textSecondary,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
+          ]
+        ],
+      ),
+    );
+  }
+}
+
+class _ComplaintCard extends StatelessWidget {
+  final KhieuNaiModel complaint;
+
+  const _ComplaintCard({required this.complaint});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppTheme.warning.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppTheme.warning.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  complaint.tieuDe ?? 'Khiếu nại',
+                  style: GoogleFonts.inter(
+                    color: AppTheme.textPrimary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              StatusBadge(
+                status: complaint.trangThai == 'Đã xử lý' ? SafetyStatus.safe : SafetyStatus.warning,
+                customLabel: complaint.trangThai ?? 'Chưa rõ',
+              ),
+            ],
+          ),
+          if (complaint.thoiGianKhieuNai != null) ...[
+            const SizedBox(height: 6),
+            Text(
+              'Thời gian: ${complaint.thoiGianKhieuNai}',
+              style: GoogleFonts.inter(
+                color: AppTheme.textSecondary,
+                fontSize: 12,
+              ),
+            ),
+          ],
+          if (complaint.moTaChiTiet != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              complaint.moTaChiTiet!,
+              style: GoogleFonts.inter(
+                color: AppTheme.textPrimary,
+                fontSize: 13,
+              ),
+            ),
+          ],
+          if (complaint.ketQuaXuLy != null) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.check_circle_outline, color: AppTheme.success, size: 16),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'Kết quả xử lý: ${complaint.ketQuaXuLy}',
+                      style: GoogleFonts.inter(
+                        color: AppTheme.textSecondary,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ]
+        ],
+      ),
+    );
+  }
+}
+
+class _ViolationCard extends StatelessWidget {
+  final ViPhamModel violation;
+
+  const _ViolationCard({required this.violation});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppTheme.error.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppTheme.error.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.warning_amber_rounded, color: AppTheme.error, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  violation.loaiViPham ?? 'Vi phạm an toàn thực phẩm',
+                  style: GoogleFonts.inter(
+                    color: AppTheme.error,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (violation.moTaThem != null && violation.moTaThem!.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              violation.moTaThem!,
+              style: GoogleFonts.inter(
+                color: AppTheme.textPrimary,
+                fontSize: 13,
+              ),
+            ),
+          ],
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              if (violation.mucDo != null)
+                _buildTag(Icons.bar_chart_rounded, violation.mucDo!),
+              if (violation.soTienPhat != null && violation.soTienPhat! > 0)
+                _buildTag(Icons.attach_money_rounded, '${violation.soTienPhat} VNĐ', color: AppTheme.error),
+              if (violation.trangThaiPheDuyet != null)
+                _buildTag(Icons.gavel_rounded, violation.trangThaiPheDuyet!),
+            ],
+          ),
+          if (violation.khacPhuc != null && violation.khacPhuc!.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.build_circle_outlined, color: AppTheme.accent, size: 16),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'Yêu cầu khắc phục: ${violation.khacPhuc}',
+                      style: GoogleFonts.inter(
+                        color: AppTheme.textSecondary,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ]
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTag(IconData icon, String text, {Color? color}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: (color ?? AppTheme.textSecondary).withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: color ?? AppTheme.textSecondary),
+          const SizedBox(width: 4),
+          Text(
+            text,
+            style: GoogleFonts.inter(
+              color: color ?? AppTheme.textSecondary,
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ],
       ),

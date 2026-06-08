@@ -112,9 +112,15 @@ Hãy gợi ý các cơ sở phù hợp nhất với yêu cầu trên. Ưu tiên 
       // Bước 3: Gọi AI
       final aiResult = await aiService.askAI(prompt);
 
+      // Tìm các cơ sở được AI nhắc đến trong kết quả trả về
+      final suggestedBusinesses = businesses.where((b) {
+        return aiResult.toLowerCase().contains(b.tenCoSo.toLowerCase());
+      }).toList();
+
       emit(state.copyWith(
         status: SearchStatus.aiLoaded,
         aiResponse: aiResult,
+        results: suggestedBusinesses,
       ));
     } catch (e) {
       emit(state.copyWith(

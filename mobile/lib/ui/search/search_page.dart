@@ -298,7 +298,30 @@ class _SearchPageState extends State<SearchPage>
 
       if (state.status == SearchStatus.aiLoaded &&
           state.aiResponse != null) {
-        return _AiResponseView(response: state.aiResponse!);
+        return ListView.builder(
+          controller: _scrollController,
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          itemCount: state.results.length + 1,
+          itemBuilder: (context, index) {
+            if (index == 0) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: _AiResponseView(response: state.aiResponse!),
+              );
+            }
+
+            final item = state.results[index - 1];
+            return _BusinessCard(
+              business: item,
+              status: _mapStatus(item.trangThai, item.soViPham),
+              onTap: () => Navigator.pushNamed(
+                context,
+                Routes.businessDetail,
+                arguments: {'maCoSo': item.maCoSo},
+              ),
+            );
+          },
+        );
       }
 
       if (state.status == SearchStatus.error) {
@@ -584,8 +607,8 @@ class _AiResponseView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -873,7 +896,41 @@ class _BusinessCard extends StatelessWidget {
                   const SizedBox(height: 8),
 
                   // Location row
-                  if (business.tenPhuongXa != null)
+                  if (business.diaChiChiNhanh.isNotEmpty)
+                    ...business.diaChiChiNhanh.map((diaChi) => Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(4),
+                            margin: const EdgeInsets.only(top: 2),
+                            decoration: BoxDecoration(
+                              color: AppTheme.primary.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Icon(
+                              Icons.location_on_rounded,
+                              size: 14,
+                              color: AppTheme.primary,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              diaChi + (business.tenPhuongXa != null ? ', ${business.tenPhuongXa}' : ''),
+                              style: GoogleFonts.inter(
+                                color: AppTheme.textSecondary,
+                                fontSize: 13,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ))
+                  else if (business.tenPhuongXa != null)
                     Row(
                       children: [
                         Container(

@@ -15,9 +15,10 @@ public record CoSoKinhDoanhSearchResponse(
         String tenPhuongXa,
         String anhBia,
         Integer soViPham,
-        List<String> loaiHinhKinhDoanh
+        List<String> loaiHinhKinhDoanh,
+        List<String> diaChiChiNhanh
 ) {
-    public static CoSoKinhDoanhSearchResponse from(CoSoKinhDoanh e, Integer soViPham, List<String> loaiHinh) {
+    public static CoSoKinhDoanhSearchResponse from(CoSoKinhDoanh e, Integer soViPham, List<String> loaiHinh, List<String> diaChiChiNhanh) {
         return new CoSoKinhDoanhSearchResponse(
                 e.getMaCoSo(),
                 e.getTenCoSo(),
@@ -28,7 +29,8 @@ public record CoSoKinhDoanhSearchResponse(
                 e.getPhuongXa() != null ? e.getPhuongXa().getTenPhuongXa() : null,
                 e.getAnhBia(),
                 soViPham,
-                loaiHinh
+                loaiHinh,
+                diaChiChiNhanh
         );
     }
 }
