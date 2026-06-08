@@ -136,7 +136,7 @@ export default function BaoCaoChinhSuaPage() {
         {[
           { label: 'Mã báo cáo', value: report.id, mono: true },
           { label: 'Ngày kiểm tra', value: report.ngay, mono: true },
-          { label: 'Quận/Huyện', value: report.quanHuyen },
+          { label: 'Phường/Xã', value: report.quanHuyen },
           { label: 'Thanh tra viên', value: report.thanhTraVien },
         ].map((item) => (
           <div key={item.label} style={{ background: '#fff', border: '1px solid #D6D6D6', borderRadius: '1px', padding: '10px 14px' }}>

@@ -71,7 +71,7 @@ export const thongKeApi = {
     return api.get(`${THONGKE_BASE}/giay-phep-sap-het-han?soNgay=${soNgay}`);
   },
 
-  /** Thống kê theo quận/huyện */
+  /** Thống kê theo Phường/Xã */
   getThongKeQuanHuyen(): Promise<ThongKeQuanHuyen[]> {
     return api.get(`${THONGKE_BASE}/quan-huyen`);
   },

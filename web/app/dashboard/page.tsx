@@ -165,7 +165,7 @@ function AuthorityDashboard() {
 
       {/* Charts row */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '10px', marginBottom: '10px' }}>
-        <TableCard title="Thống kê theo quận/huyện">
+        <TableCard title="Thống kê theo Phường/Xã">
           <DistrictStats />
         </TableCard>
       </div>

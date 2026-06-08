@@ -78,7 +78,7 @@ export default function GiayPhepPage() {
       header: 'Ngày hết hạn',
       render: r => <span style={{ fontFamily: 'monospace', fontSize: '12px', color: r.status === 'expired' ? '#CC0000' : '#222', fontWeight: r.status === 'expired' ? 600 : 400 }}>{r.expiryDate}</span>,
     },
-    { key: 'district', header: 'Quận/Huyện' },
+    { key: 'district', header: 'Phường/Xã' },
     {
       key: 'status',
       header: 'Trạng thái',
@@ -143,7 +143,7 @@ export default function GiayPhepPage() {
             { value: 'revoked', label: 'Đã thu hồi' },
           ]} width={140} />
         </FilterField>
-        <FilterField label="Quận/Huyện">
+        <FilterField label="Phường/Xã">
           <GovSelect value={districtFilter} onChange={setDistrictFilter} options={[
             { value: '', label: '-- Tất cả --' },
             ...districts.map(d => ({ value: d, label: d })),
