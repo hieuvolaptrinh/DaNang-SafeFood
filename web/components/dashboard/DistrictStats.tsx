@@ -34,7 +34,7 @@ export default function DistrictStats() {
     <table style={{ width:'100%', borderCollapse:'collapse', fontSize:'12.5px' }}>
       <thead>
         <tr>
-          {['STT', 'Quận/Huyện', 'Tổng cơ sở', 'Đạt chuẩn', 'Vi phạm', 'Tỷ lệ đạt', 'Mức độ'].map(h => (
+          {['STT', 'Phường/Xã', 'Tổng cơ sở', 'Đạt chuẩn', 'Vi phạm', 'Tỷ lệ đạt', 'Mức độ'].map(h => (
             <th key={h} style={{ background:'#E8E8E8', border:'1px solid #D6D6D6', padding:'5px 10px', fontSize:'12px', fontWeight:600, color:'#333', textAlign: h==='STT' ? 'center' : 'left', whiteSpace:'nowrap' }}>{h}</th>
           ))}
         </tr>

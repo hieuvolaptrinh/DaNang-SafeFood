@@ -34,7 +34,7 @@ export default function ExpiryAlerts() {
     <table style={{ width:'100%', borderCollapse:'collapse', fontSize:'12.5px' }}>
       <thead>
         <tr>
-          {['Cơ sở', 'Số giấy phép', 'Quận/Huyện', 'Ngày hết hạn', 'Tình trạng', 'Thao tác'].map(h => (
+          {['Cơ sở', 'Số giấy phép', 'Phường/Xã', 'Ngày hết hạn', 'Tình trạng', 'Thao tác'].map(h => (
             <th key={h} style={{ background:'#E8E8E8', border:'1px solid #D6D6D6', padding:'5px 10px', fontSize:'11.5px', fontWeight:600, color:'#333', textAlign:'left', whiteSpace:'nowrap' }}>{h}</th>
           ))}
         </tr>
