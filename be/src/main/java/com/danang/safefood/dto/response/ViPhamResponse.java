@@ -8,7 +8,14 @@ import com.danang.safefood.util.TrangThaiViPham;
 import java.math.BigDecimal;
 import java.util.List;
 
-
+/**
+ * Response chi tiết vi phạm (cho CSKD xem trong màn hình "Chi tiết vi phạm").
+ *
+ * Trường <code>tinhTrangKhacPhuc</code> = label tổng hợp từ các hình thức xử phạt:
+ *  - Tất cả ĐÃ KHẮC PHỤC → "Đã khắc phục"
+ *  - Có ít nhất 1 ĐANG KHẮC PHỤC → "Đang khắc phục"
+ *  - Còn lại → "Chưa khắc phục"
+ */
 public record ViPhamResponse(
         String maViPham,
         String moTaThem,
@@ -20,10 +27,70 @@ public record ViPhamResponse(
         String maCoSo,
         String tenCoSo,
         BigDecimal tongTienPhat,
+        TrangThaiKhacPhuc tinhTrangKhacPhuc,
+        String tinhTrangKhacPhucLabel,
+        List<HinhThucKhacPhucInfo> danhSachKhacPhuc,
         String yeuCauKhacPhuc,
-        String lyDo) {
+        String lyDo,
+        List<String> minhChungUrls) {
+
+    public record HinhThucKhacPhucInfo(
+            String maHinhThucKhacPhuc,
+            BigDecimal soTienKhacPhuc,
+            TrangThaiKhacPhuc tinhTrangKhacPhuc,
+            String tinhTrangKhacPhucLabel) {
+        public static HinhThucKhacPhucInfo from(HinhThucKhacPhuc h) {
+            var status = h.getTinhTrangKhacPhuc() == null
+                    ? TrangThaiKhacPhuc.CHUA_KHAC_PHUC
+                    : h.getTinhTrangKhacPhuc();
+            return new HinhThucKhacPhucInfo(
+                    h.getMaHinhThucKhacPhuc(),
+                    h.getSoTienKhacPhuc(),
+                    status,
+                    status.label());
+        }
+    }
 
     public static ViPhamResponse from(ViPham v) {
+        var ds = v.getHinhThucKhacPhucList() == null
+                ? List.<HinhThucKhacPhucInfo>of()
+                : v.getHinhThucKhacPhucList().stream()
+                        .map(HinhThucKhacPhucInfo::from)
+                        .toList();
+
+        BigDecimal tong;
+        if (ds.isEmpty() && v.getSoTienPhat() != null) {
+            tong = v.getSoTienPhat();
+        } else {
+            tong = ds.stream()
+                    .map(HinhThucKhacPhucInfo::soTienKhacPhuc)
+                    .filter(java.util.Objects::nonNull)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+        }
+
+        List<String> minhChungUrls = v.getMinhChungKhacPhucList() == null
+                ? List.of()
+                : v.getMinhChungKhacPhucList().stream()
+                        .flatMap(m -> {
+                            var files = m.getFileDinhKems();
+                            return files == null ? java.util.stream.Stream.empty() : files.stream();
+                        })
+                        .map(com.danang.safefood.entity.FileDinhKem::getUrlFile)
+                        .filter(java.util.Objects::nonNull)
+                        .toList();
+
+        TrangThaiKhacPhuc tinhTrang;
+        if (ds.isEmpty()) {
+            tinhTrang = TrangThaiKhacPhuc.CHUA_KHAC_PHUC;
+        } else if (ds.stream().allMatch(h -> h.tinhTrangKhacPhuc() == TrangThaiKhacPhuc.DA_KHAC_PHUC)) {
+            tinhTrang = TrangThaiKhacPhuc.DA_KHAC_PHUC;
+        } else if (ds.stream().anyMatch(h -> h.tinhTrangKhacPhuc() == TrangThaiKhacPhuc.DANG_KHAC_PHUC
+                || h.tinhTrangKhacPhuc() == TrangThaiKhacPhuc.DA_KHAC_PHUC)) {
+            tinhTrang = TrangThaiKhacPhuc.DANG_KHAC_PHUC;
+        } else {
+            tinhTrang = TrangThaiKhacPhuc.CHUA_KHAC_PHUC;
+        }
+
         return new ViPhamResponse(
                 v.getMaViPham(),
                 v.getMoTaThem(),
@@ -34,9 +101,12 @@ public record ViPhamResponse(
                 v.getLoaiViPham() != null ? v.getLoaiViPham().getTenLoaiViPham() : null,
                 v.getCoSoKinhDoanh() != null ? v.getCoSoKinhDoanh().getMaCoSo() : null,
                 v.getCoSoKinhDoanh() != null ? v.getCoSoKinhDoanh().getTenCoSo() : null,
-                v.getSoTienPhat(),
+                tong,
+                tinhTrang,
+                tinhTrang.label(),
+                ds,
                 v.getKhacPhuc(),
-                v.getMoTaThem()
-        );
+                v.getMoTaThem(),
+                minhChungUrls);
     }
 }

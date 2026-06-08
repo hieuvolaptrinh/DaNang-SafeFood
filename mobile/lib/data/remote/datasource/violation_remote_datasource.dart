@@ -106,6 +106,28 @@ class ViolationRemoteDataSource {
     }
   }
 
+  /// POST /api/user/khac-phuc/vi-pham/{maViPham}/minh-chung
+  Future<void> uploadMinhChung(String maViPham, String filePath) async {
+    try {
+      final formData = FormData.fromMap({
+        'file': await MultipartFile.fromFile(filePath),
+      });
+      final res = await dio.post(
+        '/api/user/khac-phuc/vi-pham/$maViPham/minh-chung',
+        data: formData,
+      );
+      final wrapper = ApiResponseWrapper<Object?>.fromJson(
+        res.data as Map<String, dynamic>,
+        (json) => json,
+      );
+      if (!wrapper.isSuccess) {
+        throw ApiException(statusCode: wrapper.code, message: wrapper.message);
+      }
+    } on DioException catch (e) {
+      throw _toException(e);
+    }
+  }
+
   ApiException _toException(DioException error) {
     final res = error.response;
     if (res?.data is Map<String, dynamic>) {

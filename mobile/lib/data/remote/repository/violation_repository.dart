@@ -20,4 +20,7 @@ class ViolationRepository {
 
   Future<PaymentModel> syncPayment(int orderCode) =>
       remote.syncPayment(orderCode);
+
+  Future<void> uploadMinhChung(String maViPham, String filePath) =>
+      remote.uploadMinhChung(maViPham, filePath);
 }

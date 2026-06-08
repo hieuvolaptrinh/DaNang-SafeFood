@@ -23,4 +23,8 @@ public class MinhChungKhacPhuc {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "maViPham")
     private ViPham viPham;
+
+    @OneToMany(mappedBy = "minhChungKhacPhuc", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
+    private java.util.List<FileDinhKem> fileDinhKems = new java.util.ArrayList<>();
 }

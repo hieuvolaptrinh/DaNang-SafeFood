@@ -12,8 +12,13 @@ import com.danang.safefood.repository.NguoiDungRepository;
 import com.danang.safefood.repository.ViPhamRepository;
 import com.danang.safefood.util.IdGenerator;
 import com.danang.safefood.util.TrangThaiKhacPhuc;
+import com.danang.safefood.entity.MinhChungKhacPhuc;
+import com.danang.safefood.entity.FileDinhKem;
+import com.danang.safefood.repository.MinhChungKhacPhucRepository;
+import com.danang.safefood.repository.FileDinhKemRepository;
 import com.danang.safefood.util.TrangThaiThanhToan;
 import com.fasterxml.jackson.databind.JsonNode;
+import org.springframework.web.multipart.MultipartFile;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -41,6 +46,9 @@ public class KhacPhucService {
     private final GiaoDichThanhToanRepository giaoDichRepo;
     private final NguoiDungRepository nguoiDungRepository;
     private final PayOSService payOSService;
+    private final CloudinaryService cloudinaryService;
+    private final MinhChungKhacPhucRepository minhChungKhacPhucRepository;
+    private final FileDinhKemRepository fileDinhKemRepository;
 
     @Value("${payos.webhook-url}")
     private String webhookUrl;
@@ -64,12 +72,22 @@ public class KhacPhucService {
         ViPham vp = viPhamRepository.findById(maViPham)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy vi phạm: " + maViPham));
 
+        // Check proof of remediation
+        boolean hasProof = minhChungKhacPhucRepository.existsByViPham_MaViPham(maViPham);
+        if (!hasProof) {
+            throw new RuntimeException("Vui lòng tải lên hình ảnh minh chứng khắc phục trước khi nộp phạt");
+        }
+
         // Tổng tiền chưa khắc phục (tức trạng thái != DA_KHAC_PHUC)
         BigDecimal totalUnpaid = vp.getHinhThucKhacPhucList().stream()
                 .filter(h -> h.getTinhTrangKhacPhuc() != TrangThaiKhacPhuc.DA_KHAC_PHUC)
                 .map(HinhThucKhacPhuc::getSoTienKhacPhuc)
                 .filter(java.util.Objects::nonNull)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        if (vp.getHinhThucKhacPhucList().isEmpty() && vp.getSoTienPhat() != null) {
+            totalUnpaid = vp.getSoTienPhat();
+        }
 
         if (totalUnpaid.compareTo(BigDecimal.ZERO) <= 0) {
             throw new RuntimeException("Vi phạm này đã được khắc phục đầy đủ");
@@ -281,5 +299,46 @@ public class KhacPhucService {
         } catch (Exception ignored) {
         }
         return null;
+    }
+
+    @Transactional
+    public void uploadMinhChung(String maViPham, MultipartFile file) throws Exception {
+        ViPham vp = viPhamRepository.findById(maViPham)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy vi phạm"));
+
+        String imageUrl = cloudinaryService.uploadImage(file);
+
+        MinhChungKhacPhuc minhChung = MinhChungKhacPhuc.builder()
+                .maMinhChung(IdGenerator.generate("MC"))
+                .thoiGianGui(java.time.LocalDateTime.now())
+                .viPham(vp)
+                .build();
+
+        minhChung = minhChungKhacPhucRepository.save(minhChung);
+
+        FileDinhKem fileDinhKem = FileDinhKem.builder()
+                .maFile(IdGenerator.generate("FD"))
+                .loaiFile("IMAGE")
+                .thoiGianGui(java.time.LocalDateTime.now())
+                .urlFile(imageUrl)
+                .minhChungKhacPhuc(minhChung)
+                .build();
+
+        fileDinhKemRepository.save(fileDinhKem);
+
+        // Check if total fine is 0. If 0 -> Mark as DA_KHAC_PHUC immediately
+        BigDecimal totalUnpaid = vp.getHinhThucKhacPhucList().stream()
+                .filter(h -> h.getTinhTrangKhacPhuc() != TrangThaiKhacPhuc.DA_KHAC_PHUC)
+                .map(HinhThucKhacPhuc::getSoTienKhacPhuc)
+                .filter(java.util.Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        if (vp.getHinhThucKhacPhucList().isEmpty() && vp.getSoTienPhat() != null) {
+            totalUnpaid = vp.getSoTienPhat();
+        }
+
+        if (totalUnpaid.compareTo(BigDecimal.ZERO) <= 0) {
+            updateKhacPhucDone(maViPham);
+        }
     }
 }

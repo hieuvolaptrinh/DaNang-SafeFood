@@ -41,6 +41,21 @@ class ViolationCubit extends Cubit<ViolationState> {
     }
   }
 
+  Future<void> uploadProof(String maViPham, String filePath) async {
+    emit(state.copyWith(status: ViolationStatus.loading));
+    try {
+      await repository.uploadMinhChung(maViPham, filePath);
+      await loadDetail(maViPham); // reload detail after success
+    } catch (e) {
+      emit(
+        state.copyWith(
+          status: ViolationStatus.error,
+          errorMessage: e.toString(),
+        ),
+      );
+    }
+  }
+
   Future<PaymentModel?> createPayment({
     required String maViPham,
     String? description,

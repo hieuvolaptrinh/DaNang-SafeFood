@@ -8,6 +8,8 @@ import 'package:mobile_ui/data/remote/model/violation_models.dart';
 import 'package:mobile_ui/ui/payment/payment_sheet.dart';
 import 'package:mobile_ui/viewmodel/violation/violation_cubit.dart';
 import 'package:mobile_ui/viewmodel/violation/violation_state.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 /// Chi tiết 1 vi phạm. Cho phép CSKD nhấn "Thanh toán" → mở bottom sheet
 /// hiển thị mã QR PayOS để chuyển khoản. Khi PayOS xác nhận → trạng thái
@@ -185,10 +187,74 @@ class _Body extends StatelessWidget {
 
           const SizedBox(height: 32),
 
+          // Hình ảnh minh chứng khắc phục
+          const SectionHeader(
+            title: 'Minh chứng khắc phục',
+            padding: EdgeInsets.symmetric(vertical: 8),
+          ),
+          if (violation.minhChungUrls.isNotEmpty) ...[
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: violation.minhChungUrls.length,
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                crossAxisSpacing: 8,
+                mainAxisSpacing: 8,
+              ),
+              itemBuilder: (ctx, i) => ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: CachedNetworkImage(
+                  imageUrl: violation.minhChungUrls[i],
+                  fit: BoxFit.cover,
+                  placeholder: (context, url) => const Center(
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                  errorWidget: (context, url, error) => const Icon(Icons.error),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+          if (!daKhacPhuc)
+            ElevatedButton.icon(
+              onPressed: () => _onPickImage(context, violation.maViPham),
+              icon: const Icon(Icons.upload_file_rounded, size: 20),
+              label: Text(
+                'Tải lên ảnh minh chứng',
+                style: GoogleFonts.inter(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                minimumSize: const Size(double.infinity, 52),
+                backgroundColor: AppTheme.background,
+                foregroundColor: AppTheme.primary,
+                side: const BorderSide(color: AppTheme.primary),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+            ),
+
+          const SizedBox(height: 32),
+
           // Action: Thanh toán
           if (!daKhacPhuc && tienChuaNop > 0)
             ElevatedButton.icon(
-              onPressed: () => _onPay(context, violation),
+              onPressed: () {
+                if (violation.minhChungUrls.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Vui lòng tải lên ảnh minh chứng trước khi thanh toán'),
+                      backgroundColor: AppTheme.error,
+                    ),
+                  );
+                  return;
+                }
+                _onPay(context, violation);
+              },
               icon: const Icon(Icons.qr_code_2_rounded, size: 20),
               label: Text(
                 'Tạo mã QR thanh toán',
@@ -279,6 +345,14 @@ class _Body extends StatelessWidget {
     );
 
     await result; // chờ tạo xong (sheet sẽ tự update qua bloc)
+  }
+
+  Future<void> _onPickImage(BuildContext context, String maViPham) async {
+    final picker = ImagePicker();
+    final xFile = await picker.pickImage(source: ImageSource.gallery);
+    if (xFile != null && context.mounted) {
+      context.read<ViolationCubit>().uploadProof(maViPham, xFile.path);
+    }
   }
 }
 

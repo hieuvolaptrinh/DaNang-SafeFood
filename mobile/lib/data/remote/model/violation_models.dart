@@ -77,6 +77,7 @@ class ViolationModel extends Equatable {
   final KhacPhucStatus tinhTrangKhacPhuc;
   final String tinhTrangKhacPhucLabel;
   final List<HinhThucKhacPhucInfo> danhSachKhacPhuc;
+  final List<String> minhChungUrls;
 
   const ViolationModel({
     required this.maViPham,
@@ -92,6 +93,7 @@ class ViolationModel extends Equatable {
     required this.tinhTrangKhacPhuc,
     required this.tinhTrangKhacPhucLabel,
     required this.danhSachKhacPhuc,
+    required this.minhChungUrls,
   });
 
   bool get daKhacPhuc => tinhTrangKhacPhuc == KhacPhucStatus.daKhacPhuc;
@@ -123,6 +125,10 @@ class ViolationModel extends Equatable {
       tinhTrangKhacPhucLabel:
           json['tinhTrangKhacPhucLabel'] as String? ?? khacPhucLabel(st),
       danhSachKhacPhuc: ds,
+      minhChungUrls: (json['minhChungUrls'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          const <String>[],
     );
   }
 
@@ -141,6 +147,7 @@ class ViolationModel extends Equatable {
     tinhTrangKhacPhuc,
     tinhTrangKhacPhucLabel,
     danhSachKhacPhuc,
+    minhChungUrls,
   ];
 }
 

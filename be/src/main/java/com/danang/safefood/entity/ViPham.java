@@ -58,4 +58,8 @@ public class ViPham {
     @OneToMany(mappedBy = "viPham", fetch = FetchType.LAZY)
     @Builder.Default
     private List<HinhThucKhacPhuc> hinhThucKhacPhucList = new ArrayList<>();
+
+    @OneToMany(mappedBy = "viPham", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<MinhChungKhacPhuc> minhChungKhacPhucList = new ArrayList<>();
 }

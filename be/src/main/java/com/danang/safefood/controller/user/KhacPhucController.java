@@ -51,4 +51,20 @@ public class KhacPhucController {
     public ResponseEntity<ApiResponse<PaymentResponse>> syncPayment(@PathVariable Long orderCode) {
         return ResponseEntity.ok(ApiResponse.success(khacPhucService.syncPaymentStatus(orderCode)));
     }
+
+    @PostMapping(value = "/vi-pham/{maViPham}/minh-chung", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<String>> uploadMinhChung(
+            @AuthenticationPrincipal JwtPrincipal jwt,
+            @PathVariable String maViPham,
+            @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+        if (jwt == null || jwt.userId() == null) {
+            throw new RuntimeException("Không thể xác định người dùng");
+        }
+        try {
+            khacPhucService.uploadMinhChung(maViPham, file);
+            return ResponseEntity.ok(ApiResponse.success("Tải lên minh chứng thành công", null));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(400, e.getMessage()));
+        }
+    }
 }

@@ -66,10 +66,11 @@ public class ThongKeService {
         long thanhTraDangXuLy  = lichThanhTraRepo.countByTrangThai("Chưa nhận");
         long phanAnhChuaXuLy   = phanAnhRepo.countByTrangThaiPhanAnh("Chưa xử lý");
         long tongQuyDinh       = quyDinhRepo.countByTrangThai(TrangThaiQuyDinh.HIEU_LUC);
+        long tongViPham        = viPhamRepo.count();
 
         return new DashboardResponse(
                 tongCSKD, hoatDong, cnHieuLuc, sapHetHan,
-                thanhTraDangXuLy, phanAnhChuaXuLy, tongQuyDinh
+                thanhTraDangXuLy, phanAnhChuaXuLy, tongQuyDinh, tongViPham
         );
     }
 

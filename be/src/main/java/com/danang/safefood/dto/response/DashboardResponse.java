@@ -7,5 +7,6 @@ public record DashboardResponse(
         long chungNhanHetHan,    // hết hạn trong 30 ngày tới
         long thanhTraDangXuLy,
         long phanAnhChuaXuLy,
-        long tongQuyDinhHieuLuc
+        long tongQuyDinhHieuLuc,
+        long tongViPham
 ) {}
